@@ -5,26 +5,26 @@
   },
   {
     "content": "Phase 2: Get design guidelines from design_agent",
-    "status": "in_progress"
+    "status": "completed"
   },
   {
     "content": "Phase 2: Install react-flow (@xyflow/react) and other deps",
-    "status": "pending"
+    "status": "completed"
   },
   {
     "content": "Phase 2: Frontend build - Landing + Player flows (Join, Lobby, Story, Gates, Vote) with WebSocket live sync",
-    "status": "pending"
+    "status": "completed"
   },
   {
     "content": "Phase 2: Frontend build - Admin flows (Login, Story list, Visual React Flow canvas editor)",
-    "status": "pending"
+    "status": "completed"
   },
   {
     "content": "Phase 2: All 25 user stories covered in development",
-    "status": "pending"
+    "status": "completed"
   },
   {
     "content": "Phase 2: End to End Testing using Testing Agent",
-    "status": "pending"
+    "status": "in_progress"
   }
 ]

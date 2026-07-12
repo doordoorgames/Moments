@@ -184,7 +184,7 @@ export default function PlayRoom() {
         <StoryReading
             node={node}
             choices={choices}
-            player={player}
+            player={view?.player || player}
             code={code}
         />
     );

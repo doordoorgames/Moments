@@ -17,12 +17,15 @@ export default function AdminLogin() {
         e.preventDefault();
         setBusy(true);
         try {
-            const res = await api.adminLogin(password);
+            const res = await api.adminLogin(password.trim());
             localStorage.setItem("admin_token", res.token);
             toast.success("Welcome, story architect.");
             nav("/admin/stories");
         } catch (err) {
-            toast.error(err?.response?.data?.detail || "Invalid password");
+            toast.error(
+                err?.response?.data?.detail ||
+                    "Invalid password. Dev password is exactly: admin123",
+            );
         } finally {
             setBusy(false);
         }
@@ -66,7 +69,16 @@ export default function AdminLogin() {
                             Sign in
                         </Button>
                         <p className="text-[11px] text-muted-foreground">
-                            Dev password: <span className="font-mono">admin123</span>
+                            Dev password:{" "}
+                            <button
+                                type="button"
+                                onClick={() => setPassword("admin123")}
+                                className="font-mono text-foreground underline decoration-dotted underline-offset-2 hover:text-accent"
+                                data-testid="admin-login-fill-dev-password"
+                            >
+                                admin123
+                            </button>{" "}
+                            (click to fill)
                         </p>
                     </form>
                 </Card>

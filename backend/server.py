@@ -364,7 +364,8 @@ async def list_stories_public():
 
 @api_router.post("/admin/login")
 async def admin_login(payload: AdminLoginRequest):
-    if payload.password != ADMIN_PASSWORD:
+    submitted = (payload.password or "").strip()
+    if submitted != ADMIN_PASSWORD:
         raise HTTPException(status_code=401, detail="Invalid password")
     return {"token": ADMIN_TOKEN}
 

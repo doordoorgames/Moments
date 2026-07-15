@@ -19,18 +19,10 @@ export const api = {
         axios.post(`${API_BASE}/rooms/${code}/select-story`, { story_id }).then((r) => r.data),
     startRoom: (code) => axios.post(`${API_BASE}/rooms/${code}/start`).then((r) => r.data),
     resetRoom: (code) => axios.post(`${API_BASE}/rooms/${code}/reset`).then((r) => r.data),
-    getPlayerView: (code, playerId) =>
-        axios.get(`${API_BASE}/rooms/${code}/players/${playerId}/view`).then((r) => r.data),
-    playerChoose: (code, playerId, choice_id) =>
-        axios
-            .post(`${API_BASE}/rooms/${code}/players/${playerId}/choose`, { choice_id })
-            .then((r) => r.data),
-    playerVote: (code, playerId, choice_id) =>
-        axios
-            .post(`${API_BASE}/rooms/${code}/players/${playerId}/vote`, { choice_id })
-            .then((r) => r.data),
+    castVote: (code, player_id, choice_id) =>
+        axios.post(`${API_BASE}/rooms/${code}/vote`, { player_id, choice_id }).then((r) => r.data),
 
-    // admin
+    // admin (unchanged)
     adminLogin: (password) =>
         axios.post(`${API_BASE}/admin/login`, { password }).then((r) => r.data),
     adminVerify: () =>
@@ -38,37 +30,21 @@ export const api = {
     adminListStories: () =>
         axios.get(`${API_BASE}/admin/stories`, { headers: adminHeaders() }).then((r) => r.data),
     adminCreateStory: (payload) =>
-        axios
-            .post(`${API_BASE}/admin/stories`, payload, { headers: adminHeaders() })
-            .then((r) => r.data),
+        axios.post(`${API_BASE}/admin/stories`, payload, { headers: adminHeaders() }).then((r) => r.data),
     adminUpdateStory: (id, payload) =>
-        axios
-            .put(`${API_BASE}/admin/stories/${id}`, payload, { headers: adminHeaders() })
-            .then((r) => r.data),
+        axios.put(`${API_BASE}/admin/stories/${id}`, payload, { headers: adminHeaders() }).then((r) => r.data),
     adminDeleteStory: (id) =>
-        axios
-            .delete(`${API_BASE}/admin/stories/${id}`, { headers: adminHeaders() })
-            .then((r) => r.data),
+        axios.delete(`${API_BASE}/admin/stories/${id}`, { headers: adminHeaders() }).then((r) => r.data),
     adminGetGraph: (id) =>
-        axios
-            .get(`${API_BASE}/admin/stories/${id}/graph`, { headers: adminHeaders() })
-            .then((r) => r.data),
+        axios.get(`${API_BASE}/admin/stories/${id}/graph`, { headers: adminHeaders() }).then((r) => r.data),
     adminCreateNode: (payload) =>
-        axios
-            .post(`${API_BASE}/admin/nodes`, payload, { headers: adminHeaders() })
-            .then((r) => r.data),
+        axios.post(`${API_BASE}/admin/nodes`, payload, { headers: adminHeaders() }).then((r) => r.data),
     adminUpdateNode: (id, payload) =>
-        axios
-            .put(`${API_BASE}/admin/nodes/${id}`, payload, { headers: adminHeaders() })
-            .then((r) => r.data),
+        axios.put(`${API_BASE}/admin/nodes/${id}`, payload, { headers: adminHeaders() }).then((r) => r.data),
     adminDeleteNode: (id) =>
-        axios
-            .delete(`${API_BASE}/admin/nodes/${id}`, { headers: adminHeaders() })
-            .then((r) => r.data),
+        axios.delete(`${API_BASE}/admin/nodes/${id}`, { headers: adminHeaders() }).then((r) => r.data),
     adminBulkPositions: (updates) =>
-        axios
-            .post(`${API_BASE}/admin/nodes/positions`, updates, { headers: adminHeaders() })
-            .then((r) => r.data),
+        axios.post(`${API_BASE}/admin/nodes/positions`, updates, { headers: adminHeaders() }).then((r) => r.data),
     adminSetStart: (storyId, nodeId) =>
         axios
             .post(

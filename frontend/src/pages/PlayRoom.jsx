@@ -1,14 +1,11 @@
-import { useEffect, useMemo, useState, useCallback } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { api } from "@/lib/api";
 import { useRoomSocket } from "@/hooks/useRoomSocket";
 import { toast } from "sonner";
 import Lobby from "@/components/player/Lobby";
-import StoryReading from "@/components/player/StoryReading";
-import LocationGate from "@/components/player/LocationGate";
-import VoteGate from "@/components/player/VoteGate";
+import SharedStory from "@/components/player/SharedStory";
 import Ending from "@/components/player/Ending";
-import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
 
 export default function PlayRoom() {
@@ -22,35 +19,24 @@ export default function PlayRoom() {
         }
     });
     const { state, connected } = useRoomSocket(code);
-    const [view, setView] = useState(null);
-    const [viewLoading, setViewLoading] = useState(false);
+
+    // Fallback initial fetch in case WS is slow
+    const [bootState, setBootState] = useState(null);
+    const fetchBoot = useCallback(async () => {
+        try {
+            const s = await api.getRoom(code);
+            setBootState(s);
+        } catch {}
+    }, [code]);
+    useEffect(() => {
+        fetchBoot();
+    }, [fetchBoot]);
 
     useEffect(() => {
         if (!player) nav("/play", { replace: true });
     }, [player, nav]);
 
-    const fetchView = useCallback(async () => {
-        if (!player) return;
-        try {
-            setViewLoading(true);
-            const v = await api.getPlayerView(code, player.id);
-            setView(v);
-        } catch (err) {
-            // Player likely evicted / room reset
-        } finally {
-            setViewLoading(false);
-        }
-    }, [code, player]);
-
-    // Re-fetch player view whenever room state changes (websocket push)
-    useEffect(() => {
-        if (state) fetchView();
-    }, [state, fetchView]);
-
-    // Initial fetch
-    useEffect(() => {
-        fetchView();
-    }, [fetchView]);
+    const roomState = state || bootState;
 
     const handleSelectStory = async (storyId) => {
         try {
@@ -66,22 +52,6 @@ export default function PlayRoom() {
             toast.error(err?.response?.data?.detail || "Failed to start");
         }
     };
-    const handleChoose = async (choiceId) => {
-        try {
-            const v = await api.playerChoose(code, player.id, choiceId);
-            setView(v);
-        } catch (err) {
-            toast.error(err?.response?.data?.detail || "Failed");
-        }
-    };
-    const handleVote = async (choiceId) => {
-        try {
-            const v = await api.playerVote(code, player.id, choiceId);
-            setView(v);
-        } catch (err) {
-            toast.error(err?.response?.data?.detail || "Failed to vote");
-        }
-    };
     const handleReset = async () => {
         try {
             await api.resetRoom(code);
@@ -90,13 +60,8 @@ export default function PlayRoom() {
         }
     };
 
-    const room = state?.room;
-    const story = state?.story;
-    const players = state?.players || [];
-
-    // Rendering decisions:
     if (!player) return null;
-    if (!state) {
+    if (!roomState) {
         return (
             <div className="flex min-h-screen items-center justify-center bg-background">
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -106,7 +71,27 @@ export default function PlayRoom() {
         );
     }
 
-    // Not started yet -> lobby
+    const room = roomState.room;
+    const players = roomState.players || [];
+
+    // Ended -> Ending screen
+    if (room?.phase === "ended") {
+        return (
+            <Ending
+                node={roomState.current_node}
+                story={roomState.story}
+                code={code}
+                onPlayAgain={handleReset}
+                onLeave={() => {
+                    localStorage.removeItem(`player_${code}`);
+                    nav("/");
+                }}
+                isHost={player?.is_host || players.find((p) => p.id === player?.id)?.is_host}
+            />
+        );
+    }
+
+    // Lobby (not started)
     if (!room?.started) {
         return (
             <Lobby
@@ -121,71 +106,6 @@ export default function PlayRoom() {
         );
     }
 
-    // Started but view is still loading
-    if (viewLoading && !view) {
-        return (
-            <div className="flex min-h-screen items-center justify-center bg-background">
-                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-            </div>
-        );
-    }
-
-    const node = view?.node;
-    const choices = view?.choices || [];
-    const waiting = view?.waiting;
-
-    if (!node) {
-        return (
-            <div className="flex min-h-screen items-center justify-center bg-background">
-                <div className="text-sm text-muted-foreground">Loading story…</div>
-            </div>
-        );
-    }
-
-    if (node.is_end) {
-        return (
-            <Ending
-                node={node}
-                story={story}
-                code={code}
-                onPlayAgain={handleReset}
-                onLeave={() => {
-                    localStorage.removeItem(`player_${code}`);
-                    nav("/");
-                }}
-            />
-        );
-    }
-
-    if (waiting?.type === "location_gate") {
-        return (
-            <LocationGate
-                node={node}
-                waiting={waiting}
-                players={players}
-                choices={choices}
-                onContinue={handleChoose}
-            />
-        );
-    }
-
-    if (waiting?.type === "vote_gate") {
-        return (
-            <VoteGate
-                node={node}
-                waiting={waiting}
-                players={players}
-                onVote={handleVote}
-            />
-        );
-    }
-
-    return (
-        <StoryReading
-            node={node}
-            choices={choices}
-            player={view?.player || player}
-            code={code}
-        />
-    );
+    // Story runtime
+    return <SharedStory state={roomState} player={player} code={code} />;
 }

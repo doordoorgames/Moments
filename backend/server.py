@@ -1,13 +1,11 @@
 """
 Branching Narrative RPG Engine — Backend
-Core multiplayer branching-narrative engine with:
-- Story/Node/Choice graph
-- Rooms + Players (join by room code + nickname)
-- Independent per-player progression
-- Location Gates (all players must arrive to proceed)
-- Vote Gates (majority decides the next node)
-- Flag-based conditional choices (requires_flag / sets_flag)
-- Admin CRUD (password-gated) + WebSocket live sync
+Synchronized group-voting runtime:
+- All players in a room share ONE current node, ONE set of flags, ONE phase.
+- Phases per node: reading (10s, no votes) -> voting (20s or until everyone voted) -> resolve.
+- Ties trigger a spinning-wheel (server picks random winner from tied options; broadcasts to clients for animation).
+- Winning choice is applied for the whole group; everyone advances together.
+- Editor (admin) endpoints and data model unchanged.
 """
 from __future__ import annotations
 
@@ -19,7 +17,7 @@ import random
 import string
 import uuid
 from collections import Counter, defaultdict
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -47,6 +45,11 @@ db = client[os.environ["DB_NAME"]]
 ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "admin123")
 ADMIN_TOKEN = os.environ.get("ADMIN_TOKEN", "admin-secret-token-" + str(uuid.uuid4())[:8])
 
+# Phase timings (seconds)
+READING_SECONDS = 10
+VOTING_SECONDS = 20
+WHEEL_SECONDS = 4.5
+
 app = FastAPI(title="Narrative RPG Engine")
 api_router = APIRouter(prefix="/api")
 
@@ -60,8 +63,12 @@ logger = logging.getLogger(__name__)
 # Models
 # ============================================================
 
+def _now() -> datetime:
+    return datetime.now(timezone.utc)
+
+
 def _now_iso() -> str:
-    return datetime.now(timezone.utc).isoformat()
+    return _now().isoformat()
 
 
 class Choice(BaseModel):
@@ -102,8 +109,6 @@ class Player(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     room_code: str
     nickname: str
-    current_node_id: Optional[str] = None
-    flags: List[str] = Field(default_factory=list)
     joined_at: str = Field(default_factory=_now_iso)
     is_host: bool = False
 
@@ -113,16 +118,12 @@ class Room(BaseModel):
     code: str
     story_id: Optional[str] = None
     started: bool = False
-    created_at: str = Field(default_factory=_now_iso)
-
-
-class Vote(BaseModel):
-    model_config = ConfigDict(extra="ignore")
-    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    room_code: str
-    node_id: str
-    player_id: str
-    choice_id: str
+    current_node_id: Optional[str] = None
+    phase: str = "lobby"          # lobby | reading | voting | wheel | ended
+    phase_ends_at: Optional[str] = None
+    flags: List[str] = Field(default_factory=list)
+    wheel_options: Optional[List[Dict[str, Any]]] = None
+    wheel_winner_choice_id: Optional[str] = None
     created_at: str = Field(default_factory=_now_iso)
 
 
@@ -182,11 +183,8 @@ class RoomSelectStoryRequest(BaseModel):
     story_id: str
 
 
-class ChoiceRequest(BaseModel):
-    choice_id: str
-
-
 class VoteRequest(BaseModel):
+    player_id: str
     choice_id: str
 
 
@@ -219,19 +217,23 @@ async def get_story(story_id: str) -> Optional[Dict[str, Any]]:
 
 def generate_room_code(length: int = 5) -> str:
     alphabet = string.ascii_uppercase + string.digits
+    # Avoid confusing characters
+    alphabet = "".join(c for c in alphabet if c not in "0O1I")
     return "".join(random.choices(alphabet, k=length))
 
 
-def filter_choices_for_player(node: Dict[str, Any], player_flags: List[str]) -> List[Dict[str, Any]]:
-    """Return only the choices whose requires_flag is satisfied (or None)."""
-    flags = set(player_flags or [])
-    result: List[Dict[str, Any]] = []
+def filter_choices_by_flags(node: Dict[str, Any], flags: List[str]) -> List[Dict[str, Any]]:
+    """Return only choices whose requires_flag is satisfied. Fail-open if that empties the list."""
+    fset = set(flags or [])
+    out: List[Dict[str, Any]] = []
     for c in node.get("choices", []) or []:
         req = c.get("requires_flag")
-        if req and req not in flags:
+        if req and req not in fset:
             continue
-        result.append(c)
-    return result
+        out.append(c)
+    if not out and node.get("choices"):
+        return list(node["choices"])  # fail-open
+    return out
 
 
 def require_admin(x_admin_token: Optional[str] = Header(default=None, alias="X-Admin-Token")):
@@ -274,67 +276,244 @@ class ConnectionManager:
 manager = ConnectionManager()
 
 
-async def broadcast_room_state(room_code: str) -> None:
-    state = await compute_room_state(room_code)
+async def broadcast_room_state(code: str) -> None:
+    state = await compute_room_state(code)
     if state is not None:
-        await manager.broadcast(room_code, {"type": "room_state", "state": state})
+        await manager.broadcast(code, {"type": "room_state", "state": state})
 
 
-async def compute_room_state(room_code: str) -> Optional[Dict[str, Any]]:
-    room = await get_room(room_code)
+async def compute_room_state(code: str) -> Optional[Dict[str, Any]]:
+    room = await get_room(code)
     if not room:
         return None
-    players_cursor = db.players.find({"room_code": room_code}, {"_id": 0})
-    players = await players_cursor.to_list(1000)
+    players = await db.players.find({"room_code": code}, {"_id": 0}).to_list(1000)
     story = None
     if room.get("story_id"):
         story = await get_story(room["story_id"])
+    current_node = None
+    filtered_choices: List[Dict[str, Any]] = []
+    if room.get("current_node_id"):
+        current_node = await get_node(room["current_node_id"])
+        if current_node:
+            filtered_choices = filter_choices_by_flags(current_node, room.get("flags") or [])
 
-    # Location gates progress
-    gates: Dict[str, Dict[str, Any]] = {}
-    for p in players:
-        node_id = p.get("current_node_id")
-        if not node_id:
-            continue
-        node = await get_node(node_id)
-        if node and node.get("is_location_gate"):
-            g = gates.setdefault(node_id, {"node_id": node_id, "title": node.get("title"), "reached": [], "total": len(players)})
-            g["reached"].append({"player_id": p["id"], "nickname": p["nickname"]})
+    vote_docs = []
+    if room.get("current_node_id") and room.get("phase") in ("voting", "wheel", "ended"):
+        vote_docs = await db.votes.find(
+            {"room_code": code, "node_id": room["current_node_id"]}, {"_id": 0}
+        ).to_list(1000)
 
-    # Vote gates tallies
-    vote_states: Dict[str, Dict[str, Any]] = {}
-    for p in players:
-        node_id = p.get("current_node_id")
-        if not node_id:
-            continue
-        node = await get_node(node_id)
-        if node and node.get("is_vote_gate"):
-            if node_id in vote_states:
-                continue
-            votes = await db.votes.find({"room_code": room_code, "node_id": node_id}, {"_id": 0}).to_list(1000)
-            tally: Dict[str, int] = {c["id"]: 0 for c in node.get("choices", [])}
-            voted_players: List[str] = []
-            for v in votes:
-                tally[v["choice_id"]] = tally.get(v["choice_id"], 0) + 1
-                voted_players.append(v["player_id"])
-            eligible = [pp for pp in players if pp.get("current_node_id") == node_id]
-            vote_states[node_id] = {
-                "node_id": node_id,
-                "title": node.get("title"),
-                "tally": tally,
-                "voted_player_ids": voted_players,
-                "eligible": len(eligible),
-                "total_votes": len(votes),
-                "choices": node.get("choices", []),
-            }
+    voted_player_ids = [v["player_id"] for v in vote_docs]
+    tally: Dict[str, int] = {}
+    if room.get("phase") in ("wheel", "ended"):
+        # Reveal tally only after voting is closed / decision made
+        counts = Counter(v["choice_id"] for v in vote_docs)
+        tally = dict(counts)
 
     return {
         "room": room,
         "story": story,
+        "current_node": current_node,
+        "choices": filtered_choices,
         "players": players,
-        "location_gates": list(gates.values()),
-        "vote_gates": list(vote_states.values()),
+        "vote_stats": {
+            "voted_count": len(voted_player_ids),
+            "total_players": len(players),
+            "voted_player_ids": voted_player_ids,
+            # Only include tally when the vote is closed
+            "tally": tally,
+        },
+        "server_time": _now_iso(),
     }
+
+
+# ============================================================
+# Server-authoritative phase timers
+# ============================================================
+
+_room_tasks: Dict[str, asyncio.Task] = {}
+
+
+def _cancel_room_task(code: str) -> None:
+    t = _room_tasks.get(code)
+    if t and not t.done():
+        t.cancel()
+    _room_tasks.pop(code, None)
+
+
+async def _start_phase_task(code: str, coro):
+    _cancel_room_task(code)
+    task = asyncio.create_task(coro)
+    _room_tasks[code] = task
+
+
+async def advance_to_node(code: str, node_id: str, flags: List[str]) -> None:
+    """Enter a new node. Broadcasts reading phase; schedules automatic voting transition."""
+    _cancel_room_task(code)
+    node = await get_node(node_id)
+    if not node:
+        # Nothing to do — mark ended
+        await db.rooms.update_one(
+            {"code": code},
+            {"$set": {
+                "current_node_id": node_id,
+                "phase": "ended",
+                "phase_ends_at": None,
+                "flags": flags,
+                "wheel_options": None,
+                "wheel_winner_choice_id": None,
+            }},
+        )
+        await broadcast_room_state(code)
+        return
+
+    # Compute filtered choices to decide if terminal
+    filtered = filter_choices_by_flags(node, flags)
+
+    if node.get("is_end") or not filtered:
+        # Terminal node — end the story
+        await db.rooms.update_one(
+            {"code": code},
+            {"$set": {
+                "current_node_id": node_id,
+                "phase": "ended",
+                "phase_ends_at": None,
+                "flags": flags,
+                "wheel_options": None,
+                "wheel_winner_choice_id": None,
+            }},
+        )
+        # Clear votes for cleanliness
+        await db.votes.delete_many({"room_code": code})
+        await broadcast_room_state(code)
+        return
+
+    # Non-terminal: start reading phase
+    reading_ends = _now() + timedelta(seconds=READING_SECONDS)
+    await db.rooms.update_one(
+        {"code": code},
+        {"$set": {
+            "current_node_id": node_id,
+            "phase": "reading",
+            "phase_ends_at": reading_ends.isoformat(),
+            "flags": flags,
+            "wheel_options": None,
+            "wheel_winner_choice_id": None,
+        }},
+    )
+    # Clear votes for this node (fresh start)
+    await db.votes.delete_many({"room_code": code, "node_id": node_id})
+    await broadcast_room_state(code)
+    await _start_phase_task(code, _reading_then_voting(code, node_id))
+
+
+async def _reading_then_voting(code: str, node_id: str) -> None:
+    try:
+        await asyncio.sleep(READING_SECONDS)
+        # Only transition if still on this node in reading phase
+        room = await get_room(code)
+        if not room or room.get("current_node_id") != node_id or room.get("phase") != "reading":
+            return
+        voting_ends = _now() + timedelta(seconds=VOTING_SECONDS)
+        await db.rooms.update_one(
+            {"code": code},
+            {"$set": {"phase": "voting", "phase_ends_at": voting_ends.isoformat()}},
+        )
+        await broadcast_room_state(code)
+        await asyncio.sleep(VOTING_SECONDS)
+        # Timer expired -> resolve
+        await resolve_votes(code, node_id, reason="timeout")
+    except asyncio.CancelledError:
+        return
+    except Exception as e:
+        logger.exception(f"phase task error for {code}: {e}")
+
+
+async def resolve_votes(code: str, node_id: str, reason: str = "timeout") -> None:
+    """Compute winning choice from submitted votes; handle tie via wheel."""
+    room = await get_room(code)
+    if not room or room.get("current_node_id") != node_id or room.get("phase") != "voting":
+        return
+
+    node = await get_node(node_id)
+    if not node:
+        return
+    flags = room.get("flags") or []
+    filtered = filter_choices_by_flags(node, flags)
+    filtered_ids = {c["id"] for c in filtered}
+
+    votes = await db.votes.find(
+        {"room_code": code, "node_id": node_id}, {"_id": 0}
+    ).to_list(1000)
+    # Only count votes for still-available choices
+    valid_votes = [v for v in votes if v["choice_id"] in filtered_ids]
+
+    if not valid_votes:
+        # No votes at all: random pick from filtered options
+        picked = random.choice(filtered) if filtered else None
+        if picked is None:
+            await db.rooms.update_one({"code": code}, {"$set": {"phase": "ended", "phase_ends_at": None}})
+            await broadcast_room_state(code)
+            return
+        await advance_with_choice(code, picked, flags)
+        return
+
+    tally = Counter(v["choice_id"] for v in valid_votes)
+    max_count = max(tally.values())
+    tied_ids = [cid for cid, cnt in tally.items() if cnt == max_count]
+
+    if len(tied_ids) == 1:
+        winning = next(c for c in filtered if c["id"] == tied_ids[0])
+        await advance_with_choice(code, winning, flags)
+        return
+
+    # Tie -> spinning wheel
+    tied_options = [c for c in filtered if c["id"] in tied_ids]
+    picked = random.choice(tied_options)
+    wheel_ends = _now() + timedelta(seconds=WHEEL_SECONDS)
+    await db.rooms.update_one(
+        {"code": code},
+        {"$set": {
+            "phase": "wheel",
+            "phase_ends_at": wheel_ends.isoformat(),
+            "wheel_options": tied_options,
+            "wheel_winner_choice_id": picked["id"],
+        }},
+    )
+    await broadcast_room_state(code)
+    await _start_phase_task(code, _wheel_then_advance(code, node_id, picked))
+
+
+async def _wheel_then_advance(code: str, node_id: str, picked: Dict[str, Any]) -> None:
+    try:
+        await asyncio.sleep(WHEEL_SECONDS)
+        room = await get_room(code)
+        if not room or room.get("current_node_id") != node_id or room.get("phase") != "wheel":
+            return
+        flags = room.get("flags") or []
+        await advance_with_choice(code, picked, flags)
+    except asyncio.CancelledError:
+        return
+    except Exception as e:
+        logger.exception(f"wheel task error for {code}: {e}")
+
+
+async def advance_with_choice(code: str, choice: Dict[str, Any], current_flags: List[str]) -> None:
+    """Apply a resolved choice, update flags, and move to the destination node."""
+    new_flags = list(current_flags or [])
+    if choice.get("sets_flag") and choice["sets_flag"] not in new_flags:
+        new_flags.append(choice["sets_flag"])
+    dest = choice.get("destination_node_id")
+    if not dest:
+        # Dangling choice — end the story
+        await db.rooms.update_one(
+            {"code": code},
+            {"$set": {"phase": "ended", "phase_ends_at": None, "flags": new_flags,
+                       "wheel_options": None, "wheel_winner_choice_id": None}},
+        )
+        await broadcast_room_state(code)
+        return
+    await advance_to_node(code, dest, new_flags)
 
 
 # ============================================================
@@ -349,7 +528,6 @@ async def root():
 @api_router.get("/stories")
 async def list_stories_public():
     docs = await db.stories.find({}, {"_id": 0}).to_list(1000)
-    # Attach node counts
     result = []
     for s in docs:
         count = await db.nodes.count_documents({"story_id": s["id"]})
@@ -359,7 +537,7 @@ async def list_stories_public():
 
 
 # ============================================================
-# Admin: auth + CRUD
+# Admin: auth + CRUD (UNCHANGED)
 # ============================================================
 
 @api_router.post("/admin/login")
@@ -387,8 +565,7 @@ async def admin_list_stories(_: bool = Depends(require_admin)):
 @api_router.post("/admin/stories", response_model=Story)
 async def admin_create_story(payload: StoryCreate, _: bool = Depends(require_admin)):
     story = Story(title=payload.title, description=payload.description)
-    doc = story.model_dump()
-    await db.stories.insert_one(doc)
+    await db.stories.insert_one(story.model_dump())
     return story
 
 
@@ -428,7 +605,6 @@ async def admin_get_graph(story_id: str, _: bool = Depends(require_admin)):
 async def admin_create_node(payload: NodeCreate, _: bool = Depends(require_admin)):
     node = Node(**payload.model_dump())
     await db.nodes.insert_one(node.model_dump())
-    # If story has no start node yet, set this as start
     story = await get_story(payload.story_id)
     if story and not story.get("start_node_id"):
         await db.stories.update_one({"id": payload.story_id}, {"$set": {"start_node_id": node.id}})
@@ -452,7 +628,6 @@ async def admin_update_node(node_id: str, payload: NodeUpdate, _: bool = Depends
 
 @api_router.delete("/admin/nodes/{node_id}")
 async def admin_delete_node(node_id: str, _: bool = Depends(require_admin)):
-    # Remove edges from other nodes' choices
     async for other in db.nodes.find({"choices.destination_node_id": node_id}, {"_id": 0}):
         new_choices = []
         for c in other.get("choices", []):
@@ -461,7 +636,6 @@ async def admin_delete_node(node_id: str, _: bool = Depends(require_admin)):
             new_choices.append(c)
         await db.nodes.update_one({"id": other["id"]}, {"$set": {"choices": new_choices}})
     await db.nodes.delete_one({"id": node_id})
-    # Clear start if this was start node
     story = await db.stories.find_one({"start_node_id": node_id})
     if story:
         await db.stories.update_one({"id": story["id"]}, {"$set": {"start_node_id": None}})
@@ -485,7 +659,7 @@ async def admin_set_start_node(story_id: str, node_id: str, _: bool = Depends(re
 
 
 # ============================================================
-# Player: rooms / join / play
+# Player runtime: rooms, join, vote (shared group voting)
 # ============================================================
 
 @api_router.post("/rooms")
@@ -513,7 +687,6 @@ async def join_room(code: str, payload: RoomJoinRequest):
     if not room:
         raise HTTPException(404, "Room not found")
     existing = await db.players.count_documents({"room_code": code})
-    # Check nickname uniqueness (case-insensitive)
     existing_names = await db.players.find({"room_code": code}, {"_id": 0, "nickname": 1}).to_list(1000)
     if any(p["nickname"].lower() == payload.nickname.lower() for p in existing_names):
         raise HTTPException(400, "Nickname already taken in this room")
@@ -550,14 +723,12 @@ async def start_room(code: str):
     story = await get_story(room["story_id"])
     if not story or not story.get("start_node_id"):
         raise HTTPException(400, "Story has no start node")
-    start = story["start_node_id"]
-    await db.players.update_many(
-        {"room_code": code},
-        {"$set": {"current_node_id": start, "flags": []}},
-    )
     await db.votes.delete_many({"room_code": code})
-    await db.rooms.update_one({"code": code}, {"$set": {"started": True}})
-    await broadcast_room_state(code)
+    await db.rooms.update_one(
+        {"code": code},
+        {"$set": {"started": True, "flags": [], "wheel_options": None, "wheel_winner_choice_id": None}},
+    )
+    await advance_to_node(code, story["start_node_id"], [])
     return {"ok": True}
 
 
@@ -566,180 +737,73 @@ async def reset_room(code: str):
     room = await get_room(code)
     if not room:
         raise HTTPException(404, "Room not found")
-    await db.players.update_many({"room_code": code}, {"$set": {"current_node_id": None, "flags": []}})
+    _cancel_room_task(code)
     await db.votes.delete_many({"room_code": code})
-    await db.rooms.update_one({"code": code}, {"$set": {"started": False}})
+    await db.rooms.update_one(
+        {"code": code},
+        {"$set": {
+            "started": False,
+            "current_node_id": None,
+            "phase": "lobby",
+            "phase_ends_at": None,
+            "flags": [],
+            "wheel_options": None,
+            "wheel_winner_choice_id": None,
+        }},
+    )
     await broadcast_room_state(code)
     return {"ok": True}
 
 
-@api_router.get("/rooms/{code}/players/{player_id}/view")
-async def get_player_view(code: str, player_id: str):
+@api_router.post("/rooms/{code}/vote")
+async def cast_vote(code: str, payload: VoteRequest):
     room = await get_room(code)
     if not room:
         raise HTTPException(404, "Room not found")
-    player = await get_player(player_id)
+    if room.get("phase") != "voting":
+        raise HTTPException(400, "Voting is not open right now")
+    if not room.get("current_node_id"):
+        raise HTTPException(400, "No active node")
+
+    player = await get_player(payload.player_id)
     if not player or player["room_code"] != code:
-        raise HTTPException(404, "Player not found")
-    if not player.get("current_node_id"):
-        return {"player": player, "node": None, "choices": [], "waiting": None}
-    node = await get_node(player["current_node_id"])
+        raise HTTPException(404, "Player not found in this room")
+
+    node = await get_node(room["current_node_id"])
     if not node:
-        return {"player": player, "node": None, "choices": [], "waiting": None}
+        raise HTTPException(400, "Invalid current node")
 
-    filtered = filter_choices_for_player(node, player.get("flags", []))
+    filtered = filter_choices_by_flags(node, room.get("flags") or [])
+    if not any(c["id"] == payload.choice_id for c in filtered):
+        raise HTTPException(400, "Invalid choice for the current node")
 
-    waiting: Optional[Dict[str, Any]] = None
-    if node.get("is_location_gate"):
-        # count how many players in the room have reached this node
-        all_players = await db.players.find({"room_code": code}, {"_id": 0}).to_list(1000)
-        reached = [p for p in all_players if p.get("current_node_id") == node["id"]]
-        waiting = {
-            "type": "location_gate",
-            "reached": [{"player_id": p["id"], "nickname": p["nickname"]} for p in reached],
-            "total": len(all_players),
-            "reached_count": len(reached),
-            "complete": len(reached) == len(all_players) and len(all_players) > 0,
-        }
-    elif node.get("is_vote_gate"):
-        all_players = await db.players.find({"room_code": code}, {"_id": 0}).to_list(1000)
-        eligible = [p for p in all_players if p.get("current_node_id") == node["id"]]
-        votes = await db.votes.find({"room_code": code, "node_id": node["id"]}, {"_id": 0}).to_list(1000)
-        tally: Dict[str, int] = {c["id"]: 0 for c in node.get("choices", [])}
-        voted_ids: List[str] = []
-        for v in votes:
-            tally[v["choice_id"]] = tally.get(v["choice_id"], 0) + 1
-            voted_ids.append(v["player_id"])
-        waiting = {
-            "type": "vote_gate",
-            "tally": tally,
-            "total_votes": len(votes),
-            "eligible": len(eligible),
-            "has_voted": player_id in voted_ids,
-            "voted_player_ids": voted_ids,
-            "resolved": False,
-        }
-
-    return {"player": player, "node": node, "choices": filtered, "waiting": waiting}
-
-
-@api_router.post("/rooms/{code}/players/{player_id}/choose")
-async def player_choose(code: str, player_id: str, payload: ChoiceRequest):
-    room = await get_room(code)
-    if not room:
-        raise HTTPException(404, "Room not found")
-    player = await get_player(player_id)
-    if not player or player["room_code"] != code:
-        raise HTTPException(404, "Player not found")
-    node = await get_node(player.get("current_node_id") or "")
-    if not node:
-        raise HTTPException(400, "Player not on a node")
-    if node.get("is_vote_gate"):
-        raise HTTPException(400, "Use /vote endpoint for vote gates")
-    # find choice
-    choice = next((c for c in node.get("choices", []) if c["id"] == payload.choice_id), None)
-    if not choice:
-        raise HTTPException(400, "Invalid choice")
-
-    if node.get("is_location_gate"):
-        # Choosing at a location gate is only allowed once all players reached; then advance EVERYONE at the gate together.
-        all_players = await db.players.find({"room_code": code}, {"_id": 0}).to_list(1000)
-        reached = [p for p in all_players if p.get("current_node_id") == node["id"]]
-        if len(reached) != len(all_players):
-            raise HTTPException(400, "Waiting for all players to reach the location gate")
-        dest = choice.get("destination_node_id")
-        set_flag = choice.get("sets_flag")
-        for p in reached:
-            new_flags = list(p.get("flags") or [])
-            if set_flag and set_flag not in new_flags:
-                new_flags.append(set_flag)
-            await db.players.update_one(
-                {"id": p["id"]},
-                {"$set": {"current_node_id": dest, "flags": new_flags}},
-            )
-        await broadcast_room_state(code)
-        return await get_player_view(code, player_id)
-
-    # requires_flag check for normal nodes
-    if choice.get("requires_flag") and choice["requires_flag"] not in (player.get("flags") or []):
-        raise HTTPException(400, "Choice not available for this player")
-    # advance the caller only
-    new_flags = list(player.get("flags") or [])
-    if choice.get("sets_flag") and choice["sets_flag"] not in new_flags:
-        new_flags.append(choice["sets_flag"])
-    dest = choice.get("destination_node_id")
-    updates = {"flags": new_flags, "current_node_id": dest}
-    await db.players.update_one({"id": player_id}, {"$set": updates})
-    await broadcast_room_state(code)
-    return await get_player_view(code, player_id)
-
-
-async def _resolve_vote_gate(code: str, node_id: str) -> Optional[str]:
-    """If majority reached, apply winning choice to all players on this vote gate. Returns winning choice_id or None."""
-    node = await get_node(node_id)
-    if not node or not node.get("is_vote_gate"):
-        return None
-    all_players = await db.players.find({"room_code": code}, {"_id": 0}).to_list(1000)
-    eligible = [p for p in all_players if p.get("current_node_id") == node_id]
-    if not eligible:
-        return None
-    votes = await db.votes.find({"room_code": code, "node_id": node_id}, {"_id": 0}).to_list(1000)
-    if len(votes) < len(eligible):
-        return None  # still waiting for everyone eligible to vote
-    tally = Counter(v["choice_id"] for v in votes)
-    if not tally:
-        return None
-    top = tally.most_common()
-    winning_choice_id, top_count = top[0]
-    # Tie-break: pick earliest cast vote among tied choices (deterministic)
-    tied = [cid for cid, cnt in top if cnt == top_count]
-    if len(tied) > 1:
-        # find earliest vote among tied choices
-        earliest_by_choice: Dict[str, str] = {}
-        for v in sorted(votes, key=lambda x: x.get("created_at", "")):
-            if v["choice_id"] in tied and v["choice_id"] not in earliest_by_choice:
-                earliest_by_choice[v["choice_id"]] = v["created_at"]
-        winning_choice_id = min(earliest_by_choice, key=lambda k: earliest_by_choice[k])
-    winning_choice = next((c for c in node.get("choices", []) if c["id"] == winning_choice_id), None)
-    if not winning_choice:
-        return None
-    dest = winning_choice.get("destination_node_id")
-    # Advance all eligible players
-    for p in eligible:
-        new_flags = list(p.get("flags") or [])
-        if winning_choice.get("sets_flag") and winning_choice["sets_flag"] not in new_flags:
-            new_flags.append(winning_choice["sets_flag"])
-        await db.players.update_one(
-            {"id": p["id"]},
-            {"$set": {"current_node_id": dest, "flags": new_flags}},
-        )
-    # Clean up votes for this gate
-    await db.votes.delete_many({"room_code": code, "node_id": node_id})
-    await manager.broadcast(code, {"type": "vote_resolved", "node_id": node_id, "choice_id": winning_choice_id})
-    return winning_choice_id
-
-
-@api_router.post("/rooms/{code}/players/{player_id}/vote")
-async def player_vote(code: str, player_id: str, payload: VoteRequest):
-    player = await get_player(player_id)
-    if not player or player["room_code"] != code:
-        raise HTTPException(404, "Player not found")
-    node = await get_node(player.get("current_node_id") or "")
-    if not node:
-        raise HTTPException(400, "Player not on a node")
-    if not node.get("is_vote_gate"):
-        raise HTTPException(400, "Current node is not a vote gate")
-    choice = next((c for c in node.get("choices", []) if c["id"] == payload.choice_id), None)
-    if not choice:
-        raise HTTPException(400, "Invalid choice")
-    existing = await db.votes.find_one({"room_code": code, "node_id": node["id"], "player_id": player_id})
+    existing = await db.votes.find_one({
+        "room_code": code,
+        "node_id": room["current_node_id"],
+        "player_id": payload.player_id,
+    })
     if existing:
-        raise HTTPException(400, "Already voted")
-    v = Vote(room_code=code, node_id=node["id"], player_id=player_id, choice_id=payload.choice_id)
-    await db.votes.insert_one(v.model_dump())
-    await _resolve_vote_gate(code, node["id"])
+        raise HTTPException(400, "You have already voted for this scene")
+
+    vote_doc = {
+        "id": str(uuid.uuid4()),
+        "room_code": code,
+        "node_id": room["current_node_id"],
+        "player_id": payload.player_id,
+        "choice_id": payload.choice_id,
+        "created_at": _now_iso(),
+    }
+    await db.votes.insert_one(vote_doc)
     await broadcast_room_state(code)
-    return await get_player_view(code, player_id)
+
+    # If everyone has voted, immediately resolve
+    total_players = await db.players.count_documents({"room_code": code})
+    votes_now = await db.votes.count_documents({"room_code": code, "node_id": room["current_node_id"]})
+    if votes_now >= total_players and total_players > 0:
+        _cancel_room_task(code)
+        await resolve_votes(code, room["current_node_id"], reason="all_voted")
+
+    return {"ok": True}
 
 
 # ============================================================
@@ -754,11 +818,9 @@ async def websocket_room(ws: WebSocket, code: str):
         return
     await manager.connect(code, ws)
     try:
-        # Send initial snapshot
         state = await compute_room_state(code)
         await ws.send_text(json.dumps({"type": "room_state", "state": state}))
         while True:
-            # Keep alive; clients don't need to send anything, but we listen for pings.
             msg = await ws.receive_text()
             if msg == "ping":
                 await ws.send_text("pong")
@@ -778,8 +840,10 @@ async def seed_zayn_story():
     if existing:
         return
 
-    story = Story(title="Airport Adventure — Zayn", description="A short branching tale about Zayn navigating a mysterious airport with his friends. Choose your ticket, meet at the boarding gate, and vote on which flight to take.")
-    # Pre-generate node IDs so we can wire choices
+    story = Story(
+        title="Airport Adventure — Zayn",
+        description="A short branching tale about Zayn navigating a mysterious airport with his friends. Vote together at every scene — the group's decision drives the story.",
+    )
     n_start = str(uuid.uuid4())
     n_biz_lounge = str(uuid.uuid4())
     n_econ_terminal = str(uuid.uuid4())
@@ -788,15 +852,11 @@ async def seed_zayn_story():
     n_end_paris = str(uuid.uuid4())
     n_end_tokyo = str(uuid.uuid4())
     n_biz_perk = str(uuid.uuid4())
-
     story.start_node_id = n_start
 
     nodes = [
         Node(
-            id=n_start,
-            story_id=story.id,
-            title="Ticket Counter",
-            character="Zayn",
+            id=n_start, story_id=story.id, title="Ticket Counter", character="Zayn",
             story_text="Zayn stands at the airport ticket counter. The agent smiles: 'Which class today?' A screen behind her flickers with departure gates.",
             position_x=100, position_y=200,
             choices=[
@@ -805,10 +865,7 @@ async def seed_zayn_story():
             ],
         ),
         Node(
-            id=n_biz_lounge,
-            story_id=story.id,
-            title="Business Class Lounge",
-            character="Zayn",
+            id=n_biz_lounge, story_id=story.id, title="Business Class Lounge", character="Zayn",
             story_text="Zayn sinks into a leather armchair in the lounge. Free espresso, quiet music. A steward offers a warm towel.",
             position_x=450, position_y=80,
             choices=[
@@ -817,21 +874,13 @@ async def seed_zayn_story():
             ],
         ),
         Node(
-            id=n_biz_perk,
-            story_id=story.id,
-            title="VIP Perk",
-            character="Zayn",
+            id=n_biz_perk, story_id=story.id, title="VIP Perk", character="Zayn",
             story_text="The steward slips Zayn a golden pass — 'For your next flight, sir.' Zayn pockets it and walks to the gate.",
             position_x=800, position_y=80,
-            choices=[
-                Choice(text="Continue to boarding gate", destination_node_id=n_gate),
-            ],
+            choices=[Choice(text="Continue to boarding gate", destination_node_id=n_gate)],
         ),
         Node(
-            id=n_econ_terminal,
-            story_id=story.id,
-            title="Crowded Terminal",
-            character="Zayn",
+            id=n_econ_terminal, story_id=story.id, title="Crowded Terminal", character="Zayn",
             story_text="Zayn squeezes through a sea of travellers. Someone is arguing with a customs officer. A child drops an ice cream cone.",
             position_x=450, position_y=380,
             choices=[
@@ -840,49 +889,29 @@ async def seed_zayn_story():
             ],
         ),
         Node(
-            id=n_gate,
-            story_id=story.id,
-            title="Boarding Gate 42",
-            character="Group",
-            story_text="The group finally regroups at Gate 42. Departure boards blink. Everyone waits until the whole party has arrived — no-one flies alone tonight.",
-            position_x=850, position_y=230,
-            is_location_gate=True,
-            choices=[
-                Choice(text="Approach the desk together", destination_node_id=n_vote),
-            ],
+            id=n_gate, story_id=story.id, title="Boarding Gate 42", character="Group",
+            story_text="The group regroups at Gate 42. Departure boards blink. Everyone gathers around the desk.",
+            position_x=850, position_y=230, is_location_gate=True,
+            choices=[Choice(text="Approach the desk together", destination_node_id=n_vote)],
         ),
         Node(
-            id=n_vote,
-            story_id=story.id,
-            title="Which Flight? (Group Vote)",
-            character="Group",
+            id=n_vote, story_id=story.id, title="Which Flight?", character="Group",
             story_text="Two boards flash: a red-eye to Paris and a sunrise flight to Tokyo. The gate agent looks at the group: 'You decide together.'",
-            position_x=1200, position_y=230,
-            is_vote_gate=True,
+            position_x=1200, position_y=230, is_vote_gate=True,
             choices=[
-                Choice(text="Vote: Paris", destination_node_id=n_end_paris),
-                Choice(text="Vote: Tokyo", destination_node_id=n_end_tokyo),
+                Choice(text="Paris", destination_node_id=n_end_paris),
+                Choice(text="Tokyo", destination_node_id=n_end_tokyo),
             ],
         ),
         Node(
-            id=n_end_paris,
-            story_id=story.id,
-            title="Ending — Paris",
-            character="Zayn",
+            id=n_end_paris, story_id=story.id, title="Ending — Paris", character="Zayn",
             story_text="Wheels up over the Atlantic. Zayn presses his forehead against the window and grins — Paris, at last.",
-            position_x=1550, position_y=100,
-            is_end=True,
-            choices=[],
+            position_x=1550, position_y=100, is_end=True, choices=[],
         ),
         Node(
-            id=n_end_tokyo,
-            story_id=story.id,
-            title="Ending — Tokyo",
-            character="Zayn",
+            id=n_end_tokyo, story_id=story.id, title="Ending — Tokyo", character="Zayn",
             story_text="Golden dawn over the Pacific. Zayn sips green tea from a paper cup as the cabin whispers with excitement — Tokyo awaits.",
-            position_x=1550, position_y=360,
-            is_end=True,
-            choices=[],
+            position_x=1550, position_y=360, is_end=True, choices=[],
         ),
     ]
 
@@ -922,4 +951,9 @@ async def _startup():
 
 @app.on_event("shutdown")
 async def _shutdown():
+    for t in list(_room_tasks.values()):
+        try:
+            t.cancel()
+        except Exception:
+            pass
     client.close()

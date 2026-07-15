@@ -1,30 +1,14 @@
 [
   {
-    "content": "Phase 1: POC - Build core backend (models, endpoints, WebSocket, seed) and run multi-player simulation script proving gates + votes + flag filtering",
-    "status": "completed"
+    "content": "Backend: Rewrite runtime for shared group voting (room-level state, server-driven phase timers, wheel tie-break)",
+    "status": "in_progress"
   },
   {
-    "content": "Phase 2: Get design guidelines from design_agent",
-    "status": "completed"
+    "content": "Frontend: Build SharedStory + Wheel components; rewrite PlayRoom for new phases (reading/voting/wheel/ended)",
+    "status": "pending"
   },
   {
-    "content": "Phase 2: Install react-flow (@xyflow/react) and other deps",
-    "status": "completed"
-  },
-  {
-    "content": "Phase 2: Frontend build - Landing + Player flows (Join, Lobby, Story, Gates, Vote) with WebSocket live sync",
-    "status": "completed"
-  },
-  {
-    "content": "Phase 2: Frontend build - Admin flows (Login, Story list, Visual React Flow canvas editor)",
-    "status": "completed"
-  },
-  {
-    "content": "Phase 2: All 25 user stories covered in development",
-    "status": "completed"
-  },
-  {
-    "content": "Phase 2: End to End Testing using Testing Agent",
-    "status": "completed"
+    "content": "Test end-to-end with testing_agent (2 browser sessions to prove sync, timers, wheel tie-break)",
+    "status": "pending"
   }
 ]

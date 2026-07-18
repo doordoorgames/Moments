@@ -1032,7 +1032,13 @@ async def _startup():
     if url and key:
         supa = create_client(url, key)
         logger.info("Supabase client initialised")
-        await seed_zayn_story()
+        try:
+            await seed_zayn_story()
+        except Exception as exc:
+            logger.error(
+                f"seed_zayn_story failed — schema may not exist yet. "
+                f"Run backend/schema.sql in the Supabase SQL editor. Error: {exc}"
+            )
     else:
         logger.warning(
             "SUPABASE_URL / SUPABASE_KEY not set — DB endpoints will return 503 until secrets are added and the backend is restarted."

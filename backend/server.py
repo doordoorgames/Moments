@@ -40,10 +40,9 @@ from starlette.middleware.cors import CORSMiddleware
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / ".env")
 
-supa: Client = create_client(
-    os.environ["SUPABASE_URL"],
-    os.environ["SUPABASE_KEY"],
-)
+# Initialized lazily in the startup event so the server binds its port
+# even when SUPABASE_URL / SUPABASE_KEY are not yet configured.
+supa: Optional[Client] = None
 
 ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "admin123")
 ADMIN_TOKEN = os.environ.get("ADMIN_TOKEN", "admin-secret-token-" + str(uuid.uuid4())[:8])
@@ -197,7 +196,13 @@ class VoteRequest(BaseModel):
 # ============================================================
 
 async def _q(fn):
-    """Run a synchronous supabase-py call off the event loop."""
+    """Run a synchronous supabase-py call off the event loop.
+    Raises HTTP 503 with a clear message if the DB client is not yet initialised."""
+    if supa is None:
+        raise HTTPException(
+            status_code=503,
+            detail="Database not configured — set SUPABASE_URL and SUPABASE_KEY secrets then restart the backend.",
+        )
     return await asyncio.to_thread(fn)
 
 
@@ -1021,7 +1026,17 @@ app.add_middleware(
 
 @app.on_event("startup")
 async def _startup():
-    await seed_zayn_story()
+    global supa
+    url = os.environ.get("SUPABASE_URL")
+    key = os.environ.get("SUPABASE_KEY")
+    if url and key:
+        supa = create_client(url, key)
+        logger.info("Supabase client initialised")
+        await seed_zayn_story()
+    else:
+        logger.warning(
+            "SUPABASE_URL / SUPABASE_KEY not set — DB endpoints will return 503 until secrets are added and the backend is restarted."
+        )
     logger.info(f"Admin token: {ADMIN_TOKEN}")
 
 

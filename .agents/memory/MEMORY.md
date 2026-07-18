@@ -1,0 +1,1 @@
+- [Supabase lazy-init pattern](supabase-lazy-init.md) — never call create_client() at module level; defer to startup event so the server binds its port before credentials are needed.

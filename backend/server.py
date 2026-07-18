@@ -6,6 +6,8 @@ Synchronized group-voting runtime:
 - Ties trigger a spinning-wheel (server picks random winner from tied options; broadcasts to clients for animation).
 - Winning choice is applied for the whole group; everyone advances together.
 - Editor (admin) endpoints and data model unchanged.
+
+Database: Supabase (PostgreSQL via supabase-py sync client, run in asyncio thread pool).
 """
 from __future__ import annotations
 
@@ -31,16 +33,17 @@ from fastapi import (
     WebSocket,
     WebSocketDisconnect,
 )
-from motor.motor_asyncio import AsyncIOMotorClient
+from supabase import create_client, Client
 from pydantic import BaseModel, ConfigDict, Field
 from starlette.middleware.cors import CORSMiddleware
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / ".env")
 
-mongo_url = os.environ["MONGO_URL"]
-client = AsyncIOMotorClient(mongo_url)
-db = client[os.environ["DB_NAME"]]
+supa: Client = create_client(
+    os.environ["SUPABASE_URL"],
+    os.environ["SUPABASE_KEY"],
+)
 
 ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "admin123")
 ADMIN_TOKEN = os.environ.get("ADMIN_TOKEN", "admin-secret-token-" + str(uuid.uuid4())[:8])
@@ -58,6 +61,7 @@ logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
 )
 logger = logging.getLogger(__name__)
+
 
 # ============================================================
 # Models
@@ -189,30 +193,40 @@ class VoteRequest(BaseModel):
 
 
 # ============================================================
-# Helpers
+# DB helpers — sync supabase client, executed in thread pool
 # ============================================================
 
-def _clean(doc: Dict[str, Any] | None) -> Dict[str, Any] | None:
-    if doc is None:
-        return None
-    doc.pop("_id", None)
-    return doc
+async def _q(fn):
+    """Run a synchronous supabase-py call off the event loop."""
+    return await asyncio.to_thread(fn)
 
 
 async def get_node(node_id: str) -> Optional[Dict[str, Any]]:
-    return _clean(await db.nodes.find_one({"id": node_id}))
+    res = await _q(
+        lambda: supa.table("nodes").select("*").eq("id", node_id).maybe_single().execute()
+    )
+    return res.data
 
 
 async def get_room(code: str) -> Optional[Dict[str, Any]]:
-    return _clean(await db.rooms.find_one({"code": code}))
+    res = await _q(
+        lambda: supa.table("rooms").select("*").eq("code", code).maybe_single().execute()
+    )
+    return res.data
 
 
 async def get_player(player_id: str) -> Optional[Dict[str, Any]]:
-    return _clean(await db.players.find_one({"id": player_id}))
+    res = await _q(
+        lambda: supa.table("players").select("*").eq("id", player_id).maybe_single().execute()
+    )
+    return res.data
 
 
 async def get_story(story_id: str) -> Optional[Dict[str, Any]]:
-    return _clean(await db.stories.find_one({"id": story_id}))
+    res = await _q(
+        lambda: supa.table("stories").select("*").eq("id", story_id).maybe_single().execute()
+    )
+    return res.data
 
 
 def generate_room_code(length: int = 5) -> str:
@@ -286,10 +300,16 @@ async def compute_room_state(code: str) -> Optional[Dict[str, Any]]:
     room = await get_room(code)
     if not room:
         return None
-    players = await db.players.find({"room_code": code}, {"_id": 0}).to_list(1000)
+
+    players_res = await _q(
+        lambda: supa.table("players").select("*").eq("room_code", code).execute()
+    )
+    players = players_res.data or []
+
     story = None
     if room.get("story_id"):
         story = await get_story(room["story_id"])
+
     current_node = None
     filtered_choices: List[Dict[str, Any]] = []
     if room.get("current_node_id"):
@@ -297,16 +317,21 @@ async def compute_room_state(code: str) -> Optional[Dict[str, Any]]:
         if current_node:
             filtered_choices = filter_choices_by_flags(current_node, room.get("flags") or [])
 
-    vote_docs = []
+    vote_docs: List[Dict[str, Any]] = []
     if room.get("current_node_id") and room.get("phase") in ("voting", "wheel", "ended"):
-        vote_docs = await db.votes.find(
-            {"room_code": code, "node_id": room["current_node_id"]}, {"_id": 0}
-        ).to_list(1000)
+        nid = room["current_node_id"]
+        votes_res = await _q(
+            lambda: supa.table("votes")
+            .select("*")
+            .eq("room_code", code)
+            .eq("node_id", nid)
+            .execute()
+        )
+        vote_docs = votes_res.data or []
 
     voted_player_ids = [v["player_id"] for v in vote_docs]
     tally: Dict[str, int] = {}
     if room.get("phase") in ("wheel", "ended"):
-        # Reveal tally only after voting is closed / decision made
         counts = Counter(v["choice_id"] for v in vote_docs)
         tally = dict(counts)
 
@@ -341,7 +366,7 @@ def _cancel_room_task(code: str) -> None:
     _room_tasks.pop(code, None)
 
 
-async def _start_phase_task(code: str, coro):
+async def _start_phase_task(code: str, coro) -> None:
     _cancel_room_task(code)
     task = asyncio.create_task(coro)
     _room_tasks[code] = task
@@ -351,58 +376,48 @@ async def advance_to_node(code: str, node_id: str, flags: List[str]) -> None:
     """Enter a new node. Broadcasts reading phase; schedules automatic voting transition."""
     _cancel_room_task(code)
     node = await get_node(node_id)
+
     if not node:
-        # Nothing to do — mark ended
-        await db.rooms.update_one(
-            {"code": code},
-            {"$set": {
-                "current_node_id": node_id,
-                "phase": "ended",
-                "phase_ends_at": None,
-                "flags": flags,
-                "wheel_options": None,
-                "wheel_winner_choice_id": None,
-            }},
-        )
+        await _q(lambda: supa.table("rooms").update({
+            "current_node_id": node_id,
+            "phase": "ended",
+            "phase_ends_at": None,
+            "flags": flags,
+            "wheel_options": None,
+            "wheel_winner_choice_id": None,
+        }).eq("code", code).execute())
         await broadcast_room_state(code)
         return
 
-    # Compute filtered choices to decide if terminal
     filtered = filter_choices_by_flags(node, flags)
 
     if node.get("is_end") or not filtered:
         # Terminal node — end the story
-        await db.rooms.update_one(
-            {"code": code},
-            {"$set": {
-                "current_node_id": node_id,
-                "phase": "ended",
-                "phase_ends_at": None,
-                "flags": flags,
-                "wheel_options": None,
-                "wheel_winner_choice_id": None,
-            }},
-        )
-        # Clear votes for cleanliness
-        await db.votes.delete_many({"room_code": code})
+        await _q(lambda: supa.table("rooms").update({
+            "current_node_id": node_id,
+            "phase": "ended",
+            "phase_ends_at": None,
+            "flags": flags,
+            "wheel_options": None,
+            "wheel_winner_choice_id": None,
+        }).eq("code", code).execute())
+        await _q(lambda: supa.table("votes").delete().eq("room_code", code).execute())
         await broadcast_room_state(code)
         return
 
     # Non-terminal: start reading phase
     reading_ends = _now() + timedelta(seconds=READING_SECONDS)
-    await db.rooms.update_one(
-        {"code": code},
-        {"$set": {
-            "current_node_id": node_id,
-            "phase": "reading",
-            "phase_ends_at": reading_ends.isoformat(),
-            "flags": flags,
-            "wheel_options": None,
-            "wheel_winner_choice_id": None,
-        }},
-    )
+    await _q(lambda: supa.table("rooms").update({
+        "current_node_id": node_id,
+        "phase": "reading",
+        "phase_ends_at": reading_ends.isoformat(),
+        "flags": flags,
+        "wheel_options": None,
+        "wheel_winner_choice_id": None,
+    }).eq("code", code).execute())
     # Clear votes for this node (fresh start)
-    await db.votes.delete_many({"room_code": code, "node_id": node_id})
+    await _q(lambda: supa.table("votes").delete()
+             .eq("room_code", code).eq("node_id", node_id).execute())
     await broadcast_room_state(code)
     await _start_phase_task(code, _reading_then_voting(code, node_id))
 
@@ -410,15 +425,14 @@ async def advance_to_node(code: str, node_id: str, flags: List[str]) -> None:
 async def _reading_then_voting(code: str, node_id: str) -> None:
     try:
         await asyncio.sleep(READING_SECONDS)
-        # Only transition if still on this node in reading phase
         room = await get_room(code)
         if not room or room.get("current_node_id") != node_id or room.get("phase") != "reading":
             return
         voting_ends = _now() + timedelta(seconds=VOTING_SECONDS)
-        await db.rooms.update_one(
-            {"code": code},
-            {"$set": {"phase": "voting", "phase_ends_at": voting_ends.isoformat()}},
-        )
+        await _q(lambda: supa.table("rooms").update({
+            "phase": "voting",
+            "phase_ends_at": voting_ends.isoformat(),
+        }).eq("code", code).execute())
         await broadcast_room_state(code)
         await asyncio.sleep(VOTING_SECONDS)
         # Timer expired -> resolve
@@ -442,9 +456,11 @@ async def resolve_votes(code: str, node_id: str, reason: str = "timeout") -> Non
     filtered = filter_choices_by_flags(node, flags)
     filtered_ids = {c["id"] for c in filtered}
 
-    votes = await db.votes.find(
-        {"room_code": code, "node_id": node_id}, {"_id": 0}
-    ).to_list(1000)
+    votes_res = await _q(
+        lambda: supa.table("votes").select("*")
+        .eq("room_code", code).eq("node_id", node_id).execute()
+    )
+    votes = votes_res.data or []
     # Only count votes for still-available choices
     valid_votes = [v for v in votes if v["choice_id"] in filtered_ids]
 
@@ -452,7 +468,9 @@ async def resolve_votes(code: str, node_id: str, reason: str = "timeout") -> Non
         # No votes at all: random pick from filtered options
         picked = random.choice(filtered) if filtered else None
         if picked is None:
-            await db.rooms.update_one({"code": code}, {"$set": {"phase": "ended", "phase_ends_at": None}})
+            await _q(lambda: supa.table("rooms").update({
+                "phase": "ended", "phase_ends_at": None,
+            }).eq("code", code).execute())
             await broadcast_room_state(code)
             return
         await advance_with_choice(code, picked, flags)
@@ -471,15 +489,12 @@ async def resolve_votes(code: str, node_id: str, reason: str = "timeout") -> Non
     tied_options = [c for c in filtered if c["id"] in tied_ids]
     picked = random.choice(tied_options)
     wheel_ends = _now() + timedelta(seconds=WHEEL_SECONDS)
-    await db.rooms.update_one(
-        {"code": code},
-        {"$set": {
-            "phase": "wheel",
-            "phase_ends_at": wheel_ends.isoformat(),
-            "wheel_options": tied_options,
-            "wheel_winner_choice_id": picked["id"],
-        }},
-    )
+    await _q(lambda: supa.table("rooms").update({
+        "phase": "wheel",
+        "phase_ends_at": wheel_ends.isoformat(),
+        "wheel_options": tied_options,
+        "wheel_winner_choice_id": picked["id"],
+    }).eq("code", code).execute())
     await broadcast_room_state(code)
     await _start_phase_task(code, _wheel_then_advance(code, node_id, picked))
 
@@ -506,11 +521,13 @@ async def advance_with_choice(code: str, choice: Dict[str, Any], current_flags: 
     dest = choice.get("destination_node_id")
     if not dest:
         # Dangling choice — end the story
-        await db.rooms.update_one(
-            {"code": code},
-            {"$set": {"phase": "ended", "phase_ends_at": None, "flags": new_flags,
-                       "wheel_options": None, "wheel_winner_choice_id": None}},
-        )
+        await _q(lambda: supa.table("rooms").update({
+            "phase": "ended",
+            "phase_ends_at": None,
+            "flags": new_flags,
+            "wheel_options": None,
+            "wheel_winner_choice_id": None,
+        }).eq("code", code).execute())
         await broadcast_room_state(code)
         return
     await advance_to_node(code, dest, new_flags)
@@ -527,17 +544,20 @@ async def root():
 
 @api_router.get("/stories")
 async def list_stories_public():
-    docs = await db.stories.find({}, {"_id": 0}).to_list(1000)
-    result = []
+    res = await _q(lambda: supa.table("stories").select("*").execute())
+    docs = res.data or []
     for s in docs:
-        count = await db.nodes.count_documents({"story_id": s["id"]})
-        s["node_count"] = count
-        result.append(s)
-    return result
+        sid = s["id"]
+        count_res = await _q(
+            lambda sid=sid: supa.table("nodes").select("*", count="exact")
+            .eq("story_id", sid).execute()
+        )
+        s["node_count"] = count_res.count or 0
+    return docs
 
 
 # ============================================================
-# Admin: auth + CRUD (UNCHANGED)
+# Admin: auth + CRUD
 # ============================================================
 
 @api_router.post("/admin/login")
@@ -555,17 +575,22 @@ async def admin_verify(_: bool = Depends(require_admin)):
 
 @api_router.get("/admin/stories")
 async def admin_list_stories(_: bool = Depends(require_admin)):
-    docs = await db.stories.find({}, {"_id": 0}).to_list(1000)
+    res = await _q(lambda: supa.table("stories").select("*").execute())
+    docs = res.data or []
     for s in docs:
-        count = await db.nodes.count_documents({"story_id": s["id"]})
-        s["node_count"] = count
+        sid = s["id"]
+        count_res = await _q(
+            lambda sid=sid: supa.table("nodes").select("*", count="exact")
+            .eq("story_id", sid).execute()
+        )
+        s["node_count"] = count_res.count or 0
     return docs
 
 
 @api_router.post("/admin/stories", response_model=Story)
 async def admin_create_story(payload: StoryCreate, _: bool = Depends(require_admin)):
     story = Story(title=payload.title, description=payload.description)
-    await db.stories.insert_one(story.model_dump())
+    await _q(lambda: supa.table("stories").insert(story.model_dump()).execute())
     return story
 
 
@@ -581,14 +606,14 @@ async def admin_get_story(story_id: str, _: bool = Depends(require_admin)):
 async def admin_update_story(story_id: str, payload: StoryUpdate, _: bool = Depends(require_admin)):
     updates = {k: v for k, v in payload.model_dump().items() if v is not None}
     if updates:
-        await db.stories.update_one({"id": story_id}, {"$set": updates})
+        await _q(lambda: supa.table("stories").update(updates).eq("id", story_id).execute())
     return await get_story(story_id)
 
 
 @api_router.delete("/admin/stories/{story_id}")
 async def admin_delete_story(story_id: str, _: bool = Depends(require_admin)):
-    await db.stories.delete_one({"id": story_id})
-    await db.nodes.delete_many({"story_id": story_id})
+    # nodes.story_id has ON DELETE CASCADE in schema — deleted automatically
+    await _q(lambda: supa.table("stories").delete().eq("id", story_id).execute())
     return {"ok": True}
 
 
@@ -597,17 +622,26 @@ async def admin_get_graph(story_id: str, _: bool = Depends(require_admin)):
     story = await get_story(story_id)
     if not story:
         raise HTTPException(404, "Story not found")
-    nodes = await db.nodes.find({"story_id": story_id}, {"_id": 0}).to_list(5000)
+    res = await _q(
+        lambda: supa.table("nodes").select("*").eq("story_id", story_id).execute()
+    )
+    nodes = res.data or []
     return {"story": story, "nodes": nodes}
 
 
 @api_router.post("/admin/nodes", response_model=Node)
 async def admin_create_node(payload: NodeCreate, _: bool = Depends(require_admin)):
     node = Node(**payload.model_dump())
-    await db.nodes.insert_one(node.model_dump())
+    # model_dump() recursively converts Choice objects to dicts for JSONB
+    await _q(lambda: supa.table("nodes").insert(node.model_dump()).execute())
     story = await get_story(payload.story_id)
     if story and not story.get("start_node_id"):
-        await db.stories.update_one({"id": payload.story_id}, {"$set": {"start_node_id": node.id}})
+        nid = node.id
+        sid = payload.story_id
+        await _q(
+            lambda: supa.table("stories").update({"start_node_id": nid})
+            .eq("id", sid).execute()
+        )
     return node
 
 
@@ -618,43 +652,70 @@ async def admin_update_node(node_id: str, payload: NodeUpdate, _: bool = Depends
         if v is None:
             continue
         if k == "choices":
-            updates[k] = [Choice(**c).model_dump() if not isinstance(c, dict) else c for c in v]
+            updates[k] = [
+                Choice(**c).model_dump() if not isinstance(c, dict) else c for c in v
+            ]
         else:
             updates[k] = v
     if updates:
-        await db.nodes.update_one({"id": node_id}, {"$set": updates})
+        await _q(lambda: supa.table("nodes").update(updates).eq("id", node_id).execute())
     return await get_node(node_id)
 
 
 @api_router.delete("/admin/nodes/{node_id}")
 async def admin_delete_node(node_id: str, _: bool = Depends(require_admin)):
-    async for other in db.nodes.find({"choices.destination_node_id": node_id}, {"_id": 0}):
+    # Find all nodes whose choices point to this node.
+    # Fetch all nodes and filter in Python — avoids JSONB filter edge cases.
+    all_res = await _q(lambda: supa.table("nodes").select("*").execute())
+    refs = [
+        n for n in (all_res.data or [])
+        if any(c.get("destination_node_id") == node_id for c in (n.get("choices") or []))
+    ]
+    for other in refs:
         new_choices = []
-        for c in other.get("choices", []):
+        for c in other.get("choices") or []:
             if c.get("destination_node_id") == node_id:
                 c = {**c, "destination_node_id": None}
             new_choices.append(c)
-        await db.nodes.update_one({"id": other["id"]}, {"$set": {"choices": new_choices}})
-    await db.nodes.delete_one({"id": node_id})
-    story = await db.stories.find_one({"start_node_id": node_id})
-    if story:
-        await db.stories.update_one({"id": story["id"]}, {"$set": {"start_node_id": None}})
+        oid, nc = other["id"], new_choices
+        await _q(
+            lambda oid=oid, nc=nc: supa.table("nodes").update({"choices": nc})
+            .eq("id", oid).execute()
+        )
+    await _q(lambda: supa.table("nodes").delete().eq("id", node_id).execute())
+    # Clear start_node_id on any story pointing to this node
+    story_res = await _q(
+        lambda: supa.table("stories").select("id")
+        .eq("start_node_id", node_id).maybe_single().execute()
+    )
+    if story_res.data:
+        sid = story_res.data["id"]
+        await _q(
+            lambda: supa.table("stories").update({"start_node_id": None})
+            .eq("id", sid).execute()
+        )
     return {"ok": True}
 
 
 @api_router.post("/admin/nodes/positions")
 async def admin_bulk_positions(updates: List[PositionUpdate], _: bool = Depends(require_admin)):
     for u in updates:
-        await db.nodes.update_one(
-            {"id": u.id},
-            {"$set": {"position_x": u.position_x, "position_y": u.position_y}},
+        uid, px, py = u.id, u.position_x, u.position_y
+        await _q(
+            lambda uid=uid, px=px, py=py: supa.table("nodes").update({
+                "position_x": px,
+                "position_y": py,
+            }).eq("id", uid).execute()
         )
     return {"ok": True, "count": len(updates)}
 
 
 @api_router.post("/admin/stories/{story_id}/set-start")
 async def admin_set_start_node(story_id: str, node_id: str, _: bool = Depends(require_admin)):
-    await db.stories.update_one({"id": story_id}, {"$set": {"start_node_id": node_id}})
+    await _q(
+        lambda: supa.table("stories").update({"start_node_id": node_id})
+        .eq("id", story_id).execute()
+    )
     return await get_story(story_id)
 
 
@@ -666,9 +727,10 @@ async def admin_set_start_node(story_id: str, node_id: str, _: bool = Depends(re
 async def create_room():
     for _ in range(10):
         code = generate_room_code()
-        if not await db.rooms.find_one({"code": code}):
+        existing = await get_room(code)
+        if not existing:
             room = Room(code=code)
-            await db.rooms.insert_one(room.model_dump())
+            await _q(lambda: supa.table("rooms").insert(room.model_dump()).execute())
             return room
     raise HTTPException(500, "Could not generate unique room code")
 
@@ -686,8 +748,15 @@ async def join_room(code: str, payload: RoomJoinRequest):
     room = await get_room(code)
     if not room:
         raise HTTPException(404, "Room not found")
-    existing = await db.players.count_documents({"room_code": code})
-    existing_names = await db.players.find({"room_code": code}, {"_id": 0, "nickname": 1}).to_list(1000)
+    count_res = await _q(
+        lambda: supa.table("players").select("*", count="exact")
+        .eq("room_code", code).execute()
+    )
+    existing = count_res.count or 0
+    names_res = await _q(
+        lambda: supa.table("players").select("nickname").eq("room_code", code).execute()
+    )
+    existing_names = names_res.data or []
     if any(p["nickname"].lower() == payload.nickname.lower() for p in existing_names):
         raise HTTPException(400, "Nickname already taken in this room")
     player = Player(
@@ -695,7 +764,7 @@ async def join_room(code: str, payload: RoomJoinRequest):
         nickname=payload.nickname,
         is_host=(existing == 0),
     )
-    await db.players.insert_one(player.model_dump())
+    await _q(lambda: supa.table("players").insert(player.model_dump()).execute())
     await broadcast_room_state(code)
     return player
 
@@ -708,7 +777,10 @@ async def select_story(code: str, payload: RoomSelectStoryRequest):
     story = await get_story(payload.story_id)
     if not story:
         raise HTTPException(404, "Story not found")
-    await db.rooms.update_one({"code": code}, {"$set": {"story_id": payload.story_id}})
+    sid = payload.story_id
+    await _q(
+        lambda: supa.table("rooms").update({"story_id": sid}).eq("code", code).execute()
+    )
     await broadcast_room_state(code)
     return {"ok": True}
 
@@ -723,11 +795,13 @@ async def start_room(code: str):
     story = await get_story(room["story_id"])
     if not story or not story.get("start_node_id"):
         raise HTTPException(400, "Story has no start node")
-    await db.votes.delete_many({"room_code": code})
-    await db.rooms.update_one(
-        {"code": code},
-        {"$set": {"started": True, "flags": [], "wheel_options": None, "wheel_winner_choice_id": None}},
-    )
+    await _q(lambda: supa.table("votes").delete().eq("room_code", code).execute())
+    await _q(lambda: supa.table("rooms").update({
+        "started": True,
+        "flags": [],
+        "wheel_options": None,
+        "wheel_winner_choice_id": None,
+    }).eq("code", code).execute())
     await advance_to_node(code, story["start_node_id"], [])
     return {"ok": True}
 
@@ -738,19 +812,16 @@ async def reset_room(code: str):
     if not room:
         raise HTTPException(404, "Room not found")
     _cancel_room_task(code)
-    await db.votes.delete_many({"room_code": code})
-    await db.rooms.update_one(
-        {"code": code},
-        {"$set": {
-            "started": False,
-            "current_node_id": None,
-            "phase": "lobby",
-            "phase_ends_at": None,
-            "flags": [],
-            "wheel_options": None,
-            "wheel_winner_choice_id": None,
-        }},
-    )
+    await _q(lambda: supa.table("votes").delete().eq("room_code", code).execute())
+    await _q(lambda: supa.table("rooms").update({
+        "started": False,
+        "current_node_id": None,
+        "phase": "lobby",
+        "phase_ends_at": None,
+        "flags": [],
+        "wheel_options": None,
+        "wheel_winner_choice_id": None,
+    }).eq("code", code).execute())
     await broadcast_room_state(code)
     return {"ok": True}
 
@@ -777,31 +848,40 @@ async def cast_vote(code: str, payload: VoteRequest):
     if not any(c["id"] == payload.choice_id for c in filtered):
         raise HTTPException(400, "Invalid choice for the current node")
 
-    existing = await db.votes.find_one({
-        "room_code": code,
-        "node_id": room["current_node_id"],
-        "player_id": payload.player_id,
-    })
-    if existing:
+    nid = room["current_node_id"]
+    existing_res = await _q(
+        lambda: supa.table("votes").select("id")
+        .eq("room_code", code).eq("node_id", nid).eq("player_id", payload.player_id)
+        .maybe_single().execute()
+    )
+    if existing_res.data:
         raise HTTPException(400, "You have already voted for this scene")
 
     vote_doc = {
         "id": str(uuid.uuid4()),
         "room_code": code,
-        "node_id": room["current_node_id"],
+        "node_id": nid,
         "player_id": payload.player_id,
         "choice_id": payload.choice_id,
         "created_at": _now_iso(),
     }
-    await db.votes.insert_one(vote_doc)
+    await _q(lambda: supa.table("votes").insert(vote_doc).execute())
     await broadcast_room_state(code)
 
     # If everyone has voted, immediately resolve
-    total_players = await db.players.count_documents({"room_code": code})
-    votes_now = await db.votes.count_documents({"room_code": code, "node_id": room["current_node_id"]})
+    total_res = await _q(
+        lambda: supa.table("players").select("*", count="exact")
+        .eq("room_code", code).execute()
+    )
+    total_players = total_res.count or 0
+    votes_res = await _q(
+        lambda: supa.table("votes").select("*", count="exact")
+        .eq("room_code", code).eq("node_id", nid).execute()
+    )
+    votes_now = votes_res.count or 0
     if votes_now >= total_players and total_players > 0:
         _cancel_room_task(code)
-        await resolve_votes(code, room["current_node_id"], reason="all_voted")
+        await resolve_votes(code, nid, reason="all_voted")
 
     return {"ok": True}
 
@@ -836,8 +916,11 @@ async def websocket_room(ws: WebSocket, code: str):
 # ============================================================
 
 async def seed_zayn_story():
-    existing = await db.stories.find_one({"title": "Airport Adventure — Zayn"})
-    if existing:
+    res = await _q(
+        lambda: supa.table("stories").select("id")
+        .eq("title", "Airport Adventure — Zayn").maybe_single().execute()
+    )
+    if res.data:
         return
 
     story = Story(
@@ -915,9 +998,9 @@ async def seed_zayn_story():
         ),
     ]
 
-    await db.stories.insert_one(story.model_dump())
+    await _q(lambda: supa.table("stories").insert(story.model_dump()).execute())
     for n in nodes:
-        await db.nodes.insert_one(n.model_dump())
+        await _q(lambda d=n.model_dump(): supa.table("nodes").insert(d).execute())
     logger.info(f"Seeded Zayn story {story.id} with {len(nodes)} nodes")
 
 
@@ -938,13 +1021,6 @@ app.add_middleware(
 
 @app.on_event("startup")
 async def _startup():
-    await db.stories.create_index("id", unique=True)
-    await db.nodes.create_index("id", unique=True)
-    await db.nodes.create_index("story_id")
-    await db.rooms.create_index("code", unique=True)
-    await db.players.create_index("id", unique=True)
-    await db.players.create_index("room_code")
-    await db.votes.create_index([("room_code", 1), ("node_id", 1), ("player_id", 1)])
     await seed_zayn_story()
     logger.info(f"Admin token: {ADMIN_TOKEN}")
 
@@ -956,4 +1032,3 @@ async def _shutdown():
             t.cancel()
         except Exception:
             pass
-    client.close()

@@ -108,6 +108,20 @@ let webpackConfig = {
 };
 
 webpackConfig.devServer = (devServerConfig) => {
+  // Proxy /api HTTP and WebSocket traffic to the backend (port 8001)
+  // webpack-dev-server v5 requires proxy as an array
+  devServerConfig.proxy = [
+    {
+      context: ["/api"],
+      target: "http://localhost:8001",
+      ws: true,
+      changeOrigin: true,
+    },
+  ];
+
+  // Allow all hosts (required for Replit's proxied preview iframe)
+  devServerConfig.allowedHosts = "all";
+
   // Add health check endpoints if enabled
   if (config.enableHealthCheck && setupHealthEndpoints && healthPluginInstance) {
     const originalSetupMiddlewares = devServerConfig.setupMiddlewares;

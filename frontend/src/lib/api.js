@@ -56,6 +56,11 @@ export const api = {
 };
 
 export const wsUrlFor = (code) => {
-    const base = BACKEND_URL.replace(/^http/, "ws");
-    return `${base}/api/ws/rooms/${code}`;
+    if (BACKEND_URL) {
+        const base = BACKEND_URL.replace(/^http/, "ws");
+        return `${base}/api/ws/rooms/${code}`;
+    }
+    // Proxy mode: derive ws:// URL from current browser location
+    const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+    return `${protocol}//${window.location.host}/api/ws/rooms/${code}`;
 };

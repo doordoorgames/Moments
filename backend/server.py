@@ -210,28 +210,28 @@ async def get_node(node_id: str) -> Optional[Dict[str, Any]]:
     res = await _q(
         lambda: supa.table("nodes").select("*").eq("id", node_id).maybe_single().execute()
     )
-    return res.data
+    return res.data if res is not None else None
 
 
 async def get_room(code: str) -> Optional[Dict[str, Any]]:
     res = await _q(
         lambda: supa.table("rooms").select("*").eq("code", code).maybe_single().execute()
     )
-    return res.data
+    return res.data if res is not None else None
 
 
 async def get_player(player_id: str) -> Optional[Dict[str, Any]]:
     res = await _q(
         lambda: supa.table("players").select("*").eq("id", player_id).maybe_single().execute()
     )
-    return res.data
+    return res.data if res is not None else None
 
 
 async def get_story(story_id: str) -> Optional[Dict[str, Any]]:
     res = await _q(
         lambda: supa.table("stories").select("*").eq("id", story_id).maybe_single().execute()
     )
-    return res.data
+    return res.data if res is not None else None
 
 
 def generate_room_code(length: int = 5) -> str:
@@ -693,7 +693,7 @@ async def admin_delete_node(node_id: str, _: bool = Depends(require_admin)):
         lambda: supa.table("stories").select("id")
         .eq("start_node_id", node_id).maybe_single().execute()
     )
-    if story_res.data:
+    if story_res is not None and story_res.data:
         sid = story_res.data["id"]
         await _q(
             lambda: supa.table("stories").update({"start_node_id": None})
@@ -859,7 +859,7 @@ async def cast_vote(code: str, payload: VoteRequest):
         .eq("room_code", code).eq("node_id", nid).eq("player_id", payload.player_id)
         .maybe_single().execute()
     )
-    if existing_res.data:
+    if existing_res is not None and existing_res.data:
         raise HTTPException(400, "You have already voted for this scene")
 
     vote_doc = {
@@ -925,7 +925,7 @@ async def seed_zayn_story():
         lambda: supa.table("stories").select("id")
         .eq("title", "Airport Adventure — Zayn").maybe_single().execute()
     )
-    if res.data:
+    if res is not None and res.data:
         return
 
     story = Story(
@@ -1028,7 +1028,9 @@ app.add_middleware(
 async def _startup():
     global supa
     url = os.environ.get("SUPABASE_URL")
-    key = os.environ.get("SUPABASE_KEY")
+    # Prefer the service-role key (bypasses RLS) for server-side operations;
+    # fall back to the anon key if only that is set.
+    key = os.environ.get("SUPABASE_SERVICE_ROLE_KEY") or os.environ.get("SUPABASE_KEY")
     if url and key:
         supa = create_client(url, key)
         logger.info("Supabase client initialised")

@@ -1,1 +1,3 @@
 - [Supabase lazy-init pattern](supabase-lazy-init.md) — never call create_client() at module level; defer to startup event so the server binds its port before credentials are needed.
+- [Supabase maybe_single v2 returns None](supabase-maybe-single.md) — supabase-py v2 maybe_single().execute() returns None (not APIResponse) when no row matches; guard every call site with `if res is not None`.
+- [Supabase service role key for server writes](supabase-service-role.md) — backend must use SUPABASE_SERVICE_ROLE_KEY (not anon key) to bypass RLS for inserts/updates; prefer it with fallback to SUPABASE_KEY.

@@ -33,6 +33,8 @@ from fastapi import (
     WebSocket,
     WebSocketDisconnect,
 )
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 from supabase import create_client, Client
 from pydantic import BaseModel, ConfigDict, Field
 from starlette.middleware.cors import CORSMiddleware
@@ -1055,3 +1057,24 @@ async def _shutdown():
             t.cancel()
         except Exception:
             pass
+
+
+# ============================================================
+# Static frontend (production)
+# Mount AFTER all API routes so /api/* is never shadowed.
+# ============================================================
+_FRONTEND_BUILD = ROOT_DIR.parent / "frontend" / "build"
+
+if _FRONTEND_BUILD.exists():
+    # Serve compiled JS / CSS / images under /static/*
+    _static_dir = _FRONTEND_BUILD / "static"
+    if _static_dir.exists():
+        app.mount("/static", StaticFiles(directory=str(_static_dir)), name="spa-static")
+
+    # SPA catch-all: every non-API path returns index.html so React Router works
+    @app.get("/{full_path:path}", include_in_schema=False)
+    async def _serve_spa(full_path: str):
+        index = _FRONTEND_BUILD / "index.html"
+        if index.exists():
+            return FileResponse(str(index))
+        raise HTTPException(status_code=404, detail="Frontend build not found")

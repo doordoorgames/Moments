@@ -60,7 +60,7 @@ export default function NodeInspector({
 
     return (
         <div
-            className="flex h-full w-[380px] flex-col border-l border-border bg-card"
+            className="flex h-full w-[380px] flex-col border-l border-rose-900/50 bg-purple-950"
             data-testid="admin-node-inspector-panel"
         >
             <div className="flex items-center justify-between border-b border-border px-4 py-3">
@@ -179,7 +179,7 @@ export default function NodeInspector({
                         {(draft.choices || []).map((c, idx) => (
                             <div
                                 key={c.id}
-                                className="space-y-2 rounded-md border border-border bg-background p-2.5"
+                                className="space-y-2 rounded-md border border-rose-900/40 bg-rose-950/50 p-2.5"
                                 data-testid={`admin-choice-${c.id}`}
                             >
                                 <div className="flex items-center gap-2">

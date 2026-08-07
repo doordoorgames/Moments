@@ -32,7 +32,7 @@ export default function AdminLogin() {
     };
 
     return (
-        <div className="dark min-h-screen bg-background text-foreground">
+        <div className="dark min-h-screen bg-gradient-to-br from-violet-950 via-fuchsia-950 to-rose-950 text-foreground">
             <div className="mx-auto max-w-sm px-4 pt-16 pb-24 sm:px-6">
                 <button
                     onClick={() => nav("/")}
@@ -46,7 +46,7 @@ export default function AdminLogin() {
                 </div>
                 <h1 className="mt-4 text-2xl font-semibold">Sign in</h1>
                 <p className="mt-1 text-sm text-muted-foreground">Enter the admin password.</p>
-                <Card className="mt-6 rounded-[var(--radius-lg)] border-border bg-card p-5">
+                <Card className="mt-6 rounded-[var(--radius-lg)] border-rose-900/50 bg-rose-950/60 p-5">
                     <form onSubmit={submit} className="space-y-4">
                         <div className="space-y-1.5">
                             <Label htmlFor="password">Password</Label>

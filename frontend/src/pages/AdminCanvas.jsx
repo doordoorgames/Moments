@@ -229,14 +229,14 @@ function CanvasInner() {
 
     if (loading) {
         return (
-            <div className="dark flex min-h-screen items-center justify-center bg-background text-foreground">
+            <div className="dark flex min-h-screen items-center justify-center bg-gradient-to-br from-violet-950 via-fuchsia-950 to-rose-950 text-foreground">
                 <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
             </div>
         );
     }
 
     return (
-        <div className="dark flex h-screen flex-col bg-background text-foreground">
+        <div className="dark flex h-screen flex-col bg-gradient-to-br from-violet-950 via-fuchsia-950 to-rose-950 text-foreground">
             <div className="flex items-center justify-between border-b border-border px-4 py-2">
                 <div className="flex items-center gap-3">
                     <Link
@@ -284,9 +284,9 @@ function CanvasInner() {
                         fitView
                         proOptions={{ hideAttribution: true }}
                     >
-                        <Background variant={BackgroundVariant.Dots} gap={22} size={1} />
+                        <Background variant={BackgroundVariant.Dots} gap={22} size={1} color="#7c3aed" />
                         <Controls showInteractive={false} />
-                        <MiniMap pannable zoomable className="!bg-card" />
+                        <MiniMap pannable zoomable className="!bg-violet-950" />
                     </ReactFlow>
                 </div>
                 {selectedNode && (

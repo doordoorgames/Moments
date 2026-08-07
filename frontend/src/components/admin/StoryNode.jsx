@@ -12,7 +12,7 @@ function NodeCard({ id, data, selected }) {
         : "";
     return (
         <div
-            className={`w-[280px] rounded-[var(--radius)] border border-border bg-card text-card-foreground shadow-[0_12px_40px_-24px_rgba(0,0,0,0.65)] ${ringClass}`}
+            className={`w-[280px] rounded-[var(--radius)] border border-rose-900/50 bg-rose-950 text-card-foreground shadow-[0_12px_40px_-24px_rgba(120,0,60,0.5)] ${ringClass}`}
             data-testid={`admin-canvas-node-${n.id}`}
             onClick={() => data.onSelect?.(n.id)}
         >

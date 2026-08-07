@@ -71,7 +71,7 @@ export default function AdminStories() {
     const filtered = stories.filter((s) => s.title.toLowerCase().includes(q.toLowerCase()));
 
     return (
-        <div className="dark min-h-screen bg-background text-foreground">
+        <div className="dark min-h-screen bg-gradient-to-br from-violet-950 via-fuchsia-950 to-rose-950 text-foreground">
             <div className="border-b border-border">
                 <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
                     <div className="flex items-center gap-3">

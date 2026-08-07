@@ -14,6 +14,7 @@ import json
 import logging
 import os
 import random
+import re
 import string
 import uuid
 from collections import Counter, defaultdict
@@ -30,6 +31,9 @@ from fastapi import (
     HTTPException,
     WebSocket,
     WebSocketDisconnect,
+    UploadFile,
+    File,
+    Form,
 )
 from motor.motor_asyncio import AsyncIOMotorClient
 from pydantic import BaseModel, ConfigDict, Field
@@ -175,6 +179,18 @@ class PositionUpdate(BaseModel):
     position_y: float
 
 
+class RambleInterpretRequest(BaseModel):
+    story_id: str
+    transcript: str
+    selected_node_id: Optional[str] = None
+    variation_count: int = Field(default=1, ge=1, le=3)
+
+
+class RambleApplyRequest(BaseModel):
+    story_id: str
+    proposal: Dict[str, Any]
+
+
 class RoomJoinRequest(BaseModel):
     nickname: str
 
@@ -240,6 +256,79 @@ def require_admin(x_admin_token: Optional[str] = Header(default=None, alias="X-A
     if x_admin_token != ADMIN_TOKEN:
         raise HTTPException(status_code=401, detail="Unauthorized")
     return True
+
+
+def _json_from_ai(text: str) -> Dict[str, Any]:
+    """Parse a JSON object even when a model wraps it in a markdown fence."""
+    text = text.strip()
+    text = re.sub(r"^```(?:json)?\s*|\s*```$", "", text, flags=re.I | re.S)
+    start, end = text.find("{"), text.rfind("}")
+    if start < 0 or end < start:
+        raise ValueError("AI did not return a JSON object")
+    return json.loads(text[start:end + 1])
+
+
+async def _openai_json(system: str, payload: Dict[str, Any]) -> Dict[str, Any]:
+    key = os.environ.get("OPENAI_API_KEY")
+    if not key:
+        raise HTTPException(503, "Ramble AI is not configured. Add OPENAI_API_KEY on the server.")
+
+    def call():
+        import requests
+        response = requests.post(
+            "https://api.openai.com/v1/chat/completions",
+            headers={"Authorization": f"Bearer {key}", "Content-Type": "application/json"},
+            json={
+                "model": os.environ.get("RAMBLE_AI_MODEL", "gpt-4o-mini"),
+                "response_format": {"type": "json_object"},
+                "temperature": 0.65,
+                "messages": [
+                    {"role": "system", "content": system},
+                    {"role": "user", "content": json.dumps(payload, ensure_ascii=False)},
+                ],
+            },
+            timeout=90,
+        )
+        response.raise_for_status()
+        return _json_from_ai(response.json()["choices"][0]["message"]["content"])
+
+    try:
+        return await asyncio.to_thread(call)
+    except HTTPException:
+        raise
+    except Exception as exc:
+        logger.exception("Ramble AI failed")
+        raise HTTPException(502, f"Ramble AI failed: {str(exc)[:160]}")
+
+
+def _validate_proposal(story_id: str, proposal: Dict[str, Any], existing: List[Dict[str, Any]]) -> List[str]:
+    errors: List[str] = []
+    existing_ids = {n["id"] for n in existing}
+    operations = proposal.get("operations") or []
+    temp_ids = {op.get("temp_id") for op in operations if op.get("action") == "create"}
+    temp_ids.discard(None)
+    deleted = {op.get("node_id") for op in operations if op.get("action") == "delete"}
+    valid_targets = (existing_ids - deleted) | temp_ids
+    if not operations:
+        errors.append("The proposal has no changes.")
+    if len(temp_ids) != len([op for op in operations if op.get("action") == "create"]):
+        errors.append("Every new node needs a unique temporary ID.")
+    for op in operations:
+        action = op.get("action")
+        if action not in {"create", "update", "delete"}:
+            errors.append(f"Unsupported action: {action}")
+            continue
+        if action in {"update", "delete"} and op.get("node_id") not in existing_ids:
+            errors.append("A proposed change refers to a node that no longer exists.")
+        node = op.get("node") or {}
+        if action != "delete":
+            if not str(node.get("title") or "").strip():
+                errors.append("Every proposed node needs a title.")
+            for choice in node.get("choices") or []:
+                target = choice.get("destination_node_id")
+                if target and target not in valid_targets:
+                    errors.append(f"Choice '{choice.get('text', '')}' has an invalid destination.")
+    return list(dict.fromkeys(errors))
 
 
 # ============================================================
@@ -656,6 +745,120 @@ async def admin_bulk_positions(updates: List[PositionUpdate], _: bool = Depends(
 async def admin_set_start_node(story_id: str, node_id: str, _: bool = Depends(require_admin)):
     await db.stories.update_one({"id": story_id}, {"$set": {"start_node_id": node_id}})
     return await get_story(story_id)
+
+
+@api_router.post("/admin/ramble/transcribe")
+async def admin_ramble_transcribe(
+    audio: UploadFile = File(...),
+    story_id: str = Form(...),
+    _: bool = Depends(require_admin),
+):
+    if not await get_story(story_id):
+        raise HTTPException(404, "Story not found")
+    key = os.environ.get("OPENAI_API_KEY")
+    if not key:
+        raise HTTPException(503, "Transcription is not configured. Add OPENAI_API_KEY on the server.")
+    content = await audio.read()
+    if not content or len(content) > 25 * 1024 * 1024:
+        raise HTTPException(400, "Recording is empty or larger than 25 MB")
+
+    def call():
+        import requests
+        response = requests.post(
+            "https://api.openai.com/v1/audio/transcriptions",
+            headers={"Authorization": f"Bearer {key}"},
+            files={"file": (audio.filename or "ramble.webm", content, audio.content_type or "audio/webm")},
+            data={"model": os.environ.get("RAMBLE_TRANSCRIBE_MODEL", "whisper-1")},
+            timeout=120,
+        )
+        response.raise_for_status()
+        return response.json()
+    try:
+        result = await asyncio.to_thread(call)
+        return {"transcript": result.get("text", "").strip()}
+    except Exception as exc:
+        logger.exception("Ramble transcription failed")
+        raise HTTPException(502, f"Transcription failed: {str(exc)[:160]}")
+
+
+@api_router.post("/admin/ramble/interpret")
+async def admin_ramble_interpret(payload: RambleInterpretRequest, _: bool = Depends(require_admin)):
+    story = await get_story(payload.story_id)
+    if not story:
+        raise HTTPException(404, "Story not found")
+    nodes = await db.nodes.find({"story_id": payload.story_id}, {"_id": 0}).to_list(2000)
+    if payload.selected_node_id and not any(n["id"] == payload.selected_node_id for n in nodes):
+        raise HTTPException(400, "Selected node is not part of this story")
+    compact_nodes = [{
+        "id": n["id"], "title": n.get("title"), "story_text": n.get("story_text"),
+        "character": n.get("character"), "position_x": n.get("position_x"),
+        "position_y": n.get("position_y"), "is_location_gate": n.get("is_location_gate", False),
+        "is_vote_gate": n.get("is_vote_gate", False), "is_end": n.get("is_end", False),
+        "choices": n.get("choices", []),
+    } for n in nodes]
+    system = """You are Moments' careful story-structure assistant. Convert an author's natural-language ramble into a PREVIEW proposal only. Never claim it is applied. Use the existing node model exactly. Return JSON with: summary (string), assumptions (string[]), clarifications ({id,question,options[],allow_ai_decide}[]; only structurally important unknowns), operations ({action:create|update|delete,temp_id?,node_id?,reason,node?}[]), and warnings (string[]). For create/update node fields may include title, story_text, character, position_x, position_y, is_location_gate, is_vote_gate, is_end, choices. Each choice requires id, text, destination_node_id (existing id or create temp_id), sets_flag, requires_flag. Preserve fields not intentionally changed in updates by returning a complete merged node. Never delete a branch without explicit author language. Prefer 1-5 focused changes. Place new cards near the selected/context node without overlapping. If a key decision is missing, ask a clarification and still provide a clearly marked best-effort draft. Do not invent important character/location/branch decisions silently."""
+    result = await _openai_json(system, {
+        "story": story, "nodes": compact_nodes, "selected_node_id": payload.selected_node_id,
+        "transcript": payload.transcript, "variation_count": payload.variation_count,
+    })
+    errors = _validate_proposal(payload.story_id, result, nodes)
+    return {"proposal": result, "validation_errors": errors}
+
+
+@api_router.post("/admin/ramble/apply")
+async def admin_ramble_apply(payload: RambleApplyRequest, _: bool = Depends(require_admin)):
+    story = await get_story(payload.story_id)
+    if not story:
+        raise HTTPException(404, "Story not found")
+    existing = await db.nodes.find({"story_id": payload.story_id}, {"_id": 0}).to_list(2000)
+    errors = _validate_proposal(payload.story_id, payload.proposal, existing)
+    if errors:
+        raise HTTPException(400, {"message": "Proposal validation failed", "errors": errors})
+    operations = payload.proposal.get("operations") or []
+    id_map = {op["temp_id"]: str(uuid.uuid4()) for op in operations if op.get("action") == "create"}
+    backup = {n["id"]: n for n in existing}
+    touched: List[str] = []
+    try:
+        for op in operations:
+            if op["action"] == "delete":
+                await db.nodes.delete_one({"id": op["node_id"], "story_id": payload.story_id})
+                touched.append(op["node_id"])
+                continue
+            body = dict(op.get("node") or {})
+            choices = []
+            for raw_choice in body.get("choices") or []:
+                c = dict(raw_choice)
+                c["id"] = c.get("id") or str(uuid.uuid4())
+                c["destination_node_id"] = id_map.get(c.get("destination_node_id"), c.get("destination_node_id"))
+                choices.append(Choice(**c).model_dump())
+            body["choices"] = choices
+            if op["action"] == "create":
+                node = Node(id=id_map[op["temp_id"]], story_id=payload.story_id, **body).model_dump()
+                await db.nodes.insert_one(node)
+                touched.append(node["id"])
+            else:
+                node_id = op["node_id"]
+                merged = {**backup[node_id], **body, "id": node_id, "story_id": payload.story_id}
+                node = Node(**merged).model_dump()
+                await db.nodes.replace_one({"id": node_id, "story_id": payload.story_id}, node)
+                touched.append(node_id)
+        # Clear any incoming references to explicitly deleted nodes unless proposal updated them.
+        deleted = {op["node_id"] for op in operations if op.get("action") == "delete"}
+        if deleted:
+            remaining = await db.nodes.find({"story_id": payload.story_id}, {"_id": 0}).to_list(2000)
+            for n in remaining:
+                repaired = [{**c, "destination_node_id": None} if c.get("destination_node_id") in deleted else c for c in n.get("choices", [])]
+                if repaired != n.get("choices", []):
+                    await db.nodes.update_one({"id": n["id"]}, {"$set": {"choices": repaired}})
+            if story.get("start_node_id") in deleted:
+                await db.stories.update_one({"id": payload.story_id}, {"$set": {"start_node_id": None}})
+        return {"ok": True, "created_id_map": id_map, "touched_node_ids": touched}
+    except Exception:
+        logger.exception("Ramble apply failed; restoring story nodes")
+        await db.nodes.delete_many({"story_id": payload.story_id})
+        if existing:
+            await db.nodes.insert_many(existing)
+        raise HTTPException(500, "Could not apply proposal. The original graph was restored.")
 
 
 # ============================================================

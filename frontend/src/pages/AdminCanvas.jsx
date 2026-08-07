@@ -18,7 +18,8 @@ import { toast } from "sonner";
 import { api } from "@/lib/api";
 import { StoryNode } from "@/components/admin/StoryNode";
 import NodeInspector from "@/components/admin/NodeInspector";
-import { ArrowLeft, Plus, LogOut, Loader2 } from "lucide-react";
+import RambleStudio from "@/components/admin/RambleStudio";
+import { ArrowLeft, Plus, LogOut, Loader2, Mic, Sparkles } from "lucide-react";
 
 const nodeTypes = { storyNode: StoryNode };
 
@@ -29,6 +30,7 @@ function CanvasInner() {
     const [story, setStory] = useState(null);
     const [rawNodes, setRawNodes] = useState([]);
     const [selectedId, setSelectedId] = useState(null);
+    const [rambleOpen, setRambleOpen] = useState(false);
     const positionSaveTimer = useRef(null);
 
     const [flowNodes, setFlowNodes, onNodesChange] = useNodesState([]);
@@ -62,7 +64,7 @@ function CanvasInner() {
                             label: c.text?.slice(0, 24),
                             labelBgPadding: [4, 2],
                             labelBgStyle: { fill: "hsl(var(--card))" },
-                            style: { strokeWidth: 1.6 },
+                            style: { strokeWidth: 2.5, stroke: "rgba(255,255,255,.92)" },
                         });
                     }
                 }
@@ -236,17 +238,17 @@ function CanvasInner() {
     }
 
     return (
-        <div className="dark flex h-screen flex-col bg-background text-foreground">
-            <div className="flex items-center justify-between border-b border-border px-4 py-2">
+        <div className="creator-theme flex h-screen flex-col bg-background text-foreground">
+            <div className="creator-topbar flex items-center justify-between px-4 py-3">
                 <div className="flex items-center gap-3">
                     <Link
                         to="/admin/stories"
-                        className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
+                        className="creator-back inline-flex items-center gap-1.5 text-sm"
                         data-testid="admin-back-to-stories"
                     >
                         <ArrowLeft className="h-4 w-4" /> Stories
                     </Link>
-                    <div className="text-sm">
+                    <div className="creator-title text-sm">
                         <span className="font-semibold">{story?.title}</span>
                         <span className="ml-2 text-xs text-muted-foreground">
                             {rawNodes.length} nodes
@@ -254,12 +256,15 @@ function CanvasInner() {
                     </div>
                 </div>
                 <div className="flex items-center gap-2">
+                    <Button size="sm" className="ramble-launch" onClick={() => setRambleOpen(true)} data-testid="admin-ramble-button">
+                        <Mic className="mr-1 h-4 w-4" /> Ramble
+                    </Button>
                     <Button size="sm" onClick={addNode} data-testid="admin-add-node-button">
-                        <Plus className="mr-1 h-3.5 w-3.5" /> Add New Box
+                        <Plus className="mr-1 h-3.5 w-3.5" /> Add story card
                     </Button>
                     <Button
                         size="sm"
-                        variant="secondary"
+                        variant="ghost"
                         onClick={() => {
                             localStorage.removeItem("admin_token");
                             nav("/admin");
@@ -271,7 +276,8 @@ function CanvasInner() {
             </div>
 
             <div className="flex flex-1 overflow-hidden">
-                <div className="flex-1" data-testid="admin-canvas">
+                <div className="creator-canvas flex-1" data-testid="admin-canvas">
+                    <div className="canvas-note"><Sparkles/> drag ideas around • connect the adventure</div>
                     <ReactFlow
                         nodes={flowNodes}
                         edges={flowEdges}
@@ -284,9 +290,9 @@ function CanvasInner() {
                         fitView
                         proOptions={{ hideAttribution: true }}
                     >
-                        <Background variant={BackgroundVariant.Dots} gap={22} size={1} />
+                        <Background variant={BackgroundVariant.Dots} gap={24} size={1.2} color="rgba(255,255,255,.28)" />
                         <Controls showInteractive={false} />
-                        <MiniMap pannable zoomable className="!bg-card" />
+                        <MiniMap pannable zoomable className="creator-minimap" nodeColor={(n) => n.data?.node?.is_end ? "#8c5ac7" : "#f37b78"} />
                     </ReactFlow>
                 </div>
                 {selectedNode && (
@@ -301,6 +307,7 @@ function CanvasInner() {
                     />
                 )}
             </div>
+            {rambleOpen && <RambleStudio storyId={storyId} selectedNode={selectedNode} onClose={() => setRambleOpen(false)} onApplied={load} />}
         </div>
     );
 }

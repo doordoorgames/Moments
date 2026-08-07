@@ -60,11 +60,11 @@ export default function NodeInspector({
 
     return (
         <div
-            className="flex h-full w-[380px] flex-col border-l border-border bg-card"
+            className="creator-inspector flex h-full w-[380px] max-w-[88vw] flex-col"
             data-testid="admin-node-inspector-panel"
         >
-            <div className="flex items-center justify-between border-b border-border px-4 py-3">
-                <div className="text-sm font-semibold">Edit Node</div>
+            <div className="inspector-head flex items-center justify-between px-4 py-3">
+                <div className="text-sm font-semibold">✎ Polish this story card</div>
                 <div className="flex items-center gap-1">
                     {!isStart && (
                         <Button

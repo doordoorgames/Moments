@@ -53,6 +53,31 @@ export const api = {
                 { headers: adminHeaders() },
             )
             .then((r) => r.data),
+    adminRambleTranscribe: (storyId, blob) => {
+        const body = new FormData();
+        body.append("story_id", storyId);
+        body.append("audio", blob, "ramble.webm");
+        return axios
+            .post(`${API_BASE}/admin/ramble/transcribe`, body, {
+                headers: adminHeaders(),
+                timeout: 150000,
+            })
+            .then((r) => r.data);
+    },
+    adminRambleInterpret: (payload) =>
+        axios
+            .post(`${API_BASE}/admin/ramble/interpret`, payload, {
+                headers: adminHeaders(),
+                timeout: 120000,
+            })
+            .then((r) => r.data),
+    adminRambleApply: (payload) =>
+        axios
+            .post(`${API_BASE}/admin/ramble/apply`, payload, {
+                headers: adminHeaders(),
+                timeout: 120000,
+            })
+            .then((r) => r.data),
 };
 
 export const wsUrlFor = (code) => {

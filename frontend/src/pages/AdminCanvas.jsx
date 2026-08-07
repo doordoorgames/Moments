@@ -18,7 +18,8 @@ import { toast } from "sonner";
 import { api } from "@/lib/api";
 import { StoryNode } from "@/components/admin/StoryNode";
 import NodeInspector from "@/components/admin/NodeInspector";
-import { ArrowLeft, Plus, LogOut, Loader2 } from "lucide-react";
+import RambleStudio from "@/components/admin/RambleStudio";
+import { ArrowLeft, Plus, LogOut, Loader2, Mic } from "lucide-react";
 
 const nodeTypes = { storyNode: StoryNode };
 
@@ -29,6 +30,7 @@ function CanvasInner() {
     const [story, setStory] = useState(null);
     const [rawNodes, setRawNodes] = useState([]);
     const [selectedId, setSelectedId] = useState(null);
+    const [rambleOpen, setRambleOpen] = useState(false);
     const positionSaveTimer = useRef(null);
 
     const [flowNodes, setFlowNodes, onNodesChange] = useNodesState([]);
@@ -37,13 +39,14 @@ function CanvasInner() {
     // --- helpers to (re)build flow graph from raw nodes ---
     const rebuildFlow = useCallback(
         (nodes, startNodeId, selected) => {
-            const rf_nodes = nodes.map((n) => ({
+            const rf_nodes = nodes.map((n, idx) => ({
                 id: n.id,
                 type: "storyNode",
                 position: { x: n.position_x || 0, y: n.position_y || 0 },
                 data: {
                     node: n,
                     isStart: n.id === startNodeId,
+                    toneIndex: idx,
                     onSelect: (nid) => setSelectedId(nid),
                 },
                 selected: n.id === selected,
@@ -58,11 +61,11 @@ function CanvasInner() {
                             sourceHandle: c.id,
                             target: c.destination_node_id,
                             targetHandle: "in",
-                            markerEnd: { type: MarkerType.ArrowClosed },
+                            markerEnd: { type: MarkerType.ArrowClosed, color: "rgba(255,255,255,.92)" },
                             label: c.text?.slice(0, 24),
                             labelBgPadding: [4, 2],
-                            labelBgStyle: { fill: "hsl(var(--card))" },
-                            style: { strokeWidth: 1.6 },
+                            labelBgStyle: { fill: "rgba(255,244,233,.85)", color: "#3c2136", fontSize: 10 },
+                            style: { strokeWidth: 2.5, stroke: "rgba(255,255,255,.92)" },
                         });
                     }
                 }
@@ -122,7 +125,6 @@ function CanvasInner() {
                 }));
                 try {
                     await api.adminBulkPositions(updates);
-                    // update local raw
                     setRawNodes((rn) =>
                         rn.map((n) => {
                             const u = updates.find((x) => x.id === n.id);
@@ -143,7 +145,6 @@ function CanvasInner() {
         async (params) => {
             const { source, sourceHandle, target } = params;
             if (!source || !target || !sourceHandle) return;
-            // sourceHandle is choice.id; update that choice's destination_node_id
             const node = rawNodes.find((n) => n.id === source);
             if (!node) return;
             const newChoices = (node.choices || []).map((c) =>
@@ -163,7 +164,6 @@ function CanvasInner() {
     // --- Actions ---
     const addNode = async () => {
         try {
-            // Place near center of current viewport (simple heuristic)
             const cx = 200 + Math.floor(Math.random() * 400);
             const cy = 200 + Math.floor(Math.random() * 200);
             const n = await api.adminCreateNode({
@@ -177,9 +177,8 @@ function CanvasInner() {
             });
             setRawNodes((rn) => [...rn, n]);
             setSelectedId(n.id);
-            // If this became the start node, refresh story
             if (!story?.start_node_id) load();
-            toast.success("Node added");
+            toast.success("Story card added");
         } catch (err) {
             toast.error("Failed to add node");
         }
@@ -204,12 +203,11 @@ function CanvasInner() {
     };
 
     const deleteNode = async (nodeId) => {
-        if (!confirm("Delete this node? Its incoming edges will be cleared.")) return;
+        if (!confirm("Delete this story card? Incoming connections will be cleared.")) return;
         try {
             await api.adminDeleteNode(nodeId);
             setRawNodes((rn) => rn.filter((n) => n.id !== nodeId));
             setSelectedId(null);
-            // reload story in case start was cleared
             load();
             toast.success("Deleted");
         } catch (err) {
@@ -229,37 +227,44 @@ function CanvasInner() {
 
     if (loading) {
         return (
-            <div className="dark flex min-h-screen items-center justify-center bg-gradient-to-br from-violet-950 via-fuchsia-950 to-rose-950 text-foreground">
-                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+            <div className="creator-theme flex min-h-screen items-center justify-center bg-background text-foreground">
+                <Loader2 className="h-6 w-6 animate-spin opacity-60" />
             </div>
         );
     }
 
     return (
-        <div className="dark flex h-screen flex-col bg-gradient-to-br from-violet-950 via-fuchsia-950 to-rose-950 text-foreground">
-            <div className="flex items-center justify-between border-b border-border px-4 py-2">
+        <div className="creator-theme flex h-screen flex-col bg-background text-foreground">
+            {/* Top bar */}
+            <div className="creator-topbar flex items-center justify-between px-4 py-3">
                 <div className="flex items-center gap-3">
                     <Link
                         to="/admin/stories"
-                        className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
+                        className="creator-back inline-flex items-center gap-1.5 text-sm"
                         data-testid="admin-back-to-stories"
                     >
                         <ArrowLeft className="h-4 w-4" /> Stories
                     </Link>
-                    <div className="text-sm">
+                    <div className="creator-title text-sm">
                         <span className="font-semibold">{story?.title}</span>
-                        <span className="ml-2 text-xs text-muted-foreground">
-                            {rawNodes.length} nodes
-                        </span>
+                        <span className="ml-2 text-xs opacity-60">{rawNodes.length} cards</span>
                     </div>
                 </div>
                 <div className="flex items-center gap-2">
+                    <Button
+                        size="sm"
+                        className="ramble-launch"
+                        onClick={() => setRambleOpen(true)}
+                        data-testid="admin-ramble-button"
+                    >
+                        <Mic className="mr-1 h-4 w-4" /> Ramble
+                    </Button>
                     <Button size="sm" onClick={addNode} data-testid="admin-add-node-button">
-                        <Plus className="mr-1 h-3.5 w-3.5" /> Add New Box
+                        <Plus className="mr-1 h-3.5 w-3.5" /> Add story card
                     </Button>
                     <Button
                         size="sm"
-                        variant="secondary"
+                        variant="ghost"
                         onClick={() => {
                             localStorage.removeItem("admin_token");
                             nav("/admin");
@@ -270,8 +275,12 @@ function CanvasInner() {
                 </div>
             </div>
 
+            {/* Canvas + inspector */}
             <div className="flex flex-1 overflow-hidden">
-                <div className="flex-1" data-testid="admin-canvas">
+                <div
+                    className="creator-canvas flex-1"
+                    data-testid="admin-canvas"
+                >
                     <ReactFlow
                         nodes={flowNodes}
                         edges={flowEdges}
@@ -284,11 +293,17 @@ function CanvasInner() {
                         fitView
                         proOptions={{ hideAttribution: true }}
                     >
-                        <Background variant={BackgroundVariant.Dots} gap={22} size={1} color="#7c3aed" />
+                        <Background
+                            variant={BackgroundVariant.Dots}
+                            gap={24}
+                            size={1.2}
+                            color="rgba(255,210,180,0.35)"
+                        />
                         <Controls showInteractive={false} />
-                        <MiniMap pannable zoomable className="!bg-violet-950" />
+                        <MiniMap pannable zoomable className="!bg-fuchsia-950/60" />
                     </ReactFlow>
                 </div>
+
                 {selectedNode && (
                     <NodeInspector
                         node={selectedNode}
@@ -301,6 +316,20 @@ function CanvasInner() {
                     />
                 )}
             </div>
+
+            {/* Ramble Studio overlay */}
+            {rambleOpen && (
+                <RambleStudio
+                    storyId={storyId}
+                    selectedNode={selectedNode}
+                    onClose={() => setRambleOpen(false)}
+                    onApplied={() => {
+                        setRambleOpen(false);
+                        load();
+                        toast.success("Story updated from Ramble ✨");
+                    }}
+                />
+            )}
         </div>
     );
 }

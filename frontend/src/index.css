@@ -74,6 +74,643 @@ code {
     }
 }
 
+/* ============================================================
+   Creator theme — warm Pinterest/stationery admin canvas
+   ============================================================ */
+
+.creator-theme {
+    --background: 276 35% 22%;
+    --foreground: 327 30% 17%;
+    --card: 28 70% 96%;
+    --card-foreground: 327 30% 17%;
+    --popover: 28 70% 97%;
+    --popover-foreground: 327 30% 17%;
+    --primary: 344 78% 61%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 24 85% 88%;
+    --secondary-foreground: 329 33% 24%;
+    --muted: 29 50% 91%;
+    --muted-foreground: 327 16% 42%;
+    --accent: 276 58% 58%;
+    --accent-foreground: 0 0% 100%;
+    --border: 333 25% 77%;
+    --input: 333 25% 77%;
+    --ring: 344 78% 61%;
+    --destructive: 350 70% 50%;
+    --destructive-foreground: 0 0% 100%;
+    --radius: 0.75rem;
+    font-family: "IBM Plex Sans", sans-serif;
+}
+
+/* Top bar */
+.creator-topbar {
+    z-index: 20;
+    border-bottom: 2px solid rgba(255, 255, 255, 0.45);
+    background: #fff4e9;
+    box-shadow: 0 7px 25px rgba(68, 29, 76, 0.18);
+}
+.creator-title {
+    padding: 5px 12px;
+    background: #ffd7be;
+    border-radius: 17px 22px 15px 20px;
+    transform: rotate(-0.3deg);
+    color: #3c2136;
+}
+.creator-back {
+    color: #7b416c;
+    font-weight: 700;
+}
+.creator-back:hover {
+    color: #4a1a3a;
+}
+
+/* Ramble launch button */
+.ramble-launch {
+    min-height: 40px !important;
+    border-radius: 22px 17px 21px 16px !important;
+    background: #ec5683 !important;
+    box-shadow: 3px 4px 0 #733b72 !important;
+    font-weight: 800 !important;
+    color: #fff !important;
+    border: none !important;
+}
+.ramble-launch:hover {
+    background: #d9406e !important;
+    transform: translateY(-1px);
+}
+
+/* Canvas background */
+.creator-canvas {
+    position: relative;
+    background-color: #593965;
+    background-image:
+        radial-gradient(circle at 15% 15%, rgba(249, 130, 131, 0.22), transparent 27%),
+        radial-gradient(circle at 83% 19%, rgba(239, 160, 98, 0.18), transparent 24%),
+        radial-gradient(circle at 76% 83%, rgba(180, 116, 206, 0.2), transparent 27%);
+}
+
+/* Override ReactFlow paths inside creator canvas */
+.creator-canvas .react-flow__edge-path {
+    stroke: rgba(255, 255, 255, 0.85);
+    stroke-width: 2.5;
+}
+.creator-canvas .react-flow__edge.selected .react-flow__edge-path,
+.creator-canvas .react-flow__edge:focus .react-flow__edge-path {
+    stroke: #ffcce0;
+    stroke-width: 3;
+}
+.creator-canvas .react-flow__background {
+    background-color: transparent;
+}
+.creator-canvas .react-flow__controls button {
+    background: rgba(255, 244, 233, 0.92);
+    color: #3c2136;
+    border-bottom: 1px solid rgba(100, 40, 80, 0.2);
+}
+
+/* Story cards — colorful pastel with wobbly borders */
+.story-card {
+    width: 280px;
+    overflow: visible;
+    color: #3c2136;
+    border: 2px solid rgba(255, 255, 255, 0.72);
+    border-radius: 21px 16px 24px 18px;
+    transform: rotate(var(--card-tilt, 0deg));
+    box-shadow: 6px 8px 0 rgba(55, 26, 66, 0.27), 0 16px 28px rgba(33, 17, 41, 0.16);
+    transition: transform 0.18s, box-shadow 0.18s;
+    cursor: pointer;
+    /* tape strip */
+    position: relative;
+}
+.story-card::before {
+    content: "";
+    position: absolute;
+    width: 56px;
+    height: 16px;
+    left: 112px;
+    top: -10px;
+    background: rgba(255, 244, 220, 0.7);
+    transform: rotate(-2deg);
+    border-radius: 2px;
+    pointer-events: none;
+}
+.story-card:hover,
+.story-card.is-selected {
+    transform: rotate(0deg) translateY(-3px);
+    box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.9), 8px 10px 0 rgba(55, 26, 66, 0.32);
+}
+
+/* Tone palette */
+.story-card.tone-0, .proposal-card.tone-0 { background: #f58b95; }
+.story-card.tone-1, .proposal-card.tone-1 { background: #f4a15f; }
+.story-card.tone-2, .proposal-card.tone-2 { background: #ee8e7a; }
+.story-card.tone-3, .proposal-card.tone-3 { background: #b885d1; }
+.story-card.tone-4, .proposal-card.tone-4 { background: #f3b79d; }
+.story-card.tone-5, .proposal-card.tone-5 { background: #c9a2dc; }
+
+/* Card sub-elements */
+.story-card-head {
+    border-bottom: 1.5px dashed rgba(83, 38, 71, 0.28);
+}
+.story-choices {
+    border-top: 1.5px dashed rgba(83, 38, 71, 0.22);
+}
+.story-sticker {
+    color: #633250 !important;
+    background: #fff3df !important;
+    border: 1px solid rgba(99, 50, 80, 0.22) !important;
+}
+.story-character {
+    color: rgba(61, 30, 51, 0.72);
+    font-weight: 800;
+}
+.story-copy {
+    color: rgba(56, 31, 47, 0.78);
+}
+
+/* Inspector panel */
+.creator-inspector {
+    background: #fff4ef;
+    border-left: 2px solid rgba(236, 86, 131, 0.3);
+    box-shadow: -6px 0 24px rgba(68, 29, 76, 0.12);
+}
+.inspector-head {
+    background: #ffe0d0;
+    border-bottom: 1.5px solid rgba(200, 100, 140, 0.3);
+}
+
+/* ============================================================
+   Ramble Studio overlay
+   ============================================================ */
+
+.ramble-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    background: rgba(40, 15, 55, 0.55);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+.ramble-shell {
+    background: #fff8f2;
+    border-radius: 28px 22px 30px 24px;
+    border: 2px solid rgba(236, 86, 131, 0.35);
+    box-shadow: 0 24px 80px rgba(60, 20, 60, 0.35), 6px 8px 0 rgba(115, 59, 114, 0.18);
+    width: 100%;
+    max-width: 680px;
+    max-height: 90vh;
+    overflow-y: auto;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+}
+
+/* Header */
+.ramble-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 22px 14px;
+    border-bottom: 1.5px dashed rgba(200, 100, 140, 0.3);
+    background: #ffe5f0;
+    border-radius: 28px 22px 0 0;
+}
+.ramble-header-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 800;
+    font-size: 1.05rem;
+    color: #4a1a3a;
+}
+.ramble-header-icon {
+    width: 20px;
+    height: 20px;
+    color: #ec5683;
+}
+.ramble-context-pill {
+    background: #ffd7e8;
+    border-radius: 20px;
+    padding: 2px 10px;
+    font-size: 11px;
+    font-weight: 600;
+    color: #7b416c;
+    border: 1px solid rgba(200, 80, 130, 0.25);
+}
+.ramble-close {
+    background: none;
+    border: none;
+    color: #9b6680;
+    cursor: pointer;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: background 0.15s;
+}
+.ramble-close:hover {
+    background: rgba(200, 80, 130, 0.12);
+    color: #4a1a3a;
+}
+
+/* Config banner */
+.ramble-config-banner {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    margin: 16px 22px 0;
+    padding: 12px 16px;
+    background: #fff3dc;
+    border: 1.5px solid rgba(220, 160, 60, 0.5);
+    border-radius: 14px;
+    font-size: 13px;
+    color: #6b4a1a;
+    line-height: 1.5;
+}
+.ramble-config-icon {
+    width: 18px;
+    height: 18px;
+    color: #c08030;
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+.ramble-config-banner code {
+    background: rgba(100, 60, 0, 0.1);
+    padding: 1px 5px;
+    border-radius: 4px;
+    font-size: 12px;
+}
+
+/* Phase container */
+.ramble-phase {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding: 20px 22px 22px;
+}
+
+/* Mic button */
+.ramble-mic-btn {
+    align-self: center;
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    background: #ec5683;
+    border: none;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 6px 20px rgba(180, 40, 90, 0.35), 3px 4px 0 #733b72;
+    transition: transform 0.15s, box-shadow 0.15s;
+    font-size: 28px;
+}
+.ramble-mic-btn svg { width: 30px; height: 30px; }
+.ramble-mic-btn:hover { transform: translateY(-2px); }
+.ramble-mic-btn.is-recording {
+    background: #c0392b;
+    animation: pulse-ring 1.2s ease-out infinite;
+}
+.ramble-mic-btn:disabled { opacity: 0.55; cursor: not-allowed; }
+
+@keyframes pulse-ring {
+    0%   { box-shadow: 0 0 0 0 rgba(192, 57, 43, 0.5), 3px 4px 0 #733b72; }
+    70%  { box-shadow: 0 0 0 16px rgba(192, 57, 43, 0), 3px 4px 0 #733b72; }
+    100% { box-shadow: 0 0 0 0 rgba(192, 57, 43, 0), 3px 4px 0 #733b72; }
+}
+
+.ramble-time {
+    text-align: center;
+    font-size: 14px;
+    color: #7b416c;
+    font-weight: 600;
+}
+.ramble-stop-label {
+    align-self: center;
+    background: none;
+    border: 1.5px solid rgba(192, 57, 43, 0.5);
+    color: #c0392b;
+    border-radius: 20px;
+    padding: 5px 16px;
+    cursor: pointer;
+    font-size: 12px;
+}
+.ramble-divider {
+    text-align: center;
+    font-size: 11px;
+    color: #b08090;
+    position: relative;
+}
+.ramble-divider::before,
+.ramble-divider::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    width: 35%;
+    height: 1px;
+    background: rgba(180, 100, 140, 0.25);
+}
+.ramble-divider::before { left: 0; }
+.ramble-divider::after { right: 0; }
+
+.ramble-textarea {
+    width: 100%;
+    border-radius: 14px;
+    border: 1.5px solid rgba(200, 100, 140, 0.3);
+    background: #fffaf7;
+    padding: 12px 14px;
+    font-family: inherit;
+    font-size: 14px;
+    color: #3c2136;
+    line-height: 1.55;
+    resize: vertical;
+    box-sizing: border-box;
+}
+.ramble-textarea:focus {
+    outline: none;
+    border-color: #ec5683;
+    box-shadow: 0 0 0 3px rgba(236, 86, 131, 0.12);
+}
+.ramble-transcript { min-height: 120px; }
+
+.ramble-label {
+    font-size: 12px;
+    font-weight: 700;
+    color: #7b416c;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+.ramble-primary-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    justify-content: center;
+    background: #ec5683;
+    color: #fff;
+    border: none;
+    border-radius: 22px 18px 22px 18px;
+    padding: 11px 22px;
+    font-weight: 800;
+    font-size: 14px;
+    cursor: pointer;
+    box-shadow: 3px 4px 0 #733b72;
+    transition: transform 0.14s, background 0.14s;
+}
+.ramble-primary-btn:hover { background: #d9406e; transform: translateY(-1px); }
+.ramble-primary-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+.ramble-primary-btn svg { width: 16px; height: 16px; }
+
+.ramble-summary {
+    font-size: 14px;
+    color: #4a2035;
+    background: #ffe8f0;
+    border-radius: 12px;
+    padding: 10px 14px;
+    border-left: 4px solid #ec5683;
+    margin: 0;
+}
+
+/* Clarifications */
+.ramble-clarifications {
+    background: #fff3dc;
+    border: 1.5px solid rgba(220, 160, 60, 0.4);
+    border-radius: 14px;
+    padding: 12px 16px;
+    font-size: 13px;
+    color: #5a3800;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+.ramble-clarification-item {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+.ramble-clarification-options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+.ramble-clarification-options button {
+    background: #fff;
+    border: 1.5px solid rgba(180, 120, 40, 0.4);
+    border-radius: 20px;
+    padding: 4px 12px;
+    font-size: 12px;
+    cursor: pointer;
+    color: #5a3800;
+}
+.ramble-clarification-options button:hover {
+    background: #fff3dc;
+}
+
+/* Proposal board */
+.proposal-board {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 14px;
+}
+.proposal-card {
+    border-radius: 16px 12px 18px 14px;
+    border: 2px solid rgba(255, 255, 255, 0.65);
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    box-shadow: 4px 5px 0 rgba(55, 26, 66, 0.2);
+}
+.proposal-meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+.proposal-action-badge {
+    background: rgba(255, 255, 255, 0.5);
+    border-radius: 20px;
+    padding: 2px 10px;
+    font-size: 10px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #4a2035;
+}
+.proposal-remove {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: rgba(74, 32, 53, 0.55);
+    width: 26px;
+    height: 26px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: background 0.12s;
+}
+.proposal-remove:hover { background: rgba(255, 255, 255, 0.5); color: #c0392b; }
+.proposal-remove svg { width: 14px; height: 14px; }
+
+.proposal-node-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: #3c2136;
+    margin: 0;
+}
+.proposal-node-text {
+    font-size: 12px;
+    color: rgba(60, 33, 54, 0.75);
+    margin: 0;
+}
+.proposal-title-input {
+    width: 100%;
+    border: none;
+    border-bottom: 1.5px solid rgba(100, 40, 80, 0.25);
+    background: transparent;
+    font-weight: 700;
+    font-size: 13px;
+    color: #3c2136;
+    padding: 2px 0;
+    font-family: inherit;
+}
+.proposal-title-input:focus { outline: none; border-color: #ec5683; }
+.proposal-text-input {
+    width: 100%;
+    border: 1.5px solid rgba(100, 40, 80, 0.2);
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.45);
+    font-size: 12px;
+    color: rgba(60, 33, 54, 0.85);
+    padding: 7px 9px;
+    resize: vertical;
+    font-family: inherit;
+    line-height: 1.5;
+    box-sizing: border-box;
+}
+.proposal-text-input:focus { outline: none; border-color: #ec5683; }
+.proposal-character-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    color: rgba(60, 33, 54, 0.65);
+}
+.proposal-character-icon { width: 12px; height: 12px; }
+.proposal-character-row input {
+    border: none;
+    background: transparent;
+    font-size: 11px;
+    color: rgba(60, 33, 54, 0.75);
+    font-weight: 700;
+    font-family: inherit;
+    flex: 1;
+}
+.proposal-character-row input:focus { outline: none; }
+.proposal-choice {
+    font-size: 11px;
+    color: rgba(60, 33, 54, 0.7);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+.proposal-dest {
+    font-size: 9px;
+    opacity: 0.55;
+    font-family: monospace;
+}
+
+/* Warnings */
+.ramble-warnings {
+    background: #fff3dc;
+    border: 1.5px solid rgba(220, 160, 60, 0.45);
+    border-radius: 12px;
+    padding: 10px 14px;
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    font-size: 12px;
+    color: #6b4000;
+}
+.ramble-warn-icon {
+    width: 16px;
+    height: 16px;
+    color: #c08030;
+    flex-shrink: 0;
+    margin-top: 1px;
+}
+.ramble-warnings ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+.ramble-warnings ul li::before { content: "• "; }
+
+/* Action rows */
+.ramble-actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    justify-content: flex-end;
+}
+.ramble-actions button {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    border-radius: 20px;
+    padding: 8px 14px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    border: 1.5px solid rgba(180, 100, 140, 0.3);
+    background: rgba(255, 255, 255, 0.6);
+    color: #4a2035;
+    transition: background 0.12s;
+}
+.ramble-actions button:hover { background: rgba(255, 220, 235, 0.7); }
+.ramble-actions button:disabled { opacity: 0.45; cursor: not-allowed; }
+.ramble-actions button svg { width: 14px; height: 14px; }
+.ramble-actions-four { flex-wrap: wrap; }
+
+/* Error */
+.ramble-error {
+    margin: 0 22px 18px;
+    background: #fff0f3;
+    border: 1.5px solid rgba(192, 57, 43, 0.4);
+    border-radius: 12px;
+    padding: 10px 14px;
+    font-size: 13px;
+    color: #8b1a1a;
+}
+
+/* Mobile / iPad */
+@media (max-width: 720px) {
+    .creator-topbar { gap: 8px; }
+    .creator-title { display: none; }
+    .ramble-launch { font-size: 0; width: 44px; padding: 0; }
+    .ramble-launch svg { margin: 0; width: 18px; height: 18px; }
+    .creator-inspector {
+        position: absolute;
+        inset: 0 0 0 auto;
+        width: min(380px, 100vw);
+        z-index: 50;
+    }
+    .ramble-shell { border-radius: 20px; }
+    .ramble-actions-four { display: grid; grid-template-columns: 1fr 1fr; }
+    .ramble-actions-four button { justify-content: center; }
+    .proposal-board { grid-template-columns: 1fr; }
+}
+
 @layer base {
     * {
         @apply border-border;

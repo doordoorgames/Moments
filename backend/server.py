@@ -16,6 +16,7 @@ import json
 import logging
 import os
 import random
+import re
 import string
 import uuid
 from collections import Counter, defaultdict
@@ -28,8 +29,11 @@ from fastapi import (
     APIRouter,
     Depends,
     FastAPI,
+    File,
+    Form,
     Header,
     HTTPException,
+    UploadFile,
     WebSocket,
     WebSocketDisconnect,
 )
@@ -180,6 +184,18 @@ class PositionUpdate(BaseModel):
     position_y: float
 
 
+class RambleInterpretRequest(BaseModel):
+    story_id: str
+    transcript: str
+    selected_node_id: Optional[str] = None
+    variation_count: int = Field(default=1, ge=1, le=3)
+
+
+class RambleApplyRequest(BaseModel):
+    story_id: str
+    proposal: Dict[str, Any]
+
+
 class RoomJoinRequest(BaseModel):
     nickname: str
 
@@ -261,6 +277,416 @@ def require_admin(x_admin_token: Optional[str] = Header(default=None, alias="X-A
     if x_admin_token != ADMIN_TOKEN:
         raise HTTPException(status_code=401, detail="Unauthorized")
     return True
+
+
+# ============================================================
+# Ramble Studio — AI-assisted story editor (Supabase-native)
+# ============================================================
+
+def _json_from_ai(text: str) -> Dict[str, Any]:
+    """Parse a JSON object even when the model wraps it in a markdown fence."""
+    text = text.strip()
+    text = re.sub(r"^```(?:json)?\s*|\s*```$", "", text, flags=re.I | re.S)
+    start, end = text.find("{"), text.rfind("}")
+    if start < 0 or end < start:
+        raise ValueError("AI did not return a JSON object")
+    return json.loads(text[start : end + 1])
+
+
+async def _openai_json(system: str, payload: Dict[str, Any]) -> Dict[str, Any]:
+    key = os.environ.get("OPENAI_API_KEY")
+    if not key:
+        raise HTTPException(
+            503,
+            "Ramble AI is not configured — add OPENAI_API_KEY to your Replit Secrets, then restart the backend.",
+        )
+
+    def call():
+        response = requests.post(
+            "https://api.openai.com/v1/chat/completions",
+            headers={"Authorization": f"Bearer {key}", "Content-Type": "application/json"},
+            json={
+                "model": os.environ.get("RAMBLE_AI_MODEL", "gpt-4o-mini"),
+                "response_format": {"type": "json_object"},
+                "temperature": 0.65,
+                "messages": [
+                    {"role": "system", "content": system},
+                    {"role": "user", "content": json.dumps(payload, ensure_ascii=False)},
+                ],
+            },
+            timeout=90,
+        )
+        response.raise_for_status()
+        return _json_from_ai(response.json()["choices"][0]["message"]["content"])
+
+    try:
+        return await asyncio.to_thread(call)
+    except HTTPException:
+        raise
+    except Exception as exc:
+        logger.exception("Ramble AI failed")
+        raise HTTPException(502, f"Ramble AI failed: {str(exc)[:160]}")
+
+
+def _validate_proposal(
+    story_id: str, proposal: Dict[str, Any], existing: List[Dict[str, Any]]
+) -> List[str]:
+    errors: List[str] = []
+    existing_ids = {n["id"] for n in existing}
+    operations = proposal.get("operations") or []
+
+    if not operations:
+        errors.append("The proposal has no changes.")
+        return errors
+
+    temp_ids: Dict[str, int] = {}
+    deleted_ids: set = set()
+    updated_ids: set = set()
+
+    for op in operations:
+        action = op.get("action")
+        if action == "create":
+            tid = op.get("temp_id")
+            if not tid:
+                errors.append("A create operation is missing its temp_id.")
+            elif tid in temp_ids:
+                errors.append(f"Duplicate temp_id '{tid}' — each new node needs a unique ID.")
+            else:
+                temp_ids[tid] = 1
+        elif action == "delete":
+            nid = op.get("node_id")
+            if not nid:
+                errors.append("A delete operation is missing node_id.")
+            elif nid not in existing_ids:
+                errors.append(f"Cannot delete node '{nid}' — not found in this story.")
+            else:
+                deleted_ids.add(nid)
+        elif action == "update":
+            nid = op.get("node_id")
+            if not nid:
+                errors.append("An update operation is missing node_id.")
+            elif nid not in existing_ids:
+                errors.append(f"Cannot update node '{nid}' — not found in this story.")
+            elif nid in deleted_ids:
+                errors.append(f"Cannot update node '{nid}' — it is also being deleted.")
+            else:
+                updated_ids.add(nid)
+
+    valid_targets = (existing_ids - deleted_ids) | set(temp_ids.keys())
+
+    for op in operations:
+        node_body = op.get("node") or {}
+        for c in node_body.get("choices") or []:
+            dest = c.get("destination_node_id")
+            if dest and dest not in valid_targets:
+                errors.append(
+                    f"Choice '{c.get('text','?')}' points to unknown destination '{dest}'."
+                )
+
+    return errors
+
+
+_INTERPRET_SYSTEM = """
+You are a collaborative story-structure assistant for a branching narrative game called Moments.
+The creator has spoken or typed a "ramble" describing what they want to happen next in their story.
+Your job: turn that ramble into a precise JSON proposal of graph operations the engine can apply safely.
+
+## Story structure
+A story is a directed graph of nodes. Each node has:
+  id, title, story_text, character (who speaks/narrates), choices (outgoing edges),
+  is_end, is_vote_gate (group votes on this node), is_location_gate (all players must arrive first).
+Each choice: id, text, destination_node_id (null = dead end), sets_flag (optional string), requires_flag (optional string).
+
+## Output — ONLY valid JSON, no markdown fences
+{
+  "summary": "<one sentence — what you are changing and why>",
+  "operations": [
+    {
+      "action": "create",
+      "temp_id": "n1",
+      "node": {
+        "title": "...", "story_text": "...", "character": "...",
+        "is_end": false, "is_vote_gate": false, "is_location_gate": false,
+        "choices": [{"id": "c1", "text": "...", "destination_node_id": "n2_or_existing_uuid_or_null", "sets_flag": null, "requires_flag": null}]
+      }
+    },
+    {"action": "update", "node_id": "<existing uuid>", "node": {<only changed fields>}},
+    {"action": "delete", "node_id": "<existing uuid>", "reason": "..."}
+  ],
+  "clarifications": [{"id": "q1", "question": "...", "options": ["A","B"], "allow_ai_decide": true}],
+  "warnings": ["..."]
+}
+
+## Rules
+- temp_ids must be short unique strings ("n1", "n2" …). The server maps them to real UUIDs.
+- Choice destination_node_id may be a temp_id or an existing real UUID or null.
+- Extend the graph by adding new nodes rather than overwriting existing content unless explicitly asked.
+- Match the existing story's tone and character voice in story_text.
+- Use clarifications when the ramble is ambiguous about something that matters to the graph structure.
+- Warn if deleting a start node or a node that many choices point to.
+- "clarifications" and "warnings" may be empty arrays [].
+""".strip()
+
+
+@api_router.post("/admin/ramble/transcribe")
+async def admin_ramble_transcribe(
+    story_id: str = Form(...),
+    audio: UploadFile = File(...),
+    _: bool = Depends(require_admin),
+):
+    key = os.environ.get("OPENAI_API_KEY")
+    if not key:
+        raise HTTPException(
+            503,
+            "Ramble AI is not configured — add OPENAI_API_KEY to your Replit Secrets, then restart the backend.",
+        )
+    audio_bytes = await audio.read()
+    filename = audio.filename or "ramble.webm"
+    content_type = audio.content_type or "audio/webm"
+
+    def call():
+        import io
+        response = requests.post(
+            "https://api.openai.com/v1/audio/transcriptions",
+            headers={"Authorization": f"Bearer {key}"},
+            files={"file": (filename, io.BytesIO(audio_bytes), content_type)},
+            data={"model": "whisper-1", "response_format": "text"},
+            timeout=120,
+        )
+        response.raise_for_status()
+        return response.text.strip()
+
+    try:
+        transcript = await asyncio.to_thread(call)
+    except Exception as exc:
+        logger.exception("Whisper transcription failed")
+        raise HTTPException(502, f"Transcription failed: {str(exc)[:160]}")
+
+    return {"transcript": transcript}
+
+
+@api_router.post("/admin/ramble/interpret")
+async def admin_ramble_interpret(
+    payload: RambleInterpretRequest,
+    _: bool = Depends(require_admin),
+):
+    story = await get_story(payload.story_id)
+    if not story:
+        raise HTTPException(404, "Story not found")
+
+    nodes_res = await _q(
+        lambda: supa.table("nodes").select("*").eq("story_id", payload.story_id).execute()
+    )
+    existing = nodes_res.data or []
+
+    # Build a compact graph summary for the AI prompt
+    graph_lines: List[str] = []
+    for n in existing:
+        start_marker = " [START]" if n["id"] == story.get("start_node_id") else ""
+        flags = []
+        if n.get("is_end"):
+            flags.append("END")
+        if n.get("is_vote_gate"):
+            flags.append("VOTE_GATE")
+        if n.get("is_location_gate"):
+            flags.append("LOCATION_GATE")
+        flag_str = f' [{",".join(flags)}]' if flags else ""
+        line = f'id={n["id"]}{start_marker}{flag_str} title="{n.get("title","")}" char="{n.get("character","")}"'
+        if n.get("story_text"):
+            line += f'\n  text: {n["story_text"][:150]}'
+        for c in n.get("choices") or []:
+            line += f'\n  → "{c.get("text","")}" → {c.get("destination_node_id") or "(null)"}'
+        graph_lines.append(line)
+
+    selected_ctx = ""
+    if payload.selected_node_id:
+        sel = next((n for n in existing if n["id"] == payload.selected_node_id), None)
+        if sel:
+            selected_ctx = (
+                f'The creator has selected node id={sel["id"]} title="{sel.get("title","")}" as their focus. '
+                f"Prefer extending from or connecting to this node."
+            )
+
+    user_payload = {
+        "story_title": story.get("title", ""),
+        "story_description": story.get("description", ""),
+        "start_node_id": story.get("start_node_id"),
+        "node_count": len(existing),
+        "graph": graph_lines,
+        "transcript": payload.transcript,
+        "variation_count": payload.variation_count,
+        "selected_node_context": selected_ctx,
+    }
+
+    result = await _openai_json(_INTERPRET_SYSTEM, user_payload)
+    validation_errors = _validate_proposal(payload.story_id, result, existing)
+    return {"proposal": result, "validation_errors": validation_errors}
+
+
+@api_router.post("/admin/ramble/apply")
+async def admin_ramble_apply(
+    payload: RambleApplyRequest,
+    _: bool = Depends(require_admin),
+):
+    story = await get_story(payload.story_id)
+    if not story:
+        raise HTTPException(404, "Story not found")
+
+    # Snapshot all existing nodes for rollback
+    existing_res = await _q(
+        lambda: supa.table("nodes").select("*").eq("story_id", payload.story_id).execute()
+    )
+    existing = existing_res.data or []
+
+    # Server-side re-validation (client may have stale data)
+    validation_errors = _validate_proposal(payload.story_id, payload.proposal, existing)
+    if validation_errors:
+        raise HTTPException(422, {"validation_errors": validation_errors})
+
+    operations = payload.proposal.get("operations") or []
+    # Map temp_ids → real UUIDs for create operations
+    id_map: Dict[str, str] = {
+        op["temp_id"]: str(uuid.uuid4())
+        for op in operations
+        if op.get("action") == "create" and op.get("temp_id")
+    }
+    backup = {n["id"]: n for n in existing}
+    touched: List[str] = []
+
+    try:
+        for op in operations:
+            action = op.get("action")
+
+            if action == "delete":
+                node_id = op["node_id"]
+                await _q(
+                    lambda nid=node_id: supa.table("nodes")
+                    .delete()
+                    .eq("id", nid)
+                    .eq("story_id", payload.story_id)
+                    .execute()
+                )
+                touched.append(node_id)
+                continue
+
+            body = dict(op.get("node") or {})
+
+            # Remap choice destinations from temp_ids to real UUIDs
+            choices: List[Dict[str, Any]] = []
+            for raw_c in body.get("choices") or []:
+                c = dict(raw_c)
+                c["id"] = c.get("id") or str(uuid.uuid4())
+                dest = c.get("destination_node_id")
+                if dest:
+                    c["destination_node_id"] = id_map.get(dest, dest)
+                choices.append(Choice(**c).model_dump())
+            body["choices"] = choices
+
+            if action == "create":
+                real_id = id_map[op["temp_id"]]
+                # Stagger positions so new nodes don't stack
+                offset_x = 300 + len([t for t in touched]) * 320
+                node_data = Node(
+                    id=real_id,
+                    story_id=payload.story_id,
+                    title=body.get("title", "New Scene"),
+                    story_text=body.get("story_text", ""),
+                    character=body.get("character", ""),
+                    is_end=bool(body.get("is_end", False)),
+                    is_vote_gate=bool(body.get("is_vote_gate", False)),
+                    is_location_gate=bool(body.get("is_location_gate", False)),
+                    choices=choices,
+                    position_x=float(body.get("position_x", offset_x)),
+                    position_y=float(body.get("position_y", 200)),
+                ).model_dump()
+                await _q(lambda d=node_data: supa.table("nodes").insert(d).execute())
+                touched.append(real_id)
+                # Auto-set start node on first node
+                if not story.get("start_node_id"):
+                    sid, nid = payload.story_id, real_id
+                    await _q(
+                        lambda sid=sid, nid=nid: supa.table("stories")
+                        .update({"start_node_id": nid})
+                        .eq("id", sid)
+                        .execute()
+                    )
+                    story["start_node_id"] = real_id
+
+            elif action == "update":
+                node_id = op["node_id"]
+                original = backup.get(node_id, {})
+                # Merge: original fields + incoming changes; never change id/story_id
+                merged = {
+                    **original,
+                    **{k: v for k, v in body.items() if k not in ("id", "story_id")},
+                    "id": node_id,
+                    "story_id": payload.story_id,
+                    "choices": choices,
+                }
+                node_data = Node(**merged).model_dump()
+                await _q(
+                    lambda d=node_data, nid=node_id: supa.table("nodes")
+                    .update(d)
+                    .eq("id", nid)
+                    .execute()
+                )
+                touched.append(node_id)
+
+        # --- Orphan repair: clear choice destinations that point to deleted nodes ---
+        deleted_ids = {op["node_id"] for op in operations if op.get("action") == "delete"}
+        if deleted_ids:
+            remaining_res = await _q(
+                lambda: supa.table("nodes")
+                .select("*")
+                .eq("story_id", payload.story_id)
+                .execute()
+            )
+            for n in remaining_res.data or []:
+                old_choices = n.get("choices") or []
+                repaired = []
+                changed = False
+                for c in old_choices:
+                    if c.get("destination_node_id") in deleted_ids:
+                        repaired.append({**c, "destination_node_id": None})
+                        changed = True
+                    else:
+                        repaired.append(c)
+                if changed:
+                    nid = n["id"]
+                    await _q(
+                        lambda nid=nid, rc=repaired: supa.table("nodes")
+                        .update({"choices": rc})
+                        .eq("id", nid)
+                        .execute()
+                    )
+            # Clear start_node_id if that node was deleted
+            if story.get("start_node_id") in deleted_ids:
+                sid = payload.story_id
+                await _q(
+                    lambda: supa.table("stories")
+                    .update({"start_node_id": None})
+                    .eq("id", sid)
+                    .execute()
+                )
+
+        return {"ok": True, "created_id_map": id_map, "touched_node_ids": touched}
+
+    except HTTPException:
+        raise
+    except Exception:
+        logger.exception("Ramble apply failed — rolling back to snapshot")
+        try:
+            await _q(
+                lambda: supa.table("nodes")
+                .delete()
+                .eq("story_id", payload.story_id)
+                .execute()
+            )
+            for n in existing:
+                await _q(lambda d=n: supa.table("nodes").insert(d).execute())
+        except Exception:
+            logger.exception("Rollback also failed — manual recovery needed")
+        raise HTTPException(500, "Could not apply proposal — original graph was restored.")
 
 
 # ============================================================

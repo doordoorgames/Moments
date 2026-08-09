@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,7 +25,7 @@ export default function AdminStories() {
     const [newTitle, setNewTitle] = useState("");
     const [newDesc, setNewDesc] = useState("");
 
-    const load = async () => {
+    const load = useCallback(async () => {
         try {
             const list = await api.adminListStories();
             setStories(list);
@@ -37,11 +37,11 @@ export default function AdminStories() {
                 toast.error("Failed to load stories");
             }
         }
-    };
+    }, [nav]);
 
     useEffect(() => {
         load();
-    }, []);
+    }, [load]);
 
     const create = async () => {
         if (!newTitle.trim()) return;

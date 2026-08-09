@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
-import { api } from "@/lib/api";
+import { adminLoginErrorMessage, api } from "@/lib/api";
 import { Wrench, ArrowLeft } from "lucide-react";
 
 export default function AdminLogin() {
@@ -22,10 +22,7 @@ export default function AdminLogin() {
             toast.success("Welcome, story architect.");
             nav("/admin/stories");
         } catch (err) {
-            toast.error(
-                err?.response?.data?.detail ||
-                    "Invalid password. Dev password is exactly: admin123",
-            );
+            toast.error(adminLoginErrorMessage(err));
         } finally {
             setBusy(false);
         }
@@ -68,18 +65,20 @@ export default function AdminLogin() {
                         >
                             Sign in
                         </Button>
-                        <p className="text-[11px] text-muted-foreground">
-                            Dev password:{" "}
-                            <button
-                                type="button"
-                                onClick={() => setPassword("admin123")}
-                                className="font-mono text-foreground underline decoration-dotted underline-offset-2 hover:text-accent"
-                                data-testid="admin-login-fill-dev-password"
-                            >
-                                admin123
-                            </button>{" "}
-                            (click to fill)
-                        </p>
+                        {process.env.NODE_ENV !== "production" && (
+                            <p className="text-[11px] text-muted-foreground">
+                                Dev password:{" "}
+                                <button
+                                    type="button"
+                                    onClick={() => setPassword("admin123")}
+                                    className="font-mono text-foreground underline decoration-dotted underline-offset-2 hover:text-accent"
+                                    data-testid="admin-login-fill-dev-password"
+                                >
+                                    admin123
+                                </button>{" "}
+                                (click to fill)
+                            </p>
+                        )}
                     </form>
                 </Card>
             </div>

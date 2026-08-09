@@ -306,6 +306,7 @@ function CanvasInner() {
 
                 {selectedNode && (
                     <NodeInspector
+                        key={selectedNode.id}
                         node={selectedNode}
                         allNodes={rawNodes}
                         isStart={selectedNode.id === story?.start_node_id}

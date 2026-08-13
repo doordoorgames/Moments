@@ -1,7 +1,7 @@
 import { memo } from "react";
 import { Handle, Position } from "@xyflow/react";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Vote, Flag, ArrowRight, Play, Milestone } from "lucide-react";
+import { MapPin, Vote, Flag, ArrowRight, Play, Milestone, BookOpen } from "lucide-react";
 
 const TILTS = ["--card-tilt: -1.8deg", "--card-tilt: 1.2deg", "--card-tilt: -0.6deg",
                "--card-tilt: 0.9deg", "--card-tilt: -1.4deg", "--card-tilt: 0.5deg"];
@@ -11,10 +11,11 @@ function NodeCard({ id, data, selected }) {
     const isStart = data.isStart;
     const toneIdx = (data.toneIndex ?? 0) % 6;
     const choices = n.choices || [];
+    const isNarration = n.node_type === "narration";
 
     return (
         <div
-            className={`story-card tone-${toneIdx}${selected ? " is-selected" : ""}`}
+            className={`story-card tone-${toneIdx}${isNarration ? " narration-card" : ""}${selected ? " is-selected" : ""}`}
             style={{ [TILTS[toneIdx].split(":")[0].trim()]: TILTS[toneIdx].split(":")[1].trim() }}
             data-testid={`admin-canvas-node-${n.id}`}
             onClick={() => data.onSelect?.(n.id)}
@@ -33,6 +34,11 @@ function NodeCard({ id, data, selected }) {
                     {isStart && (
                         <Badge className="story-sticker gap-1 rounded-full text-[10px]">
                             <Play className="h-3 w-3" /> START
+                        </Badge>
+                    )}
+                    {isNarration && (
+                        <Badge className="narration-sticker gap-1 rounded-full text-[10px]">
+                            <BookOpen className="h-3 w-3" /> Narration
                         </Badge>
                     )}
                     {n.is_location_gate && (
@@ -111,6 +117,29 @@ function NodeCard({ id, data, selected }) {
                             />
                         </div>
                     ))}
+                </div>
+            )}
+            {isNarration && (
+                <div className="story-choices px-3 py-2">
+                    <div className="relative flex items-center justify-between gap-2 text-[11px] text-[#7a1d50]">
+                        <span className="inline-flex items-center gap-1"><ArrowRight className="h-3 w-3" /> Next</span>
+                        <span className="truncate opacity-70">
+                            {n.narration_next_node_id ? "connected" : "not connected"}
+                        </span>
+                        <Handle
+                            type="source"
+                            position={Position.Right}
+                            id="narration-next"
+                            data-testid={`admin-narration-handle-${n.id}`}
+                            style={{
+                                right: -8,
+                                background: "#ff69b4",
+                                border: "2px solid rgba(122,29,80,.55)",
+                                width: 13,
+                                height: 13,
+                            }}
+                        />
+                    </div>
                 </div>
             )}
         </div>

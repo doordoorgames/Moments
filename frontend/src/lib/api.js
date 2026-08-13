@@ -71,6 +71,10 @@ export const api = {
     resetRoom: (code) => axios.post(apiUrl(`/rooms/${code}/reset`)).then((r) => r.data),
     castVote: (code, player_id, choice_id) =>
         axios.post(apiUrl(`/rooms/${code}/vote`), { player_id, choice_id }).then((r) => r.data),
+    advanceNarration: (code, player_id, session_token) =>
+        axios
+            .post(apiUrl(`/rooms/${code}/narration/next`), { player_id, session_token })
+            .then((r) => r.data),
 
     // admin (unchanged)
     adminLogin: (password) =>

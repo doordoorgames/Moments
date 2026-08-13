@@ -13,7 +13,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-import { Plus, Trash2, Save, Star, X, Flag } from "lucide-react";
+import { Plus, Trash2, Save, Star, X, Flag, BookOpen } from "lucide-react";
 
 const uid = () => Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
 
@@ -29,6 +29,7 @@ export default function NodeInspector({
     const [draft, setDraft] = useState(node);
 
     if (!draft) return null;
+    const isNarration = draft.node_type === "narration";
 
     const updateChoice = (idx, patch) => {
         setDraft((d) => {
@@ -60,7 +61,10 @@ export default function NodeInspector({
             data-testid="admin-node-inspector-panel"
         >
             <div className="inspector-head flex items-center justify-between px-4 py-3">
-                <div className="text-sm font-semibold">✎ Polish this story card</div>
+                <div className="flex items-center gap-1.5 text-sm font-semibold">
+                    {isNarration && <BookOpen className="h-4 w-4 text-pink-400" />}
+                    {isNarration ? "Edit narration card" : "✎ Polish this story card"}
+                </div>
                 <div className="flex items-center gap-1">
                     {!isStart && (
                         <Button
@@ -93,12 +97,12 @@ export default function NodeInspector({
                         <Input
                             value={draft.character || ""}
                             onChange={(e) => setDraft({ ...draft, character: e.target.value })}
-                            placeholder="e.g. Zayn"
+                            placeholder={isNarration ? "e.g. Narrator" : "e.g. Zayn"}
                             data-testid="admin-node-character-input"
                         />
                     </div>
                     <div className="space-y-1.5">
-                        <Label>Story text</Label>
+                        <Label>{isNarration ? "Narration text" : "Story text"}</Label>
                         <Textarea
                             value={draft.story_text || ""}
                             onChange={(e) => setDraft({ ...draft, story_text: e.target.value })}
@@ -107,7 +111,7 @@ export default function NodeInspector({
                         />
                     </div>
 
-                    <div className="space-y-2 rounded-md border border-border bg-secondary/30 p-3">
+                    {!isNarration && <div className="space-y-2 rounded-md border border-border bg-secondary/30 p-3">
                         <div className="flex items-center justify-between">
                             <div>
                                 <div className="text-xs font-medium">Location gate</div>
@@ -151,11 +155,45 @@ export default function NodeInspector({
                                 data-testid="admin-node-end-switch"
                             />
                         </div>
-                    </div>
+                    </div>}
 
-                    <Separator />
+                    {isNarration && (
+                        <div className="space-y-2 rounded-md border border-pink-400/40 bg-pink-500/10 p-3">
+                            <div>
+                                <div className="text-xs font-medium">Next destination</div>
+                                <div className="text-[10px] text-muted-foreground">
+                                    Only the room host can advance to this card.
+                                </div>
+                            </div>
+                            <Select
+                                value={draft.narration_next_node_id || "__none"}
+                                onValueChange={(v) =>
+                                    setDraft({
+                                        ...draft,
+                                        narration_next_node_id: v === "__none" ? null : v,
+                                    })
+                                }
+                            >
+                                <SelectTrigger data-testid="admin-narration-next-select">
+                                    <SelectValue placeholder="Pick the next card" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="__none">(no destination)</SelectItem>
+                                    {allNodes
+                                        .filter((n) => n.id !== draft.id)
+                                        .map((n) => (
+                                            <SelectItem key={n.id} value={n.id}>
+                                                {n.node_type === "narration" ? "Narration: " : ""}{n.title}
+                                            </SelectItem>
+                                        ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    )}
 
-                    <div className="space-y-2">
+                    {!isNarration && <Separator />}
+
+                    {!isNarration && <div className="space-y-2">
                         <div className="flex items-center justify-between">
                             <Label>Choices</Label>
                             <Button
@@ -257,7 +295,7 @@ export default function NodeInspector({
                                 </div>
                             </div>
                         ))}
-                    </div>
+                    </div>}
                 </div>
             </ScrollArea>
 

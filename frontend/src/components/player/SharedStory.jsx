@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { api } from "@/lib/api";
 import { toast } from "sonner";
 import Wheel from "@/components/player/Wheel";
-import { Check } from "lucide-react";
+import { Check, ArrowRight, Crown, BookOpen } from "lucide-react";
 
 /**
  * SharedStory
@@ -21,6 +21,9 @@ export default function SharedStory({ state, player, code }) {
     const players = state.players || [];
     const voteStats = state.vote_stats || { voted_count: 0, total_players: players.length, voted_player_ids: [] };
     const phase = room?.phase; // reading | voting | wheel | ended
+    const isNarration = phase === "narration" || node?.node_type === "narration";
+    const currentPlayer = players.find((p) => p.id === player?.id);
+    const isHost = !!currentPlayer?.is_host;
 
     const [voting, setVoting] = useState(false);
     const [flashy, setFlashy] = useState(0); // toggles hint text
@@ -75,6 +78,19 @@ export default function SharedStory({ state, player, code }) {
         }
     };
 
+    const [advancing, setAdvancing] = useState(false);
+    const advanceNarration = async () => {
+        if (!isHost || advancing) return;
+        setAdvancing(true);
+        try {
+            await api.advanceNarration(code, player.id, player.session_token);
+        } catch (err) {
+            toast.error(err?.response?.data?.detail || "Could not advance narration");
+        } finally {
+            setAdvancing(false);
+        }
+    };
+
     if (!node) return null;
 
     return (
@@ -97,6 +113,11 @@ export default function SharedStory({ state, player, code }) {
                         transition={{ duration: 0.24, ease: [0.16, 1, 0.3, 1] }}
                     >
                         <div className="flex items-center gap-2">
+                            {isNarration && (
+                                <Badge className="gap-1 rounded-full bg-pink-500 text-[10px] uppercase tracking-widest text-white">
+                                    <BookOpen className="h-3 w-3" /> Narration
+                                </Badge>
+                            )}
                             {node.character && (
                                 <Badge
                                     variant="secondary"
@@ -141,7 +162,7 @@ export default function SharedStory({ state, player, code }) {
                         </Card>
 
                         {/* Choice list */}
-                        <div className="mt-5 space-y-2" data-testid="choice-list">
+                        {!isNarration && <div className="mt-5 space-y-2" data-testid="choice-list">
                             {choices.map((c) => {
                                 const canVote = phase === "voting" && !myVote;
                                 return (
@@ -177,13 +198,34 @@ export default function SharedStory({ state, player, code }) {
                                     </button>
                                 );
                             })}
-                        </div>
+                        </div>}
+
+                        {isNarration && (
+                            <div className="mt-6" data-testid="narration-controls">
+                                {isHost ? (
+                                    <Button
+                                        onClick={advanceNarration}
+                                        disabled={advancing || !node.narration_next_node_id}
+                                        className="h-12 w-full gap-2 bg-pink-500 text-base text-white hover:bg-pink-600"
+                                        data-testid="narration-next-button"
+                                    >
+                                        <Crown className="h-4 w-4" />
+                                        {advancing ? "Moving everyone…" : "Next"}
+                                        <ArrowRight className="h-4 w-4" />
+                                    </Button>
+                                ) : (
+                                    <div className="rounded-lg border border-pink-400/30 bg-pink-500/5 p-3 text-center text-xs text-muted-foreground">
+                                        Waiting for the host to continue…
+                                    </div>
+                                )}
+                            </div>
+                        )}
                     </motion.div>
                 </AnimatePresence>
             </div>
 
             {/* Bottom dock: reading = subtle hint; voting = progress bar + counter; wheel = full overlay */}
-            {phase === "reading" && (
+            {phase === "reading" && !isNarration && (
                 <div className="fixed inset-x-0 bottom-0 border-t border-border bg-background/90 px-4 py-3 text-center backdrop-blur">
                     <div
                         className="mx-auto max-w-md text-xs text-muted-foreground"

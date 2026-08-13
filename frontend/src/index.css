@@ -139,6 +139,21 @@ code {
     transform: translateY(-1px);
 }
 
+.narration-launch {
+  color: white;
+  background: #ec4899;
+  border: 1px solid rgba(255,255,255,.35);
+  box-shadow: 0 6px 18px rgba(236,72,153,.3);
+}
+.narration-launch:hover { background: #db2777; }
+
+.story-card.narration-card {
+  background: #ffc7df;
+  border-color: rgba(219,39,119,.65);
+  box-shadow: 0 12px 30px rgba(190,24,93,.24);
+}
+.narration-sticker { background: #db2777; color: white; }
+
 /* Canvas background */
 .creator-canvas {
     position: relative;

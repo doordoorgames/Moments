@@ -17,12 +17,13 @@ import logging
 import os
 import random
 import re
+import secrets
 import string
 import uuid
 from collections import Counter, defaultdict
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Literal, Optional
 
 from dotenv import load_dotenv
 from fastapi import (
@@ -101,6 +102,8 @@ class Node(BaseModel):
     is_location_gate: bool = False
     is_vote_gate: bool = False
     is_end: bool = False
+    node_type: Literal["story", "narration"] = "story"
+    narration_next_node_id: Optional[str] = None
     choices: List[Choice] = Field(default_factory=list)
 
 
@@ -120,6 +123,7 @@ class Player(BaseModel):
     nickname: str
     joined_at: str = Field(default_factory=_now_iso)
     is_host: bool = False
+    session_token: str = Field(default_factory=lambda: secrets.token_urlsafe(32))
 
 
 class Room(BaseModel):
@@ -163,6 +167,8 @@ class NodeCreate(BaseModel):
     is_location_gate: bool = False
     is_vote_gate: bool = False
     is_end: bool = False
+    node_type: Literal["story", "narration"] = "story"
+    narration_next_node_id: Optional[str] = None
     choices: List[Choice] = Field(default_factory=list)
 
 
@@ -175,6 +181,8 @@ class NodeUpdate(BaseModel):
     is_location_gate: Optional[bool] = None
     is_vote_gate: Optional[bool] = None
     is_end: Optional[bool] = None
+    node_type: Optional[Literal["story", "narration"]] = None
+    narration_next_node_id: Optional[str] = None
     choices: Optional[List[Choice]] = None
 
 
@@ -207,6 +215,11 @@ class RoomSelectStoryRequest(BaseModel):
 class VoteRequest(BaseModel):
     player_id: str
     choice_id: str
+
+
+class NarrationAdvanceRequest(BaseModel):
+    player_id: str
+    session_token: str
 
 
 # ============================================================
@@ -735,7 +748,9 @@ async def compute_room_state(code: str) -> Optional[Dict[str, Any]]:
         return None
 
     players_res = await _q(
-        lambda: supa.table("players").select("*").eq("room_code", code).execute()
+        lambda: supa.table("players")
+        .select("id,room_code,nickname,joined_at,is_host")
+        .eq("room_code", code).execute()
     )
     players = players_res.data or []
 
@@ -747,7 +762,7 @@ async def compute_room_state(code: str) -> Optional[Dict[str, Any]]:
     filtered_choices: List[Dict[str, Any]] = []
     if room.get("current_node_id"):
         current_node = await get_node(room["current_node_id"])
-        if current_node:
+        if current_node and current_node.get("node_type", "story") != "narration":
             filtered_choices = filter_choices_by_flags(current_node, room.get("flags") or [])
 
     vote_docs: List[Dict[str, Any]] = []
@@ -819,6 +834,19 @@ async def advance_to_node(code: str, node_id: str, flags: List[str]) -> None:
             "wheel_options": None,
             "wheel_winner_choice_id": None,
         }).eq("code", code).execute())
+        await broadcast_room_state(code)
+        return
+
+    if node.get("node_type", "story") == "narration":
+        await _q(lambda: supa.table("rooms").update({
+            "current_node_id": node_id,
+            "phase": "narration",
+            "phase_ends_at": None,
+            "flags": flags,
+            "wheel_options": None,
+            "wheel_winner_choice_id": None,
+        }).eq("code", code).execute())
+        await _q(lambda: supa.table("votes").delete().eq("room_code", code).execute())
         await broadcast_room_state(code)
         return
 
@@ -1064,7 +1092,15 @@ async def admin_get_graph(story_id: str, _: bool = Depends(require_admin)):
 
 @api_router.post("/admin/nodes", response_model=Node)
 async def admin_create_node(payload: NodeCreate, _: bool = Depends(require_admin)):
-    node = Node(**payload.model_dump())
+    body = payload.model_dump()
+    if body.get("node_type") == "narration":
+        body.update({
+            "choices": [],
+            "is_location_gate": False,
+            "is_vote_gate": False,
+            "is_end": False,
+        })
+    node = Node(**body)
     # model_dump() recursively converts Choice objects to dicts for JSONB
     await _q(lambda: supa.table("nodes").insert(node.model_dump()).execute())
     story = await get_story(payload.story_id)
@@ -1082,7 +1118,9 @@ async def admin_create_node(payload: NodeCreate, _: bool = Depends(require_admin
 async def admin_update_node(node_id: str, payload: NodeUpdate, _: bool = Depends(require_admin)):
     updates: Dict[str, Any] = {}
     for k, v in payload.model_dump().items():
-        if v is None:
+        if v is None and k != "narration_next_node_id":
+            continue
+        if k == "narration_next_node_id" and k not in payload.model_fields_set:
             continue
         if k == "choices":
             updates[k] = [
@@ -1090,6 +1128,13 @@ async def admin_update_node(node_id: str, payload: NodeUpdate, _: bool = Depends
             ]
         else:
             updates[k] = v
+    if updates.get("node_type") == "narration":
+        updates.update({
+            "choices": [],
+            "is_location_gate": False,
+            "is_vote_gate": False,
+            "is_end": False,
+        })
     if updates:
         await _q(lambda: supa.table("nodes").update(updates).eq("id", node_id).execute())
     return await get_node(node_id)
@@ -1114,6 +1159,16 @@ async def admin_delete_node(node_id: str, _: bool = Depends(require_admin)):
         await _q(
             lambda oid=oid, nc=nc: supa.table("nodes").update({"choices": nc})
             .eq("id", oid).execute()
+        )
+    narration_refs = [
+        n for n in (all_res.data or [])
+        if n.get("narration_next_node_id") == node_id
+    ]
+    for other in narration_refs:
+        oid = other["id"]
+        await _q(
+            lambda oid=oid: supa.table("nodes")
+            .update({"narration_next_node_id": None}).eq("id", oid).execute()
         )
     await _q(lambda: supa.table("nodes").delete().eq("id", node_id).execute())
     # Clear start_node_id on any story pointing to this node
@@ -1316,6 +1371,38 @@ async def cast_vote(code: str, payload: VoteRequest):
         _cancel_room_task(code)
         await resolve_votes(code, nid, reason="all_voted")
 
+    return {"ok": True}
+
+
+@api_router.post("/rooms/{code}/narration/next")
+async def advance_narration(code: str, payload: NarrationAdvanceRequest):
+    room = await get_room(code)
+    if not room:
+        raise HTTPException(404, "Room not found")
+    if room.get("phase") != "narration" or not room.get("current_node_id"):
+        raise HTTPException(400, "The room is not showing a narration card")
+
+    player = await get_player(payload.player_id)
+    if (
+        not player
+        or player.get("room_code") != code
+        or not player.get("is_host")
+        or not secrets.compare_digest(
+            player.get("session_token") or "", payload.session_token or ""
+        )
+    ):
+        raise HTTPException(403, "Only the room host can advance narration")
+
+    node = await get_node(room["current_node_id"])
+    if not node or node.get("node_type", "story") != "narration":
+        raise HTTPException(400, "Invalid narration card")
+    destination = node.get("narration_next_node_id")
+    if not destination:
+        raise HTTPException(400, "This narration card has no next destination")
+    if not await get_node(destination):
+        raise HTTPException(400, "The narration card's next destination does not exist")
+
+    await advance_to_node(code, destination, room.get("flags") or [])
     return {"ok": True}
 
 

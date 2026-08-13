@@ -19,7 +19,7 @@ import { api } from "@/lib/api";
 import { StoryNode } from "@/components/admin/StoryNode";
 import NodeInspector from "@/components/admin/NodeInspector";
 import RambleStudio from "@/components/admin/RambleStudio";
-import { ArrowLeft, Plus, LogOut, Loader2, Mic } from "lucide-react";
+import { ArrowLeft, Plus, LogOut, Loader2, Mic, BookOpen } from "lucide-react";
 
 const nodeTypes = { storyNode: StoryNode };
 
@@ -53,6 +53,20 @@ function CanvasInner() {
             }));
             const rf_edges = [];
             for (const n of nodes) {
+                if (n.node_type === "narration" && n.narration_next_node_id) {
+                    rf_edges.push({
+                        id: `${n.id}-narration-next-${n.narration_next_node_id}`,
+                        source: n.id,
+                        sourceHandle: "narration-next",
+                        target: n.narration_next_node_id,
+                        targetHandle: "in",
+                        markerEnd: { type: MarkerType.ArrowClosed, color: "rgba(255,255,255,.92)" },
+                        label: "Next",
+                        labelBgPadding: [4, 2],
+                        labelBgStyle: { fill: "rgba(255,228,242,.9)", color: "#7a1d50", fontSize: 10 },
+                        style: { strokeWidth: 2.5, stroke: "rgba(255,105,180,.95)" },
+                    });
+                }
                 for (const c of n.choices || []) {
                     if (c.destination_node_id) {
                         rf_edges.push({
@@ -147,6 +161,16 @@ function CanvasInner() {
             if (!source || !target || !sourceHandle) return;
             const node = rawNodes.find((n) => n.id === source);
             if (!node) return;
+            if (node.node_type === "narration" && sourceHandle === "narration-next") {
+                try {
+                    const updated = await api.adminUpdateNode(source, { narration_next_node_id: target });
+                    setRawNodes((rn) => rn.map((n) => (n.id === source ? updated : n)));
+                    toast.success("Narration linked");
+                } catch {
+                    toast.error("Failed to link narration");
+                }
+                return;
+            }
             const newChoices = (node.choices || []).map((c) =>
                 c.id === sourceHandle ? { ...c, destination_node_id: target } : c,
             );
@@ -184,6 +208,30 @@ function CanvasInner() {
         }
     };
 
+    const addNarrationNode = async () => {
+        try {
+            const cx = 200 + Math.floor(Math.random() * 400);
+            const cy = 200 + Math.floor(Math.random() * 200);
+            const n = await api.adminCreateNode({
+                story_id: storyId,
+                title: "New Narration",
+                story_text: "",
+                character: "Narrator",
+                position_x: cx,
+                position_y: cy,
+                node_type: "narration",
+                narration_next_node_id: null,
+                choices: [],
+            });
+            setRawNodes((rn) => [...rn, n]);
+            setSelectedId(n.id);
+            if (!story?.start_node_id) load();
+            toast.success("Narration card added");
+        } catch {
+            toast.error("Failed to add narration card");
+        }
+    };
+
     const saveNode = async (draft) => {
         try {
             const updated = await api.adminUpdateNode(draft.id, {
@@ -193,6 +241,8 @@ function CanvasInner() {
                 is_location_gate: !!draft.is_location_gate,
                 is_vote_gate: !!draft.is_vote_gate,
                 is_end: !!draft.is_end,
+                node_type: draft.node_type || "story",
+                narration_next_node_id: draft.narration_next_node_id || null,
                 choices: draft.choices,
             });
             setRawNodes((rn) => rn.map((n) => (n.id === updated.id ? updated : n)));
@@ -261,6 +311,14 @@ function CanvasInner() {
                     </Button>
                     <Button size="sm" onClick={addNode} data-testid="admin-add-node-button">
                         <Plus className="mr-1 h-3.5 w-3.5" /> Add story card
+                    </Button>
+                    <Button
+                        size="sm"
+                        className="narration-launch"
+                        onClick={addNarrationNode}
+                        data-testid="admin-add-narration-button"
+                    >
+                        <BookOpen className="mr-1 h-3.5 w-3.5" /> Add Narration Card
                     </Button>
                     <Button
                         size="sm"

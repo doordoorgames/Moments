@@ -22,6 +22,8 @@ create table if not exists nodes (
   is_location_gate boolean not null default false,
   is_vote_gate     boolean not null default false,
   is_end           boolean not null default false,
+  node_type        text not null default 'story' check (node_type in ('story', 'narration')),
+  narration_next_node_id text,
   choices          jsonb not null default '[]'::jsonb
   -- choices schema: [{id, text, destination_node_id, sets_flag, requires_flag}, ...]
 );
@@ -46,7 +48,8 @@ create table if not exists players (
   room_code text not null references rooms(code) on delete cascade,
   nickname  text not null,
   joined_at text not null default '',
-  is_host   boolean not null default false
+  is_host   boolean not null default false,
+  session_token text not null default ''
 );
 
 -- Votes: one vote per player per node per room (unique enforced below)

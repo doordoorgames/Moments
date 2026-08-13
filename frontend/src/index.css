@@ -243,6 +243,79 @@ code {
     color: rgba(56, 31, 47, 0.78);
 }
 
+/* Visual routing controls */
+.choice-route-row {
+    min-height: 30px;
+    padding-right: 12px;
+}
+.choice-letter {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    flex: 0 0 20px;
+    border-radius: 999px;
+    background: var(--route-color);
+    color: #3c2136;
+    font-size: 10px;
+    font-weight: 900;
+    box-shadow: 0 2px 0 rgba(60, 33, 54, 0.25);
+}
+.story-card .route-handle {
+    width: 18px;
+    height: 18px;
+    border: 3px solid #593965;
+    box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.7);
+    transition: transform 0.15s, box-shadow 0.15s;
+}
+.story-card .route-handle:hover { box-shadow: 0 0 0 5px rgba(255, 255, 255, 0.9); }
+.story-card .route-handle-in {
+    left: -11px;
+    top: 50%;
+    background: #fff4ef;
+}
+.story-card .route-handle-in:hover { transform: translate(-50%, -50%) scale(1.25); }
+.story-card .route-handle-out {
+    right: -12px;
+    top: 50%;
+    background: var(--route-color);
+}
+.story-card .route-handle-out:hover { transform: translate(50%, -50%) scale(1.25); }
+.story-card .route-handle-out.is-open {
+    border-style: dashed;
+    animation: route-open-pulse 1.8s ease-in-out infinite;
+}
+.route-input-label {
+    position: absolute;
+    left: -33px;
+    top: calc(50% - 7px);
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 9px;
+    font-weight: 900;
+    letter-spacing: 0.08em;
+    pointer-events: none;
+}
+.canvas-route-hint {
+    max-width: min(700px, calc(100vw - 40px));
+    border: 1px solid rgba(255, 255, 255, 0.28);
+    border-radius: 999px;
+    background: rgba(54, 31, 65, 0.9);
+    padding: 7px 13px;
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 11px;
+    text-align: center;
+    box-shadow: 0 6px 18px rgba(30, 15, 36, 0.25);
+}
+.creator-canvas .react-flow__edge-textbg {
+    fill: rgba(69, 40, 78, 0.94);
+}
+
+@keyframes route-open-pulse {
+    0%, 100% { box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.65); }
+    50% { box-shadow: 0 0 0 6px rgba(255, 255, 255, 0.28); }
+}
+
 /* Inspector panel */
 .creator-inspector {
     background: #fff4ef;

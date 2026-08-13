@@ -2,11 +2,12 @@ import { memo } from "react";
 import { Handle, Position } from "@xyflow/react";
 import { Badge } from "@/components/ui/badge";
 import { MapPin, Vote, Flag, ArrowRight, Play, Milestone, BookOpen } from "lucide-react";
+import { CHOICE_COLORS, NARRATION_COLOR } from "@/lib/graphRouting";
 
 const TILTS = ["--card-tilt: -1.8deg", "--card-tilt: 1.2deg", "--card-tilt: -0.6deg",
                "--card-tilt: 0.9deg", "--card-tilt: -1.4deg", "--card-tilt: 0.5deg"];
 
-function NodeCard({ id, data, selected }) {
+function NodeCard({ data, selected, isConnectable }) {
     const n = data.node;
     const isStart = data.isStart;
     const toneIdx = (data.toneIndex ?? 0) % 6;
@@ -25,8 +26,12 @@ function NodeCard({ id, data, selected }) {
                 type="target"
                 position={Position.Left}
                 id="in"
-                style={{ top: 26, background: "rgba(255,255,255,.9)", border: "2px solid rgba(100,40,80,.5)" }}
+                isConnectable={isConnectable}
+                className="route-handle route-handle-in"
+                aria-label={`Connect into ${n.title || "this card"}`}
+                data-testid={`admin-node-incoming-handle-${n.id}`}
             />
+            <span className="route-input-label">IN</span>
 
             {/* Header row */}
             <div className="story-card-head flex items-center justify-between px-3 py-2">
@@ -80,10 +85,11 @@ function NodeCard({ id, data, selected }) {
                     {choices.map((c, idx) => (
                         <div
                             key={c.id}
-                            className="relative flex items-center justify-between gap-2"
+                            className="choice-route-row relative flex items-center justify-between gap-2"
+                            style={{ "--route-color": CHOICE_COLORS[idx % CHOICE_COLORS.length] }}
                         >
                             <div className="flex min-w-0 items-center gap-1.5 text-[11px] text-[#3c2136]">
-                                <ArrowRight className="h-3 w-3 opacity-50" />
+                                <span className="choice-letter">{String.fromCharCode(65 + idx)}</span>
                                 <span className="truncate">{c.text || "(empty)"}</span>
                             </div>
                             <div className="flex items-center gap-1">
@@ -103,17 +109,10 @@ function NodeCard({ id, data, selected }) {
                                 type="source"
                                 position={Position.Right}
                                 id={c.id}
+                                isConnectable={isConnectable}
+                                aria-label={`Connect Choice ${String.fromCharCode(65 + idx)}`}
                                 data-testid={`admin-node-handle-${n.id}-${c.id}`}
-                                style={{
-                                    top: "auto",
-                                    bottom: "auto",
-                                    right: -8,
-                                    transform: "translateY(0)",
-                                    background: "rgba(255,255,255,.9)",
-                                    border: "2px solid rgba(100,40,80,.5)",
-                                    width: 13,
-                                    height: 13,
-                                }}
+                                className={`route-handle route-handle-out${c.destination_node_id ? " is-connected" : " is-open"}`}
                             />
                         </div>
                     ))}
@@ -121,23 +120,22 @@ function NodeCard({ id, data, selected }) {
             )}
             {isNarration && (
                 <div className="story-choices px-3 py-2">
-                    <div className="relative flex items-center justify-between gap-2 text-[11px] text-[#7a1d50]">
+                    <div
+                        className="choice-route-row relative flex items-center justify-between gap-2 text-[11px] text-[#7a1d50]"
+                        style={{ "--route-color": NARRATION_COLOR }}
+                    >
                         <span className="inline-flex items-center gap-1"><ArrowRight className="h-3 w-3" /> Next</span>
                         <span className="truncate opacity-70">
-                            {n.narration_next_node_id ? "connected" : "not connected"}
+                            {n.narration_next_node_id ? "connected" : "drag to connect"}
                         </span>
                         <Handle
                             type="source"
                             position={Position.Right}
                             id="narration-next"
+                            isConnectable={isConnectable}
+                            aria-label="Connect Narration Next"
                             data-testid={`admin-narration-handle-${n.id}`}
-                            style={{
-                                right: -8,
-                                background: "#ff69b4",
-                                border: "2px solid rgba(122,29,80,.55)",
-                                width: 13,
-                                height: 13,
-                            }}
+                            className={`route-handle route-handle-out${n.narration_next_node_id ? " is-connected" : " is-open"}`}
                         />
                     </div>
                 </div>

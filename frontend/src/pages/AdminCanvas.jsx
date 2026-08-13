@@ -8,9 +8,11 @@ import {
     MiniMap,
     useNodesState,
     useEdgesState,
-    addEdge,
-    MarkerType,
     BackgroundVariant,
+    ConnectionLineType,
+    Panel,
+    addEdge,
+    reconnectEdge,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import { Button } from "@/components/ui/button";
@@ -19,9 +21,12 @@ import { api } from "@/lib/api";
 import { StoryNode } from "@/components/admin/StoryNode";
 import NodeInspector from "@/components/admin/NodeInspector";
 import RambleStudio from "@/components/admin/RambleStudio";
+import { buildRouteEdges, routeUpdateFor } from "@/lib/graphRouting";
 import { ArrowLeft, Plus, LogOut, Loader2, Mic, BookOpen } from "lucide-react";
 
 const nodeTypes = { storyNode: StoryNode };
+const choiceId = () =>
+    globalThis.crypto?.randomUUID?.() || `choice-${Date.now()}-${Math.random().toString(36).slice(2)}`;
 
 function CanvasInner() {
     const { id: storyId } = useParams();
@@ -51,39 +56,7 @@ function CanvasInner() {
                 },
                 selected: n.id === selected,
             }));
-            const rf_edges = [];
-            for (const n of nodes) {
-                if (n.node_type === "narration" && n.narration_next_node_id) {
-                    rf_edges.push({
-                        id: `${n.id}-narration-next-${n.narration_next_node_id}`,
-                        source: n.id,
-                        sourceHandle: "narration-next",
-                        target: n.narration_next_node_id,
-                        targetHandle: "in",
-                        markerEnd: { type: MarkerType.ArrowClosed, color: "rgba(255,255,255,.92)" },
-                        label: "Next",
-                        labelBgPadding: [4, 2],
-                        labelBgStyle: { fill: "rgba(255,228,242,.9)", color: "#7a1d50", fontSize: 10 },
-                        style: { strokeWidth: 2.5, stroke: "rgba(255,105,180,.95)" },
-                    });
-                }
-                for (const c of n.choices || []) {
-                    if (c.destination_node_id) {
-                        rf_edges.push({
-                            id: `${n.id}-${c.id}-${c.destination_node_id}`,
-                            source: n.id,
-                            sourceHandle: c.id,
-                            target: c.destination_node_id,
-                            targetHandle: "in",
-                            markerEnd: { type: MarkerType.ArrowClosed, color: "rgba(255,255,255,.92)" },
-                            label: c.text?.slice(0, 24),
-                            labelBgPadding: [4, 2],
-                            labelBgStyle: { fill: "rgba(255,244,233,.85)", color: "#3c2136", fontSize: 10 },
-                            style: { strokeWidth: 2.5, stroke: "rgba(255,255,255,.92)" },
-                        });
-                    }
-                }
-            }
+            const rf_edges = buildRouteEdges(nodes);
             setFlowNodes(rf_nodes);
             setFlowEdges(rf_edges);
         },
@@ -154,35 +127,60 @@ function CanvasInner() {
         }
     };
 
-    // --- Handle new edge drawn by drag-connect ---
-    const onConnect = useCallback(
-        async (params) => {
-            const { source, sourceHandle, target } = params;
-            if (!source || !target || !sourceHandle) return;
-            const node = rawNodes.find((n) => n.id === source);
-            if (!node) return;
-            if (node.node_type === "narration" && sourceHandle === "narration-next") {
-                try {
-                    const updated = await api.adminUpdateNode(source, { narration_next_node_id: target });
-                    setRawNodes((rn) => rn.map((n) => (n.id === source ? updated : n)));
-                    toast.success("Narration linked");
-                } catch {
-                    toast.error("Failed to link narration");
-                }
-                return;
-            }
-            const newChoices = (node.choices || []).map((c) =>
-                c.id === sourceHandle ? { ...c, destination_node_id: target } : c,
-            );
+    const persistRoute = useCallback(
+        async (source, sourceHandle, target) => {
+            if (!source || !sourceHandle) return false;
+            const node = rawNodes.find((item) => item.id === source);
+            if (!node) return false;
+            const update = routeUpdateFor(node, sourceHandle, target || null);
+            if (!update) return false;
             try {
-                const updated = await api.adminUpdateNode(source, { choices: newChoices });
+                const updated = await api.adminUpdateNode(source, update);
                 setRawNodes((rn) => rn.map((n) => (n.id === source ? updated : n)));
-                toast.success("Linked");
-            } catch (err) {
-                toast.error("Failed to link");
+                toast.success(target ? "Route connected" : "Route disconnected");
+                return true;
+            } catch {
+                toast.error(target ? "Failed to connect route" : "Failed to disconnect route");
+                setRawNodes((rn) => [...rn]);
+                return false;
             }
         },
         [rawNodes],
+    );
+
+    // React Flow draws the temporary line; the completed drop persists to gameplay routing.
+    const onConnect = useCallback(
+        (connection) => {
+            setFlowEdges((edges) => {
+                const withoutOldRoute = edges.filter(
+                    (edge) =>
+                        !(edge.source === connection.source && edge.sourceHandle === connection.sourceHandle),
+                );
+                return addEdge(
+                    { ...connection, id: `route:${connection.source}:${connection.sourceHandle}`, type: "smoothstep" },
+                    withoutOldRoute,
+                );
+            });
+            return persistRoute(connection.source, connection.sourceHandle, connection.target);
+        },
+        [persistRoute, setFlowEdges],
+    );
+
+    const onReconnect = useCallback(
+        (oldEdge, newConnection) => {
+            setFlowEdges((edges) => reconnectEdge(oldEdge, newConnection, edges));
+            return persistRoute(oldEdge.source, oldEdge.sourceHandle, newConnection.target);
+        },
+        [persistRoute, setFlowEdges],
+    );
+
+    const disconnectEdges = useCallback(
+        (edges) => {
+            for (const edge of edges) {
+                persistRoute(edge.source, edge.sourceHandle, null);
+            }
+        },
+        [persistRoute],
     );
 
     // --- Actions ---
@@ -197,7 +195,22 @@ function CanvasInner() {
                 character: "",
                 position_x: cx,
                 position_y: cy,
-                choices: [],
+                choices: [
+                    {
+                        id: choiceId(),
+                        text: "Choice A",
+                        destination_node_id: null,
+                        sets_flag: null,
+                        requires_flag: null,
+                    },
+                    {
+                        id: choiceId(),
+                        text: "Choice B",
+                        destination_node_id: null,
+                        sets_flag: null,
+                        requires_flag: null,
+                    },
+                ],
             });
             setRawNodes((rn) => [...rn, n]);
             setSelectedId(n.id);
@@ -345,9 +358,18 @@ function CanvasInner() {
                         onNodesChange={handleNodesChange}
                         onEdgesChange={onEdgesChange}
                         onConnect={onConnect}
+                        onReconnect={onReconnect}
+                        onEdgesDelete={disconnectEdges}
+                        onEdgeDoubleClick={(_, edge) => disconnectEdges([edge])}
                         onNodeClick={(_, n) => setSelectedId(n.id)}
                         onPaneClick={() => setSelectedId(null)}
                         nodeTypes={nodeTypes}
+                        connectionLineType={ConnectionLineType.SmoothStep}
+                        connectionLineStyle={{ stroke: "#fff4a8", strokeWidth: 3 }}
+                        connectionRadius={36}
+                        reconnectRadius={32}
+                        edgesReconnectable
+                        deleteKeyCode={["Backspace", "Delete"]}
                         fitView
                         proOptions={{ hideAttribution: true }}
                     >
@@ -359,6 +381,9 @@ function CanvasInner() {
                         />
                         <Controls showInteractive={false} />
                         <MiniMap pannable zoomable className="!bg-fuchsia-950/60" />
+                        <Panel position="bottom-center" className="canvas-route-hint">
+                            Drag a colored dot to connect · drag an arrow end to reconnect · select and Delete, or double-click, to disconnect
+                        </Panel>
                     </ReactFlow>
                 </div>
 

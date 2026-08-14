@@ -93,15 +93,6 @@ export default function NodeInspector({
                         />
                     </div>
                     <div className="space-y-1.5">
-                        <Label>Character</Label>
-                        <Input
-                            value={draft.character || ""}
-                            onChange={(e) => setDraft({ ...draft, character: e.target.value })}
-                            placeholder={isNarration ? "e.g. Narrator" : "e.g. Zayn"}
-                            data-testid="admin-node-character-input"
-                        />
-                    </div>
-                    <div className="space-y-1.5">
                         <Label>{isNarration ? "Narration text" : "Story text"}</Label>
                         <Textarea
                             value={draft.story_text || ""}

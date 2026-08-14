@@ -7,7 +7,6 @@ import {
     RotateCcw,
     Check,
     Trash2,
-    Pencil,
     Loader2,
     AlertTriangle,
     WifiOff,
@@ -351,16 +350,6 @@ export default function RambleStudio({ storyId, selectedNode, onClose, onApplied
                                                 rows={4}
                                                 placeholder="Story text…"
                                             />
-                                            <div className="proposal-character-row">
-                                                <Pencil className="proposal-character-icon" />
-                                                <input
-                                                    value={op.node?.character || ""}
-                                                    onChange={(e) =>
-                                                        editOp(idx, "character", e.target.value)
-                                                    }
-                                                    placeholder="Character"
-                                                />
-                                            </div>
                                             {op.node?.choices?.map((c) => (
                                                 <div className="proposal-choice" key={c.id}>
                                                     ↳ {c.text}

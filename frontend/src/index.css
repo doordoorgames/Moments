@@ -235,10 +235,6 @@ code {
     background: #fff3df !important;
     border: 1px solid rgba(99, 50, 80, 0.22) !important;
 }
-.story-character {
-    color: rgba(61, 30, 51, 0.72);
-    font-weight: 800;
-}
 .story-copy {
     color: rgba(56, 31, 47, 0.78);
 }
@@ -684,24 +680,6 @@ code {
     box-sizing: border-box;
 }
 .proposal-text-input:focus { outline: none; border-color: #ec5683; }
-.proposal-character-row {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 11px;
-    color: rgba(60, 33, 54, 0.65);
-}
-.proposal-character-icon { width: 12px; height: 12px; }
-.proposal-character-row input {
-    border: none;
-    background: transparent;
-    font-size: 11px;
-    color: rgba(60, 33, 54, 0.75);
-    font-weight: 700;
-    font-family: inherit;
-    flex: 1;
-}
-.proposal-character-row input:focus { outline: none; }
 .proposal-choice {
     font-size: 11px;
     color: rgba(60, 33, 54, 0.7);

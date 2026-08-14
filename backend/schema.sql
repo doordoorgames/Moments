@@ -16,7 +16,6 @@ create table if not exists nodes (
   story_id         text not null references stories(id) on delete cascade,
   title            text not null default '',
   story_text       text not null default '',
-  character        text not null default '',
   position_x       double precision not null default 0,
   position_y       double precision not null default 0,
   is_location_gate boolean not null default false,

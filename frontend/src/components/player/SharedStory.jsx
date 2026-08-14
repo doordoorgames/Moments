@@ -118,15 +118,6 @@ export default function SharedStory({ state, player, code }) {
                                     <BookOpen className="h-3 w-3" /> Narration
                                 </Badge>
                             )}
-                            {node.character && (
-                                <Badge
-                                    variant="secondary"
-                                    className="rounded-full text-[10px] uppercase tracking-widest"
-                                    data-testid="story-character-badge"
-                                >
-                                    {node.character}
-                                </Badge>
-                            )}
                             {phase === "reading" && (
                                 <span className="text-[10px] uppercase tracking-widest text-muted-foreground">
                                     · Take it in…

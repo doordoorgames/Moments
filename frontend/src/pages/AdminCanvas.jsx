@@ -192,7 +192,6 @@ function CanvasInner() {
                 story_id: storyId,
                 title: "New Scene",
                 story_text: "",
-                character: "",
                 position_x: cx,
                 position_y: cy,
                 choices: [
@@ -229,7 +228,6 @@ function CanvasInner() {
                 story_id: storyId,
                 title: "New Narration",
                 story_text: "",
-                character: "Narrator",
                 position_x: cx,
                 position_y: cy,
                 node_type: "narration",
@@ -250,7 +248,6 @@ function CanvasInner() {
             const updated = await api.adminUpdateNode(draft.id, {
                 title: draft.title,
                 story_text: draft.story_text,
-                character: draft.character,
                 is_location_gate: !!draft.is_location_gate,
                 is_vote_gate: !!draft.is_vote_gate,
                 is_end: !!draft.is_end,

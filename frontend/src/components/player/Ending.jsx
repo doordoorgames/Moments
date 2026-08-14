@@ -14,7 +14,7 @@ export default function Ending({ node, story, code, onPlayAgain, onLeave, isHost
                     style={{ fontFamily: "var(--font-serif)", letterSpacing: "var(--tracking-tight)" }}
                     data-testid="ending-title"
                 >
-                    {node?.title || "The tale concludes"}
+                    The tale concludes
                 </h1>
                 {node?.story_text && (
                     <Card className="mt-5 rounded-[var(--radius-lg)] border-border bg-card p-5 shadow-[0_10px_30px_-18px_rgba(0,0,0,0.35)]">

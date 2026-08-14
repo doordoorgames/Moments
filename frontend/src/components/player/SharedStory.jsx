@@ -124,13 +124,6 @@ export default function SharedStory({ state, player, code }) {
                                 </span>
                             )}
                         </div>
-                        <h2
-                            className="mt-3 text-2xl font-semibold"
-                            style={{ fontFamily: "var(--font-serif)", letterSpacing: "var(--tracking-tight)" }}
-                            data-testid="story-title"
-                        >
-                            {node.title}
-                        </h2>
                         <Card className="mt-4 rounded-[var(--radius-lg)] border-border bg-card p-5 shadow-[0_10px_30px_-18px_rgba(0,0,0,0.35)]">
                             <p
                                 className="story-text text-[15px] text-foreground sm:text-base"

@@ -62,11 +62,6 @@ function NodeCard({ data, selected, isConnectable }) {
                         </Badge>
                     )}
                 </div>
-                {n.character && (
-                    <div className="story-character truncate text-[10px] uppercase tracking-widest ml-1">
-                        {n.character}
-                    </div>
-                )}
             </div>
 
             {/* Body */}

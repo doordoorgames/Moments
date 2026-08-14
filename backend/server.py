@@ -96,7 +96,6 @@ class Node(BaseModel):
     story_id: str
     title: str
     story_text: str = ""
-    character: str = ""
     position_x: float = 0.0
     position_y: float = 0.0
     is_location_gate: bool = False
@@ -161,7 +160,6 @@ class NodeCreate(BaseModel):
     story_id: str
     title: str = "Untitled Node"
     story_text: str = ""
-    character: str = ""
     position_x: float = 0.0
     position_y: float = 0.0
     is_location_gate: bool = False
@@ -175,7 +173,6 @@ class NodeCreate(BaseModel):
 class NodeUpdate(BaseModel):
     title: Optional[str] = None
     story_text: Optional[str] = None
-    character: Optional[str] = None
     position_x: Optional[float] = None
     position_y: Optional[float] = None
     is_location_gate: Optional[bool] = None
@@ -406,7 +403,7 @@ Your job: turn that ramble into a precise JSON proposal of graph operations the 
 
 ## Story structure
 A story is a directed graph of nodes. Each node has:
-  id, title, story_text, character (who speaks/narrates), choices (outgoing edges),
+  id, title, story_text, choices (outgoing edges),
   is_end, is_vote_gate (group votes on this node), is_location_gate (all players must arrive first).
 Each choice: id, text, destination_node_id (null = dead end), sets_flag (optional string), requires_flag (optional string).
 
@@ -418,7 +415,7 @@ Each choice: id, text, destination_node_id (null = dead end), sets_flag (optiona
       "action": "create",
       "temp_id": "n1",
       "node": {
-        "title": "...", "story_text": "...", "character": "...",
+        "title": "...", "story_text": "...",
         "is_end": false, "is_vote_gate": false, "is_location_gate": false,
         "choices": [{"id": "c1", "text": "...", "destination_node_id": "n2_or_existing_uuid_or_null", "sets_flag": null, "requires_flag": null}]
       }
@@ -434,7 +431,7 @@ Each choice: id, text, destination_node_id (null = dead end), sets_flag (optiona
 - temp_ids must be short unique strings ("n1", "n2" …). The server maps them to real UUIDs.
 - Choice destination_node_id may be a temp_id or an existing real UUID or null.
 - Extend the graph by adding new nodes rather than overwriting existing content unless explicitly asked.
-- Match the existing story's tone and character voice in story_text.
+- Match the existing story's tone and narrative voice in story_text.
 - Use clarifications when the ramble is ambiguous about something that matters to the graph structure.
 - Warn if deleting a start node or a node that many choices point to.
 - "clarifications" and "warnings" may be empty arrays [].
@@ -504,7 +501,7 @@ async def admin_ramble_interpret(
         if n.get("is_location_gate"):
             flags.append("LOCATION_GATE")
         flag_str = f' [{",".join(flags)}]' if flags else ""
-        line = f'id={n["id"]}{start_marker}{flag_str} title="{n.get("title","")}" char="{n.get("character","")}"'
+        line = f'id={n["id"]}{start_marker}{flag_str} title="{n.get("title","")}"'
         if n.get("story_text"):
             line += f'\n  text: {n["story_text"][:150]}'
         for c in n.get("choices") or []:
@@ -604,7 +601,6 @@ async def admin_ramble_apply(
                     story_id=payload.story_id,
                     title=body.get("title", "New Scene"),
                     story_text=body.get("story_text", ""),
-                    character=body.get("character", ""),
                     is_end=bool(body.get("is_end", False)),
                     is_vote_gate=bool(body.get("is_vote_gate", False)),
                     is_location_gate=bool(body.get("is_location_gate", False)),
@@ -1459,7 +1455,7 @@ async def seed_zayn_story():
 
     nodes = [
         Node(
-            id=n_start, story_id=story.id, title="Ticket Counter", character="Zayn",
+            id=n_start, story_id=story.id, title="Ticket Counter",
             story_text="Zayn stands at the airport ticket counter. The agent smiles: 'Which class today?' A screen behind her flickers with departure gates.",
             position_x=100, position_y=200,
             choices=[
@@ -1468,7 +1464,7 @@ async def seed_zayn_story():
             ],
         ),
         Node(
-            id=n_biz_lounge, story_id=story.id, title="Business Class Lounge", character="Zayn",
+            id=n_biz_lounge, story_id=story.id, title="Business Class Lounge",
             story_text="Zayn sinks into a leather armchair in the lounge. Free espresso, quiet music. A steward offers a warm towel.",
             position_x=450, position_y=80,
             choices=[
@@ -1477,13 +1473,13 @@ async def seed_zayn_story():
             ],
         ),
         Node(
-            id=n_biz_perk, story_id=story.id, title="VIP Perk", character="Zayn",
+            id=n_biz_perk, story_id=story.id, title="VIP Perk",
             story_text="The steward slips Zayn a golden pass — 'For your next flight, sir.' Zayn pockets it and walks to the gate.",
             position_x=800, position_y=80,
             choices=[Choice(text="Continue to boarding gate", destination_node_id=n_gate)],
         ),
         Node(
-            id=n_econ_terminal, story_id=story.id, title="Crowded Terminal", character="Zayn",
+            id=n_econ_terminal, story_id=story.id, title="Crowded Terminal",
             story_text="Zayn squeezes through a sea of travellers. Someone is arguing with a customs officer. A child drops an ice cream cone.",
             position_x=450, position_y=380,
             choices=[
@@ -1492,13 +1488,13 @@ async def seed_zayn_story():
             ],
         ),
         Node(
-            id=n_gate, story_id=story.id, title="Boarding Gate 42", character="Group",
+            id=n_gate, story_id=story.id, title="Boarding Gate 42",
             story_text="The group regroups at Gate 42. Departure boards blink. Everyone gathers around the desk.",
             position_x=850, position_y=230, is_location_gate=True,
             choices=[Choice(text="Approach the desk together", destination_node_id=n_vote)],
         ),
         Node(
-            id=n_vote, story_id=story.id, title="Which Flight?", character="Group",
+            id=n_vote, story_id=story.id, title="Which Flight?",
             story_text="Two boards flash: a red-eye to Paris and a sunrise flight to Tokyo. The gate agent looks at the group: 'You decide together.'",
             position_x=1200, position_y=230, is_vote_gate=True,
             choices=[
@@ -1507,12 +1503,12 @@ async def seed_zayn_story():
             ],
         ),
         Node(
-            id=n_end_paris, story_id=story.id, title="Ending — Paris", character="Zayn",
+            id=n_end_paris, story_id=story.id, title="Ending — Paris",
             story_text="Wheels up over the Atlantic. Zayn presses his forehead against the window and grins — Paris, at last.",
             position_x=1550, position_y=100, is_end=True, choices=[],
         ),
         Node(
-            id=n_end_tokyo, story_id=story.id, title="Ending — Tokyo", character="Zayn",
+            id=n_end_tokyo, story_id=story.id, title="Ending — Tokyo",
             story_text="Golden dawn over the Pacific. Zayn sips green tea from a paper cup as the cabin whispers with excitement — Tokyo awaits.",
             position_x=1550, position_y=360, is_end=True, choices=[],
         ),

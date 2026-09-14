@@ -109,7 +109,7 @@ function StartScreen() {
       <motion.div className="vt-shutter top" initial={{ y: 0 }} animate={{ y: "-105%" }} transition={{ delay: .18, duration: .65 }} />
       <motion.div className="vt-shutter bottom" initial={{ y: 0 }} animate={{ y: "105%" }} transition={{ delay: .18, duration: .65 }} />
       <p className="vt-kicker">INCOMING TRANSMISSION</p>
-      <div className="vt-wave">{Array.from({ length: 28 }).map((_, i) => <i key={i} style={{ "--i": i }} />)}</div>
+      <div className="vt-wave">{Array.from({ length: 28 }).map((_, i) => <i key={i} style={{ "--i": i, "--h": `${8 + (i % 6) * 5}px` }} />)}</div>
       <div className="vt-mission-card">
         <span className="vt-corner tl" /><span className="vt-corner br" />
         <small>CASE FILE // 001</small>

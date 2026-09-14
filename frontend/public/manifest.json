@@ -1,0 +1,16 @@
+{
+  "short_name": "Moments",
+  "name": "Moments by Dordor",
+  "description": "Interactive story missions by Dordor Games",
+  "id": "/visual-test",
+  "start_url": "/visual-test",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone"],
+  "background_color": "#020711",
+  "theme_color": "#06162c",
+  "orientation": "portrait",
+  "icons": [
+    { "src": "/moments-icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}

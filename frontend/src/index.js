@@ -15,9 +15,11 @@ const queryClient = new QueryClient({
 
 if ("serviceWorker" in navigator && process.env.NODE_ENV === "production") {
   window.addEventListener("load", () => {
-    navigator.serviceWorker.register("/service-worker.js").catch(() => {
-      // The app remains fully usable online if registration is unavailable.
-    });
+    navigator.serviceWorker.register("/service-worker.js", { updateViaCache: "none" })
+      .then((registration) => registration.update())
+      .catch(() => {
+        // The app remains fully usable online if registration is unavailable.
+      });
   });
 }
 

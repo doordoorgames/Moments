@@ -81,7 +81,7 @@ function Boot({ onComplete }) {
   );
 }
 
-function Home({ navigate }) {
+function Home({ navigate, install }) {
   return (
     <motion.section className="vt-screen vt-home" key="home" initial={{ opacity: 0, clipPath: "inset(50% 0 50% 0)" }} animate={{ opacity: 1, clipPath: "inset(0% 0 0% 0)" }} exit={{ opacity: 0, x: -50, filter: "blur(8px)" }} transition={{ duration: .5, ease: [0.16, 1, 0.3, 1] }}>
       <div className="vt-eyebrow"><span>MISSION INTERFACE</span><b>MK // 01</b></div>
@@ -99,6 +99,14 @@ function Home({ navigate }) {
         <span><small>CHANNEL</small><b>7.26</b></span>
         <span><small>STATUS</small><b className="cyan">LIVE</b></span>
       </div>
+      {install.visible && (
+        <div className="vt-install" role="status">
+          <button type="button" onClick={install.request}>
+            <span>INSTALL MOMENTS</span><b>＋</b>
+          </button>
+          {install.help && <p>Chrome menu ⋮ → Add to Home screen → Install</p>}
+        </div>
+      )}
     </motion.section>
   );
 }
@@ -153,16 +161,55 @@ function Profile() {
 export default function VisualTest() {
   const [booting, setBooting] = useState(true);
   const [screen, setScreen] = useState("home");
+  const [installPrompt, setInstallPrompt] = useState(null);
+  const [installHelp, setInstallHelp] = useState(false);
+  const [installed, setInstalled] = useState(() =>
+    window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true
+  );
 
   useEffect(() => {
     document.documentElement.classList.add("visual-test-active");
-    return () => document.documentElement.classList.remove("visual-test-active");
+    const captureInstallPrompt = (event) => {
+      event.preventDefault();
+      setInstallPrompt(event);
+      setInstallHelp(false);
+    };
+    const markInstalled = () => {
+      setInstalled(true);
+      setInstallPrompt(null);
+      setInstallHelp(false);
+    };
+    const standaloneQuery = window.matchMedia("(display-mode: standalone)");
+    const syncDisplayMode = () => setInstalled(standaloneQuery.matches || window.navigator.standalone === true);
+
+    window.addEventListener("beforeinstallprompt", captureInstallPrompt);
+    window.addEventListener("appinstalled", markInstalled);
+    standaloneQuery.addEventListener?.("change", syncDisplayMode);
+
+    return () => {
+      document.documentElement.classList.remove("visual-test-active");
+      window.removeEventListener("beforeinstallprompt", captureInstallPrompt);
+      window.removeEventListener("appinstalled", markInstalled);
+      standaloneQuery.removeEventListener?.("change", syncDisplayMode);
+    };
   }, []);
+
+  const requestInstall = async () => {
+    if (!installPrompt) {
+      setInstallHelp(true);
+      return;
+    }
+
+    await installPrompt.prompt();
+    const { outcome } = await installPrompt.userChoice;
+    setInstallPrompt(null);
+    if (outcome === "accepted") setInstalled(true);
+  };
 
   return (
     <Frame screen={screen} onBack={() => setScreen("home")}>
       {booting ? <Boot onComplete={() => setBooting(false)} /> :
-        screen === "home" ? <Home navigate={setScreen} /> :
+        screen === "home" ? <Home navigate={setScreen} install={{ visible: !installed, help: installHelp, request: requestInstall }} /> :
         screen === "start" ? <StartScreen /> :
         screen === "episodes" ? <Episodes /> : <Profile />}
     </Frame>

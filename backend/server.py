@@ -231,7 +231,22 @@ async def _q(fn):
             status_code=503,
             detail="Database not configured — set SUPABASE_URL and SUPABASE_KEY secrets then restart the backend.",
         )
-    return await asyncio.to_thread(fn)
+    try:
+        return await asyncio.to_thread(fn)
+    except HTTPException:
+        raise
+    except Exception as exc:
+        # Supabase/PostgREST failures previously escaped as an opaque plain-text
+        # HTTP 500, leaving the admin UI with no actionable information.
+        logger.exception("Supabase database operation failed")
+        detail = str(exc).strip() or exc.__class__.__name__
+        # Keep the response useful without allowing an upstream exception to
+        # dump an unbounded amount of internal detail into the browser.
+        detail = re.sub(r"[\r\n]+", " ", detail)[:500]
+        raise HTTPException(
+            status_code=502,
+            detail=f"Database operation failed: {detail}",
+        ) from exc
 
 
 async def get_node(node_id: str) -> Optional[Dict[str, Any]]:
@@ -1046,9 +1061,19 @@ async def admin_list_stories(_: bool = Depends(require_admin)):
 
 @api_router.post("/admin/stories", response_model=Story)
 async def admin_create_story(payload: StoryCreate, _: bool = Depends(require_admin)):
-    story = Story(title=payload.title, description=payload.description)
-    await _q(lambda: supa.table("stories").insert(story.model_dump()).execute())
-    return story
+    title = payload.title.strip()
+    if not title:
+        raise HTTPException(status_code=422, detail="Story title is required")
+
+    story = Story(title=title, description=payload.description.strip())
+    result = await _q(lambda: supa.table("stories").insert(story.model_dump()).execute())
+    if result is None or not result.data:
+        logger.error("Story insert returned no database row", extra={"story_id": story.id})
+        raise HTTPException(status_code=502, detail="Database did not confirm that the story was created")
+
+    created = result.data[0] if isinstance(result.data, list) else result.data
+    logger.info("Story created", extra={"story_id": story.id})
+    return created
 
 
 @api_router.get("/admin/stories/{story_id}")

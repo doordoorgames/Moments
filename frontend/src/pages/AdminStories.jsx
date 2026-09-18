@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { api } from "@/lib/api";
+import { api, apiErrorMessage } from "@/lib/api";
 import { Plus, Search, Trash2, LogOut, Network } from "lucide-react";
 
 export default function AdminStories() {
@@ -24,6 +24,8 @@ export default function AdminStories() {
     const [creating, setCreating] = useState(false);
     const [newTitle, setNewTitle] = useState("");
     const [newDesc, setNewDesc] = useState("");
+    const [createPending, setCreatePending] = useState(false);
+    const [createError, setCreateError] = useState("");
 
     const load = useCallback(async () => {
         try {
@@ -44,7 +46,9 @@ export default function AdminStories() {
     }, [load]);
 
     const create = async () => {
-        if (!newTitle.trim()) return;
+        if (!newTitle.trim() || createPending) return;
+        setCreatePending(true);
+        setCreateError("");
         try {
             const s = await api.adminCreateStory({ title: newTitle.trim(), description: newDesc.trim() });
             toast.success("Story created");
@@ -53,7 +57,11 @@ export default function AdminStories() {
             setNewDesc("");
             nav(`/admin/stories/${s.id}`);
         } catch (err) {
-            toast.error(err?.response?.data?.detail || "Failed to create");
+            const message = apiErrorMessage(err, "Failed to create story");
+            setCreateError(message);
+            toast.error(message);
+        } finally {
+            setCreatePending(false);
         }
     };
 
@@ -105,7 +113,13 @@ export default function AdminStories() {
                             Build sprawling branching trees. Click any story to open its canvas.
                         </p>
                     </div>
-                    <Dialog open={creating} onOpenChange={setCreating}>
+                    <Dialog
+                        open={creating}
+                        onOpenChange={(open) => {
+                            setCreating(open);
+                            if (!open) setCreateError("");
+                        }}
+                    >
                         <DialogTrigger asChild>
                             <Button data-testid="admin-new-story-button">
                                 <Plus className="mr-1 h-4 w-4" /> New story
@@ -134,14 +148,19 @@ export default function AdminStories() {
                                         data-testid="admin-new-story-desc"
                                     />
                                 </div>
+                                {createError && (
+                                    <p className="text-sm text-destructive" role="alert" data-testid="admin-new-story-error">
+                                        {createError}
+                                    </p>
+                                )}
                             </div>
                             <DialogFooter>
                                 <Button
                                     onClick={create}
-                                    disabled={!newTitle.trim()}
+                                    disabled={!newTitle.trim() || createPending}
                                     data-testid="admin-new-story-create"
                                 >
-                                    Create
+                                    {createPending ? "Creating…" : "Create"}
                                 </Button>
                             </DialogFooter>
                         </DialogContent>

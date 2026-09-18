@@ -1,4 +1,4 @@
-import { adminLoginErrorMessage, normalizeBackendUrl } from "./api";
+import { adminLoginErrorMessage, apiErrorMessage, normalizeBackendUrl } from "./api";
 
 describe("backend URL handling", () => {
     test.each([
@@ -36,5 +36,23 @@ describe("admin login errors", () => {
                 message: "Backend connection is not configured.",
             }),
         ).toBe("Backend connection is not configured.");
+    });
+});
+
+describe("API errors", () => {
+    test("surfaces backend database details", () => {
+        expect(
+            apiErrorMessage({ response: { data: { detail: "Database operation failed" } } }),
+        ).toBe("Database operation failed");
+    });
+
+    test("surfaces validation messages", () => {
+        expect(
+            apiErrorMessage({ response: { data: { detail: [{ msg: "Story title is required" }] } } }),
+        ).toBe("Story title is required");
+    });
+
+    test("reports unreachable backend", () => {
+        expect(apiErrorMessage({ request: {} })).toMatch(/Unable to reach/);
     });
 });

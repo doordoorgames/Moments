@@ -75,7 +75,13 @@ const adminHeaders = () => {
 
 export const api = {
     // public
-    listStories: () => axios.get(apiUrl("/stories")).then((r) => r.data),
+    // Stories are live production content. Always revalidate so an installed
+    // PWA sees admin-created tales without a reinstall or frontend deployment.
+    listStories: () =>
+        axios.get(apiUrl("/stories"), {
+            params: { _ts: Date.now() },
+            headers: { "Cache-Control": "no-cache" },
+        }).then((r) => r.data),
     createRoom: () => axios.post(apiUrl("/rooms")).then((r) => r.data),
     getRoom: (code) => axios.get(apiUrl(`/rooms/${code}`)).then((r) => r.data),
     joinRoom: (code, nickname) =>

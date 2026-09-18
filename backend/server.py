@@ -18,12 +18,14 @@ import os
 import random
 import re
 import secrets
+import socket
 import string
 import uuid
 from collections import Counter, defaultdict
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Literal, Optional
+from urllib.parse import urlparse
 
 from dotenv import load_dotenv
 from fastapi import (
@@ -1012,6 +1014,35 @@ async def advance_with_choice(code: str, choice: Dict[str, Any], current_flags: 
 @api_router.get("/")
 async def root():
     return {"message": "Narrative RPG Engine", "ok": True}
+
+
+@api_router.get("/health/database")
+async def database_health():
+    """Expose connection metadata that is safe for production diagnostics.
+
+    This intentionally returns only the hostname, never the URL path, user,
+    password, API key, query string, or token.
+    """
+    configured_url = os.environ.get("SUPABASE_URL", "").strip()
+    hostname = urlparse(configured_url).hostname if configured_url else None
+    resolved_addresses: List[str] = []
+    dns_error = None
+
+    if hostname:
+        try:
+            results = await asyncio.to_thread(socket.getaddrinfo, hostname, 443, type=socket.SOCK_STREAM)
+            resolved_addresses = sorted({result[4][0] for result in results})
+        except OSError as exc:
+            dns_error = str(exc)
+
+    return {
+        "database_client_initialized": supa is not None,
+        "supabase_url_configured": bool(configured_url),
+        "hostname": hostname,
+        "dns_resolves": bool(resolved_addresses),
+        "resolved_address_count": len(resolved_addresses),
+        "dns_error": dns_error,
+    }
 
 
 @api_router.get("/stories")

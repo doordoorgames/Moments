@@ -33,6 +33,21 @@ export const adminLoginErrorMessage = (err) => {
     return "Could not send the sign-in request. Please try again.";
 };
 
+export const apiErrorMessage = (err, fallback = "The request failed. Please try again.") => {
+    if (err?.name === "BackendConfigError") return err.message;
+
+    const detail = err?.response?.data?.detail;
+    if (typeof detail === "string" && detail.trim()) return detail;
+    if (Array.isArray(detail)) {
+        const message = detail.map((item) => item?.msg).filter(Boolean).join("; ");
+        if (message) return message;
+    }
+    if (err?.request && !err?.response) {
+        return "Unable to reach the Moments backend. Check the connection and try again.";
+    }
+    return fallback;
+};
+
 const apiUrl = (path) => {
     if (!BACKEND_URL) {
         throw new BackendConfigError(

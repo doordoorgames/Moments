@@ -36,6 +36,7 @@ from fastapi import (
     Form,
     Header,
     HTTPException,
+    Response,
     UploadFile,
     WebSocket,
     WebSocketDisconnect,
@@ -1046,7 +1047,10 @@ async def database_health():
 
 
 @api_router.get("/stories")
-async def list_stories_public():
+async def list_stories_public(response: Response):
+    # Public story metadata is authored in Admin and must remain live. In
+    # particular, an installed PWA must not retain an obsolete story list.
+    response.headers["Cache-Control"] = "no-store"
     res = await _q(lambda: supa.table("stories").select("*").execute())
     docs = res.data or []
     for s in docs:

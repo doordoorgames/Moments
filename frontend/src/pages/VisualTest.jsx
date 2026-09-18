@@ -1,12 +1,7 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
+import { api, apiErrorMessage } from "@/lib/api";
 import "./VisualTest.css";
-
-const episodes = [
-  { id: "01", title: "THE WATCH", place: "DUBAI // 22:40", status: "UNLOCKED", mark: "★" },
-  { id: "02", title: "SEVEN DOVES II", place: "PREMIERE // VIP", status: "STANDBY", mark: "◆" },
-  { id: "03", title: "THE ISLAND", place: "LOCATION // REDACTED", status: "LOCKED", mark: "?" },
-];
 
 const snap = { type: "spring", stiffness: 420, damping: 27, mass: 0.75 };
 
@@ -71,13 +66,13 @@ function Boot({ onComplete }) {
   );
 }
 
-function Home({ navigate, install }) {
+function Home({ navigate, onStart, install }) {
   return (
     <motion.section className="vt-screen vt-home" key="home" initial={{ scaleY: 0.04, opacity: 0 }} animate={{ scaleY: 1, opacity: 1 }} exit={{ x: -90, rotate: -4, opacity: 0 }} transition={snap}>
       <div className="vt-eyebrow"><span>✦ TEEN AGENT CHANNEL</span><b>VOL. 02</b></div>
       <div className="vt-hero"><div className="vt-title-block"><span className="vt-sticker">TOP SECRET!</span><p>INTERACTIVE STORY DEVICE</p><h1 data-text="MOMENTS">MOMENTS</h1><div className="vt-title-rule"><i /><span>READY!</span></div><div className="vt-sparkles"><i>✦</i><b>✧</b><em>★</em></div></div><Radar /></div>
       <nav className="vt-menu" aria-label="Main menu">
-        <motion.button className="primary" onClick={() => navigate("start")} whileTap={{ scale: 0.94, rotate: -1.5 }}><small>01</small><i className="vt-menu-icon play">▶</i><span>START</span><b>GO!</b></motion.button>
+        <motion.button className="primary" onClick={onStart} whileTap={{ scale: 0.94, rotate: -1.5 }}><small>01</small><i className="vt-menu-icon play">▶</i><span>START</span><b>GO!</b></motion.button>
         <motion.button onClick={() => navigate("episodes")} whileTap={{ scale: 0.94, rotate: 1.5 }}><small>02</small><i className="vt-menu-icon disc">✦</i><span>EPISODES</span><b>↗</b></motion.button>
         <motion.button onClick={() => navigate("profile")} whileTap={{ scale: 0.94, rotate: -1 }}><small>03</small><i className="vt-menu-icon face">●</i><span>PROFILE</span><b>↗</b></motion.button>
       </nav>
@@ -87,23 +82,30 @@ function Home({ navigate, install }) {
   );
 }
 
-function StartScreen() {
+function StartScreen({ story }) {
+  const title = story?.title || "SELECT A TALE";
+  const description = story?.description || "Open Episodes and choose a transmission from the live Moments archive.";
   return (
     <motion.section className="vt-screen vt-mission" key="start" initial={{ opacity: 0, scale: 1.45, rotate: 7 }} animate={{ opacity: 1, scale: 1, rotate: 0 }} exit={{ scale: 0.05, rotate: -8 }} transition={snap}>
       <motion.div className="vt-wipe pink" initial={{ x: "-120%" }} animate={{ x: "120%" }} transition={{ duration: 0.52, ease: "circInOut" }} /><motion.div className="vt-wipe blue" initial={{ x: "-140%" }} animate={{ x: "140%" }} transition={{ duration: 0.48, delay: 0.08, ease: "circInOut" }} />
       <p className="vt-kicker"><i /> INCOMING TRANSMISSION! <i /></p>
       <div className="vt-wave">{Array.from({ length: 24 }).map((_, i) => <i key={i} style={{ "--i": i, "--h": `${9 + (i % 6) * 5}px` }} />)}</div>
-      <div className="vt-mission-card"><span className="vt-tape">PLAY MESSAGE</span><span className="vt-corner tl" /><span className="vt-corner br" /><small>CASE FILE ★ 001</small><h2>DUBAI<br /><em>CRAZY</em> WEEKEND</h2><p>A recovered signal. A missing princess. One weekend that refuses to stay normal.</p><motion.button onClick={() => {}} whileTap={{ scale: 0.91, rotate: -2 }}>CONNECT! <b>▶▶</b></motion.button></div>
+      <div className="vt-mission-card"><span className="vt-tape">PLAY MESSAGE</span><span className="vt-corner tl" /><span className="vt-corner br" /><small>LIVE CASE FILE ★</small><h2>{title}</h2><p>{description}</p><motion.button onClick={() => {}} whileTap={{ scale: 0.91, rotate: -2 }}>CONNECT! <b>▶▶</b></motion.button></div>
       <div className="vt-coordinates"><span>25.2048° N</span><i>◎</i><span>55.2708° E</span></div>
     </motion.section>
   );
 }
 
-function Episodes() {
+function Episodes({ stories, loading, error, onRetry, onOpen }) {
   return (
     <motion.section className="vt-screen vt-episodes" key="episodes" initial={{ opacity: 0, x: "110%", rotate: 4 }} animate={{ opacity: 1, x: 0, rotate: 0 }} exit={{ opacity: 0, x: "110%" }} transition={snap}>
-      <div className="vt-section-head"><p>★ MEMORY CARTRIDGES</p><h2>EPISODES!</h2><span>03 FILES</span></div>
-      <div className="vt-episode-list">{episodes.map((episode, index) => <motion.button key={episode.id} initial={{ opacity: 0, x: 75, rotate: 4 }} animate={{ opacity: 1, x: 0, rotate: index % 2 ? 0.6 : -0.6 }} transition={{ ...snap, delay: 0.1 + index * 0.09 }} whileTap={{ scale: 0.95, rotate: 0 }}><b>{episode.id}</b><i className="vt-episode-mark">{episode.mark}</i><span><strong>{episode.title}</strong><small>{episode.place}</small></span><em className={episode.status.toLowerCase()}>{episode.status}</em></motion.button>)}</div>
+      <div className="vt-section-head"><p>★ MEMORY CARTRIDGES</p><h2>EPISODES!</h2><span>{stories.length.toString().padStart(2, "0")} FILES</span></div>
+      <div className="vt-episode-list">
+        {stories.map((story, index) => <motion.button key={story.id} onClick={() => onOpen(story)} initial={{ opacity: 0, x: 75, rotate: 4 }} animate={{ opacity: 1, x: 0, rotate: index % 2 ? 0.6 : -0.6 }} transition={{ ...snap, delay: 0.1 + index * 0.09 }} whileTap={{ scale: 0.95, rotate: 0 }}><b>{String(index + 1).padStart(2, "0")}</b><i className="vt-episode-mark">{index % 2 ? "◆" : "★"}</i><span><strong>{story.title}</strong><small>{story.description || "NO DESCRIPTION"}</small></span><em className={story.node_count ? "unlocked" : "standby"}>{story.node_count ? "READY" : "NEW"}</em></motion.button>)}
+        {loading && <p className="vt-story-state">TUNING LIVE ARCHIVE...</p>}
+        {!loading && error && <div className="vt-story-state error" role="alert"><p>{error}</p><button onClick={onRetry}>RETRY LINK</button></div>}
+        {!loading && !error && stories.length === 0 && <p className="vt-story-state">NO TALES TRANSMITTED YET</p>}
+      </div>
       <div className="vt-data-strip"><i /> MEMORY BANK <b>STABLE!</b> <span>● ● ○</span></div>
     </motion.section>
   );
@@ -125,6 +127,24 @@ export default function VisualTest() {
   const [installPrompt, setInstallPrompt] = useState(null);
   const [installHelp, setInstallHelp] = useState(false);
   const [installed, setInstalled] = useState(() => window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true);
+  const [stories, setStories] = useState([]);
+  const [storiesLoading, setStoriesLoading] = useState(true);
+  const [storiesError, setStoriesError] = useState("");
+  const [selectedStory, setSelectedStory] = useState(null);
+
+  const loadStories = useCallback(async () => {
+    setStoriesLoading(true);
+    setStoriesError("");
+    try {
+      const liveStories = await api.listStories();
+      setStories(Array.isArray(liveStories) ? liveStories : []);
+      setSelectedStory((current) => current || liveStories?.[0] || null);
+    } catch (error) {
+      setStoriesError(apiErrorMessage(error, "Could not load the live tale archive."));
+    } finally {
+      setStoriesLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
     document.documentElement.classList.add("visual-test-active");
@@ -136,10 +156,25 @@ export default function VisualTest() {
     return () => { document.documentElement.classList.remove("visual-test-active"); window.removeEventListener("beforeinstallprompt", captureInstallPrompt); window.removeEventListener("appinstalled", markInstalled); standaloneQuery.removeEventListener?.("change", syncDisplayMode); };
   }, []);
 
+  useEffect(() => {
+    loadStories();
+    const refreshWhenVisible = () => { if (document.visibilityState === "visible") loadStories(); };
+    window.addEventListener("focus", loadStories);
+    document.addEventListener("visibilitychange", refreshWhenVisible);
+    return () => {
+      window.removeEventListener("focus", loadStories);
+      document.removeEventListener("visibilitychange", refreshWhenVisible);
+    };
+  }, [loadStories]);
+
   const requestInstall = async () => {
     if (!installPrompt) { setInstallHelp(true); return; }
     await installPrompt.prompt(); const { outcome } = await installPrompt.userChoice; setInstallPrompt(null); if (outcome === "accepted") setInstalled(true);
   };
 
-  return <Frame screen={screen} onBack={() => setScreen("home")}>{booting ? <Boot onComplete={() => setBooting(false)} /> : screen === "home" ? <Home navigate={setScreen} install={{ visible: !installed, help: installHelp, request: requestInstall }} /> : screen === "start" ? <StartScreen /> : screen === "episodes" ? <Episodes /> : <Profile />}</Frame>;
+  const openStory = (story) => { setSelectedStory(story); setScreen("start"); };
+  const openEpisodes = () => { loadStories(); setScreen("episodes"); };
+  const startStory = () => { if (selectedStory || stories[0]) openStory(selectedStory || stories[0]); else openEpisodes(); };
+
+  return <Frame screen={screen} onBack={() => setScreen("home")}>{booting ? <Boot onComplete={() => setBooting(false)} /> : screen === "home" ? <Home navigate={(next) => next === "episodes" ? openEpisodes() : setScreen(next)} onStart={startStory} install={{ visible: !installed, help: installHelp, request: requestInstall }} /> : screen === "start" ? <StartScreen story={selectedStory} /> : screen === "episodes" ? <Episodes stories={stories} loading={storiesLoading} error={storiesError} onRetry={loadStories} onOpen={openStory} /> : <Profile />}</Frame>;
 }

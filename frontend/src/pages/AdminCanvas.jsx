@@ -16,13 +16,23 @@ import {
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import {
+    Dialog,
+    DialogContent,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { api } from "@/lib/api";
 import { StoryNode } from "@/components/admin/StoryNode";
 import NodeInspector from "@/components/admin/NodeInspector";
 import RambleStudio from "@/components/admin/RambleStudio";
 import { buildRouteEdges, routeUpdateFor } from "@/lib/graphRouting";
-import { ArrowLeft, Plus, LogOut, Loader2, Mic, BookOpen } from "lucide-react";
+import { ArrowLeft, Plus, LogOut, Loader2, Mic, BookOpen, Pencil } from "lucide-react";
 
 const nodeTypes = { storyNode: StoryNode };
 const choiceId = () =>
@@ -33,6 +43,10 @@ function CanvasInner() {
     const nav = useNavigate();
     const [loading, setLoading] = useState(true);
     const [story, setStory] = useState(null);
+    const [storySettingsOpen, setStorySettingsOpen] = useState(false);
+    const [storyTitle, setStoryTitle] = useState("");
+    const [storyDescription, setStoryDescription] = useState("");
+    const [storySaving, setStorySaving] = useState(false);
     const [rawNodes, setRawNodes] = useState([]);
     const [selectedId, setSelectedId] = useState(null);
     const [rambleOpen, setRambleOpen] = useState(false);
@@ -68,6 +82,8 @@ function CanvasInner() {
         try {
             const data = await api.adminGetGraph(storyId);
             setStory(data.story);
+            setStoryTitle(data.story?.title || "");
+            setStoryDescription(data.story?.description || "");
             setRawNodes(data.nodes || []);
             rebuildFlow(data.nodes || [], data.story?.start_node_id, selectedId);
         } catch (err) {
@@ -285,6 +301,24 @@ function CanvasInner() {
         }
     };
 
+    const saveStorySettings = async () => {
+        if (!storyTitle.trim() || storySaving) return;
+        setStorySaving(true);
+        try {
+            const updated = await api.adminUpdateStory(storyId, {
+                title: storyTitle.trim(),
+                description: storyDescription.trim(),
+            });
+            setStory(updated);
+            setStorySettingsOpen(false);
+            toast.success("Story details saved");
+        } catch (err) {
+            toast.error(err?.response?.data?.detail || "Failed to save story details");
+        } finally {
+            setStorySaving(false);
+        }
+    };
+
     if (loading) {
         return (
             <div className="creator-theme flex min-h-screen items-center justify-center bg-background text-foreground">
@@ -311,6 +345,14 @@ function CanvasInner() {
                     </div>
                 </div>
                 <div className="flex items-center gap-2">
+                    <Button
+                        size="sm"
+                        variant="secondary"
+                        onClick={() => setStorySettingsOpen(true)}
+                        data-testid="admin-story-settings-button"
+                    >
+                        <Pencil className="mr-1 h-3.5 w-3.5" /> Story details
+                    </Button>
                     <Button
                         size="sm"
                         className="ramble-launch"
@@ -342,6 +384,43 @@ function CanvasInner() {
                     </Button>
                 </div>
             </div>
+
+            <Dialog open={storySettingsOpen} onOpenChange={setStorySettingsOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Story details</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4">
+                        <div className="space-y-1.5">
+                            <Label htmlFor="story-title">Title</Label>
+                            <Input
+                                id="story-title"
+                                value={storyTitle}
+                                onChange={(event) => setStoryTitle(event.target.value)}
+                                data-testid="admin-story-title-input"
+                            />
+                        </div>
+                        <div className="space-y-1.5">
+                            <Label htmlFor="story-description">Description</Label>
+                            <Textarea
+                                id="story-description"
+                                value={storyDescription}
+                                onChange={(event) => setStoryDescription(event.target.value)}
+                                data-testid="admin-story-description-input"
+                            />
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button
+                            onClick={saveStorySettings}
+                            disabled={!storyTitle.trim() || storySaving}
+                            data-testid="admin-story-settings-save"
+                        >
+                            {storySaving ? "Saving…" : "Save"}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
 
             {/* Canvas + inspector */}
             <div className="flex flex-1 overflow-hidden">

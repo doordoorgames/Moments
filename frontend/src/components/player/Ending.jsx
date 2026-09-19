@@ -1,33 +1,30 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Sparkles } from "lucide-react";
+import PlayerFrame from "@/components/player/PlayerFrame";
 
 export default function Ending({ node, story, code, onPlayAgain, onLeave, isHost }) {
     return (
-        <div className="min-h-screen bg-background">
-            <div className="mx-auto max-w-md px-4 pt-10 pb-24 sm:px-6">
-                <div className="inline-flex items-center gap-1.5 rounded-full bg-secondary px-3 py-1 text-xs uppercase tracking-widest text-secondary-foreground">
+        <PlayerFrame code={code} playerName="COMPLETE">
+            <div className="player-panel player-ending">
+                <div className="player-ending-badge inline-flex items-center gap-1.5">
                     <Sparkles className="h-3 w-3" /> Ending
                 </div>
-                <h1
-                    className="mt-4 text-3xl font-semibold"
-                    style={{ fontFamily: "var(--font-serif)", letterSpacing: "var(--tracking-tight)" }}
-                    data-testid="ending-title"
-                >
-                    The tale concludes
+                <h1 className="player-title mt-5" data-testid="ending-title">
+                    MISSION COMPLETE!
                 </h1>
                 {node?.story_text && (
-                    <Card className="mt-5 rounded-[var(--radius-lg)] border-border bg-card p-5 shadow-[0_10px_30px_-18px_rgba(0,0,0,0.35)]">
-                        <p className="story-text text-[15px] text-foreground">{node.story_text}</p>
+                    <Card className="player-story-card">
+                        <p className="story-text player-story-text">{node.story_text}</p>
                     </Card>
                 )}
                 {story?.title && (
-                    <div className="mt-3 text-xs text-muted-foreground">From: {story.title}</div>
+                    <div className="player-from">TRANSMISSION: {story.title}</div>
                 )}
                 <div className="mt-8 space-y-2">
                     {isHost && (
                         <Button
-                            className="h-11 w-full"
+                            className="player-primary-button"
                             onClick={onPlayAgain}
                             data-testid="ending-play-again-button"
                         >
@@ -36,7 +33,7 @@ export default function Ending({ node, story, code, onPlayAgain, onLeave, isHost
                     )}
                     <Button
                         variant="secondary"
-                        className="h-11 w-full"
+                        className="player-secondary-button"
                         onClick={onLeave}
                         data-testid="ending-back-to-lobby-button"
                     >
@@ -44,6 +41,6 @@ export default function Ending({ node, story, code, onPlayAgain, onLeave, isHost
                     </Button>
                 </div>
             </div>
-        </div>
+        </PlayerFrame>
     );
 }

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
+import { useNavigate } from "react-router-dom";
 import { api, apiErrorMessage } from "@/lib/api";
 import "./VisualTest.css";
 
@@ -82,7 +83,7 @@ function Home({ navigate, onStart, install }) {
   );
 }
 
-function StartScreen({ story }) {
+function StartScreen({ story, onConnect, connecting, error }) {
   const title = story?.title || "SELECT A TALE";
   const description = story?.description || "Open Episodes and choose a transmission from the live Moments archive.";
   return (
@@ -90,7 +91,7 @@ function StartScreen({ story }) {
       <motion.div className="vt-wipe pink" initial={{ x: "-120%" }} animate={{ x: "120%" }} transition={{ duration: 0.52, ease: "circInOut" }} /><motion.div className="vt-wipe blue" initial={{ x: "-140%" }} animate={{ x: "140%" }} transition={{ duration: 0.48, delay: 0.08, ease: "circInOut" }} />
       <p className="vt-kicker"><i /> INCOMING TRANSMISSION! <i /></p>
       <div className="vt-wave">{Array.from({ length: 24 }).map((_, i) => <i key={i} style={{ "--i": i, "--h": `${9 + (i % 6) * 5}px` }} />)}</div>
-      <div className="vt-mission-card"><span className="vt-tape">PLAY MESSAGE</span><span className="vt-corner tl" /><span className="vt-corner br" /><small>LIVE CASE FILE ★</small><h2>{title}</h2><p>{description}</p><motion.button onClick={() => {}} whileTap={{ scale: 0.91, rotate: -2 }}>CONNECT! <b>▶▶</b></motion.button></div>
+      <div className="vt-mission-card"><span className="vt-tape">PLAY MESSAGE</span><span className="vt-corner tl" /><span className="vt-corner br" /><small>LIVE CASE FILE ★</small><h2>{title}</h2><p>{description}</p><motion.button onClick={onConnect} disabled={connecting || !story} whileTap={{ scale: 0.91, rotate: -2 }}>{connecting ? "CONNECTING..." : "CONNECT!"} <b>▶▶</b></motion.button>{error && <p className="vt-connect-error" role="alert">{error}</p>}</div>
       <div className="vt-coordinates"><span>25.2048° N</span><i>◎</i><span>55.2708° E</span></div>
     </motion.section>
   );
@@ -122,6 +123,7 @@ function Profile() {
 }
 
 export default function VisualTest() {
+  const navigate = useNavigate();
   const [booting, setBooting] = useState(true);
   const [screen, setScreen] = useState("home");
   const [installPrompt, setInstallPrompt] = useState(null);
@@ -131,6 +133,8 @@ export default function VisualTest() {
   const [storiesLoading, setStoriesLoading] = useState(true);
   const [storiesError, setStoriesError] = useState("");
   const [selectedStory, setSelectedStory] = useState(null);
+  const [connecting, setConnecting] = useState(false);
+  const [connectError, setConnectError] = useState("");
 
   const loadStories = useCallback(async () => {
     setStoriesLoading(true);
@@ -176,5 +180,23 @@ export default function VisualTest() {
   const openEpisodes = () => { loadStories(); setScreen("episodes"); };
   const startStory = () => { if (selectedStory || stories[0]) openStory(selectedStory || stories[0]); else openEpisodes(); };
 
-  return <Frame screen={screen} onBack={() => setScreen("home")}>{booting ? <Boot onComplete={() => setBooting(false)} /> : screen === "home" ? <Home navigate={(next) => next === "episodes" ? openEpisodes() : setScreen(next)} onStart={startStory} install={{ visible: !installed, help: installHelp, request: requestInstall }} /> : screen === "start" ? <StartScreen story={selectedStory} /> : screen === "episodes" ? <Episodes stories={stories} loading={storiesLoading} error={storiesError} onRetry={loadStories} onOpen={openStory} /> : <Profile />}</Frame>;
+  const connectStory = async () => {
+    if (!selectedStory || connecting) return;
+    setConnecting(true);
+    setConnectError("");
+    try {
+      const room = await api.createRoom();
+      const player = await api.joinRoom(room.code, "Agent");
+      localStorage.setItem(`player_${room.code}`, JSON.stringify(player));
+      await api.selectStory(room.code, selectedStory.id);
+      await api.startRoom(room.code);
+      navigate(`/play/${room.code}`);
+    } catch (error) {
+      setConnectError(apiErrorMessage(error, "Could not start this Tale. Check its start node and try again."));
+    } finally {
+      setConnecting(false);
+    }
+  };
+
+  return <Frame screen={screen} onBack={() => setScreen("home")}>{booting ? <Boot onComplete={() => setBooting(false)} /> : screen === "home" ? <Home navigate={(next) => next === "episodes" ? openEpisodes() : setScreen(next)} onStart={startStory} install={{ visible: !installed, help: installHelp, request: requestInstall }} /> : screen === "start" ? <StartScreen story={selectedStory} onConnect={connectStory} connecting={connecting} error={connectError} /> : screen === "episodes" ? <Episodes stories={stories} loading={storiesLoading} error={storiesError} onRetry={loadStories} onOpen={openStory} /> : <Profile />}</Frame>;
 }

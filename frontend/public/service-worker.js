@@ -1,4 +1,4 @@
-const CACHE_NAME = "moments-visual-v2";
+const CACHE_NAME = "moments-visual-v3";
 const APP_SHELL = [
   "/manifest.json",
   "/moments-icon-192.png",
@@ -39,15 +39,16 @@ self.addEventListener("fetch", (event) => {
   const url = new URL(event.request.url);
   if (url.origin !== self.location.origin) return;
 
+  // App assets must revalidate online. A cache-first JavaScript bundle can
+  // otherwise keep an installed PWA on an obsolete build indefinitely.
   event.respondWith(
-    caches.match(event.request).then((cached) => {
-      const network = fetch(event.request).then((response) => {
+    fetch(event.request)
+      .then((response) => {
         if (response.ok) {
           caches.open(CACHE_NAME).then((cache) => cache.put(event.request, response.clone()));
         }
         return response;
-      });
-      return cached || network;
-    })
+      })
+      .catch(() => caches.match(event.request))
   );
 });

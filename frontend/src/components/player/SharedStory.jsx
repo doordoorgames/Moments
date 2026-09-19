@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { api } from "@/lib/api";
 import { toast } from "sonner";
 import Wheel from "@/components/player/Wheel";
+import PlayerFrame from "@/components/player/PlayerFrame";
 import { Check, ArrowRight, Crown, BookOpen } from "lucide-react";
 
 /**
@@ -94,17 +95,8 @@ export default function SharedStory({ state, player, code }) {
     if (!node) return null;
 
     return (
-        <div className="min-h-screen bg-background">
-            <div className="sticky top-0 z-10 border-b border-border bg-background/95 px-4 py-2 backdrop-blur">
-                <div className="mx-auto flex max-w-md items-center justify-between">
-                    <div className="text-xs uppercase tracking-widest text-muted-foreground">
-                        Room <span className="font-mono text-foreground">{code}</span>
-                    </div>
-                    <div className="text-xs text-muted-foreground">Playing as {player?.nickname}</div>
-                </div>
-            </div>
-
-            <div className="mx-auto max-w-md px-4 pt-6 pb-40 sm:px-6">
+        <PlayerFrame code={code} playerName={player?.nickname}>
+            <div className="player-panel">
                 <AnimatePresence mode="wait">
                     <motion.div
                         key={node.id}
@@ -112,31 +104,31 @@ export default function SharedStory({ state, player, code }) {
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.24, ease: [0.16, 1, 0.3, 1] }}
                     >
-                        <div className="flex items-center gap-2">
+                        <div className="player-eyebrow">
                             {isNarration && (
-                                <Badge className="gap-1 rounded-full bg-pink-500 text-[10px] uppercase tracking-widest text-white">
+                                <Badge className="player-chip gap-1">
                                     <BookOpen className="h-3 w-3" /> Narration
                                 </Badge>
                             )}
                             {phase === "reading" && (
-                                <span className="text-[10px] uppercase tracking-widest text-muted-foreground">
-                                    · Take it in…
+                                <span>
+                                    ★ TAKE IT IN…
                                 </span>
                             )}
                         </div>
-                        <Card className="mt-4 rounded-[var(--radius-lg)] border-border bg-card p-5 shadow-[0_10px_30px_-18px_rgba(0,0,0,0.35)]">
+                        <Card className="player-story-card">
                             <p
-                                className="story-text text-[15px] text-foreground sm:text-base"
+                                className="story-text player-story-text"
                                 data-testid="story-reading-text"
                             >
                                 {node.story_text}
                             </p>
                             {(room.flags || []).length > 0 && (
-                                <div className="mt-4 flex flex-wrap gap-1.5" data-testid="story-flags">
+                                <div className="player-flags" data-testid="story-flags">
                                     {(room.flags || []).map((f) => (
                                         <span
                                             key={f}
-                                            className="rounded-full bg-secondary px-2 py-0.5 text-[10px] uppercase tracking-widest text-secondary-foreground"
+                                            className="player-flag"
                                         >
                                             {f.replace(/_/g, " ")}
                                         </span>
@@ -146,7 +138,7 @@ export default function SharedStory({ state, player, code }) {
                         </Card>
 
                         {/* Choice list */}
-                        {!isNarration && <div className="mt-5 space-y-2" data-testid="choice-list">
+                        {!isNarration && <div className="player-choice-list" data-testid="choice-list">
                             {choices.map((c) => {
                                 const canVote = phase === "voting" && !myVote;
                                 return (
@@ -154,27 +146,23 @@ export default function SharedStory({ state, player, code }) {
                                         key={c.id}
                                         disabled={!canVote}
                                         onClick={() => submitVote(c.id)}
-                                        className={`group relative block w-full rounded-[var(--radius-lg)] border p-4 text-left text-sm transition-all ${
-                                            canVote
-                                                ? "cursor-pointer border-border bg-card hover:border-primary hover:bg-primary/[0.06]"
-                                                : "cursor-default border-border bg-card"
-                                        } ${!canVote && phase === "voting" ? "opacity-70" : ""}`}
+                                        className="player-choice"
                                         data-testid={`choice-vote-${c.id}`}
                                     >
-                                        <div className="flex items-center justify-between">
-                                            <span className="pr-2">{c.text}</span>
+                                        <div className="player-choice-row">
+                                            <span className="player-choice-text">{c.text}</span>
                                             {phase === "reading" && (
-                                                <span className="text-[10px] uppercase tracking-widest text-muted-foreground">
+                                                <span className="player-choice-state">
                                                     reading
                                                 </span>
                                             )}
                                             {phase === "voting" && !myVote && (
-                                                <span className="text-[10px] uppercase tracking-widest text-primary">
+                                                <span className="player-choice-state">
                                                     tap to vote
                                                 </span>
                                             )}
                                             {phase === "voting" && myVote && (
-                                                <span className="text-[10px] uppercase tracking-widest text-muted-foreground">
+                                                <span className="player-choice-state">
                                                     locked
                                                 </span>
                                             )}
@@ -190,7 +178,7 @@ export default function SharedStory({ state, player, code }) {
                                     <Button
                                         onClick={advanceNarration}
                                         disabled={advancing || !node.narration_next_node_id}
-                                        className="h-12 w-full gap-2 bg-pink-500 text-base text-white hover:bg-pink-600"
+                                        className="player-primary-button gap-2"
                                         data-testid="narration-next-button"
                                     >
                                         <Crown className="h-4 w-4" />
@@ -210,9 +198,9 @@ export default function SharedStory({ state, player, code }) {
 
             {/* Bottom dock: reading = subtle hint; voting = progress bar + counter; wheel = full overlay */}
             {phase === "reading" && !isNarration && (
-                <div className="fixed inset-x-0 bottom-0 border-t border-border bg-background/90 px-4 py-3 text-center backdrop-blur">
+                <div className="player-dock text-center">
                     <div
-                        className="mx-auto max-w-md text-xs text-muted-foreground"
+                        className="player-dock-inner player-copy"
                         data-testid="phase-reading-hint"
                     >
                         Take a moment. Read together. The vote will open in a few seconds…
@@ -221,32 +209,32 @@ export default function SharedStory({ state, player, code }) {
             )}
 
             {phase === "voting" && (
-                <div className="fixed inset-x-0 bottom-0 border-t border-border bg-background/95 px-4 py-3 backdrop-blur">
-                    <div className="mx-auto max-w-md">
-                        <div className="flex items-center justify-between text-xs" data-testid="vote-status-row">
+                <div className="player-dock">
+                    <div className="player-dock-inner">
+                        <div className="player-vote-row" data-testid="vote-status-row">
                             <span
-                                className="font-medium text-foreground"
+                                className=""
                                 data-testid="vote-hint-text"
                             >
                                 {flashy % 2 === 0 ? "Let's make a decision…" : "Time is running out…"}
                             </span>
                             <span
-                                className="rounded-full bg-secondary px-2 py-0.5 font-mono text-[11px] text-secondary-foreground"
+                                className="player-vote-count"
                                 data-testid="vote-counter"
                             >
                                 {voteStats.voted_count}/{voteStats.total_players} voted
                             </span>
                         </div>
-                        <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-secondary">
+                        <div className="player-progress">
                             <div
-                                className="h-full rounded-full bg-primary transition-[width] duration-200 ease-linear"
+                                className="transition-[width] duration-200 ease-linear"
                                 style={{ width: `${(votingProgress * 100).toFixed(1)}%` }}
                                 data-testid="vote-progress-bar"
                             />
                         </div>
                         {myVote && (
                             <div
-                                className="mt-2 flex items-center justify-center gap-1.5 text-[11px] text-muted-foreground"
+                                className="player-locked flex items-center justify-center gap-1.5"
                                 data-testid="vote-locked-hint"
                             >
                                 <Check className="h-3 w-3 text-[hsl(var(--success))]" /> Your vote is locked in… waiting for the others.
@@ -264,6 +252,6 @@ export default function SharedStory({ state, player, code }) {
                     durationMs={4200}
                 />
             )}
-        </div>
+        </PlayerFrame>
     );
 }

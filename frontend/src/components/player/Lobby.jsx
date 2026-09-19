@@ -6,6 +6,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { api } from "@/lib/api";
 import { toast } from "sonner";
 import { Copy, Crown, PlayCircle, Users, Wifi, WifiOff } from "lucide-react";
+import PlayerFrame from "@/components/player/PlayerFrame";
 
 export default function Lobby({ code, players, me, selectedStoryId, onSelectStory, onStart, connected }) {
     const [stories, setStories] = useState([]);
@@ -41,20 +42,20 @@ export default function Lobby({ code, players, me, selectedStoryId, onSelectStor
     };
 
     return (
-        <div className="min-h-screen bg-background">
-            <div className="mx-auto max-w-md px-4 pt-6 pb-32 sm:px-6">
+        <PlayerFrame code={code} playerName={meObj?.nickname}>
+            <div className="player-panel">
                 <div className="flex items-center justify-between">
                     <div>
-                        <div className="text-xs uppercase tracking-widest text-muted-foreground">Room</div>
+                        <div className="player-section-label !m-0">SECRET ROOM</div>
                         <button
                             onClick={copyCode}
-                            className="mt-0.5 inline-flex items-center gap-2 rounded-full bg-secondary px-3 py-1.5 font-mono text-lg tracking-widest text-secondary-foreground hover:bg-secondary/80"
+                            className="player-code mt-1 inline-flex items-center gap-2 px-3 py-1.5 text-lg tracking-widest"
                             data-testid="lobby-copy-code-button"
                         >
                             {code} <Copy className="h-3.5 w-3.5" />
                         </button>
                     </div>
-                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                    <div className="player-live flex items-center gap-1.5">
                         {connected ? (
                             <>
                                 <Wifi className="h-3.5 w-3.5 text-[hsl(var(--success))]" />
@@ -69,22 +70,17 @@ export default function Lobby({ code, players, me, selectedStoryId, onSelectStor
                     </div>
                 </div>
 
-                <h1
-                    className="mt-6 text-2xl font-semibold"
-                    style={{ fontFamily: "var(--font-serif)", letterSpacing: "var(--tracking-tight)" }}
-                >
-                    Around the fire
-                </h1>
-                <p className="mt-1 text-sm text-muted-foreground">
+                <h1 className="player-title mt-6">AGENTS ASSEMBLE!</h1>
+                <p className="player-copy">
                     Share the code above with your friends. When everyone's in, pick a tale to play.
                 </p>
 
                 <div className="mt-6">
-                    <div className="mb-2 flex items-center gap-1.5 text-xs uppercase tracking-widest text-muted-foreground">
+                    <div className="player-section-label flex items-center gap-1.5">
                         <Users className="h-3.5 w-3.5" /> {players.length} in room
                     </div>
                     <Card
-                        className="space-y-2 rounded-[var(--radius-lg)] border-border bg-card p-3"
+                        className="player-roster space-y-2 p-3"
                         data-testid="lobby-player-roster"
                     >
                         {players.map((p) => (
@@ -117,12 +113,12 @@ export default function Lobby({ code, players, me, selectedStoryId, onSelectStor
                 </div>
 
                 <div className="mt-8">
-                    <div className="mb-2 text-xs uppercase tracking-widest text-muted-foreground">
-                        Choose a tale
+                    <div className="player-section-label">
+                        CHOOSE A TRANSMISSION
                     </div>
                     <div className="space-y-2">
                         {stories.length === 0 && (
-                            <div className="rounded-md border border-dashed border-border p-4 text-sm text-muted-foreground">
+                            <div className="player-story-card p-4 text-sm">
                                 No stories available. Ask the admin to publish one.
                             </div>
                         )}
@@ -132,20 +128,16 @@ export default function Lobby({ code, players, me, selectedStoryId, onSelectStor
                                 <button
                                     key={s.id}
                                     onClick={() => onSelectStory(s.id)}
-                                    className={`w-full rounded-[var(--radius-lg)] border p-4 text-left transition-colors ${
-                                        selected
-                                            ? "border-primary bg-primary/[0.06] ring-1 ring-primary/40"
-                                            : "border-border bg-card hover:bg-secondary/50"
-                                    }`}
+                                    className={`player-tale-button ${selected ? "selected" : ""}`}
                                     data-testid={`lobby-story-card-${s.id}`}
                                 >
                                     <div className="flex items-center justify-between">
-                                        <div className="text-sm font-semibold">{s.title}</div>
-                                        <Badge variant="outline" className="text-[10px]">
+                                        <div className="player-tale-title">{s.title}</div>
+                                        <Badge variant="outline" className="player-chip">
                                             {s.node_count} nodes
                                         </Badge>
                                     </div>
-                                    <div className="mt-1 text-xs text-muted-foreground line-clamp-2">
+                                    <div className="player-tale-copy line-clamp-2">
                                         {s.description || "No description"}
                                     </div>
                                 </button>
@@ -155,12 +147,12 @@ export default function Lobby({ code, players, me, selectedStoryId, onSelectStor
                 </div>
             </div>
 
-            <div className="fixed inset-x-0 bottom-0 border-t border-border bg-background/95 px-4 py-3 backdrop-blur">
-                <div className="mx-auto max-w-md">
+            <div className="player-dock">
+                <div className="player-dock-inner">
                     <Button
                         onClick={start}
                         disabled={!selectedStoryId || busy || !isHost}
-                        className="h-12 w-full gap-2 text-base"
+                        className="player-primary-button gap-2"
                         data-testid="lobby-start-story-button"
                     >
                         <PlayCircle className="h-5 w-5" />
@@ -172,6 +164,6 @@ export default function Lobby({ code, players, me, selectedStoryId, onSelectStor
                     </Button>
                 </div>
             </div>
-        </div>
+        </PlayerFrame>
     );
 }

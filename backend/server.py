@@ -1122,6 +1122,12 @@ async def admin_get_story(story_id: str, _: bool = Depends(require_admin)):
 @api_router.put("/admin/stories/{story_id}")
 async def admin_update_story(story_id: str, payload: StoryUpdate, _: bool = Depends(require_admin)):
     updates = {k: v for k, v in payload.model_dump().items() if v is not None}
+    if "title" in updates:
+        updates["title"] = updates["title"].strip()
+        if not updates["title"]:
+            raise HTTPException(status_code=422, detail="Story title is required")
+    if "description" in updates:
+        updates["description"] = updates["description"].strip()
     if updates:
         await _q(lambda: supa.table("stories").update(updates).eq("id", story_id).execute())
     return await get_story(story_id)

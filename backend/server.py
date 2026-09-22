@@ -2,7 +2,8 @@
 Branching Narrative RPG Engine — Backend
 Synchronized group-voting runtime:
 - All players in a room share ONE current node, ONE set of flags, ONE phase.
-- Phases per node: reading (10s, no votes) -> voting (20s or until everyone voted) -> resolve.
+- Multiplayer phases per node: reading (10s, no votes) -> voting (20s or until everyone voted) -> resolve.
+- Solo rooms skip the reading phase so choices are immediately available.
 - Ties trigger a spinning-wheel (server picks random winner from tied options; broadcasts to clients for animation).
 - Winning choice is applied for the whole group; everyone advances together.
 - Editor (admin) endpoints and data model unchanged.
@@ -835,7 +836,7 @@ async def _start_phase_task(code: str, coro) -> None:
 
 
 async def advance_to_node(code: str, node_id: str, flags: List[str]) -> None:
-    """Enter a new node. Broadcasts reading phase; schedules automatic voting transition."""
+    """Enter a node, skipping the reading buffer only for one-player rooms."""
     _cancel_room_task(code)
     node = await get_node(node_id)
 
@@ -880,7 +881,31 @@ async def advance_to_node(code: str, node_id: str, flags: List[str]) -> None:
         await broadcast_room_state(code)
         return
 
-    # Non-terminal: start reading phase
+    players_res = await _q(
+        lambda: supa.table("players").select("*", count="exact")
+        .eq("room_code", code).execute()
+    )
+    is_solo = (players_res.count or 0) == 1
+
+    # A solo player can vote as soon as the node is displayed. Multiplayer
+    # retains the synchronized reading buffer unchanged.
+    if is_solo:
+        voting_ends = _now() + timedelta(seconds=VOTING_SECONDS)
+        await _q(lambda: supa.table("rooms").update({
+            "current_node_id": node_id,
+            "phase": "voting",
+            "phase_ends_at": voting_ends.isoformat(),
+            "flags": flags,
+            "wheel_options": None,
+            "wheel_winner_choice_id": None,
+        }).eq("code", code).execute())
+        await _q(lambda: supa.table("votes").delete()
+                 .eq("room_code", code).eq("node_id", node_id).execute())
+        await broadcast_room_state(code)
+        await _start_phase_task(code, _voting_timeout(code, node_id))
+        return
+
+    # Non-terminal multiplayer room: start reading phase
     reading_ends = _now() + timedelta(seconds=READING_SECONDS)
     await _q(lambda: supa.table("rooms").update({
         "current_node_id": node_id,
@@ -909,13 +934,17 @@ async def _reading_then_voting(code: str, node_id: str) -> None:
             "phase_ends_at": voting_ends.isoformat(),
         }).eq("code", code).execute())
         await broadcast_room_state(code)
-        await asyncio.sleep(VOTING_SECONDS)
-        # Timer expired -> resolve
-        await resolve_votes(code, node_id, reason="timeout")
+        await _voting_timeout(code, node_id)
     except asyncio.CancelledError:
         return
     except Exception as e:
         logger.exception(f"phase task error for {code}: {e}")
+
+
+async def _voting_timeout(code: str, node_id: str) -> None:
+    """Resolve an unanswered vote after the existing voting window."""
+    await asyncio.sleep(VOTING_SECONDS)
+    await resolve_votes(code, node_id, reason="timeout")
 
 
 async def resolve_votes(code: str, node_id: str, reason: str = "timeout") -> None:

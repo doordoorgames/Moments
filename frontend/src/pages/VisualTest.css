@@ -59,3 +59,5 @@
 .shoug-intro .vt-mission-card h2{color:#63253d;-webkit-text-stroke:0;text-shadow:none;font:italic 700 clamp(30px,9vw,58px)/1 Georgia,serif}
 .shoug-intro .vt-mission-card p{border:0;background:transparent;font:14px/1.5 Arial,sans-serif}
 .shoug-intro .vt-mission-card button{border:0;border-radius:0;background:#b6c594;color:#35263a;font:800 13px Arial,sans-serif;box-shadow:4px 4px 0 #63253d}
+.shoug-intro-mark{position:absolute;right:7px;top:40%;z-index:5;font:italic 700 20px Georgia,serif;letter-spacing:-.4em;color:#62283d;transform:rotate(16deg);pointer-events:none}
+.shoug-intro-mark small{display:block;margin-top:5px;font:italic 9px Georgia,serif;letter-spacing:0}

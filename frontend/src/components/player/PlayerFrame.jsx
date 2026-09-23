@@ -13,6 +13,7 @@ export default function PlayerFrame({ children, code, playerName, taleTheme }) {
             <div className="vt-orbit-bg orbit-two" aria-hidden="true" />
             <div className="vt-noise" aria-hidden="true" />
             <div className="vt-device">
+                {taleTheme === "shoug" && <div className="shoug-margin" aria-hidden="true"><span className="shoug-mark mark-a">ϽↃ</span><span className="shoug-mark mark-b">ϽↃ</span><span className="shoug-mark mark-c">ϽↃ</span><span className="shoug-margin-note">♡ LDN</span></div>}
                 <span className="vt-antenna"><i /></span>
                 <span className="vt-side-key key-a" /><span className="vt-side-key key-b" />
                 {['a', 'b', 'c', 'd'].map((position) => <span className={`vt-screw screw-${position}`} key={position}>×</span>)}

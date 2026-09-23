@@ -88,7 +88,7 @@ function StartScreen({ story, onConnect, connecting, error }) {
   const shoug = /shou[gq]|شوق/i.test(title);
   return (
     <motion.section className={`vt-screen vt-mission ${shoug ? "shoug-intro" : ""}`} key="start" initial={{ opacity: 0, scale: 1.45, rotate: 7 }} animate={{ opacity: 1, scale: 1, rotate: 0 }} exit={{ scale: 0.05, rotate: -8 }} transition={snap}>
-      {shoug && <div className="shoug-intro-photo" aria-hidden="true"><strong>LONDON</strong><span>THE LONDON FILES / 01</span></div>}
+      {shoug && <><div className="shoug-intro-photo" aria-hidden="true"><strong>LONDON</strong><span>THE LONDON FILES / 01</span></div><div className="shoug-intro-mark" aria-hidden="true">ϽↃ <small>♡ LDN</small></div></>}
       <motion.div className="vt-wipe pink" initial={{ x: "-120%" }} animate={{ x: "120%" }} transition={{ duration: 0.52, ease: "circInOut" }} /><motion.div className="vt-wipe blue" initial={{ x: "-140%" }} animate={{ x: "140%" }} transition={{ duration: 0.48, delay: 0.08, ease: "circInOut" }} />
       <p className="vt-kicker"><i /> INCOMING TRANSMISSION! <i /></p>
       <div className="vt-wave">{Array.from({ length: 24 }).map((_, i) => <i key={i} style={{ "--i": i, "--h": `${9 + (i % 6) * 5}px` }} />)}</div>

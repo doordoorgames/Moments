@@ -74,8 +74,7 @@ function Home({ navigate, onStart, install }) {
       <div className="vt-hero"><div className="vt-title-block"><span className="vt-sticker">TOP SECRET!</span><p>INTERACTIVE STORY DEVICE</p><h1 data-text="MOMENTS">MOMENTS</h1><div className="vt-title-rule"><i /><span>READY!</span></div><div className="vt-sparkles"><i>✦</i><b>✧</b><em>★</em></div></div><Radar /></div>
       <nav className="vt-menu" aria-label="Main menu">
         <motion.button className="primary" onClick={onStart} whileTap={{ scale: 0.94, rotate: -1.5 }}><small>01</small><i className="vt-menu-icon play">▶</i><span>START</span><b>GO!</b></motion.button>
-        <motion.button onClick={() => navigate("episodes")} whileTap={{ scale: 0.94, rotate: 1.5 }}><small>02</small><i className="vt-menu-icon disc">✦</i><span>EPISODES</span><b>↗</b></motion.button>
-        <motion.button onClick={() => navigate("profile")} whileTap={{ scale: 0.94, rotate: -1 }}><small>03</small><i className="vt-menu-icon face">●</i><span>PROFILE</span><b>↗</b></motion.button>
+        <motion.button onClick={() => navigate("profile")} whileTap={{ scale: 0.94, rotate: -1 }}><small>02</small><i className="vt-menu-icon face">●</i><span>PROFILE</span><b>↗</b></motion.button>
       </nav>
       <div className="vt-telemetry"><span><small>SIGNAL</small><Signal /></span><span><small>CHANNEL</small><b>7.26</b></span><span><small>STATUS</small><b className="mint">COOL</b></span></div>
       {install.visible && <div className="vt-install" role="status"><button type="button" onClick={install.request}><span>INSTALL MOMENTS</span><b>＋</b></button>{install.help && <p>Chrome menu ⋮ → Add to Home screen → Install</p>}</div>}
@@ -85,9 +84,11 @@ function Home({ navigate, onStart, install }) {
 
 function StartScreen({ story, onConnect, connecting, error }) {
   const title = story?.title || "SELECT A TALE";
-  const description = story?.description || "Open Episodes and choose a transmission from the live Moments archive.";
+  const description = story?.description || "Choose a tale from the live Moments archive.";
+  const shoug = /shou[gq]|شوق/i.test(title);
   return (
-    <motion.section className="vt-screen vt-mission" key="start" initial={{ opacity: 0, scale: 1.45, rotate: 7 }} animate={{ opacity: 1, scale: 1, rotate: 0 }} exit={{ scale: 0.05, rotate: -8 }} transition={snap}>
+    <motion.section className={`vt-screen vt-mission ${shoug ? "shoug-intro" : ""}`} key="start" initial={{ opacity: 0, scale: 1.45, rotate: 7 }} animate={{ opacity: 1, scale: 1, rotate: 0 }} exit={{ scale: 0.05, rotate: -8 }} transition={snap}>
+      {shoug && <div className="shoug-intro-photo" aria-hidden="true"><strong>LONDON</strong><span>THE LONDON FILES / 01</span></div>}
       <motion.div className="vt-wipe pink" initial={{ x: "-120%" }} animate={{ x: "120%" }} transition={{ duration: 0.52, ease: "circInOut" }} /><motion.div className="vt-wipe blue" initial={{ x: "-140%" }} animate={{ x: "140%" }} transition={{ duration: 0.48, delay: 0.08, ease: "circInOut" }} />
       <p className="vt-kicker"><i /> INCOMING TRANSMISSION! <i /></p>
       <div className="vt-wave">{Array.from({ length: 24 }).map((_, i) => <i key={i} style={{ "--i": i, "--h": `${9 + (i % 6) * 5}px` }} />)}</div>
@@ -97,10 +98,10 @@ function StartScreen({ story, onConnect, connecting, error }) {
   );
 }
 
-function Episodes({ stories, loading, error, onRetry, onOpen }) {
+function TaleSelection({ stories, loading, error, onRetry, onOpen }) {
   return (
     <motion.section className="vt-screen vt-episodes" key="episodes" initial={{ opacity: 0, x: "110%", rotate: 4 }} animate={{ opacity: 1, x: 0, rotate: 0 }} exit={{ opacity: 0, x: "110%" }} transition={snap}>
-      <div className="vt-section-head"><p>★ MEMORY CARTRIDGES</p><h2>EPISODES!</h2><span>{stories.length.toString().padStart(2, "0")} FILES</span></div>
+      <div className="vt-section-head"><p>★ YOUR NEXT WORLD</p><h2>CHOOSE A TALE</h2><span>{stories.length.toString().padStart(2, "0")} TALES</span></div>
       <div className="vt-episode-list">
         {stories.map((story, index) => <motion.button key={story.id} onClick={() => onOpen(story)} initial={{ opacity: 0, x: 75, rotate: 4 }} animate={{ opacity: 1, x: 0, rotate: index % 2 ? 0.6 : -0.6 }} transition={{ ...snap, delay: 0.1 + index * 0.09 }} whileTap={{ scale: 0.95, rotate: 0 }}><b>{String(index + 1).padStart(2, "0")}</b><i className="vt-episode-mark">{index % 2 ? "◆" : "★"}</i><span><strong>{story.title}</strong><small>{story.description || "NO DESCRIPTION"}</small></span><em className={story.node_count ? "unlocked" : "standby"}>{story.node_count ? "READY" : "NEW"}</em></motion.button>)}
         {loading && <p className="vt-story-state">TUNING LIVE ARCHIVE...</p>}
@@ -142,7 +143,6 @@ export default function VisualTest() {
     try {
       const liveStories = await api.listStories();
       setStories(Array.isArray(liveStories) ? liveStories : []);
-      setSelectedStory((current) => current || liveStories?.[0] || null);
     } catch (error) {
       setStoriesError(apiErrorMessage(error, "Could not load the live tale archive."));
     } finally {
@@ -177,8 +177,7 @@ export default function VisualTest() {
   };
 
   const openStory = (story) => { setSelectedStory(story); setScreen("start"); };
-  const openEpisodes = () => { loadStories(); setScreen("episodes"); };
-  const startStory = () => { if (selectedStory || stories[0]) openStory(selectedStory || stories[0]); else openEpisodes(); };
+  const openTales = () => { loadStories(); setScreen("tales"); };
 
   const connectStory = async () => {
     if (!selectedStory || connecting) return;
@@ -198,5 +197,5 @@ export default function VisualTest() {
     }
   };
 
-  return <Frame screen={screen} onBack={() => setScreen("home")}>{booting ? <Boot onComplete={() => setBooting(false)} /> : screen === "home" ? <Home navigate={(next) => next === "episodes" ? openEpisodes() : setScreen(next)} onStart={startStory} install={{ visible: !installed, help: installHelp, request: requestInstall }} /> : screen === "start" ? <StartScreen story={selectedStory} onConnect={connectStory} connecting={connecting} error={connectError} /> : screen === "episodes" ? <Episodes stories={stories} loading={storiesLoading} error={storiesError} onRetry={loadStories} onOpen={openStory} /> : <Profile />}</Frame>;
+  return <Frame screen={screen} onBack={() => setScreen(screen === "start" ? "tales" : "home")}>{booting ? <Boot onComplete={() => setBooting(false)} /> : screen === "home" ? <Home navigate={setScreen} onStart={openTales} install={{ visible: !installed, help: installHelp, request: requestInstall }} /> : screen === "start" ? <StartScreen story={selectedStory} onConnect={connectStory} connecting={connecting} error={connectError} /> : screen === "tales" ? <TaleSelection stories={stories} loading={storiesLoading} error={storiesError} onRetry={loadStories} onOpen={openStory} /> : <Profile />}</Frame>;
 }

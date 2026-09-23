@@ -6,6 +6,12 @@ function Signal() {
 }
 
 export default function PlayerFrame({ children, code, playerName, taleTheme }) {
+    if (taleTheme === "shoug") {
+        return <main className="vt-root player-theme-root tale-shoug shoug-canvas">
+            <div className="shoug-margin" aria-hidden="true"><span className="shoug-mark mark-a">ϽↃ</span><span className="shoug-mark mark-b">ϽↃ</span><span className="shoug-mark mark-c">ϽↃ</span><span className="shoug-margin-note">♡ LDN</span></div>
+            {children}
+        </main>;
+    }
     return (
         <main className={`vt-root player-theme-root ${taleTheme ? `tale-${taleTheme}` : ""}`}>
             <div className="vt-burst" aria-hidden="true" />
@@ -13,7 +19,6 @@ export default function PlayerFrame({ children, code, playerName, taleTheme }) {
             <div className="vt-orbit-bg orbit-two" aria-hidden="true" />
             <div className="vt-noise" aria-hidden="true" />
             <div className="vt-device">
-                {taleTheme === "shoug" && <div className="shoug-margin" aria-hidden="true"><span className="shoug-mark mark-a">ϽↃ</span><span className="shoug-mark mark-b">ϽↃ</span><span className="shoug-mark mark-c">ϽↃ</span><span className="shoug-margin-note">♡ LDN</span></div>}
                 <span className="vt-antenna"><i /></span>
                 <span className="vt-side-key key-a" /><span className="vt-side-key key-b" />
                 {['a', 'b', 'c', 'd'].map((position) => <span className={`vt-screw screw-${position}`} key={position}>×</span>)}

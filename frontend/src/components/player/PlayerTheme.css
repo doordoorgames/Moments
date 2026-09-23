@@ -72,3 +72,29 @@
 .tale-shoug .shoug-phone .shoug-scene-header::before{animation:none}
 @keyframes shoug-breathe{to{transform:scale(1.035)}}
 @media(prefers-reduced-motion:reduce){.tale-shoug .shoug-scene-header::before{animation:none}}
+
+/* Shoug owns the full viewport; no shared gadget hardware or television effects. */
+.shoug-canvas{display:flex;flex-direction:column;width:100%;height:100dvh;min-height:100dvh;margin:0;padding:0!important;background:#f8f1e9;overflow:hidden;isolation:isolate}
+.shoug-canvas .player-panel{position:relative;flex:1;overflow-y:auto;overscroll-behavior:contain;width:min(100%,740px);margin:0 auto;padding:0 20px max(120px,env(safe-area-inset-bottom) + 105px)!important;color:#1d1719}
+.shoug-canvas .shoug-scene-header{position:absolute;inset:0 0 auto;width:100%;height:max(90dvh,100%);min-height:0;margin:0;background-position:center top;z-index:-1;overflow:hidden}
+.shoug-canvas .shoug-scene-header::before{z-index:0}
+.shoug-canvas .shoug-scene-header::after{z-index:2;right:25px;top:calc(25dvh + 16px);bottom:auto}
+.shoug-canvas .shoug-scene-header strong{z-index:1;top:clamp(110px,27dvh,290px);bottom:auto;left:-.04em;max-width:none;font:900 clamp(63px,19vw,145px)/.8 Georgia,serif;color:#fff;text-shadow:0 2px 10px #1a15154d}
+.shoug-canvas .shoug-scene-header span{z-index:2;top:max(18px,env(safe-area-inset-top) + 14px);left:23px;background:#fffaf2;color:#271c20}
+.shoug-canvas .player-eyebrow{position:relative;z-index:3;margin-top:clamp(250px,55dvh,570px);margin-bottom:12px}
+.shoug-canvas .player-story-card{position:relative;z-index:3;width:min(94%,520px);margin:0 0 22px 1%!important;padding:20px 18px!important;background:#fff9f0f2!important;box-shadow:7px 7px 0 #e3afbe!important}
+.shoug-canvas .player-choice-list{position:relative;z-index:3;width:min(96%,530px);margin:0 0 0 auto;gap:15px}
+.shoug-canvas .shoug-choice{min-height:72px;padding:15px 18px;color:#1d1719}
+.shoug-canvas .shoug-choice-caption{color:#fff}
+.shoug-canvas .shoug-choice-caption .player-choice-text{color:#fff}
+.shoug-canvas .player-dock{position:absolute;inset:auto 0 0;z-index:20;padding-bottom:max(13px,env(safe-area-inset-bottom));border-top:0;background:#fff9f0f5;box-shadow:0 -3px 0 #e3afbe;color:#22191b}
+.shoug-canvas .shoug-margin{position:absolute;inset:0;z-index:8;pointer-events:none}
+.shoug-canvas .shoug-mark.mark-a{left:5px;top:20%;color:#fff;opacity:.75}
+.shoug-canvas .shoug-mark.mark-b{right:8px;top:46%;color:#fff;opacity:.7}
+.shoug-canvas .shoug-mark.mark-c{left:-4px;bottom:13%;color:#62283d;opacity:.45}
+.shoug-canvas .shoug-margin-note{right:5px;top:58%;color:#fff;opacity:.8}
+.shoug-canvas .shoug-phone .shoug-scene-header{background:#b4c492}
+.shoug-canvas .shoug-phone .shoug-scene-header strong{font-size:clamp(48px,12vw,110px);color:#fff}
+.shoug-canvas .shoug-phone .player-story-card{background:#f6d5e0f5!important}
+.shoug-canvas .shoug-london .player-story-card{margin-left:auto!important;margin-right:0!important}
+@media(max-height:700px){.shoug-canvas .player-eyebrow{margin-top:48dvh}.shoug-canvas .player-story-card{padding:16px!important}.shoug-canvas .shoug-choice{min-height:62px}}

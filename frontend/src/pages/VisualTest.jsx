@@ -29,7 +29,8 @@ function DeviceChrome() {
   return <><span className="vt-antenna"><i /></span><span className="vt-side-key key-a" /><span className="vt-side-key key-b" />{["a", "b", "c", "d"].map((position) => <span className={`vt-screw screw-${position}`} key={position}>×</span>)}</>;
 }
 
-function Frame({ children, screen, onBack }) {
+function Frame({ children, screen, onBack, shoug = false }) {
+  if (shoug) return <main className="vt-root shoug-entry-root"><button className="shoug-entry-back" onClick={onBack} aria-label="Back to tales">← TALES</button>{children}</main>;
   return (
     <main className="vt-root">
       <div className="vt-burst" aria-hidden="true" /><div className="vt-orbit-bg orbit-one" aria-hidden="true" /><div className="vt-orbit-bg orbit-two" aria-hidden="true" /><div className="vt-noise" aria-hidden="true" />
@@ -197,5 +198,5 @@ export default function VisualTest() {
     }
   };
 
-  return <Frame screen={screen} onBack={() => setScreen(screen === "start" ? "tales" : "home")}>{booting ? <Boot onComplete={() => setBooting(false)} /> : screen === "home" ? <Home navigate={setScreen} onStart={openTales} install={{ visible: !installed, help: installHelp, request: requestInstall }} /> : screen === "start" ? <StartScreen story={selectedStory} onConnect={connectStory} connecting={connecting} error={connectError} /> : screen === "tales" ? <TaleSelection stories={stories} loading={storiesLoading} error={storiesError} onRetry={loadStories} onOpen={openStory} /> : <Profile />}</Frame>;
+  return <Frame screen={screen} shoug={!booting && screen === "start" && /shou[gq]|شوق/i.test(selectedStory?.title || "")} onBack={() => setScreen(screen === "start" ? "tales" : "home")}>{booting ? <Boot onComplete={() => setBooting(false)} /> : screen === "home" ? <Home navigate={setScreen} onStart={openTales} install={{ visible: !installed, help: installHelp, request: requestInstall }} /> : screen === "start" ? <StartScreen story={selectedStory} onConnect={connectStory} connecting={connecting} error={connectError} /> : screen === "tales" ? <TaleSelection stories={stories} loading={storiesLoading} error={storiesError} onRetry={loadStories} onOpen={openStory} /> : <Profile />}</Frame>;
 }

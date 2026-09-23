@@ -5,9 +5,9 @@ function Signal() {
     return <span className="vt-signal compact" aria-label="Signal online">{[1, 2, 3, 4].map((bar) => <i key={bar} style={{ "--bar": bar }} />)}</span>;
 }
 
-export default function PlayerFrame({ children, code, playerName }) {
+export default function PlayerFrame({ children, code, playerName, taleTheme }) {
     return (
-        <main className="vt-root player-theme-root">
+        <main className={`vt-root player-theme-root ${taleTheme ? `tale-${taleTheme}` : ""}`}>
             <div className="vt-burst" aria-hidden="true" />
             <div className="vt-orbit-bg orbit-one" aria-hidden="true" />
             <div className="vt-orbit-bg orbit-two" aria-hidden="true" />

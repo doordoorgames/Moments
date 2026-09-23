@@ -46,3 +46,18 @@
 @media(max-height:700px){.vt-screen{padding-top:14px}.vt-hero{height:132px}.vt-menu button{height:44px}.vt-menu button.primary{height:49px}.vt-telemetry{padding-top:7px}.vt-telemetry>span{min-height:34px}.vt-device-cap{height:36px}.vt-footer{height:45px}.vt-episodes,.vt-mission,.vt-profile{padding-top:40px}.vt-episode-list{gap:7px;margin-top:16px}.vt-episode-list button{min-height:61px}.vt-avatar{width:103px;height:103px}.vt-profile>p{margin-top:17px}}
 @media(min-width:600px){.vt-root{padding:18px}.vt-device{height:calc(100dvh - 36px);box-shadow:inset 8px 8px 0 #83c7ff,inset -9px -10px 0 #2538a2,8px 11px 0 rgba(15,11,55,.65),20px 30px 55px rgba(14,8,57,.5)}}
 @media(prefers-reduced-motion:reduce){.vt-root *,.vt-root *::before,.vt-root *::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
+
+/* Shoug's world begins only after her tale is selected. */
+.shoug-intro{background:#f6d9df;color:#542439;isolation:isolate}
+.shoug-intro-photo{position:relative;min-height:34vh;margin:-8px -12px 12px;background:#8a9991 url('https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?w=1200&q=85') center/cover;color:white;overflow:hidden}
+.shoug-intro-photo::after{content:"";position:absolute;inset:45% 0 0;background:linear-gradient(transparent,rgba(36,20,30,.55));pointer-events:none}
+.shoug-intro-photo strong{position:absolute;z-index:1;left:-.06em;bottom:.15em;font:900 clamp(58px,19vw,115px)/.8 Georgia,serif;letter-spacing:-.1em;white-space:nowrap}
+.shoug-intro-photo span{position:absolute;z-index:2;right:14px;top:14px;padding:7px 10px;background:#faf6eb;color:#542439;font:700 10px Arial,sans-serif;transform:rotate(3deg)}
+.shoug-intro .vt-kicker{color:#542439}.shoug-intro .vt-wave{display:none}
+.shoug-intro .vt-mission-card{background:#fffaf3!important;border:0!important;border-radius:0!important;box-shadow:9px 10px 0 #a9bb8a!important;transform:rotate(-1.5deg)}
+.shoug-intro .vt-mission-card::before,.shoug-intro .vt-corner{display:none}.shoug-intro .vt-tape{background:#e1aabc;border:0;font-family:Georgia,serif}
+.shoug-intro .vt-mission-card h2{color:#63253d;-webkit-text-stroke:0;text-shadow:none;font:italic 700 clamp(30px,9vw,58px)/1 Georgia,serif}
+.shoug-intro .vt-mission-card p{border:0;background:transparent;font:14px/1.5 Arial,sans-serif}
+.shoug-intro .vt-mission-card button{border:0;border-radius:0;background:#b6c594;color:#35263a;font:800 13px Arial,sans-serif;box-shadow:4px 4px 0 #63253d}
+.shoug-intro-mark{position:absolute;right:7px;top:40%;z-index:5;font:italic 700 20px Georgia,serif;letter-spacing:-.4em;color:#62283d;transform:rotate(16deg);pointer-events:none}
+.shoug-intro-mark small{display:block;margin-top:5px;font:italic 9px Georgia,serif;letter-spacing:0}

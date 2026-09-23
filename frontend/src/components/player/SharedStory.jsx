@@ -7,6 +7,7 @@ import { api } from "@/lib/api";
 import { toast } from "sonner";
 import Wheel from "@/components/player/Wheel";
 import PlayerFrame from "@/components/player/PlayerFrame";
+import { isShougTale, shougScene, choiceStyles } from "@/components/player/shougVisuals";
 import { Check, ArrowRight, Crown, BookOpen } from "lucide-react";
 
 /**
@@ -18,6 +19,8 @@ import { Check, ArrowRight, Crown, BookOpen } from "lucide-react";
 export default function SharedStory({ state, player, code }) {
     const room = state.room;
     const node = state.current_node;
+    const shoug = isShougTale(state.story);
+    const scene = shougScene(node);
     const choices = state.choices || [];
     const players = state.players || [];
     const voteStats = state.vote_stats || { voted_count: 0, total_players: players.length, voted_player_ids: [] };
@@ -95,8 +98,9 @@ export default function SharedStory({ state, player, code }) {
     if (!node) return null;
 
     return (
-        <PlayerFrame code={code} playerName={player?.nickname}>
-            <div className="player-panel">
+        <PlayerFrame code={code} playerName={player?.nickname} taleTheme={shoug ? "shoug" : null}>
+            <div className={`player-panel ${shoug ? `shoug-scene shoug-${scene}` : ""}`}>
+                {shoug && <div className="shoug-scene-header" aria-hidden="true"><strong>{scene === "airport" ? "DEPARTURES" : scene === "shopping" ? "OXFORD" : scene === "phone" ? "ON THE LINE" : "LONDON"}</strong><span>{scene === "airport" ? "BOARDING / LONDON" : scene === "shopping" ? "SHOPPING / LONDON" : scene === "phone" ? "SHOUG ↔ ZAIN" : "SHOUG'S CAMERA ROLL"}</span></div>}
                 <AnimatePresence mode="wait">
                     <motion.div
                         key={node.id}
@@ -146,7 +150,7 @@ export default function SharedStory({ state, player, code }) {
                                         key={c.id}
                                         disabled={!canVote}
                                         onClick={() => submitVote(c.id)}
-                                        className="player-choice"
+                                        className={shoug ? `player-choice shoug-choice shoug-choice-${c === choices[1] ? { airport: "taped", shopping: "cutout", phone: "bubble", london: "caption" }[scene] : choiceStyles[scene]} ${c === choices[1] ? "shoug-choice-alt" : ""}` : "player-choice"}
                                         data-testid={`choice-vote-${c.id}`}
                                     >
                                         <div className="player-choice-row">

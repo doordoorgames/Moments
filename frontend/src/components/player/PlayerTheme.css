@@ -59,3 +59,16 @@
 .tale-shoug .shoug-choice-cutout{background:#e3afbe;border-radius:2px 0 4px 0;transform:rotate(1.5deg);box-shadow:5px 5px 0 #fffaf3,8px 8px 0 #62283d}
 .tale-shoug .shoug-choice-caption{background:#62283d;color:white;box-shadow:5px 5px 0 #b4c492;transform:rotate(.5deg)}
 .tale-shoug .shoug-choice-caption .player-choice-state{color:#352c30}
+/* Margin marks sit on the physical device, never over narrative or controls. */
+.tale-shoug .vt-device{position:relative}
+.shoug-margin{position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:4;color:#62283d}
+.shoug-mark{position:absolute;font:italic 700 19px/1 Georgia,serif;letter-spacing:-.4em;opacity:.8;white-space:nowrap}
+.shoug-mark.mark-a{top:14%;left:1px;transform:rotate(-19deg)}
+.shoug-mark.mark-b{right:7px;top:55%;font-size:13px;transform:rotate(21deg);opacity:.65}
+.shoug-mark.mark-c{left:-5px;bottom:8%;font-size:31px;transform:rotate(11deg);opacity:.42}
+.shoug-margin-note{position:absolute;top:40%;right:2px;writing-mode:vertical-rl;font:italic 9px Georgia,serif;transform:rotate(3deg)}
+.tale-shoug .shoug-scene-header{isolation:isolate}
+.tale-shoug .shoug-scene-header::before{content:"";position:absolute;inset:-4%;background:inherit;background-position:center;background-size:cover;animation:shoug-breathe 18s ease-in-out infinite alternate;z-index:-1}
+.tale-shoug .shoug-phone .shoug-scene-header::before{animation:none}
+@keyframes shoug-breathe{to{transform:scale(1.035)}}
+@media(prefers-reduced-motion:reduce){.tale-shoug .shoug-scene-header::before{animation:none}}

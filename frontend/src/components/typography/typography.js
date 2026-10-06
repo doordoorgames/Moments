@@ -1,7 +1,7 @@
 export const wordCount = (text = "") =>
     (String(text).match(/[\p{L}\p{N}]+(?:['’][\p{L}\p{N}]+)*/gu) || []).length;
 
-export const typographyKind = (text) => wordCount(text) <= 5 ? "display-short" : "reading-long";
+export const typographyKind = (text, role = "reading") => role === "headline" ? "display-short" : "reading-long";
 
 export const FOREST = "white-forest";
 export const MAROON = "white-maroon";

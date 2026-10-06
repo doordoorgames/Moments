@@ -1,4 +1,5 @@
 import "@/App.css";
+import MomentsTypography from "@/components/typography/MomentsTypography";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { Toaster } from "@/components/ui/sonner";
 
@@ -18,7 +19,7 @@ function AdminGate({ children }) {
 
 function App() {
     return (
-        <div className="App">
+        <MomentsTypography><div className="App">
             <BrowserRouter>
                 <Routes>
                     <Route path="/" element={<Landing />} />
@@ -46,7 +47,7 @@ function App() {
                 </Routes>
             </BrowserRouter>
             <Toaster position="top-center" richColors />
-        </div>
+        </div></MomentsTypography>
     );
 }
 

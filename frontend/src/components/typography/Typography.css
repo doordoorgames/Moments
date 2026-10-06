@@ -1,0 +1,75 @@
+@import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Manrope:wght@400..800&display=swap');
+
+:root {
+    --moments-font-display: "Bricolage Grotesque", ui-sans-serif, system-ui, sans-serif;
+    --moments-font-reading: "Manrope", ui-sans-serif, system-ui, sans-serif;
+    --moments-ink: #141514;
+    --moments-forest: #102f24;
+    --moments-maroon: #3d1024;
+    --moments-blush: #ffe3ee;
+    --moments-mint: #e0fff0;
+}
+:is(.moments-typography,.moments-text-system) { display: contents; }
+:is(.moments-typography,.moments-text-system) [data-moments-type],
+:is(.moments-typography,.moments-text-system) .display-short,
+:is(.moments-typography,.moments-text-system) .reading-long {
+    -webkit-text-stroke: 0 !important;
+    --registration-offset: 2px;
+    --registration-edge: .8px;
+    text-shadow:
+        var(--registration-edge) 0 0 var(--registration-ink),
+        calc(-1 * var(--registration-edge)) 0 0 var(--registration-ink),
+        0 var(--registration-edge) 0 var(--registration-ink),
+        0 calc(-1 * var(--registration-edge)) 0 var(--registration-ink),
+        var(--registration-edge) var(--registration-edge) 0 var(--registration-ink),
+        calc(-1 * var(--registration-edge)) calc(-1 * var(--registration-edge)) 0 var(--registration-ink),
+        var(--registration-edge) calc(-1 * var(--registration-edge)) 0 var(--registration-ink),
+        calc(-1 * var(--registration-edge)) var(--registration-edge) 0 var(--registration-ink),
+        var(--registration-offset) var(--registration-offset) 0 var(--registration-ink) !important;
+}
+:is(.moments-typography,.moments-text-system) [data-moments-type="display-short"],
+:is(.moments-typography,.moments-text-system) .display-short {
+    font-family: var(--moments-font-display) !important;
+    font-weight: 750 !important;
+}
+:is(.moments-typography,.moments-text-system) [data-moments-type="reading-long"],
+:is(.moments-typography,.moments-text-system) .reading-long {
+    font-family: var(--moments-font-reading) !important;
+    --registration-offset: 1px;
+    --registration-edge: .55px;
+}
+:is(.moments-typography,.moments-text-system) [data-moments-tone="white-forest"],
+:is(.moments-typography,.moments-text-system) .white-forest {
+    color: #fff !important;
+    --registration-ink: var(--moments-forest);
+}
+:is(.moments-typography,.moments-text-system) [data-moments-tone="white-maroon"],
+:is(.moments-typography,.moments-text-system) .white-maroon {
+    color: #fff !important;
+    --registration-ink: var(--moments-maroon);
+}
+:is(.moments-typography,.moments-text-system) [data-moments-tone="dark-blush"],
+:is(.moments-typography,.moments-text-system) .dark-blush {
+    color: var(--moments-ink) !important;
+    --registration-ink: var(--moments-blush);
+}
+:is(.moments-typography,.moments-text-system) [data-moments-tone="dark-mint"],
+:is(.moments-typography,.moments-text-system) .dark-mint {
+    color: var(--moments-ink) !important;
+    --registration-ink: var(--moments-mint);
+}
+:is(.moments-typography,.moments-text-system) input::placeholder,
+:is(.moments-typography,.moments-text-system) textarea::placeholder {
+    font-family: var(--moments-font-reading);
+    color: inherit;
+    opacity: 1;
+    text-shadow: inherit;
+}
+/* These selectors only affect text treatment, never placement or dimensions. */
+:is(.moments-typography,.moments-text-system) :is(h1,h2,h3)[data-moments-type="display-short"] {
+    --registration-offset: 3px;
+    --registration-edge: 1px;
+}
+@media (forced-colors: active) {
+    :is(.moments-typography,.moments-text-system) [data-moments-type] { text-shadow: none !important; color: CanvasText !important; }
+}

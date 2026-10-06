@@ -4,9 +4,9 @@ import "./Typography.css";
 
 // Use for new UI. The provider also migrates existing text without adding wrappers
 // around text nodes managed by React or changing screen markup/layout.
-export function Typography({ as: Tag = "span", text, tone = "dark-blush", className = "", children, ...props }) {
+export function Typography({ as: Tag = "span", text, tone = "dark-blush", className = "", variant, children, ...props }) {
     const content = text ?? children;
-    return <Tag {...props} className={className} data-moments-type={typographyKind(typeof content === "string" ? content : "")} data-moments-tone={tone}>{content}</Tag>;
+    return <Tag {...props} className={className} data-moments-type={typographyKind(typeof content === "string" ? content : "", variant || (/^h[1-6]$/.test(Tag) ? "headline" : "reading"))} data-moments-tone={tone}>{content}</Tag>;
 }
 
 const candidates = "h1,h2,h3,h4,h5,h6,p,span,a,button,label,strong,b,em,small,li,td,th,div,legend,input,textarea,select,option";
@@ -54,7 +54,8 @@ export default function MomentsTypography({ children }) {
                 const tone = photographic
                     ? (preferWhite ? (alternate ? "white-maroon" : "white-forest") : (alternate ? "dark-mint" : "dark-blush"))
                     : contrastTone(background, preferWhite, alternate);
-                element.dataset.momentsType = typographyKind(text);
+                const headline = element.matches("h1,h2,h3,h4,h5,h6,.player-title") || !!element.closest(".shoug-scene-header strong,.shoug-intro-photo strong");
+                element.dataset.momentsType = typographyKind(text, headline ? "headline" : "reading");
                 element.dataset.momentsTone = tone;
             });
         };

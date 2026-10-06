@@ -4,8 +4,8 @@
 @tailwind utilities;
 
 :root {
-    --font-sans: "Manrope", ui-sans-serif, system-ui, sans-serif;
-    --font-serif: "Bricolage Grotesque", ui-sans-serif, system-ui, sans-serif;
+    --font-sans: "Avenir Next World W05 Bold", ui-sans-serif, system-ui, sans-serif;
+    --font-serif: "Bodoni Moda", Didot, serif;
     --tracking-tight: -0.02em;
     --leading-story: 1.65;
 }

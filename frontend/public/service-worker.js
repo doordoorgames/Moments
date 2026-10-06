@@ -1,11 +1,11 @@
-const CACHE_NAME = "moments-visual-v4";
+const CACHE_NAME = "moments-visual-v5";
 const APP_SHELL = [
   "/manifest.json",
-  "/moments-home-v2-180.png",
-  "/moments-home-v2-192.png",
-  "/moments-home-v2-512.png",
-  "/moments-home-v2-maskable-192.png",
-  "/moments-home-v2-maskable-512.png",
+  "/moments-home-v3-180.png",
+  "/moments-home-v3-192.png",
+  "/moments-home-v3-512.png",
+  "/moments-home-v3-maskable-192.png",
+  "/moments-home-v3-maskable-512.png",
 ];
 
 self.addEventListener("install", (event) => {

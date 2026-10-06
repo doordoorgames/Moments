@@ -100,7 +100,7 @@ export default function SharedStory({ state, player, code }) {
     return (
         <PlayerFrame code={code} playerName={player?.nickname} taleTheme={shoug ? "shoug" : null}>
             <div className={`player-panel ${shoug ? `shoug-scene shoug-${scene}` : ""}`}>
-                {shoug && <div className="shoug-scene-header" aria-hidden="true"><strong>{scene === "airport" ? "DEPARTURES" : scene === "shopping" ? "OXFORD" : scene === "phone" ? "ON THE LINE" : "LONDON"}</strong><span>{scene === "airport" ? "BOARDING / LONDON" : scene === "shopping" ? "SHOPPING / LONDON" : scene === "phone" ? "SHOUG ↔ ZAIN" : "SHOUG'S CAMERA ROLL"}</span></div>}
+                {shoug && <div className="shoug-scene-header" aria-hidden="true"><strong>{scene === "airport" ? "DEPARTURES" : scene === "shopping" ? "OXFORD" : scene === "phone" ? "ON THE LINE" : "LONDON"}</strong></div>}
                 <AnimatePresence mode="wait">
                     <motion.div
                         key={node.id}

@@ -5,8 +5,8 @@ import { typographyKind, wordCount, contrastTone, contrast } from "./typography"
 
 global.IS_REACT_ACT_ENVIRONMENT = true;
 
-test("five/six word boundary ignores punctuation and handles Arabic", () => {
-    expect(typographyKind("Where are we going today?")).toBe("display-short");
+test("headlines use editorial type and all choices use reading type", () => {
+    expect(typographyKind("Where are we going today?", "headline")).toBe("display-short");
     expect(typographyKind("Where are we going in London?")).toBe("reading-long");
     expect(wordCount("شوق، زين — في لندن اليوم")).toBe(5);
     expect(wordCount("Shoug's London: day-one / 02")).toBe(5);
@@ -39,7 +39,7 @@ test("dynamic content and edited form values are classified automatically", asyn
         root.render(<MomentsTypography><p>Next chapter</p></MomentsTypography>);
     });
     await act(async () => { await new Promise(resolve => setTimeout(resolve, 35)); });
-    expect(host.querySelector("p").dataset.momentsType).toBe("display-short");
+    expect(host.querySelector("p").dataset.momentsType).toBe("reading-long");
     await act(async () => root.unmount());
     host.remove();
 });

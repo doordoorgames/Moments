@@ -39,7 +39,7 @@ function Frame({ children, screen, onBack, shoug = false }) {
         <div className="vt-device-cap"><div className="vt-speaker">{Array.from({ length: 7 }).map((_, index) => <i key={index} />)}</div><strong>DORDOR</strong><span>DD–02</span></div>
         <div className="vt-display-shell">
           <header className="vt-status"><div className="vt-network"><Signal compact /><span>DORDOR NET</span></div><span className="vt-clock">02:14</span><span className="vt-online"><i /> LINK</span></header>
-          {screen !== "home" && <motion.button className="vt-back" onClick={onBack} aria-label="Back" whileTap={{ x: -5, rotate: -3 }}><span>◀</span> BACK</motion.button>}
+          {screen !== "home" && <motion.button className="vt-back" onClick={onBack} aria-label="Back" whileTap={{ x: -5}}><span>◀</span> BACK</motion.button>}
           <div className="vt-crt-lines" aria-hidden="true" /><AnimatePresence mode="wait">{children}</AnimatePresence>
         </div>
         <footer className="vt-footer"><span className="vt-led pink" /><span className="vt-led mint" /><div className="vt-footer-track"><i /></div><b>SECRET MODE</b><span className="vt-dial"><i /></span></footer>
@@ -59,23 +59,23 @@ function Boot({ onComplete }) {
   return (
     <motion.section className="vt-boot" key="boot" exit={{ scaleY: 0.03, scaleX: 1.06, filter: "brightness(2.5)" }} transition={{ duration: 0.26, ease: "anticipate" }}>
       <div className="vt-speed-lines" />
-      <motion.div className="vt-boot-badge" initial={{ scale: 0, rotate: -18 }} animate={{ scale: 1, rotate: 3 }} transition={{ ...snap, delay: 0.15 }}><span className="vt-boot-ufo"><i /><b /></span><strong>DD</strong><small>SPY LINK</small></motion.div>
+      <motion.div className="vt-boot-badge" initial={{ scale: 0}} animate={{ scale: 1}} transition={{ ...snap, delay: 0.15 }}><span className="vt-boot-ufo"><i /><b /></span><strong>DD</strong><small>SPY LINK</small></motion.div>
       <motion.h1 initial={{ y: 24, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ ...snap, delay: 0.45 }}>DORDOR!</motion.h1>
       <div className="vt-boot-log">{lines.map((text, index) => <p className={line > index ? "done" : ""} key={text}><b>{line > index ? "★" : "○"}</b>{text}</p>)}</div>
       <div className="vt-loader"><motion.i initial={{ width: "4%" }} animate={{ width: "100%" }} transition={{ duration: 2.05, ease: [0.65, 0, 0.35, 1] }} /></div>
-      <motion.strong className="vt-online-sticker" animate={{ scale: [1, 1.08, 1], rotate: [-2, 1, -2] }} transition={{ duration: 0.5, repeat: 2 }}>SYSTEM GO!</motion.strong>
+
     </motion.section>
   );
 }
 
 function Home({ navigate, onStart, install }) {
   return (
-    <motion.section className="vt-screen vt-home" key="home" initial={{ scaleY: 0.04, opacity: 0 }} animate={{ scaleY: 1, opacity: 1 }} exit={{ x: -90, rotate: -4, opacity: 0 }} transition={snap}>
+    <motion.section className="vt-screen vt-home" key="home" initial={{ scaleY: 0.04, opacity: 0 }} animate={{ scaleY: 1, opacity: 1 }} exit={{ x: -90,  opacity: 0 }} transition={snap}>
       <div className="vt-eyebrow"><span>✦ TEEN AGENT CHANNEL</span><b>VOL. 02</b></div>
-      <div className="vt-hero"><div className="vt-title-block"><span className="vt-sticker">TOP SECRET!</span><p>INTERACTIVE STORY DEVICE</p><h1 data-text="MOMENTS">MOMENTS</h1><div className="vt-title-rule"><i /><span>READY!</span></div><div className="vt-sparkles"><i>✦</i><b>✧</b><em>★</em></div></div><Radar /></div>
+      <div className="vt-hero"><div className="vt-title-block"><p>INTERACTIVE STORY DEVICE</p><h1 data-text="MOMENTS">MOMENTS</h1><div className="vt-title-rule"><i /><span>READY!</span></div></div><Radar /></div>
       <nav className="vt-menu" aria-label="Main menu">
-        <motion.button className="primary" onClick={onStart} whileTap={{ scale: 0.94, rotate: -1.5 }}><small>01</small><i className="vt-menu-icon play">▶</i><span>START</span><b>GO!</b></motion.button>
-        <motion.button onClick={() => navigate("profile")} whileTap={{ scale: 0.94, rotate: -1 }}><small>02</small><i className="vt-menu-icon face">●</i><span>PROFILE</span><b>↗</b></motion.button>
+        <motion.button className="primary" onClick={onStart} whileTap={{ scale: 0.94}}><small>01</small><i className="vt-menu-icon play">▶</i><span>START</span><b>GO!</b></motion.button>
+        <motion.button onClick={() => navigate("profile")} whileTap={{ scale: 0.94}}><small>02</small><i className="vt-menu-icon face">●</i><span>PROFILE</span><b>↗</b></motion.button>
       </nav>
       <div className="vt-telemetry"><span><small>SIGNAL</small><Signal /></span><span><small>CHANNEL</small><b>7.26</b></span><span><small>STATUS</small><b className="mint">COOL</b></span></div>
       {install.visible && <div className="vt-install" role="status"><button type="button" onClick={install.request}><span>INSTALL MOMENTS</span><b>＋</b></button>{install.help && <p>Chrome menu ⋮ → Add to Home screen → Install</p>}</div>}
@@ -88,12 +88,12 @@ function StartScreen({ story, onConnect, connecting, error }) {
   const description = story?.description || "Choose a tale from the live Moments archive.";
   const shoug = /shou[gq]|شوق/i.test(title);
   return (
-    <motion.section className={`vt-screen vt-mission ${shoug ? "shoug-intro" : ""}`} key="start" initial={{ opacity: 0, scale: 1.45, rotate: 7 }} animate={{ opacity: 1, scale: 1, rotate: 0 }} exit={{ scale: 0.05, rotate: -8 }} transition={snap}>
-      {shoug && <><div className="shoug-intro-photo" aria-hidden="true"><strong>LONDON</strong><span>THE LONDON FILES / 01</span></div><div className="shoug-intro-mark" aria-hidden="true">ϽↃ <small>♡ LDN</small></div></>}
+    <motion.section className={`vt-screen vt-mission ${shoug ? "shoug-intro" : ""}`} key="start" initial={{ opacity: 0, scale: 1.45}} animate={{ opacity: 1, scale: 1}} exit={{ scale: 0.05}} transition={snap}>
+      {shoug && <><div className="shoug-intro-photo" aria-hidden="true"><strong>LONDON</strong></div></>}
       <motion.div className="vt-wipe pink" initial={{ x: "-120%" }} animate={{ x: "120%" }} transition={{ duration: 0.52, ease: "circInOut" }} /><motion.div className="vt-wipe blue" initial={{ x: "-140%" }} animate={{ x: "140%" }} transition={{ duration: 0.48, delay: 0.08, ease: "circInOut" }} />
       <p className="vt-kicker"><i /> INCOMING TRANSMISSION! <i /></p>
       <div className="vt-wave">{Array.from({ length: 24 }).map((_, i) => <i key={i} style={{ "--i": i, "--h": `${9 + (i % 6) * 5}px` }} />)}</div>
-      <div className="vt-mission-card"><span className="vt-tape">PLAY MESSAGE</span><span className="vt-corner tl" /><span className="vt-corner br" /><small>LIVE CASE FILE ★</small><h2>{title}</h2><p>{description}</p><motion.button onClick={onConnect} disabled={connecting || !story} whileTap={{ scale: 0.91, rotate: -2 }}>{connecting ? "CONNECTING..." : "CONNECT!"} <b>▶▶</b></motion.button>{error && <p className="vt-connect-error" role="alert">{error}</p>}</div>
+      <div className="vt-mission-card"><span className="vt-corner tl" /><span className="vt-corner br" /><small>LIVE CASE FILE ★</small><h2>{title}</h2><p>{description}</p><motion.button onClick={onConnect} disabled={connecting || !story} whileTap={{ scale: 0.91}}>{connecting ? "CONNECTING..." : "CONNECT!"} <b>▶▶</b></motion.button>{error && <p className="vt-connect-error" role="alert">{error}</p>}</div>
       <div className="vt-coordinates"><span>25.2048° N</span><i>◎</i><span>55.2708° E</span></div>
     </motion.section>
   );
@@ -101,10 +101,10 @@ function StartScreen({ story, onConnect, connecting, error }) {
 
 function TaleSelection({ stories, loading, error, onRetry, onOpen }) {
   return (
-    <motion.section className="vt-screen vt-episodes" key="episodes" initial={{ opacity: 0, x: "110%", rotate: 4 }} animate={{ opacity: 1, x: 0, rotate: 0 }} exit={{ opacity: 0, x: "110%" }} transition={snap}>
+    <motion.section className="vt-screen vt-episodes" key="episodes" initial={{ opacity: 0, x: "110%"}} animate={{ opacity: 1, x: 0}} exit={{ opacity: 0, x: "110%" }} transition={snap}>
       <div className="vt-section-head"><p>★ YOUR NEXT WORLD</p><h2>CHOOSE A TALE</h2><span>{stories.length.toString().padStart(2, "0")} TALES</span></div>
       <div className="vt-episode-list">
-        {stories.map((story, index) => <motion.button key={story.id} onClick={() => onOpen(story)} initial={{ opacity: 0, x: 75, rotate: 4 }} animate={{ opacity: 1, x: 0, rotate: index % 2 ? 0.6 : -0.6 }} transition={{ ...snap, delay: 0.1 + index * 0.09 }} whileTap={{ scale: 0.95, rotate: 0 }}><b>{String(index + 1).padStart(2, "0")}</b><i className="vt-episode-mark">{index % 2 ? "◆" : "★"}</i><span><strong>{story.title}</strong><small>{story.description || "NO DESCRIPTION"}</small></span><em className={story.node_count ? "unlocked" : "standby"}>{story.node_count ? "READY" : "NEW"}</em></motion.button>)}
+        {stories.map((story, index) => <motion.button key={story.id} onClick={() => onOpen(story)} initial={{ opacity: 0, x: 75}} animate={{ opacity: 1, x: 0 }} transition={{ ...snap, delay: 0.1 + index * 0.09 }} whileTap={{ scale: 0.95}}><b>{String(index + 1).padStart(2, "0")}</b><i className="vt-episode-mark">{index % 2 ? "◆" : "★"}</i><span><strong>{story.title}</strong><small>{story.description || "NO DESCRIPTION"}</small></span><em className={story.node_count ? "unlocked" : "standby"}>{story.node_count ? "READY" : "NEW"}</em></motion.button>)}
         {loading && <p className="vt-story-state">TUNING LIVE ARCHIVE...</p>}
         {!loading && error && <div className="vt-story-state error" role="alert"><p>{error}</p><button onClick={onRetry}>RETRY LINK</button></div>}
         {!loading && !error && stories.length === 0 && <p className="vt-story-state">NO TALES TRANSMITTED YET</p>}
@@ -116,10 +116,10 @@ function TaleSelection({ stories, loading, error, onRetry, onOpen }) {
 
 function Profile() {
   return (
-    <motion.section className="vt-screen vt-profile" key="profile" initial={{ opacity: 0, y: 90, rotate: -5 }} animate={{ opacity: 1, y: 0, rotate: 0 }} exit={{ opacity: 0, scale: 0.5 }} transition={snap}>
-      <span className="vt-profile-sticker">WHO ARE U?</span><div className="vt-avatar"><span>?</span><i /><b>✦</b></div><p>PLAYER IDENTITY CARD</p><h2>AGENT UNKNOWN</h2>
+    <motion.section className="vt-screen vt-profile" key="profile" initial={{ opacity: 0, y: 90}} animate={{ opacity: 1, y: 0}} exit={{ opacity: 0, scale: 0.5 }} transition={snap}>
+      <div className="vt-avatar"><span>?</span><i /><b>✦</b></div><p>PLAYER IDENTITY CARD</p><h2>AGENT UNKNOWN</h2>
       <div className="vt-profile-panel"><div className="vt-profile-row"><span>SESSIONS</span><b>00</b></div><div className="vt-profile-row"><span>CLEARANCE</span><b>COBALT</b></div></div>
-      <motion.button className="vt-outline" whileTap={{ scale: 0.93, rotate: 2 }}>INITIALIZE PROFILE! <b>＋</b></motion.button>
+      <motion.button className="vt-outline" whileTap={{ scale: 0.93}}>INITIALIZE PROFILE! <b>＋</b></motion.button>
     </motion.section>
   );
 }

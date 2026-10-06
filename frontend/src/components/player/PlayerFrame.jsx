@@ -8,7 +8,6 @@ function Signal() {
 export default function PlayerFrame({ children, code, playerName, taleTheme }) {
     if (taleTheme === "shoug") {
         return <main className="vt-root player-theme-root tale-shoug shoug-canvas">
-            <div className="shoug-margin" aria-hidden="true"><span className="shoug-mark mark-a">ϽↃ</span><span className="shoug-mark mark-b">ϽↃ</span><span className="shoug-mark mark-c">ϽↃ</span><span className="shoug-margin-note">♡ LDN</span></div>
             {children}
         </main>;
     }

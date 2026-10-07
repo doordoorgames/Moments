@@ -1,0 +1,22 @@
+import { act } from "react";
+import { createRoot } from "react-dom/client";
+import SharedStory from "./SharedStory";
+import { shougTreatment } from "./shougPalette";
+global.IS_REACT_ACT_ENVIRONMENT=true;
+test("real gameplay mounts Shoug colors for both vote counts and changes at the next node", async()=>{
+ window.matchMedia=()=>({matches:false,addListener:()=>{},removeListener:()=>{}});
+ const meta=document.createElement("meta");meta.name="theme-color";meta.content="#195de6";document.head.append(meta);
+ const host=document.createElement("div");document.body.append(host);const root=createRoot(host);
+ const state={story:{title:"Shoug’s Tale"},current_node:{id:"node-1",story_text:"At the airport"},room:{phase:"voting",flags:[],phase_ends_at:new Date(Date.now()+20000).toISOString()},choices:[{id:"a",text:"Continue"},{id:"b",text:"Wait"}],players:[{id:"p"}],vote_stats:{voted_count:0,total_players:1,voted_player_ids:[]}};
+ await act(async()=>root.render(<SharedStory state={state} player={{id:"p"}} code="TEST"/>));
+ expect(host.querySelector("main").dataset.shougTreatment).toBe(shougTreatment("node-1").name);
+ expect(host.querySelector("main").style.getPropertyValue("--shoug-status-bg")).toBe(shougTreatment("node-1").background);
+ expect(host.querySelector('[data-testid="vote-counter"]').textContent).toContain("0/1 voted");
+ expect(meta.content).toBe(shougTreatment("node-1").background);
+ await act(async()=>root.render(<SharedStory state={{...state,vote_stats:{voted_count:1,total_players:1,voted_player_ids:["p"]}}} player={{id:"p"}} code="TEST"/>));
+ expect(host.querySelector('[data-testid="vote-counter"]').textContent).toContain("1/1 voted");
+ expect(host.querySelectorAll("button:disabled").length).toBe(2);
+ await act(async()=>root.render(<SharedStory state={{...state,current_node:{id:"node-2",story_text:"Next scene"}}} player={{id:"p"}} code="TEST"/>));
+ expect(meta.content).toBe(shougTreatment("node-2").background);
+ await act(async()=>root.unmount());expect(meta.content).toBe("#195de6");host.remove();meta.remove();
+});

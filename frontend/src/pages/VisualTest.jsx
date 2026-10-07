@@ -1,3 +1,5 @@
+import { useShougShell } from "@/components/player/useShougShell";
+import { shougTreatment } from "@/components/player/shougPalette";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
@@ -30,6 +32,7 @@ function DeviceChrome() {
 }
 
 function Frame({ children, screen, onBack, shoug = false }) {
+  useShougShell(shoug, shougTreatment("shoug-entry"));
   if (shoug) return <main className="vt-root shoug-entry-root"><button className="shoug-entry-back" onClick={onBack} aria-label="Back to tales">← TALES</button>{children}</main>;
   return (
     <main className="vt-root">

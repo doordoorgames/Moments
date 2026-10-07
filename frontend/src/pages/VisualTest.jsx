@@ -1,10 +1,11 @@
 import { useShougShell } from "@/components/player/useShougShell";
-import { shougTreatment } from "@/components/player/shougPalette";
+import { shougTreatment, shougVariables } from "@/components/player/shougPalette";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { api, apiErrorMessage } from "@/lib/api";
 import "./VisualTest.css";
+import "@/components/player/ShougSystem.css";
 
 const snap = { type: "spring", stiffness: 420, damping: 27, mass: 0.75 };
 
@@ -33,7 +34,7 @@ function DeviceChrome() {
 
 function Frame({ children, screen, onBack, shoug = false }) {
   useShougShell(shoug, shougTreatment("shoug-entry"));
-  if (shoug) return <main className="vt-root shoug-entry-root"><button className="shoug-entry-back" onClick={onBack} aria-label="Back to tales">← TALES</button>{children}</main>;
+  if (shoug) return <main className="vt-root shoug-entry-root" style={shougVariables(shougTreatment("shoug-entry"))}><button className="shoug-entry-back" onClick={onBack} aria-label="Back to tales">← TALES</button>{children}</main>;
   return (
     <main className="vt-root">
       <div className="vt-burst" aria-hidden="true" /><div className="vt-orbit-bg orbit-one" aria-hidden="true" /><div className="vt-orbit-bg orbit-two" aria-hidden="true" /><div className="vt-noise" aria-hidden="true" />

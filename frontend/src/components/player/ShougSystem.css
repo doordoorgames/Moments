@@ -1,0 +1,29 @@
+/* Central Shoug surface contract: backgrounds, text, icons and shadows share tokens. */
+:is(.shoug-canvas,.shoug-entry-root){--moments-font-reading:"Avenir World Bold W10","Avenir Next World W05 Bold",sans-serif;--surface-bg:var(--shoug-bg);--surface-fg:var(--shoug-fg);--surface-shadow:var(--shoug-shadow);--surface-accent:var(--shoug-accent);--ink:var(--surface-fg);--cream:var(--surface-bg);--mint:var(--surface-bg);--pink:var(--surface-accent);--bubble:var(--surface-bg);--cyan:var(--surface-bg);--blue:var(--surface-fg);--cobalt:var(--surface-fg);--lavender:var(--surface-bg);background-color:var(--surface-bg)!important;color:var(--surface-fg)!important}
+/* The global text classifier cannot independently choose Shoug paint. */
+:is(.shoug-canvas.tale-shoug,.shoug-entry-root.shoug-entry-root) :is([data-moments-tone],*){color:var(--surface-fg)!important;--registration-ink:var(--surface-shadow);--registration-shadow:var(--surface-shadow)}
+:is(.shoug-canvas,.shoug-entry-root) [data-moments-type],.shoug-canvas.tale-shoug .player-story-text{text-shadow:.6px .6px 0 var(--surface-shadow)!important;-webkit-text-stroke:0!important;font-weight:700!important;font-synthesis:none!important}
+/* Local Avenir only; a licensed webfont is still required on devices without it. */
+.shoug-canvas.tale-shoug .player-story-text,:is(.shoug-canvas,.shoug-entry-root) [data-moments-type="reading-long"]{font-family:var(--moments-font-reading)!important;font-weight:700!important}
+:is(.shoug-canvas,.shoug-entry-root) [data-moments-type="display-short"]{text-shadow:2px 2px 0 var(--surface-shadow)!important}
+.shoug-canvas .player-panel{background:transparent!important}
+/* Opaque backing guarantees headline contrast even when the photograph changes. */
+.shoug-canvas .shoug-scene-header strong{background:var(--surface-bg)!important;color:var(--surface-fg)!important}
+.shoug-canvas .shoug-phone .shoug-scene-header,.shoug-canvas .shoug-phone .shoug-scene-header::before{background:var(--surface-bg)!important}
+:is(.shoug-canvas,.shoug-entry-root) :is(.player-story-card,.player-choice-state,.player-vote-count,.player-flag,.player-chip,.player-ending-badge,.player-eyebrow span,.shoug-entry-back){--surface-bg:var(--shoug-fg);--surface-fg:var(--shoug-bg);--surface-shadow:var(--shoug-inverse-shadow);--surface-accent:var(--shoug-inverse-accent);background:var(--surface-bg)!important;color:var(--surface-fg)!important;border-color:var(--surface-fg)!important;box-shadow:2px 2px 0 var(--surface-accent)!important}
+.shoug-canvas .player-story-card{box-shadow:7px 7px 0 var(--surface-accent)!important}
+.shoug-canvas :is(.shoug-choice,.player-primary-button,.player-secondary-button,.player-narration-wait,.player-wheel,.player-wheel-label,.player-wheel-winner,.player-dock){background:var(--surface-bg)!important;color:var(--surface-fg)!important;border-color:var(--surface-fg)!important;box-shadow:3px 3px 0 var(--surface-accent)!important}
+.shoug-canvas .shoug-choice:nth-child(even),.shoug-canvas .player-secondary-button{--surface-bg:var(--shoug-fg);--surface-fg:var(--shoug-bg);--surface-shadow:var(--shoug-inverse-shadow);--surface-accent:var(--shoug-inverse-accent)}
+.shoug-canvas .shoug-choice:nth-child(even) .player-choice-state{--surface-bg:var(--shoug-bg);--surface-fg:var(--shoug-fg);--surface-shadow:var(--shoug-shadow);--surface-accent:var(--shoug-accent)}
+.shoug-canvas .shoug-choice::before{color:var(--surface-fg)!important;border-color:var(--surface-fg)!important;font-weight:700;text-shadow:.6px .6px 0 var(--surface-shadow)}
+.shoug-canvas .shoug-choice:disabled{opacity:1;filter:none}
+.shoug-canvas .shoug-choice:not(:disabled):hover{box-shadow:4px 5px 0 var(--surface-fg)!important}
+.shoug-canvas .shoug-choice:not(:disabled):active{box-shadow:1px 1px 0 var(--surface-fg)!important}
+.shoug-canvas :is(button,a):focus-visible{outline:3px solid var(--surface-fg)!important;outline-offset:4px}
+.shoug-canvas .player-dock{box-shadow:0 -3px 0 var(--surface-fg)!important}
+.shoug-canvas .player-progress{background:var(--surface-bg)!important;border-color:var(--surface-fg)!important}
+.shoug-canvas .player-progress>div{background:repeating-linear-gradient(90deg,var(--surface-fg) 0 14px,var(--surface-accent) 14px 18px)!important}
+.shoug-canvas .player-wheel text{font-family:var(--moments-font-reading);font-weight:700}
+.shoug-canvas.tale-shoug :is(.player-choice-text,.player-choice-state,.player-vote-count,.player-copy,.player-locked,.player-from,.player-live){font-family:var(--moments-font-reading)!important;font-weight:700!important}
+.shoug-app-shell body::after{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top);background:var(--shoug-native-status);z-index:1000;pointer-events:none}
+.shoug-entry-root :is(.vt-mission-card,.shoug-intro-photo strong){background:var(--surface-bg)!important;color:var(--surface-fg)!important;border-color:var(--surface-fg)!important;box-shadow:3px 3px 0 var(--surface-accent)!important}

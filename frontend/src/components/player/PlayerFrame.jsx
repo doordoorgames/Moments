@@ -1,7 +1,8 @@
 import { useShougShell } from "@/components/player/useShougShell";
-import { shougTreatment } from "@/components/player/shougPalette";
+import { shougTreatment, shougVariables } from "@/components/player/shougPalette";
 import "@/pages/VisualTest.css";
 import "@/components/player/PlayerTheme.css";
+import "@/components/player/ShougSystem.css";
 
 function Signal() {
     return <span className="vt-signal compact" aria-label="Signal online">{[1, 2, 3, 4].map((bar) => <i key={bar} style={{ "--bar": bar }} />)}</span>;
@@ -11,7 +12,7 @@ export default function PlayerFrame({ children, code, playerName, taleTheme, the
     const treatment = shougTreatment(themeKey);
     useShougShell(taleTheme === "shoug", treatment);
     if (taleTheme === "shoug") {
-        return <main className="vt-root player-theme-root tale-shoug shoug-canvas" style={{ "--shoug-status-bg": treatment.background, "--shoug-status-fg": treatment.foreground, "--shoug-status-accent": treatment.accent }} data-shoug-treatment={treatment.name}>
+        return <main className="vt-root player-theme-root tale-shoug shoug-canvas" style={shougVariables(treatment)} data-shoug-treatment={treatment.name}>
             {children}
         </main>;
     }

@@ -190,7 +190,7 @@ export default function SharedStory({ state, player, code }) {
                                         <ArrowRight className="h-4 w-4" />
                                     </Button>
                                 ) : (
-                                    <div className="rounded-lg border border-pink-400/30 bg-pink-500/5 p-3 text-center text-xs text-muted-foreground">
+                                    <div className="player-narration-wait rounded-lg border border-pink-400/30 bg-pink-500/5 p-3 text-center text-xs text-muted-foreground">
                                         Waiting for the host to continue…
                                     </div>
                                 )}
@@ -251,6 +251,8 @@ export default function SharedStory({ state, player, code }) {
             {/* Wheel overlay */}
             {phase === "wheel" && room?.wheel_options && (
                 <Wheel
+                    taleTheme={shoug ? "shoug" : null}
+                    themeKey={node.id}
                     options={room.wheel_options}
                     winnerId={room.wheel_winner_choice_id}
                     durationMs={4200}

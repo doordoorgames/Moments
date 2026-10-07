@@ -1,7 +1,7 @@
 import { act } from "react";
 import { createRoot } from "react-dom/client";
 import SharedStory from "./SharedStory";
-import { shougTreatment } from "./shougPalette";
+import { shougTreatment, shougNativeTreatment } from "./shougPalette";
 global.IS_REACT_ACT_ENVIRONMENT=true;
 test("real gameplay mounts Shoug colors for both vote counts and changes at the next node", async()=>{
  window.matchMedia=()=>({matches:false,addListener:()=>{},removeListener:()=>{}});
@@ -12,11 +12,11 @@ test("real gameplay mounts Shoug colors for both vote counts and changes at the 
  expect(host.querySelector("main").dataset.shougTreatment).toBe(shougTreatment("node-1").name);
  expect(host.querySelector("main").style.getPropertyValue("--shoug-status-bg")).toBe(shougTreatment("node-1").background);
  expect(host.querySelector('[data-testid="vote-counter"]').textContent).toContain("0/1 voted");
- expect(meta.content).toBe(shougTreatment("node-1").background);
+ expect(meta.content).toBe(shougNativeTreatment(shougTreatment("node-1")).background);
  await act(async()=>root.render(<SharedStory state={{...state,vote_stats:{voted_count:1,total_players:1,voted_player_ids:["p"]}}} player={{id:"p"}} code="TEST"/>));
  expect(host.querySelector('[data-testid="vote-counter"]').textContent).toContain("1/1 voted");
  expect(host.querySelectorAll("button:disabled").length).toBe(2);
  await act(async()=>root.render(<SharedStory state={{...state,current_node:{id:"node-2",story_text:"Next scene"}}} player={{id:"p"}} code="TEST"/>));
- expect(meta.content).toBe(shougTreatment("node-2").background);
+ expect(meta.content).toBe(shougNativeTreatment(shougTreatment("node-2")).background);
  await act(async()=>root.unmount());expect(meta.content).toBe("#195de6");host.remove();meta.remove();
 });

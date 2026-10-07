@@ -1,4 +1,4 @@
-const CACHE_NAME = "moments-visual-v8-shoug-contrast";
+const CACHE_NAME = "moments-visual-v9-shoug-fit";
 const APP_SHELL = [
   "/manifest.json",
   "/moments-home-v3-180.png",

@@ -46,3 +46,23 @@ export function shougVariables(treatment) {
         "--shoug-status-accent": treatment.accent,
     };
 }
+
+// A is also the native bar: retain a dark base for installed Android white glyphs.
+// B has a different dark AND light color, not just another tint of the same pair.
+export function shougScreenThemes(key) {
+    const A = shougNativeTreatment(shougTreatment(key));
+    const candidates = SHOUG_TREATMENTS.filter(p =>
+        ![A.background, A.foreground].includes(p.background) &&
+        ![A.background, A.foreground].includes(p.foreground));
+    let hash = 0;
+    for (const character of `${key}:second`) hash = (hash * 31 + character.charCodeAt(0)) >>> 0;
+    return { A, B: candidates[hash % candidates.length] };
+}
+export function shougBand(themes, index) {
+    const band = index % 2 ? "B" : "A";
+    const p = themes[band];
+    return { "data-shoug-band": band, "data-shoug-pair": p.name, style: {
+        "--surface-bg": p.background, "--surface-fg": p.foreground,
+        "--surface-shadow": p.shadow, "--surface-accent": p.accent,
+    } };
+}

@@ -14,101 +14,76 @@
 @media(max-height:700px){.player-panel{padding-top:12px}.player-story-card{padding:14px!important}.player-choice{min-height:52px}.player-title{font-size:18px}}
 
 /* Shoug: contextual editorial collage, scoped to her story runtime. */
-.tale-shoug{--shoug-pink:#e3afbe;--shoug-matcha:#b4c492;--shoug-cream:#fff9f0;--shoug-maroon:#62283d;background:#eee3dc}
-.tale-shoug .vt-device{background:var(--shoug-pink);border-color:var(--shoug-maroon)}
-.tale-shoug .vt-device-cap,.tale-shoug .vt-footer{background:var(--shoug-matcha);color:var(--shoug-maroon)}
-.tale-shoug .player-display-shell{background:var(--shoug-cream);border-color:var(--shoug-maroon)}
-.tale-shoug .vt-status{background:#fffaf3;color:var(--shoug-maroon)}
+
+.tale-shoug .vt-device{}
+.tale-shoug .vt-device-cap,.tale-shoug .vt-footer{}
+.tale-shoug .player-display-shell{}
+.tale-shoug .vt-status{}
 .tale-shoug .vt-crt-lines{display:none}
-.tale-shoug .player-panel{color:#392c30;font-family:Arial,sans-serif;padding-top:12px}
+.tale-shoug .player-panel{font-family:Arial,sans-serif;padding-top:12px}
 .tale-shoug .player-panel::before{display:none}
-.tale-shoug .shoug-scene-header{position:relative;height:clamp(170px,30vh,310px);margin:-12px -14px 16px;overflow:hidden;background-color:#7b8c8a;background-position:center;background-size:cover;color:white}
+.tale-shoug .shoug-scene-header{position:relative;height:clamp(170px,30vh,310px);margin:-12px -14px 16px;overflow:hidden;background-position:center;background-size:cover}
 .tale-shoug .shoug-airport .shoug-scene-header{background-image:url('https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=1200&q=85')}
 .tale-shoug .shoug-shopping .shoug-scene-header{background-image:url('https://images.unsplash.com/photo-1483975988355-763728e1935b?w=1200&q=85')}
 .tale-shoug .shoug-london .shoug-scene-header{background-image:url('https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?w=1200&q=85')}
-.tale-shoug .shoug-phone .shoug-scene-header{background:#b5c493;background-image:repeating-linear-gradient(-13deg,transparent 0 43px,rgba(255,255,255,.22) 44px 45px)}
+.tale-shoug .shoug-phone .shoug-scene-header{}
 
-.tale-shoug .shoug-scene-header strong{position:absolute;left:-.04em;bottom:.1em;max-width:110%;white-space:nowrap;font:900 clamp(45px,16vw,110px)/.8 Georgia,serif;letter-spacing:-.085em;text-shadow:0 2px 8px #26202655;animation:shoug-enter .6s ease-out both}
-.tale-shoug .shoug-scene-header span{position:absolute;top:12px;left:12px;padding:6px 9px;background:#fff9f0;color:#62283d;font:700 10px Arial,sans-serif;transform:none}
-.tale-shoug .player-eyebrow span,.tale-shoug .player-chip{border:0;background:var(--shoug-matcha);color:var(--shoug-maroon);font:700 10px Arial,sans-serif}
-.tale-shoug .player-story-card{position:relative;margin-top:10px!important;padding:20px 18px!important;border:0!important;border-radius:0!important;background:var(--shoug-cream)!important;box-shadow:5px 5px 0 var(--shoug-pink)!important;color:#352c30!important;transform:none}
+.tale-shoug .shoug-scene-header strong{position:absolute;left:-.04em;bottom:.1em;max-width:110%;white-space:nowrap;font:900 clamp(45px,16vw,110px)/.8 Georgia,serif;letter-spacing:-.085em;animation:shoug-enter .6s ease-out both}
+.tale-shoug .shoug-scene-header span{position:absolute;top:12px;left:12px;padding:6px 9px;font:700 10px Arial,sans-serif;transform:none}
+.tale-shoug .player-eyebrow span,.tale-shoug .player-chip{border:0;font:700 10px Arial,sans-serif}
+.tale-shoug .player-story-card{position:relative;margin-top:10px!important;padding:20px 18px!important;border:0!important;border-radius:0!important;transform:none}
 
 .tale-shoug .player-story-text{font:500 clamp(15px,4vw,19px)/1.55 Arial,sans-serif!important}
 .tale-shoug .player-choice-list{gap:13px}
-.tale-shoug .shoug-choice{position:relative;min-height:64px;padding:13px 17px;border:0;border-radius:0;background:#fffaf3;color:#3f2b32;box-shadow:4px 5px 0 #62283d;transform:none;transition:transform .15s,box-shadow .15s}
-.tale-shoug .shoug-choice:nth-child(even){transform:none;background:#f3d6df}
+.tale-shoug .shoug-choice{position:relative;min-height:64px;padding:13px 17px;border:0;border-radius:0;transform:none;transition:transform .15s,box-shadow .15s}
+.tale-shoug .shoug-choice:nth-child(even){transform:none}
 .tale-shoug .shoug-choice:not(:disabled):hover{transform:translateY(-3px) }
-.tale-shoug .shoug-choice:not(:disabled):active{transform:translate(3px,3px);box-shadow:1px 1px 0 #62283d}
-.tale-shoug .shoug-choice:focus-visible{outline:3px solid #62283d;outline-offset:4px}
+.tale-shoug .shoug-choice:not(:disabled):active{transform:translate(3px,3px)}
+.tale-shoug .shoug-choice:focus-visible{outline-offset:4px}
 .tale-shoug .shoug-choice:disabled{opacity:.78}
 .tale-shoug .player-choice-text{font:700 clamp(13px,3.5vw,17px)/1.35 Arial,sans-serif}
-.tale-shoug .player-choice-state{border:0;background:#b4c492;font:700 9px Arial,sans-serif;white-space:nowrap}
-.tale-shoug .shoug-choice-ticket{background:#fffaf3;border-left:9px solid #b4c492;clip-path:polygon(0 0,100% 0,100% 42%,97% 50%,100% 58%,100% 100%,0 100%)}
-.tale-shoug .shoug-choice-ticket::before{content:"BOARDING / CHOICE";display:block;margin-bottom:6px;font:700 9px Arial,sans-serif;letter-spacing:.16em;color:#62283d}
-.tale-shoug .shoug-choice-receipt{background:#fffaf3;clip-path:polygon(0 0,100% 0,100% 100%,96% 97%,92% 100%,88% 97%,84% 100%,80% 97%,76% 100%,72% 97%,68% 100%,64% 97%,60% 100%,56% 97%,52% 100%,48% 97%,44% 100%,40% 97%,36% 100%,32% 97%,28% 100%,24% 97%,20% 100%,16% 97%,12% 100%,8% 97%,4% 100%,0 97%)}
+.tale-shoug .player-choice-state{border:0;font:700 9px Arial,sans-serif;white-space:nowrap}
+.tale-shoug .shoug-choice-ticket{border-left:9px solid var(--surface-fg);clip-path:polygon(0 0,100% 0,100% 42%,97% 50%,100% 58%,100% 100%,0 100%)}
+.tale-shoug .shoug-choice-ticket::before{content:"BOARDING / CHOICE";display:block;margin-bottom:6px;font:700 9px Arial,sans-serif;letter-spacing:.16em}
+.tale-shoug .shoug-choice-receipt{clip-path:polygon(0 0,100% 0,100% 100%,96% 97%,92% 100%,88% 97%,84% 100%,80% 97%,76% 100%,72% 97%,68% 100%,64% 97%,60% 100%,56% 97%,52% 100%,48% 97%,44% 100%,40% 97%,36% 100%,32% 97%,28% 100%,24% 97%,20% 100%,16% 97%,12% 100%,8% 97%,4% 100%,0 97%)}
 .tale-shoug .shoug-choice-receipt::before{content:"LONDON  /  EDITION";display:block;border-bottom:1px dashed #62283d;margin-bottom:7px;padding-bottom:4px;font:700 9px Arial,sans-serif;letter-spacing:.12em}
-.tale-shoug .shoug-choice-bubble{border-radius:17px 17px 17px 2px;background:#b4c492;box-shadow:3px 4px 0 #62283d}
-.tale-shoug .shoug-choice-bubble.shoug-choice-alt{border-radius:17px 17px 2px 17px;background:#f3d6df}
-.tale-shoug .shoug-choice-paper{background:#fffaf3;border-left:5px solid #e3afbe}
-.tale-shoug .shoug-choice-paper.shoug-choice-alt{background:#b4c492;border-left:0;border-top:6px solid #fffaf3}
-.tale-shoug .player-dock{background:#fffaf3;border-top-color:#62283d;box-shadow:0 -4px 0 #e3afbe;color:#62283d}
+.tale-shoug .shoug-choice-bubble{border-radius:17px 17px 17px 2px}
+.tale-shoug .shoug-choice-bubble.shoug-choice-alt{border-radius:17px 17px 2px 17px}
+.tale-shoug .shoug-choice-paper{border-left:5px solid var(--surface-fg)}
+.tale-shoug .shoug-choice-paper.shoug-choice-alt{border-left:0;border-top:6px solid var(--surface-fg)}
+.tale-shoug .player-dock{}
 @keyframes shoug-enter{from{transform:translateY(22px);opacity:0}to{transform:translateY(0);opacity:1}}
 @media(prefers-reduced-motion:reduce){.tale-shoug .shoug-scene-header strong{animation:none}}
-.tale-shoug .shoug-choice-taped{background:#fffaf3;transform:none}
+.tale-shoug .shoug-choice-taped{transform:none}
 
-.tale-shoug .shoug-choice-cutout{background:#e3afbe;border-radius:2px 0 4px 0;transform:none;box-shadow:5px 5px 0 #fffaf3,8px 8px 0 #62283d}
-.tale-shoug .shoug-choice-caption{background:#62283d;color:white;box-shadow:5px 5px 0 #b4c492;transform:none}
-.tale-shoug .shoug-choice-caption .player-choice-state{color:#352c30}
+.tale-shoug .shoug-choice-cutout{border-radius:2px 0 4px 0;transform:none}
+.tale-shoug .shoug-choice-caption{transform:none}
+.tale-shoug .shoug-choice-caption .player-choice-state{}
 /* Margin marks sit on the physical device, never over narrative or controls. */
 .tale-shoug .vt-device{position:relative}
 .tale-shoug .shoug-scene-header{isolation:isolate}
-.tale-shoug .shoug-scene-header::before{content:"";position:absolute;inset:-4%;background:inherit;background-position:center;background-size:cover;animation:shoug-breathe 18s ease-in-out infinite alternate;z-index:-1}
+.tale-shoug .shoug-scene-header::before{content:"";position:absolute;inset:-4%;background-position:center;background-size:cover;animation:shoug-breathe 18s ease-in-out infinite alternate;z-index:-1}
 .tale-shoug .shoug-phone .shoug-scene-header::before{animation:none}
 @keyframes shoug-breathe{to{transform:scale(1.035)}}
 @media(prefers-reduced-motion:reduce){.tale-shoug .shoug-scene-header::before{animation:none}}
 
 /* Shoug owns the full viewport; no shared gadget hardware or television effects. */
-.shoug-canvas{display:flex;flex-direction:column;width:100%;height:100dvh;min-height:100dvh;margin:0;padding:0!important;background:#f8f1e9;overflow:hidden;isolation:isolate}
-.shoug-canvas .player-panel{position:relative;flex:1;overflow-y:auto;overscroll-behavior:contain;width:min(100%,740px);margin:0 auto;padding:0 20px max(120px,env(safe-area-inset-bottom) + 105px)!important;color:#1d1719}
+.shoug-canvas{display:flex;flex-direction:column;width:100%;height:100dvh;min-height:100dvh;margin:0;padding:0!important;overflow:hidden;isolation:isolate}
+.shoug-canvas .player-panel{position:relative;flex:1;overflow-y:auto;overscroll-behavior:contain;width:min(100%,740px);margin:0 auto;padding:0 20px max(120px,env(safe-area-inset-bottom) + 105px)!important}
 .shoug-canvas .shoug-scene-header{position:absolute;inset:0 0 auto;width:100%;height:max(90dvh,100%);min-height:0;margin:0;background-position:center top;z-index:-1;overflow:hidden}
 .shoug-canvas .shoug-scene-header::before{z-index:0}
 .shoug-canvas .shoug-scene-header::after{z-index:2;right:25px;top:calc(25dvh + 16px);bottom:auto}
-.shoug-canvas .shoug-scene-header strong{z-index:1;top:clamp(110px,27dvh,290px);bottom:auto;left:-.04em;max-width:none;font:900 clamp(63px,19vw,145px)/.8 Georgia,serif;color:#fff;text-shadow:0 2px 10px #1a15154d}
-.shoug-canvas .shoug-scene-header span{z-index:2;top:max(18px,env(safe-area-inset-top) + 14px);left:23px;background:#fffaf2;color:#271c20}
+.shoug-canvas .shoug-scene-header strong{z-index:1;top:clamp(110px,27dvh,290px);bottom:auto;left:-.04em;max-width:none;font:900 clamp(63px,19vw,145px)/.8 Georgia,serif}
+.shoug-canvas .shoug-scene-header span{z-index:2;top:max(18px,env(safe-area-inset-top) + 14px);left:23px}
 .shoug-canvas .player-eyebrow{position:relative;z-index:3;margin-top:clamp(250px,55dvh,570px);margin-bottom:12px}
-.shoug-canvas .player-story-card{position:relative;z-index:3;width:min(94%,520px);margin:0 0 22px 1%!important;padding:20px 18px!important;background:#fff9f0f2!important;box-shadow:7px 7px 0 #e3afbe!important}
+.shoug-canvas .player-story-card{position:relative;z-index:3;width:min(94%,520px);margin:0 0 22px 1%!important;padding:20px 18px!important}
 .shoug-canvas .player-choice-list{position:relative;z-index:3;width:min(96%,530px);margin:0 0 0 auto;gap:15px}
-.shoug-canvas .shoug-choice{min-height:72px;padding:15px 18px;color:#1d1719}
-.shoug-canvas .shoug-choice-caption{color:#fff}
-.shoug-canvas .shoug-choice-caption .player-choice-text{color:#fff}
-.shoug-canvas .player-dock{position:absolute;inset:auto 0 0;z-index:20;padding-bottom:max(13px,env(safe-area-inset-bottom));border-top:0;background:#fff9f0f5;box-shadow:0 -3px 0 #e3afbe;color:#22191b}
-.shoug-canvas .shoug-phone .shoug-scene-header{background:#b4c492}
-.shoug-canvas .shoug-phone .shoug-scene-header strong{font-size:clamp(48px,12vw,110px);color:#fff}
-.shoug-canvas .shoug-phone .player-story-card{background:#f6d5e0f5!important}
+.shoug-canvas .shoug-choice{min-height:72px;padding:15px 18px}
+.shoug-canvas .shoug-choice-caption{}
+.shoug-canvas .shoug-choice-caption .player-choice-text{}
+.shoug-canvas .player-dock{position:absolute;inset:auto 0 0;z-index:20;padding-bottom:max(13px,env(safe-area-inset-bottom));border-top:0}
+.shoug-canvas .shoug-phone .shoug-scene-header{}
+.shoug-canvas .shoug-phone .shoug-scene-header strong{font-size:clamp(48px,12vw,110px)}
+.shoug-canvas .shoug-phone .player-story-card{}
 .shoug-canvas .shoug-london .player-story-card{margin-left:auto!important;margin-right:0!important}
 @media(max-height:700px){.shoug-canvas .player-eyebrow{margin-top:48dvh}.shoug-canvas .player-story-card{padding:16px!important}.shoug-canvas .shoug-choice{min-height:62px}}
-
-/* Runtime treatment owns every voting/status surface; homepage tokens cannot leak. */
-.shoug-canvas .player-dock{background:var(--shoug-status-bg);color:var(--shoug-status-fg);box-shadow:0 -3px 0 var(--shoug-status-accent)}
-.shoug-canvas .player-vote-count,.shoug-canvas .player-choice-state{background:var(--shoug-status-fg);color:var(--shoug-status-bg);border-color:var(--shoug-status-accent)}
-.shoug-canvas .player-progress{background:var(--shoug-status-bg);border-color:var(--shoug-status-fg)}
-.shoug-canvas .player-progress>div{background:repeating-linear-gradient(90deg,var(--shoug-status-fg) 0 14px,var(--shoug-status-accent) 14px 18px)}
-.shoug-canvas .player-dock .player-copy,.shoug-canvas .player-locked svg{color:var(--shoug-status-fg)}
-/* The global text classifier must not substitute a different foreground on these pairs. */
-.shoug-canvas .player-dock [data-moments-tone]{color:var(--shoug-status-fg)!important;--registration-shadow:var(--shoug-status-bg);--registration-ink:var(--shoug-status-bg)}
-.shoug-canvas .player-dock .player-vote-count[data-moments-tone],.shoug-canvas .player-choice-state[data-moments-tone]{color:var(--shoug-status-bg)!important;--registration-shadow:var(--shoug-status-bg);--registration-ink:var(--shoug-status-bg)}
-
-.shoug-app-shell body::after{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top);background:var(--shoug-native-status);z-index:1000;pointer-events:none}
-
-/* Scope legacy tokens at the actual rendered tale root. */
-.shoug-canvas{--ink:var(--shoug-status-bg);--cobalt:var(--shoug-status-fg);--blue:var(--shoug-status-fg);--cyan:#e0fff0;--mint:#e0fff0;--pink:#e3afbe;--bubble:#e3afbe;--lavender:#b4c492;--cream:#ffffff}
-.shoug-canvas .shoug-choice{background:var(--shoug-status-bg);color:var(--shoug-status-fg);border-color:var(--shoug-status-accent);box-shadow:4px 5px 0 var(--shoug-status-accent)}
-.shoug-canvas .shoug-choice:nth-child(even){background:var(--shoug-status-fg);color:var(--shoug-status-bg);box-shadow:4px 5px 0 var(--shoug-status-accent)}
-.shoug-canvas .shoug-choice .player-choice-text[data-moments-tone]{color:var(--shoug-status-fg)!important}
-.shoug-canvas .shoug-choice:nth-child(even) .player-choice-text[data-moments-tone]{color:var(--shoug-status-bg)!important}
-.shoug-canvas .shoug-choice:nth-child(even) .player-choice-state{background:var(--shoug-status-bg);color:var(--shoug-status-fg)}
-.shoug-canvas .shoug-choice:nth-child(even) .player-choice-state[data-moments-tone]{color:var(--shoug-status-fg)!important}
-.shoug-canvas .shoug-choice:active{box-shadow:1px 1px 0 var(--shoug-status-accent)}
-.shoug-canvas .shoug-choice:focus-visible{outline-color:var(--shoug-status-accent)}
-.shoug-canvas .shoug-choice::before{color:inherit;border-color:var(--shoug-status-accent)}
-.shoug-canvas .player-vote-count{box-shadow:2px 2px 0 var(--shoug-status-accent)}

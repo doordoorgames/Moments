@@ -8,6 +8,14 @@
     font-style: normal;
     font-display: swap;
 }
+/* Licensed local W10 names; no proprietary font download. */
+@font-face {
+    font-family: "Avenir World Bold W10";
+    src: local("Avenir World Bold W10"), local("Avenir Next World W10 Bold");
+    font-weight: 700;
+    font-style: normal;
+    font-display: swap;
+}
 :root {
     --moments-font-display: "Bodoni Moda", Didot, serif;
     --moments-font-reading: "Avenir Next World W05 Bold", sans-serif;

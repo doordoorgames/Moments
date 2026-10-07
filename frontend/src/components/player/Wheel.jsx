@@ -1,3 +1,4 @@
+import { shougTreatment } from "./shougPalette";
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 
@@ -5,7 +6,10 @@ import { motion } from "framer-motion";
  * Full-screen spinning wheel for tie-breaks.
  * Renders `options` as equal slices. Deterministically lands on `winnerId` after `durationMs`.
  */
-export default function Wheel({ options, winnerId, durationMs = 4200 }) {
+export default function Wheel({ options, winnerId, durationMs = 4200, taleTheme, themeKey = "wheel" }) {
+    const shoug = taleTheme === "shoug";
+    const treatment = shougTreatment(themeKey);
+    const sliceTreatment = i => shougTreatment(`${themeKey}:slice:${i}`);
     const n = options?.length || 0;
     const sliceAngle = n > 0 ? 360 / n : 0;
 
@@ -87,7 +91,7 @@ export default function Wheel({ options, winnerId, durationMs = 4200 }) {
                     aria-hidden
                 >
                     <svg width="22" height="28" viewBox="0 0 22 28">
-                        <path d="M11 26 L2 6 L20 6 Z" fill="hsl(var(--foreground))" />
+                        <path d="M11 26 L2 6 L20 6 Z" fill={shoug ? treatment.foreground : "hsl(var(--foreground))"} />
                     </svg>
                 </div>
 
@@ -101,14 +105,14 @@ export default function Wheel({ options, winnerId, durationMs = 4200 }) {
                 >
                     {options.map((opt, i) => (
                         <g key={opt.id}>
-                            <path d={arcPath(i)} fill={palette[i % palette.length]} stroke="hsl(var(--card))" strokeWidth="2" />
+                            <path d={arcPath(i)} fill={shoug ? sliceTreatment(i).background : palette[i % palette.length]} stroke={shoug ? sliceTreatment(i).foreground : "hsl(var(--card))"} strokeWidth="2" />
                             {(() => {
                                 const { x, y, angle } = labelPos(i);
                                 return (
                                     <text
                                         x={x}
                                         y={y}
-                                        fill="#ffffff"
+                                        fill={shoug ? sliceTreatment(i).foreground : "#ffffff"}
                                         fontSize="12"
                                         fontWeight="600"
                                         textAnchor="middle"
@@ -121,8 +125,8 @@ export default function Wheel({ options, winnerId, durationMs = 4200 }) {
                             })()}
                         </g>
                     ))}
-                    <circle cx={CX} cy={CY} r={R} fill="none" stroke="hsl(var(--card))" strokeWidth="4" />
-                    <circle cx={CX} cy={CY} r={16} fill="hsl(var(--card))" stroke="hsl(var(--foreground))" strokeWidth="2" />
+                    <circle cx={CX} cy={CY} r={R} fill="none" stroke={shoug ? treatment.foreground : "hsl(var(--card))"} strokeWidth="4" />
+                    <circle cx={CX} cy={CY} r={16} fill={shoug ? treatment.background : "hsl(var(--card))"} stroke={shoug ? treatment.foreground : "hsl(var(--foreground))"} strokeWidth="2" />
                 </motion.svg>
             </div>
 

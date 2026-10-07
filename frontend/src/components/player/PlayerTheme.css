@@ -87,3 +87,28 @@
 .shoug-canvas .shoug-phone .player-story-card{background:#f6d5e0f5!important}
 .shoug-canvas .shoug-london .player-story-card{margin-left:auto!important;margin-right:0!important}
 @media(max-height:700px){.shoug-canvas .player-eyebrow{margin-top:48dvh}.shoug-canvas .player-story-card{padding:16px!important}.shoug-canvas .shoug-choice{min-height:62px}}
+
+/* Runtime treatment owns every voting/status surface; homepage tokens cannot leak. */
+.shoug-canvas .player-dock{background:var(--shoug-status-bg);color:var(--shoug-status-fg);box-shadow:0 -3px 0 var(--shoug-status-accent)}
+.shoug-canvas .player-vote-count,.shoug-canvas .player-choice-state{background:var(--shoug-status-fg);color:var(--shoug-status-bg);border-color:var(--shoug-status-accent)}
+.shoug-canvas .player-progress{background:var(--shoug-status-bg);border-color:var(--shoug-status-fg)}
+.shoug-canvas .player-progress>div{background:repeating-linear-gradient(90deg,var(--shoug-status-fg) 0 14px,var(--shoug-status-accent) 14px 18px)}
+.shoug-canvas .player-dock .player-copy,.shoug-canvas .player-locked svg{color:var(--shoug-status-fg)}
+/* The global text classifier must not substitute a different foreground on these pairs. */
+.shoug-canvas .player-dock [data-moments-tone]{color:var(--shoug-status-fg)!important;--registration-shadow:var(--shoug-status-bg);--registration-ink:var(--shoug-status-bg)}
+.shoug-canvas .player-dock .player-vote-count[data-moments-tone],.shoug-canvas .player-choice-state[data-moments-tone]{color:var(--shoug-status-bg)!important;--registration-shadow:var(--shoug-status-bg);--registration-ink:var(--shoug-status-bg)}
+
+.shoug-app-shell body::after{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top);background:var(--shoug-native-status);z-index:1000;pointer-events:none}
+
+/* Scope legacy tokens at the actual rendered tale root. */
+.shoug-canvas{--ink:var(--shoug-status-bg);--cobalt:var(--shoug-status-fg);--blue:var(--shoug-status-fg);--cyan:#e0fff0;--mint:#e0fff0;--pink:#e3afbe;--bubble:#e3afbe;--lavender:#b4c492;--cream:#ffffff}
+.shoug-canvas .shoug-choice{background:var(--shoug-status-bg);color:var(--shoug-status-fg);border-color:var(--shoug-status-accent);box-shadow:4px 5px 0 var(--shoug-status-accent)}
+.shoug-canvas .shoug-choice:nth-child(even){background:var(--shoug-status-fg);color:var(--shoug-status-bg);box-shadow:4px 5px 0 var(--shoug-status-accent)}
+.shoug-canvas .shoug-choice .player-choice-text[data-moments-tone]{color:var(--shoug-status-fg)!important}
+.shoug-canvas .shoug-choice:nth-child(even) .player-choice-text[data-moments-tone]{color:var(--shoug-status-bg)!important}
+.shoug-canvas .shoug-choice:nth-child(even) .player-choice-state{background:var(--shoug-status-bg);color:var(--shoug-status-fg)}
+.shoug-canvas .shoug-choice:nth-child(even) .player-choice-state[data-moments-tone]{color:var(--shoug-status-fg)!important}
+.shoug-canvas .shoug-choice:active{box-shadow:1px 1px 0 var(--shoug-status-accent)}
+.shoug-canvas .shoug-choice:focus-visible{outline-color:var(--shoug-status-accent)}
+.shoug-canvas .shoug-choice::before{color:inherit;border-color:var(--shoug-status-accent)}
+.shoug-canvas .player-vote-count{box-shadow:2px 2px 0 var(--shoug-status-accent)}

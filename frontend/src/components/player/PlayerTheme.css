@@ -20,7 +20,7 @@
 .tale-shoug .player-display-shell{}
 .tale-shoug .vt-status{}
 .tale-shoug .vt-crt-lines{display:none}
-.tale-shoug .player-panel{font-family:Arial,sans-serif;padding-top:12px}
+.tale-shoug .player-panel{font-family:var(--moments-font-reading);padding-top:12px}
 .tale-shoug .player-panel::before{display:none}
 .tale-shoug .shoug-scene-header{position:relative;height:clamp(170px,30vh,310px);margin:-12px -14px 16px;overflow:hidden;background-position:center;background-size:cover}
 .tale-shoug .shoug-airport .shoug-scene-header{background-image:url('https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=1200&q=85')}
@@ -33,7 +33,7 @@
 .tale-shoug .player-eyebrow span,.tale-shoug .player-chip{border:0;font:700 10px Arial,sans-serif}
 .tale-shoug .player-story-card{position:relative;margin-top:10px!important;padding:20px 18px!important;border:0!important;border-radius:0!important;transform:none}
 
-.tale-shoug .player-story-text{font:500 clamp(15px,4vw,19px)/1.55 Arial,sans-serif!important}
+.tale-shoug .player-story-text{font:700 clamp(15px,4vw,19px)/1.55 var(--moments-font-reading)!important}
 .tale-shoug .player-choice-list{gap:13px}
 .tale-shoug .shoug-choice{position:relative;min-height:64px;padding:13px 17px;border:0;border-radius:0;transform:none;transition:transform .15s,box-shadow .15s}
 .tale-shoug .shoug-choice:nth-child(even){transform:none}
@@ -62,7 +62,7 @@
 /* Margin marks sit on the physical device, never over narrative or controls. */
 .tale-shoug .vt-device{position:relative}
 .tale-shoug .shoug-scene-header{isolation:isolate}
-.tale-shoug .shoug-scene-header::before{content:"";position:absolute;inset:-4%;background-position:center;background-size:cover;animation:shoug-breathe 18s ease-in-out infinite alternate;z-index:-1}
+.tale-shoug .shoug-scene-header::before{content:"";background:inherit;position:absolute;inset:-4%;background-position:center;background-size:cover;animation:shoug-breathe 18s ease-in-out infinite alternate;z-index:-1}
 .tale-shoug .shoug-phone .shoug-scene-header::before{animation:none}
 @keyframes shoug-breathe{to{transform:scale(1.035)}}
 @media(prefers-reduced-motion:reduce){.tale-shoug .shoug-scene-header::before{animation:none}}

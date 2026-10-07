@@ -15,7 +15,7 @@
 .shoug-canvas :is(.shoug-choice,.player-primary-button,.player-secondary-button,.player-narration-wait,.player-wheel,.player-wheel-label,.player-wheel-winner,.player-dock){background:var(--surface-bg)!important;color:var(--surface-fg)!important;border-color:var(--surface-fg)!important;box-shadow:3px 3px 0 var(--surface-accent)!important}
 .shoug-canvas .shoug-choice:nth-child(even),.shoug-canvas .player-secondary-button{--surface-bg:var(--shoug-fg);--surface-fg:var(--shoug-bg);--surface-shadow:var(--shoug-inverse-shadow);--surface-accent:var(--shoug-inverse-accent)}
 .shoug-canvas .shoug-choice:nth-child(even) .player-choice-state{--surface-bg:var(--shoug-bg);--surface-fg:var(--shoug-fg);--surface-shadow:var(--shoug-shadow);--surface-accent:var(--shoug-accent)}
-.shoug-canvas .shoug-choice::before{color:var(--surface-fg)!important;border-color:var(--surface-fg)!important;font-weight:700;text-shadow:.6px .6px 0 var(--surface-shadow)}
+.shoug-canvas .shoug-choice::before{font-family:var(--moments-font-reading)!important;color:var(--surface-fg)!important;border-color:var(--surface-fg)!important;font-weight:700;text-shadow:.6px .6px 0 var(--surface-shadow)}
 .shoug-canvas .shoug-choice:disabled{opacity:1;filter:none}
 .shoug-canvas .shoug-choice:not(:disabled):hover{box-shadow:4px 5px 0 var(--surface-fg)!important}
 .shoug-canvas .shoug-choice:not(:disabled):active{box-shadow:1px 1px 0 var(--surface-fg)!important}

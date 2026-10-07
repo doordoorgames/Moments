@@ -2,7 +2,7 @@ import { act } from "react";
 import { createRoot } from "react-dom/client";
 import SharedStory from "./SharedStory";
 import Ending from "./Ending";
-import { SHOUG_TREATMENTS, shougTreatment, shougNativeTreatment, shougContrast } from "./shougPalette";
+import { SHOUG_TREATMENTS, shougTreatment, shougScreenThemes, shougNativeTreatment, shougContrast } from "./shougPalette";
 global.IS_REACT_ACT_ENVIRONMENT=true;
 test("all palette rotations reach real gameplay, narration, tie wheel and endings", async()=>{
  window.matchMedia=()=>({matches:false,addListener:()=>{},removeListener:()=>{}});
@@ -14,7 +14,7 @@ test("all palette rotations reach real gameplay, narration, tie wheel and ending
  for(const key of keys.values()){
   const state={story,current_node:{id:key,story_text:"London calling"},room:{phase:"voting",flags:["passport"],phase_ends_at:new Date(Date.now()+20000).toISOString()},choices:[{id:"a",text:"Go"},{id:"b",text:"Stay"}],players:[{id:"p",is_host:true}],vote_stats:{voted_count:0,total_players:1,voted_player_ids:[]}};
   await act(async()=>root.render(<SharedStory state={state} player={{id:"p"}} code="TEST"/>));
-  expect(host.querySelector("main").style.getPropertyValue("--shoug-shadow")).toBe(shougTreatment(key).shadow);
+  expect(host.querySelector("main").style.getPropertyValue("--shoug-shadow")).toBe(shougScreenThemes(key).A.shadow);
   expect(meta.content).toBe(shougNativeTreatment(shougTreatment(key)).background);
   expect(host.querySelectorAll(".player-choice-state").length).toBe(2);
   await act(async()=>root.render(<SharedStory state={{...state,current_node:{...state.current_node,node_type:"narration",narration_next_node_id:"next"}}} player={{id:"p",is_host:true}} code="TEST"/>));

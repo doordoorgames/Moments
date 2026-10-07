@@ -1,4 +1,4 @@
-import { shougTreatment } from "./shougPalette";
+import { shougScreenThemes, shougBand } from "./shougPalette";
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 
@@ -8,8 +8,9 @@ import { motion } from "framer-motion";
  */
 export default function Wheel({ options, winnerId, durationMs = 4200, taleTheme, themeKey = "wheel" }) {
     const shoug = taleTheme === "shoug";
-    const treatment = shougTreatment(themeKey);
-    const sliceTreatment = i => shougTreatment(`${themeKey}:slice:${i}`);
+    const themes = shougScreenThemes(themeKey);
+    const treatment = themes.A;
+    const sliceTreatment = i => themes[i % 2 ? "B" : "A"];
     const n = options?.length || 0;
     const sliceAngle = n > 0 ? 360 / n : 0;
 
@@ -79,7 +80,7 @@ export default function Wheel({ options, winnerId, durationMs = 4200, taleTheme,
             className="player-wheel fixed inset-0 z-50 flex flex-col items-center justify-center backdrop-blur"
             data-testid="wheel-overlay"
         >
-            <div className="player-wheel-label mb-4">
+            <div className="player-wheel-label mb-4" {...(shoug ? shougBand(themes, 1) : {})}>
                 It's a tie — spinning the wheel…
             </div>
 
@@ -114,7 +115,8 @@ export default function Wheel({ options, winnerId, durationMs = 4200, taleTheme,
                                         y={y}
                                         fill={shoug ? sliceTreatment(i).foreground : "#ffffff"}
                                         fontSize="12"
-                                        fontWeight="600"
+                                        fontWeight={shoug ? "900" : "600"}
+                                        style={shoug ? { textShadow: `.6px .6px 0 ${sliceTreatment(i).shadow}` } : undefined}
                                         textAnchor="middle"
                                         dominantBaseline="middle"
                                         transform={`rotate(${angle + 90}, ${x}, ${y})`}
@@ -134,7 +136,7 @@ export default function Wheel({ options, winnerId, durationMs = 4200, taleTheme,
                 <motion.div
                     initial={{ opacity: 0, y: 6 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="player-wheel-winner mt-6 px-4 py-2 text-sm"
+                    className="player-wheel-winner mt-6 px-4 py-2 text-sm" {...(shoug ? shougBand(themes, 3) : {})}
                     data-testid="wheel-winner"
                 >
                     <span className="text-muted-foreground">Winner: </span>

@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import Wheel from "@/components/player/Wheel";
 import PlayerFrame from "@/components/player/PlayerFrame";
 import { isShougTale, shougScene, choiceStyles } from "@/components/player/shougVisuals";
+import { shougScreenThemes, shougBand } from "./shougPalette";
 import { Check, ArrowRight, Crown, BookOpen } from "lucide-react";
 
 /**
@@ -22,6 +23,8 @@ export default function SharedStory({ state, player, code }) {
     const shoug = isShougTale(state.story);
     const scene = shougScene(node);
     const choices = state.choices || [];
+    const themes = shougScreenThemes(node?.id);
+    const band = index => shoug ? shougBand(themes, index) : {};
     const players = state.players || [];
     const voteStats = state.vote_stats || { voted_count: 0, total_players: players.length, voted_player_ids: [] };
     const phase = room?.phase; // reading | voting | wheel | ended
@@ -100,15 +103,16 @@ export default function SharedStory({ state, player, code }) {
     return (
         <PlayerFrame code={code} playerName={player?.nickname} taleTheme={shoug ? "shoug" : null} themeKey={node.id}>
             <div className={`player-panel ${shoug ? `shoug-scene shoug-${scene}` : ""}`}>
-                {shoug && <div className="shoug-scene-header" aria-hidden="true"><strong>{scene === "airport" ? "DEPARTURES" : scene === "shopping" ? "OXFORD" : scene === "phone" ? "ON THE LINE" : "LONDON"}</strong></div>}
+                {shoug && <div className="shoug-scene-header" {...band(1)} aria-hidden="true"><strong>{scene === "airport" ? "DEPARTURES" : scene === "shopping" ? "OXFORD" : scene === "phone" ? "ON THE LINE" : "LONDON"}</strong></div>}
                 <AnimatePresence mode="wait">
                     <motion.div
                         key={node.id}
+                        className={shoug ? "shoug-content" : undefined}
                         initial={{ opacity: 0, y: 8 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.24, ease: [0.16, 1, 0.3, 1] }}
                     >
-                        <div className="player-eyebrow">
+                        <div className="player-eyebrow" {...band(2)}>
                             {isNarration && (
                                 <Badge className="player-chip gap-1">
                                     <BookOpen className="h-3 w-3" /> Narration
@@ -120,7 +124,7 @@ export default function SharedStory({ state, player, code }) {
                                 </span>
                             )}
                         </div>
-                        <Card className="player-story-card">
+                        <Card className="player-story-card" {...band(2)}>
                             <p
                                 className="story-text player-story-text"
                                 data-testid="story-reading-text"
@@ -143,11 +147,12 @@ export default function SharedStory({ state, player, code }) {
 
                         {/* Choice list */}
                         {!isNarration && <div className="player-choice-list" data-testid="choice-list">
-                            {choices.map((c) => {
+                            {choices.map((c, index) => {
                                 const canVote = phase === "voting" && !myVote;
                                 return (
                                     <button
                                         key={c.id}
+                                        {...band(3 + index)}
                                         disabled={!canVote}
                                         onClick={() => submitVote(c.id)}
                                         className={shoug ? `player-choice shoug-choice shoug-choice-${c === choices[1] ? { airport: "taped", shopping: "cutout", phone: "bubble", london: "caption" }[scene] : choiceStyles[scene]} ${c === choices[1] ? "shoug-choice-alt" : ""}` : "player-choice"}
@@ -177,7 +182,7 @@ export default function SharedStory({ state, player, code }) {
                         </div>}
 
                         {isNarration && (
-                            <div className="mt-6" data-testid="narration-controls">
+                            <div className="mt-6" {...band(3)} data-testid="narration-controls">
                                 {isHost ? (
                                     <Button
                                         onClick={advanceNarration}
@@ -202,7 +207,7 @@ export default function SharedStory({ state, player, code }) {
 
             {/* Bottom dock: reading = subtle hint; voting = progress bar + counter; wheel = full overlay */}
             {phase === "reading" && !isNarration && (
-                <div className="player-dock text-center">
+                <div className="player-dock text-center" {...band(3 + choices.length)}>
                     <div
                         className="player-dock-inner player-copy"
                         data-testid="phase-reading-hint"
@@ -213,7 +218,7 @@ export default function SharedStory({ state, player, code }) {
             )}
 
             {phase === "voting" && (
-                <div className="player-dock">
+                <div className="player-dock" {...band(3 + choices.length)}>
                     <div className="player-dock-inner">
                         <div className="player-vote-row" data-testid="vote-status-row">
                             <span

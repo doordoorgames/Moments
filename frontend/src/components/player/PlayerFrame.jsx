@@ -1,5 +1,6 @@
 import { useShougShell } from "@/components/player/useShougShell";
-import { shougTreatment, shougVariables } from "@/components/player/shougPalette";
+import { shougScreenThemes, shougVariables } from "@/components/player/shougPalette";
+import { useShougFit } from "./useShougFit";
 import "@/pages/VisualTest.css";
 import "@/components/player/PlayerTheme.css";
 import "@/components/player/ShougSystem.css";
@@ -9,10 +10,12 @@ function Signal() {
 }
 
 export default function PlayerFrame({ children, code, playerName, taleTheme, themeKey = "" }) {
-    const treatment = shougTreatment(themeKey);
+    const themes = shougScreenThemes(themeKey);
+    const treatment = themes.A;
+    const fit = useShougFit(taleTheme === "shoug", themeKey);
     useShougShell(taleTheme === "shoug", treatment);
     if (taleTheme === "shoug") {
-        return <main className="vt-root player-theme-root tale-shoug shoug-canvas" style={shougVariables(treatment)} data-shoug-treatment={treatment.name}>
+        return <main {...fit} className="vt-root player-theme-root tale-shoug shoug-canvas" style={shougVariables(treatment)} data-shoug-treatment={treatment.name} data-shoug-theme-b={themes.B.name}>
             {children}
         </main>;
     }

@@ -11,7 +11,6 @@ import { Loader2 } from "lucide-react";
 
 export default function PlayRoom({ shoug2 = false }) {
     const { code } = useParams();
-    const [shoug2Selected, setShoug2Selected] = useState(() => localStorage.getItem(`shoug2_room_${code}`) === "true");
     const nav = useNavigate();
     const [player, setPlayer] = useState(() => {
         try {
@@ -42,9 +41,7 @@ export default function PlayRoom({ shoug2 = false }) {
 
     const handleSelectStory = async (storyId, variant = false) => {
         try {
-            await api.selectStory(code, storyId);
-            localStorage.setItem(`shoug2_room_${code}`, String(variant));
-            setShoug2Selected(variant);
+            await api.selectStory(code, storyId, variant ? "shoug2" : "classic");
         } catch (err) {
             toast.error(err?.response?.data?.detail || "Failed to select story");
         }
@@ -53,7 +50,7 @@ export default function PlayRoom({ shoug2 = false }) {
     const handleStart = async () => {
         try {
             await api.startRoom(code);
-            if (shoug2Selected && !shoug2) nav(`/shoug-2/room/${encodeURIComponent(code)}`, { replace: true });
+
         } catch (err) {
             toast.error(err?.response?.data?.detail || "Failed to start");
         }
@@ -78,7 +75,8 @@ export default function PlayRoom({ shoug2 = false }) {
     }
 
     const room = roomState.room;
-    const shoug2Active = shoug2 || shoug2Selected;
+    const shoug2Selected = room?.presentation === "shoug2";
+    const shoug2Active = shoug2Selected;
     const players = roomState.players || [];
 
     // Ended -> Ending screen

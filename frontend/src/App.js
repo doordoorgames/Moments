@@ -26,6 +26,7 @@ function App() {
                     <Route path="/" element={<Landing />} />
                     <Route path="/visual-test" element={<VisualTest />} />
                     <Route path="/shoug-2" element={<ShougVillagePrototype />} />
+                    <Route path="/shoug-2/room/:code" element={<PlayRoom shoug2 />} />
                     <Route path="/play" element={<PlayJoin />} />
                     <Route path="/play/:code" element={<PlayRoom />} />
                     <Route path="/admin" element={<AdminLogin />} />

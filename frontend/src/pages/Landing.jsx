@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Sparkles, PlayCircle, Wrench } from "lucide-react";
+import { Sparkles, PlayCircle, Wrench, Search } from "lucide-react";
 
 export default function Landing() {
     const nav = useNavigate();
@@ -45,6 +45,14 @@ export default function Landing() {
                         >
                             <Wrench className="h-5 w-5" /> Story architect (admin)
                         </Button>
+                    </div>
+                    <div className="mt-8 rounded-[var(--radius-lg)] border border-border bg-card p-5">
+                        <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Mini games</div>
+                        <h2 className="mt-2 text-xl font-semibold">Baccarat Search</h2>
+                        <p className="mt-2 text-sm text-muted-foreground">Find the Baccarat in Bicester Village. Play the original interactive hunt.</p>
+                        <a href="/baccarat-search/index.html" className="mt-4 inline-flex h-11 items-center gap-2 rounded-md bg-primary px-5 text-sm font-semibold text-primary-foreground" data-testid="landing-baccarat-search-link">
+                            <Search className="h-4 w-4" /> Play Baccarat Search
+                        </a>
                     </div>
                 </div>
             </div>

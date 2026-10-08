@@ -5,6 +5,7 @@ import { useRoomSocket } from "@/hooks/useRoomSocket";
 import { toast } from "sonner";
 import Lobby from "@/components/player/Lobby";
 import SharedStory from "@/components/player/SharedStory";
+import Shoug2Story from "@/components/player/Shoug2Story";
 import Ending from "@/components/player/Ending";
 import { Loader2 } from "lucide-react";
 
@@ -107,5 +108,7 @@ export default function PlayRoom({ shoug2 = false }) {
     }
 
     // Story runtime
-    return <SharedStory state={roomState} player={player} code={code} shoug2={shoug2 && /shoug[’\x27]?s tale/i.test(roomState.story?.title || "")} />;
+    return shoug2 && /shoug[’\x27]?s tale/i.test(roomState.story?.title || "")
+        ? <Shoug2Story state={roomState} player={player} code={code} />
+        : <SharedStory state={roomState} player={player} code={code} />;
 }

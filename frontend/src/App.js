@@ -10,6 +10,7 @@ import AdminLogin from "@/pages/AdminLogin";
 import AdminStories from "@/pages/AdminStories";
 import AdminCanvas from "@/pages/AdminCanvas";
 import VisualTest from "@/pages/VisualTest";
+import ShougVillagePrototype from "@/pages/ShougVillagePrototype";
 
 function AdminGate({ children }) {
     const token = localStorage.getItem("admin_token");
@@ -24,6 +25,8 @@ function App() {
                 <Routes>
                     <Route path="/" element={<Landing />} />
                     <Route path="/visual-test" element={<VisualTest />} />
+                    <Route path="/shoug-2" element={<ShougVillagePrototype />} />
+                    <Route path="/shoug-2/room/:code" element={<PlayRoom shoug2 />} />
                     <Route path="/play" element={<PlayJoin />} />
                     <Route path="/play/:code" element={<PlayRoom />} />
                     <Route path="/admin" element={<AdminLogin />} />

@@ -133,6 +133,7 @@ class Room(BaseModel):
     model_config = ConfigDict(extra="ignore")
     code: str
     story_id: Optional[str] = None
+    presentation: Literal["classic", "shoug2"] = "classic"
     started: bool = False
     current_node_id: Optional[str] = None
     phase: str = "lobby"          # lobby | reading | voting | wheel | ended
@@ -211,6 +212,7 @@ class RoomJoinRequest(BaseModel):
 
 class RoomSelectStoryRequest(BaseModel):
     story_id: str
+    presentation: Literal["classic", "shoug2"] = "classic"
 
 
 class VoteRequest(BaseModel):
@@ -1357,8 +1359,10 @@ async def select_story(code: str, payload: RoomSelectStoryRequest):
     if not story:
         raise HTTPException(404, "Story not found")
     sid = payload.story_id
+    if payload.presentation == "shoug2" and not __import__("re").search(r"shoug[’\x27]?s tale", story.get("title", ""), __import__("re").IGNORECASE):
+        raise HTTPException(400, "Shoug 2.0 is only available for Shoug’s Tale")
     await _q(
-        lambda: supa.table("rooms").update({"story_id": sid}).eq("code", code).execute()
+        lambda: supa.table("rooms").update({"story_id": sid, "presentation": payload.presentation}).eq("code", code).execute()
     )
     await broadcast_room_state(code)
     return {"ok": True}

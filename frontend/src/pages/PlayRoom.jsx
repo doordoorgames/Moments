@@ -5,10 +5,11 @@ import { useRoomSocket } from "@/hooks/useRoomSocket";
 import { toast } from "sonner";
 import Lobby from "@/components/player/Lobby";
 import SharedStory from "@/components/player/SharedStory";
+import Shoug2Story from "@/components/player/Shoug2Story";
 import Ending from "@/components/player/Ending";
 import { Loader2 } from "lucide-react";
 
-export default function PlayRoom() {
+export default function PlayRoom({ shoug2 = false }) {
     const { code } = useParams();
     const nav = useNavigate();
     const [player, setPlayer] = useState(() => {
@@ -38,16 +39,18 @@ export default function PlayRoom() {
 
     const roomState = state || bootState;
 
-    const handleSelectStory = async (storyId) => {
+    const handleSelectStory = async (storyId, variant = false) => {
         try {
-            await api.selectStory(code, storyId);
+            await api.selectStory(code, storyId, variant ? "shoug2" : "classic");
         } catch (err) {
             toast.error(err?.response?.data?.detail || "Failed to select story");
         }
     };
+    const handleSelectShoug2 = (storyId) => handleSelectStory(storyId, true);
     const handleStart = async () => {
         try {
             await api.startRoom(code);
+
         } catch (err) {
             toast.error(err?.response?.data?.detail || "Failed to start");
         }
@@ -72,6 +75,8 @@ export default function PlayRoom() {
     }
 
     const room = roomState.room;
+    const shoug2Selected = room?.presentation === "shoug2";
+    const shoug2Active = shoug2Selected;
     const players = roomState.players || [];
 
     // Ended -> Ending screen
@@ -99,7 +104,9 @@ export default function PlayRoom() {
                 players={players}
                 me={player}
                 selectedStoryId={room?.story_id}
-                onSelectStory={handleSelectStory}
+                onSelectStory={(id) => handleSelectStory(id, false)}
+                onSelectShoug2={handleSelectShoug2}
+                shoug2Selected={shoug2Selected}
                 onStart={handleStart}
                 connected={connected}
             />
@@ -107,5 +114,7 @@ export default function PlayRoom() {
     }
 
     // Story runtime
-    return <SharedStory state={roomState} player={player} code={code} />;
+    return shoug2Active && /shoug[’\x27]?s tale/i.test(roomState.story?.title || "")
+        ? <Shoug2Story state={roomState} player={player} code={code} />
+        : <SharedStory state={roomState} player={player} code={code} />;
 }

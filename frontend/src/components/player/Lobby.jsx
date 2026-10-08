@@ -8,7 +8,7 @@ import { toast } from "sonner";
 import { Copy, Crown, PlayCircle, Users, Wifi, WifiOff } from "lucide-react";
 import PlayerFrame from "@/components/player/PlayerFrame";
 
-export default function Lobby({ code, players, me, selectedStoryId, onSelectStory, onStart, connected }) {
+export default function Lobby({ code, players, me, selectedStoryId, onSelectStory, onStart, connected, shoug2Selected = false, onSelectShoug2 }) {
     const [stories, setStories] = useState([]);
     const [busy, setBusy] = useState(false);
 
@@ -16,6 +16,7 @@ export default function Lobby({ code, players, me, selectedStoryId, onSelectStor
         api.listStories().then(setStories).catch(() => setStories([]));
     }, []);
 
+    const shougStory = stories.find(s => /shoug[’\x27]?s tale/i.test(s.title || ""));
     const meObj = players.find((p) => p.id === me?.id) || me;
     const isHost = meObj?.is_host;
 
@@ -123,7 +124,7 @@ export default function Lobby({ code, players, me, selectedStoryId, onSelectStor
                             </div>
                         )}
                         {stories.map((s) => {
-                            const selected = s.id === selectedStoryId;
+                            const selected = s.id === selectedStoryId && !shoug2Selected;
                             return (
                                 <button
                                     key={s.id}
@@ -143,6 +144,7 @@ export default function Lobby({ code, players, me, selectedStoryId, onSelectStor
                                 </button>
                             );
                         })}
+                        {shougStory && <button type="button" onClick={() => onSelectShoug2?.(shougStory.id)} className={`player-tale-button ${shoug2Selected ? "selected" : ""}`} data-testid="lobby-story-card-shoug-2" style={{borderColor:"#e8b5c7",background:shoug2Selected?"#6e293f":"#172c22",color:"#fff7f0"}}><div className="flex items-center justify-between"><div className="player-tale-title">Shoug 2.0</div><Badge variant="outline" className="player-chip">{shougStory.node_count} nodes</Badge></div><div className="player-tale-copy">A new visual experience using the original Shoug’s Tale story and live group voting.</div></button>}
                     </div>
                 </div>
             </div>

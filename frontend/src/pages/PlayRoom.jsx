@@ -8,7 +8,7 @@ import SharedStory from "@/components/player/SharedStory";
 import Ending from "@/components/player/Ending";
 import { Loader2 } from "lucide-react";
 
-export default function PlayRoom() {
+export default function PlayRoom({ shoug2 = false }) {
     const { code } = useParams();
     const nav = useNavigate();
     const [player, setPlayer] = useState(() => {
@@ -107,5 +107,5 @@ export default function PlayRoom() {
     }
 
     // Story runtime
-    return <SharedStory state={roomState} player={player} code={code} />;
+    return <SharedStory state={roomState} player={player} code={code} shoug2={shoug2 && /shoug[’\x27]?s tale/i.test(roomState.story?.title || "")} />;
 }

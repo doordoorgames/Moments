@@ -86,8 +86,8 @@ export const api = {
     getRoom: (code) => axios.get(apiUrl(`/rooms/${code}`)).then((r) => r.data),
     joinRoom: (code, nickname) =>
         axios.post(apiUrl(`/rooms/${code}/join`), { nickname }).then((r) => r.data),
-    selectStory: (code, story_id) =>
-        axios.post(apiUrl(`/rooms/${code}/select-story`), { story_id }).then((r) => r.data),
+    selectStory: (code, story_id, presentation = "classic") =>
+        axios.post(apiUrl(`/rooms/${code}/select-story`), { story_id, presentation }).then((r) => r.data),
     startRoom: (code) => axios.post(apiUrl(`/rooms/${code}/start`)).then((r) => r.data),
     resetRoom: (code) => axios.post(apiUrl(`/rooms/${code}/reset`)).then((r) => r.data),
     castVote: (code, player_id, choice_id) =>

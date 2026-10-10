@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>The Hunt for the Baccarat</title>
-<link href="https://fonts.googleapis.com/css2?family=Gluten:wght@600;800&family=Sniglet:wght@400;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Quicksand:wght@500;600;700&display=swap" rel="stylesheet">
 <style>
 :root{
   --matcha:#8fb36a; --matcha-dk:#4f7a35; --maroon:#7b2a40; --pink:#f2a7c3;
@@ -112,6 +112,69 @@ body{display:flex;justify-content:center}
 @keyframes fly{to{transform:translate(var(--dx),var(--dy)) rotate(220deg) scale(.2);opacity:0}}
 .deco{position:absolute;z-index:2;pointer-events:none;animation:twinkle 3s ease-in-out infinite}
 @keyframes twinkle{0%,100%{transform:scale(1) rotate(0)}50%{transform:scale(1.25) rotate(20deg)}}
+
+/* Baccarat editorial matcha restyle — isolated to this standalone document.
+   Gameplay markup, timers, handlers and game state are unchanged. */
+:root{
+ --mint:#CFE8D5;--matcha:#8DB36B;--matcha-dk:#4F6E3A;
+ --matcha-darkest:#2F4524;--maroon:#6E1F35;--pink:#F6CFD8;
+ --cream:#FBF4E4;--gold:#F2B705;--ink:#000000;
+ --butter:#FBF4E4;--sky:#CFE8D5;
+}
+html,body{background:var(--cream);font-family:'Quicksand',sans-serif;color:var(--ink);font-weight:700}
+.phone{background:var(--cream)}
+.hud{background:var(--cream);border-bottom:1px solid var(--matcha-darkest);padding-inline:16px}
+.goal,.prompt p,.opt .lbl b,.call .nm,.bubble p b,.stamp h2,.again span{
+ font-family:'DM Serif Display',Georgia,serif;font-weight:400;letter-spacing:-.025em
+}
+.goal{font-style:italic;font-size:clamp(26px,7vw,34px);line-height:1.04;text-shadow:none;color:var(--maroon)}
+.goal small{font-family:'Quicksand',sans-serif;font-style:normal;font-size:10px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--matcha-darkest)}
+.vine-label{font-size:11px;font-weight:700;letter-spacing:.09em;color:var(--matcha-darkest)}
+.hearts svg{filter:none}
+.photo{filter:grayscale(.3) saturate(.68) blur(1.2px)}
+.photo-fade{background:linear-gradient(180deg,rgba(251,244,228,.58),rgba(251,244,228,.23) 45%,rgba(251,244,228,.7))}
+.stage{padding:30px 16px 16px}
+.prompt{align-self:flex-start;width:94%;padding:19px 18px 18px;text-align:left;background:var(--cream);border:1.5px solid var(--matcha-darkest);box-shadow:6px 6px 0 var(--maroon);border-radius:2px;z-index:1}
+.prompt svg.shape{display:none}
+.prompt p{font-size:clamp(20px,5.6vw,27px);line-height:1.17;color:var(--ink)}
+.prompt p em{font-style:italic;color:var(--maroon)}
+.tape{background:repeating-conic-gradient(from 0deg,var(--mint) 0 25%,rgba(255,255,255,.8) 0 50%) 0 0/12px 12px;opacity:.88;border:1px solid var(--matcha-darkest);width:58px;height:17px}
+.grid{gap:13px 12px;padding:18px 5px 5px}
+.opt{aspect-ratio:1/.95;animation:none!important}
+.opt .float,.opt:nth-child(n) .float{animation:none;inset:0;display:flex;align-items:stretch;justify-content:stretch}
+.opt svg.blob{display:none}
+.opt .float{border:1.5px solid var(--matcha-darkest);border-radius:49% 49% 5px 5px / 35% 35% 5px 5px;background:var(--mint);box-shadow:5px 5px 0 var(--black,#000)}
+.opt:nth-child(2) .float{background:var(--pink)}
+.opt:nth-child(3) .float{background:var(--cream)}
+.opt:nth-child(4) .float{background:var(--matcha)}
+.opt .lbl{margin:auto;padding:18px 7px 7px;color:var(--ink)}
+.opt .lbl b{font-size:clamp(19px,5.1vw,25px);line-height:1.05;color:var(--ink)}
+.opt .lbl span{font-family:'Quicksand',sans-serif;font-size:10px;font-weight:700;letter-spacing:.08em;line-height:1.25;opacity:1;color:var(--matcha-darkest)}
+.opt .icon{width:28px;height:27px}
+.opt:active .float{transform:translate(5px,5px);box-shadow:0 0 0 var(--ink)}
+.opt.sel .float{outline:2px solid var(--maroon);outline-offset:3px}
+.opt .ring{display:none}
+.opt.wrong{filter:grayscale(.8) opacity(.62)}
+.opt.wrong .float{animation:shake .35s ease-in-out!important}
+.opt.right .float{animation:win .6s ease-out forwards!important}
+.call{margin-top:12px}
+.call svg.shape{display:none}
+.call{background:var(--maroon);border:1.5px solid var(--ink);border-radius:3px;box-shadow:5px 5px 0 var(--matcha-darkest)}
+.call .nm{font-size:23px;color:#fff}
+.call .sb{font-size:11px;color:#fff;font-weight:700}
+.cb i{font-family:'Quicksand',sans-serif;font-weight:700;font-size:12px;color:var(--ink)}
+.bubble{background:var(--cream);border:1.5px solid var(--ink);box-shadow:5px 5px 0 var(--maroon);border-radius:3px}
+.bubble svg{display:none}
+.bubble p{font-size:15px;font-weight:700;line-height:1.45;color:var(--ink)}
+.stamp h2{font-size:clamp(32px,9vw,43px);color:#fff;text-shadow:3px 3px 0 var(--ink)}
+.stamp p{font-size:14px;font-weight:700;color:#fff;line-height:1.35}
+.again span{font-size:19px;color:var(--ink)}
+.deco{opacity:.45}
+@media(prefers-reduced-motion:reduce){
+ .photo,.deco,.opt,.opt .float,.call.show,.result.show .stamp,.spark{animation:none!important}
+ .opt .float,.call,.bubble,.result{transition:none!important}
+}
+
 </style>
 </head>
 <body>

@@ -106,9 +106,10 @@ function StartScreen({ story, onConnect, connecting, error }) {
 function TaleSelection({ stories, loading, error, onRetry, onOpen }) {
   return (
     <motion.section className="vt-screen vt-episodes" key="episodes" initial={{ opacity: 0, x: "110%"}} animate={{ opacity: 1, x: 0}} exit={{ opacity: 0, x: "110%" }} transition={snap}>
-      <div className="vt-section-head"><p>★ YOUR NEXT WORLD</p><h2>CHOOSE A TALE</h2><span>{stories.length.toString().padStart(2, "0")} TALES</span></div>
+      <div className="vt-section-head"><p>★ YOUR NEXT WORLD</p><h2>CHOOSE A TALE</h2><span>{(stories.length + 1).toString().padStart(2, "0")} TALES</span></div>
       <div className="vt-episode-list">
         {stories.map((story, index) => <motion.button key={story.id} onClick={() => onOpen(story)} initial={{ opacity: 0, x: 75}} animate={{ opacity: 1, x: 0 }} transition={{ ...snap, delay: 0.1 + index * 0.09 }} whileTap={{ scale: 0.95}}><b>{String(index + 1).padStart(2, "0")}</b><i className="vt-episode-mark">{index % 2 ? "◆" : "★"}</i><span><strong>{story.title}</strong><small>{story.description || "NO DESCRIPTION"}</small></span><em className={story.node_count ? "unlocked" : "standby"}>{story.node_count ? "READY" : "NEW"}</em></motion.button>)}
+        <motion.button type="button" className="vt-baccarat-tale" onClick={() => window.location.assign("/baccarat-search/index.html")} initial={{ opacity: 0, x: 75 }} animate={{ opacity: 1, x: 0 }} transition={{ ...snap, delay: 0.1 + stories.length * 0.09 }} whileTap={{ scale: 0.95 }} data-testid="choose-tale-baccarat-search"><b>{String(stories.length + 1).padStart(2, "0")}</b><i className="vt-episode-mark">◇</i><span><strong>Baccarat Perfume Search</strong><small>HUNT FOR THE PERFUME</small></span><em className="unlocked">READY</em></motion.button>
         {loading && <p className="vt-story-state">TUNING LIVE ARCHIVE...</p>}
         {!loading && error && <div className="vt-story-state error" role="alert"><p>{error}</p><button onClick={onRetry}>RETRY LINK</button></div>}
         {!loading && !error && stories.length === 0 && <p className="vt-story-state">NO TALES TRANSMITTED YET</p>}

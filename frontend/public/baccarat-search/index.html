@@ -124,7 +124,7 @@ body{display:flex;justify-content:center}
     <div class="hearts" id="hearts"></div>
   </div>
   <div class="vine">
-    <div class="vine-label"><span>TIME TO THE COUNTER</span><span id="secs">20</span></div>
+    <div class="vine-label"><span>TIME TO THE COUNTER</span><span id="secs">100</span></div>
     <svg viewBox="0 0 400 26" preserveAspectRatio="none">
       <path d="M4 13 Q 29 1 54 13 T 104 13 T 154 13 T 204 13 T 254 13 T 304 13 T 354 13 T 396 13" fill="none" stroke="#e9dcc2" stroke-width="12" stroke-linecap="round"/>
       <path id="vinefill" d="M4 13 Q 29 1 54 13 T 104 13 T 154 13 T 204 13 T 254 13 T 304 13 T 354 13 T 396 13" fill="none" stroke="#8fb36a" stroke-width="12" stroke-linecap="round"/>
@@ -224,12 +224,13 @@ OPTS.sort(()=>Math.random()-.5).forEach((o,i)=>{
   </div>`);
 });
 
-let time=20,lives=3,done=false;
+const GAME_DURATION_SECONDS=100;
+let time=GAME_DURATION_SECONDS,lives=3,done=false;
 const vf=document.getElementById('vinefill'),L=vf.getTotalLength();
 vf.style.strokeDasharray=L;
 const secs=document.getElementById('secs');
 function tick(){ if(done)return; time-=.1; if(time<=0){time=0;end(false,"Time's up","The boutique closed its doors. Sharifa says she told you so.");}
-  vf.style.strokeDashoffset=L*(1-time/20); vf.setAttribute('stroke',time<6?'#7b2a40':'#8fb36a'); secs.textContent=Math.ceil(time);}
+  vf.style.strokeDashoffset=L*(1-time/GAME_DURATION_SECONDS); vf.setAttribute('stroke',time<6?'#7b2a40':'#8fb36a'); secs.textContent=Math.ceil(time);}
 const timer=setInterval(tick,100);
 
 function sparks(x,y){

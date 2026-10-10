@@ -63,7 +63,7 @@ export default function Shoug2Story({ state, player, code }) {
   const matchedBackground = backgrounds.find(([, pattern]) => pattern.test(text));
   if (matchedBackground) lastBackground.current = `/shoug2/bg/${matchedBackground[0]}.jpg`;
   const background = lastBackground.current;
-  const fallbackBackground = "/shoug2/bg/fallback.svg";
+  const fallbackBackground = "/IMG_2640.webp";
   return <main className={`shoug2-root shoug2-${type}`} style={{"--shoug2-image": `url("${background}"), url("${fallbackBackground}")`}}>
     <div className="shoug2-environment" aria-hidden="true" />
     <header className="shoug2-status"><span>SHOUG 2.0</span><span>ROOM {code}</span><span>{phase === "voting" ? "LIVE VOTE" : phase === "reading" ? "READING" : "STORY"}</span></header>

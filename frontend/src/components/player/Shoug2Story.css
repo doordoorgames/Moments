@@ -26,3 +26,7 @@
 .shoug2-track{background:#D7EACD}.shoug2-track>div{background:#4F6E3A}
 .shoug2-root .shoug-shape:focus-visible{outline:3px solid #6E1F35;outline-offset:10px}
 @media(max-height:700px){.shoug2-stage{padding:10px 0;gap:10px}.shoug2-story .shoug-shape{min-height:145px}.shoug2-choices .shoug-shape{min-height:95px}}
+
+/* Full-opacity image; exactly 35% cream wash above it. */
+.shoug2-root .shoug2-environment{opacity:1}
+.shoug2-root::before{background:#FBF4E4;opacity:.35}

@@ -20,6 +20,7 @@ export default function Shoug2Story({ state, player, code }) {
   const [pending, setPending] = useState(false);
   const [now, setNow] = useState(Date.now());
   const clockOffset = useRef(0);
+  const lastBackground = useRef("/shoug2/bg/airport.jpg");
   const reduced = useReducedMotion();
   useEffect(() => {
     if (state.server_time) clockOffset.current = new Date(state.server_time).getTime() - Date.now();
@@ -47,7 +48,6 @@ export default function Shoug2Story({ state, player, code }) {
   const type = /airport|gate|flight|heathrow|مطار|بوابة|رحلة/i.test(text) ? "airport" :
     /phone|call|message|whatsapp|اتصال|رسالة/i.test(text) ? "phone" :
     choices.length > 1 ? "decision" : narration ? "narration" : "journey";
-  const lastBackground = useRef("/shoug2/bg/airport.jpg");
   const backgrounds = [
     ["phone-accessories", /phone strap|duty free/i],
     ["christmas-lights", /christmas lights|accommodation|regent street/i],

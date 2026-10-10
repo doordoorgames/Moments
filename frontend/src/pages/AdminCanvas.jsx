@@ -32,11 +32,31 @@ import { StoryNode } from "@/components/admin/StoryNode";
 import NodeInspector from "@/components/admin/NodeInspector";
 import RambleStudio from "@/components/admin/RambleStudio";
 import { buildRouteEdges, routeUpdateFor } from "@/lib/graphRouting";
-import { ArrowLeft, Plus, LogOut, Loader2, Mic, BookOpen, Pencil } from "lucide-react";
+import { ArrowLeft, Plus, LogOut, Loader2, Mic, BookOpen, Pencil, Download } from "lucide-react";
 
 const nodeTypes = { storyNode: StoryNode };
 const choiceId = () =>
     globalThis.crypto?.randomUUID?.() || `choice-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+
+const csvCell = (value) => {
+    const text = String(value ?? "");
+    const safe = /^\\s*[=+@-]/.test(text) ? "'" + text : text;
+    return '"' + safe.replace(/"/g, '""') + '"';
+};
+const graphToCsv = (nodes) => {
+    const maxChoices = Math.max(0, ...nodes.map((n) => (n.choices || []).length));
+    const headers = ["Node ID", "Node Text / Dialogue", "Narration Next Node ID"];
+    for (let i = 0; i < maxChoices; i++) headers.push(`Choice ${i + 1} Text`, `Choice ${i + 1} Target Node ID`);
+    const rows = nodes.map((node) => {
+        const row = [node.id, node.story_text, node.narration_next_node_id || ""];
+        for (let i = 0; i < maxChoices; i++) {
+            const choice = (node.choices || [])[i];
+            row.push(choice?.text || "", choice?.destination_node_id || "");
+        }
+        return row;
+    });
+    return "\\uFEFF" + [headers, ...rows].map((row) => row.map(csvCell).join(",")).join("\\r\\n");
+};
 
 function CanvasInner() {
     const { id: storyId } = useParams();
@@ -301,6 +321,25 @@ function CanvasInner() {
         }
     };
 
+    const downloadCsv = async () => {
+        try {
+            const data = await api.adminGetGraph(storyId);
+            const nodes = data.nodes || [];
+            const blob = new Blob([graphToCsv(nodes)], { type: "text/csv;charset=utf-8" });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.href = url;
+            link.download = `moments-story-${storyId}-nodes.csv`;
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            setTimeout(() => URL.revokeObjectURL(url), 1000);
+            toast.success(`Downloaded ${nodes.length} nodes`);
+        } catch {
+            toast.error("Could not export nodes. Please try again.");
+        }
+    };
+
     const saveStorySettings = async () => {
         if (!storyTitle.trim() || storySaving) return;
         setStorySaving(true);
@@ -345,6 +384,9 @@ function CanvasInner() {
                     </div>
                 </div>
                 <div className="flex items-center gap-2">
+                    <Button size="sm" variant="secondary" onClick={downloadCsv} data-testid="admin-download-csv-button">
+                        <Download className="mr-1 h-3.5 w-3.5" /> Download as CSV
+                    </Button>
                     <Button
                         size="sm"
                         variant="secondary"

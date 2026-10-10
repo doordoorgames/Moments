@@ -32,7 +32,7 @@ export default function ShougVillagePrototype() {
     } catch (err) { toast.error(err?.response?.data?.detail || "Unable to enter room."); }
     finally { setBusy(false); }
   };
-  return <main style={{minHeight:"100dvh",background:"#172c22",color:"#fff7f0",padding:"max(env(safe-area-inset-top),32px) 24px max(env(safe-area-inset-bottom),32px)",fontFamily:"Avenir,system-ui,sans-serif"}}>
+  return <main style={{minHeight:"100dvh",backgroundImage:"linear-gradient(rgba(251,244,228,.35),rgba(251,244,228,.35)),url(/shoug2/bg/fallback.svg)",backgroundSize:"cover",backgroundPosition:"center",backgroundColor:"#172c22",color:"#fff7f0",padding:"max(env(safe-area-inset-top),32px) 24px max(env(safe-area-inset-bottom),32px)",fontFamily:"Avenir,system-ui,sans-serif"}}>
     <div style={{maxWidth:480,margin:"auto",display:"grid",gap:24}}>
       <div style={{fontSize:12,letterSpacing:4,color:"#e8b5c7"}}>MOMENTS · INTERACTIVE TALE</div>
       <h1 style={{fontFamily:"Georgia,serif",fontSize:"clamp(48px,12vw,78px)",lineHeight:1}}>Shoug <em style={{color:"#e8b5c7"}}>2.0</em></h1>

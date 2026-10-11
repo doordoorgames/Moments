@@ -6,3 +6,4 @@ const sw = path.join(publicDir, "service-worker.js");
 const version = process.env.VERCEL_GIT_COMMIT_SHA || process.env.GITHUB_SHA || crypto.randomBytes(12).toString("hex");
 fs.writeFileSync(sw, fs.readFileSync(sw, "utf8").replace(/__MOMENTS_BUILD_VERSION__/g, version));
 fs.writeFileSync(path.join(publicDir, "build-version.json"), JSON.stringify({version}));
+fs.writeFileSync(path.resolve(__dirname, "../src/buildVersion.js"), `export const BUILD_VERSION = ${JSON.stringify(version)};\n`);

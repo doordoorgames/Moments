@@ -3,6 +3,7 @@ import ReactDOM from "react-dom/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import "@/index.css";
 import App from "@/App";
+import { BUILD_VERSION } from "@/buildVersion";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -31,17 +32,15 @@ if ("serviceWorker" in navigator && process.env.NODE_ENV === "production") {
     navigator.serviceWorker.register("/service-worker.js", { updateViaCache: "none" })
       .then((registration) => {
         registration.update();
-        let knownVersion = null;
         const checkVersion = async () => {
           try {
             const response = await fetch("/build-version.json", {cache:"no-store"});
             if (!response.ok) return;
             const {version} = await response.json();
-            if (knownVersion && version !== knownVersion && !reloadingForUpdate) {
+            if (version && version !== BUILD_VERSION && !reloadingForUpdate) {
               reloadingForUpdate = true;
               window.location.reload();
             }
-            knownVersion = version;
           } catch (_) { /* offline: keep app running */ }
         };
         checkVersion();

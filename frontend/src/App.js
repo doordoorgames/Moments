@@ -9,7 +9,6 @@ import PlayRoom from "@/pages/PlayRoom";
 import AdminLogin from "@/pages/AdminLogin";
 import AdminStories from "@/pages/AdminStories";
 import AdminCanvas from "@/pages/AdminCanvas";
-import VisualTest from "@/pages/VisualTest";
 import ShougVillagePrototype from "@/pages/ShougVillagePrototype";
 
 function AdminGate({ children }) {
@@ -24,7 +23,7 @@ function App() {
             <BrowserRouter>
                 <Routes>
                     <Route path="/" element={<Landing />} />
-                    <Route path="/visual-test" element={<VisualTest />} />
+                    <Route path="/visual-test" element={<Navigate to="/" replace />} />
                     <Route path="/shoug-2" element={<ShougVillagePrototype />} />
                     <Route path="/shoug-2/room/:code" element={<PlayRoom shoug2 />} />
                     <Route path="/play" element={<PlayJoin />} />

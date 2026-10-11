@@ -3,6 +3,7 @@ import ReactDOM from "react-dom/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import "@/index.css";
 import App from "@/App";
+import { BUILD_VERSION } from "@/buildVersion";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -21,10 +22,33 @@ if ("serviceWorker" in navigator && process.env.NODE_ENV === "production") {
     window.location.reload();
   });
 
+  navigator.serviceWorker.addEventListener("message", event => {
+    if (event.data?.type === "MOMENTS_BUILD_UPDATED" && !reloadingForUpdate) {
+      reloadingForUpdate = true;
+      window.location.reload();
+    }
+  });
   window.addEventListener("load", () => {
     navigator.serviceWorker.register("/service-worker.js", { updateViaCache: "none" })
       .then((registration) => {
         registration.update();
+        const checkVersion = async () => {
+          try {
+            const response = await fetch("/build-version.json", {cache:"no-store"});
+            if (!response.ok) return;
+            const {version} = await response.json();
+            if (version && version !== BUILD_VERSION && !reloadingForUpdate) {
+              reloadingForUpdate = true;
+              window.location.reload();
+            }
+          } catch (_) { /* offline: keep app running */ }
+        };
+        checkVersion();
+        window.addEventListener("focus", checkVersion);
+        document.addEventListener("visibilitychange", () => {
+          if (document.visibilityState === "visible") checkVersion();
+        });
+        window.setInterval(checkVersion, 60000);
         const refreshWorker = () => registration.update();
         window.addEventListener("focus", refreshWorker);
         document.addEventListener("visibilitychange", () => {

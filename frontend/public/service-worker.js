@@ -1,55 +1,18 @@
-const CACHE_NAME = "moments-visual-v12-shoug2-img2640";
-const APP_SHELL = [
-  "/manifest.json",
-  "/moments-home-v3-180.png",
-  "/moments-home-v3-192.png",
-  "/moments-home-v3-512.png",
-  "/moments-home-v3-maskable-192.png",
-  "/moments-home-v3-maskable-512.png",
-];
-
-self.addEventListener("install", (event) => {
-  event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(APP_SHELL)));
-  self.skipWaiting();
+// Network-only application worker. Never cache HTML, JS, CSS or API responses.
+// Updated on every deployment via the build's generated version file.
+const VERSION = "__MOMENTS_BUILD_VERSION__";
+self.addEventListener("install", () => self.skipWaiting());
+self.addEventListener("activate", event => {
+  event.waitUntil((async () => {
+    const keys = await caches.keys();
+    await Promise.all(keys.map(key => caches.delete(key)));
+    await self.clients.claim();
+    const clients = await self.clients.matchAll({type:"window", includeUncontrolled:true});
+    clients.forEach(client => client.postMessage({type:"MOMENTS_BUILD_UPDATED", version:VERSION}));
+  })());
 });
-
-self.addEventListener("activate", (event) => {
-  event.waitUntil(
-    caches.keys().then((keys) => Promise.all(keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key))))
-  );
-  self.clients.claim();
-});
-
-self.addEventListener("fetch", (event) => {
+self.addEventListener("fetch", event => {
   if (event.request.method !== "GET") return;
-
-  if (event.request.mode === "navigate") {
-    event.respondWith(
-      fetch(event.request)
-        .then((response) => {
-          if (response.ok && new URL(event.request.url).pathname === "/visual-test") {
-            caches.open(CACHE_NAME).then((cache) => cache.put("/visual-test", response.clone()));
-          }
-          return response;
-        })
-        .catch(() => caches.match("/visual-test"))
-    );
-    return;
-  }
-
-  const url = new URL(event.request.url);
-  if (url.origin !== self.location.origin) return;
-
-  // App assets must revalidate online. A cache-first JavaScript bundle can
-  // otherwise keep an installed PWA on an obsolete build indefinitely.
-  event.respondWith(
-    fetch(event.request)
-      .then((response) => {
-        if (response.ok) {
-          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, response.clone()));
-        }
-        return response;
-      })
-      .catch(() => caches.match(event.request))
-  );
+  if (new URL(event.request.url).origin !== self.location.origin) return;
+  event.respondWith(fetch(event.request, {cache:"no-store"}));
 });

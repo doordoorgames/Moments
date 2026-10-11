@@ -63,7 +63,7 @@
   },
   "scripts": {
     "start": "craco start",
-    "build": "craco build",
+    "build": "node scripts/prepare-production-build.js && craco build",
     "test": "craco test"
   },
   "browserslist": {

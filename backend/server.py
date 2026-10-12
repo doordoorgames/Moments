@@ -22,6 +22,8 @@ import secrets
 import socket
 import string
 import uuid
+
+import httpx
 from collections import Counter, defaultdict
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -44,7 +46,7 @@ from fastapi import (
 )
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
-from supabase import create_client, Client
+from supabase import create_client, Client, ClientOptions
 from pydantic import BaseModel, ConfigDict, Field
 from starlette.middleware.cors import CORSMiddleware
 
@@ -54,6 +56,7 @@ load_dotenv(ROOT_DIR / ".env")
 # Initialized lazily in the startup event so the server binds its port
 # even when SUPABASE_URL / SUPABASE_KEY are not yet configured.
 supa: Optional[Client] = None
+database_http: Optional[httpx.Client] = None
 
 ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "admin123")
 ADMIN_TOKEN = os.environ.get("ADMIN_TOKEN", "admin-secret-token-" + str(uuid.uuid4())[:8])
@@ -774,10 +777,11 @@ class ConnectionManager:
 manager = ConnectionManager()
 
 
-async def broadcast_room_state(code: str) -> None:
+async def broadcast_room_state(code: str):
     state = await compute_room_state(code)
     if state is not None:
         await manager.broadcast(code, {"type": "room_state", "state": state})
+    return state
 
 
 def supreme_nickname(nickname: str) -> bool:
@@ -797,12 +801,12 @@ async def is_supreme_room(code: str) -> bool:
     return test_metadata(await get_room(code) or {}) is not None
 
 
-async def authorize_test_room(code: str, payload: RoomSessionRequest) -> Dict[str, Any]:
-    room = await get_room(code)
+async def authorize_test_room(code: str, payload: RoomSessionRequest, room=None, player=None) -> Dict[str, Any]:
+    room = room if room is not None else await get_room(code)
     metadata = test_metadata(room or {})
     if not metadata:
         raise HTTPException(403, "This is not a Supreme Test99 room")
-    player = await get_player(payload.player_id) if payload.player_id else None
+    player = player if player is not None else (await get_player(payload.player_id) if payload.player_id else None)
     if (not player or player.get("room_code") != code
             or player.get("id") != metadata.get("creator_id")
             or not player.get("is_host") or not payload.session_token
@@ -902,10 +906,10 @@ async def _start_phase_task(code: str, coro) -> None:
     _room_tasks[code] = task
 
 
-async def advance_to_node(code: str, node_id: str, flags: List[str], history_override=None) -> None:
+async def advance_to_node(code: str, node_id: str, flags: List[str], history_override=None, previous_room=None):
     """Enter a node, skipping the reading buffer only for one-player rooms."""
     _cancel_room_task(code)
-    previous = await get_room(code) or {}
+    previous = previous_room if previous_room is not None else (await get_room(code) or {})
     metadata = test_metadata(previous)
     visit_id = None
     if metadata:
@@ -930,8 +934,7 @@ async def advance_to_node(code: str, node_id: str, flags: List[str], history_ove
             "wheel_options": [metadata] if metadata else None,
             "wheel_winner_choice_id": visit_id,
         }).eq("code", code).execute())
-        await broadcast_room_state(code)
-        return
+        return await broadcast_room_state(code)
 
     if node.get("node_type", "story") == "narration":
         await _q(lambda: supa.table("rooms").update({
@@ -943,8 +946,7 @@ async def advance_to_node(code: str, node_id: str, flags: List[str], history_ove
             "wheel_winner_choice_id": visit_id,
         }).eq("code", code).execute())
         await _q(lambda: supa.table("votes").delete().eq("room_code", code).execute())
-        await broadcast_room_state(code)
-        return
+        return await broadcast_room_state(code)
 
     filtered = filter_choices_by_flags(node, flags)
 
@@ -959,15 +961,14 @@ async def advance_to_node(code: str, node_id: str, flags: List[str], history_ove
             "wheel_winner_choice_id": visit_id,
         }).eq("code", code).execute())
         await _q(lambda: supa.table("votes").delete().eq("room_code", code).execute())
-        await broadcast_room_state(code)
-        return
+        return await broadcast_room_state(code)
 
     players_res = await _q(
         lambda: supa.table("players").select("*", count="exact")
         .eq("room_code", code).execute()
     )
     is_solo = (players_res.count or 0) == 1
-    supreme = await is_supreme_room(code)
+    supreme = metadata is not None
 
     # A solo player can vote as soon as the node is displayed. Multiplayer
     # retains the synchronized reading buffer unchanged.
@@ -983,10 +984,10 @@ async def advance_to_node(code: str, node_id: str, flags: List[str], history_ove
         }).eq("code", code).execute())
         await _q(lambda: supa.table("votes").delete()
                  .eq("room_code", code).eq("node_id", node_id).execute())
-        await broadcast_room_state(code)
+        state = await broadcast_room_state(code)
         if not supreme:
             await _start_phase_task(code, _voting_timeout(code, node_id))
-        return
+        return state
 
     # Non-terminal multiplayer room: start reading phase
     reading_ends = _now() + timedelta(seconds=READING_SECONDS)
@@ -1100,7 +1101,7 @@ async def _wheel_then_advance(code: str, node_id: str, picked: Dict[str, Any]) -
         logger.exception(f"wheel task error for {code}: {e}")
 
 
-async def advance_with_choice(code: str, choice: Dict[str, Any], current_flags: List[str]) -> None:
+async def advance_with_choice(code: str, choice: Dict[str, Any], current_flags: List[str], previous_room=None):
     """Apply a resolved choice, update flags, and move to the destination node."""
     new_flags = list(current_flags or [])
     if choice.get("sets_flag") and choice["sets_flag"] not in new_flags:
@@ -1108,7 +1109,7 @@ async def advance_with_choice(code: str, choice: Dict[str, Any], current_flags: 
     dest = choice.get("destination_node_id")
     if not dest:
         # Keep test-room identity and controls available at a dangling ending.
-        room = await get_room(code) or {}
+        room = previous_room if previous_room is not None else (await get_room(code) or {})
         metadata = test_metadata(room)
         if metadata:
             metadata = {**metadata, "history": [*metadata.get("history", []), {"node_id": room["current_node_id"], "flags": current_flags}]}
@@ -1119,9 +1120,8 @@ async def advance_with_choice(code: str, choice: Dict[str, Any], current_flags: 
             "wheel_options": [metadata] if metadata else None,
             "wheel_winner_choice_id": str(uuid.uuid4()) if metadata else None,
         }).eq("code", code).execute())
-        await broadcast_room_state(code)
-        return
-    await advance_to_node(code, dest, new_flags)
+        return await broadcast_room_state(code)
+    return await advance_to_node(code, dest, new_flags, previous_room=previous_room)
 
 
 # ============================================================
@@ -1541,17 +1541,18 @@ async def _cast_vote(code: str, payload: VoteRequest):
         raise HTTPException(400, "Invalid choice for the current node")
 
     nid = room["current_node_id"]
-    existing_res = await _q(
-        lambda: supa.table("votes").select("id")
-        .eq("room_code", code).eq("node_id", nid).eq("player_id", payload.player_id)
-        .maybe_single().execute()
-    )
-    if existing_res is not None and existing_res.data:
-        raise HTTPException(400, "You have already voted for this scene")
+    supreme = test_metadata(room) is not None
+    if not supreme:
+        existing_res = await _q(
+            lambda: supa.table("votes").select("id")
+            .eq("room_code", code).eq("node_id", nid).eq("player_id", payload.player_id)
+            .maybe_single().execute()
+        )
+        if existing_res is not None and existing_res.data:
+            raise HTTPException(400, "You have already voted for this scene")
 
-    supreme = await is_supreme_room(code)
     if supreme:
-        await authorize_test_room(code, payload)
+        await authorize_test_room(code, payload, room=room, player=player)
         if not payload.node_id or not payload.visit_id or payload.visit_id != room.get("wheel_winner_choice_id"):
             raise HTTPException(409, "This node visit has already advanced")
         # Only the original Test99 creator controls an accelerated room.
@@ -1570,7 +1571,7 @@ async def _cast_vote(code: str, payload: VoteRequest):
         _cancel_room_task(code)
         winning = next(c for c in filtered if c["id"] == payload.choice_id)
         try:
-            await advance_with_choice(code, winning, room.get("flags") or [])
+            state = await advance_with_choice(code, winning, room.get("flags") or [], previous_room=room)
         except Exception:
             # Do not strand a room in resolving if Supabase fails downstream.
             await _q(lambda: supa.table("rooms").update({
@@ -1578,7 +1579,7 @@ async def _cast_vote(code: str, payload: VoteRequest):
             }).eq("code", code).eq("current_node_id", nid)
               .eq("phase", "resolving").execute())
             raise
-        return await compute_room_state(code)
+        return state
 
     vote_doc = {
         "id": str(uuid.uuid4()),
@@ -1852,13 +1853,16 @@ app.add_middleware(
 
 @app.on_event("startup")
 async def _startup():
-    global supa
+    global supa, database_http
     url = os.environ.get("SUPABASE_URL")
     # Prefer the service-role key (bypasses RLS) for server-side operations;
     # fall back to the anon key if only that is set.
     key = os.environ.get("SUPABASE_SERVICE_ROLE_KEY") or os.environ.get("SUPABASE_KEY")
     if url and key:
-        supa = create_client(url, key)
+        # HTTP/2 pooled connections produced shared ReadError/EAGAIN failures
+        # under simultaneous production requests. Use isolated HTTP/1.1 streams.
+        database_http = httpx.Client(http2=False, timeout=30.0, limits=httpx.Limits(max_connections=20, max_keepalive_connections=10))
+        supa = create_client(url, key, options=ClientOptions(httpx_client=database_http))
         logger.info("Supabase client initialised")
         try:
             await seed_zayn_story()
@@ -1871,11 +1875,12 @@ async def _startup():
         logger.warning(
             "SUPABASE_URL / SUPABASE_KEY not set — DB endpoints will return 503 until secrets are added and the backend is restarted."
         )
-    logger.info(f"Admin token: {ADMIN_TOKEN}")
 
 
 @app.on_event("shutdown")
 async def _shutdown():
+    if database_http is not None:
+        database_http.close()
     for t in list(_room_tasks.values()):
         try:
             t.cancel()

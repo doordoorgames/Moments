@@ -1,0 +1,80 @@
+{
+  "source": "wikimedia-fashion",
+  "adapter": "manifest",
+  "reuse": {
+    "status": "permitted",
+    "evidence": "Each listed Wikimedia Commons file page explicitly grants reuse under its recorded CC BY or CC BY-SA licence. Attribution and licence links are preserved; resized WebP copies retain the original licence. Verified 2026-10-12."
+  },
+  "items": [
+    {
+      "name": "Chanel Classic Double Flap 2.55",
+      "category": "handbags",
+      "image_url": "https://upload.wikimedia.org/wikipedia/commons/1/19/Chanel_CLASSIC_Double_Flap_2.55_.jpg",
+      "source_url": "https://commons.wikimedia.org/wiki/File:Chanel_CLASSIC_Double_Flap_2.55_.jpg",
+      "license": "CC BY-SA 4.0",
+      "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
+      "creator": "Stylehouseofbonadeaseo",
+      "attribution": "Chanel Classic Double Flap 2.55 — Stylehouseofbonadeaseo; CC BY-SA 4.0; resized and converted to WebP."
+    },
+    {
+      "name": "Christian Louboutin Luggage Shoe",
+      "category": "shoes",
+      "image_url": "https://upload.wikimedia.org/wikipedia/commons/7/79/LagguageShoe_by_ChristianLouboutin.jpg",
+      "source_url": "https://commons.wikimedia.org/wiki/File:LagguageShoe_by_ChristianLouboutin.jpg",
+      "license": "CC BY 2.0",
+      "license_url": "https://creativecommons.org/licenses/by/2.0",
+      "creator": "Sheila Thomson from London, England",
+      "attribution": "Christian Louboutin Luggage Shoe — Sheila Thomson from London, England; CC BY 2.0; resized and converted to WebP."
+    },
+    {
+      "name": "Guerlain Shalimar perfume",
+      "category": "perfume",
+      "image_url": "https://upload.wikimedia.org/wikipedia/commons/b/b0/Perfume_Shalimar.jpg",
+      "source_url": "https://commons.wikimedia.org/wiki/File:Perfume_Shalimar.jpg",
+      "license": "CC BY-SA 2.0",
+      "license_url": "https://creativecommons.org/licenses/by-sa/2.0",
+      "creator": "Gonna Fly Now",
+      "attribution": "Guerlain Shalimar perfume — Gonna Fly Now; CC BY-SA 2.0; resized and converted to WebP."
+    },
+    {
+      "name": "Christian Dior snakeskin heels",
+      "category": "shoes",
+      "image_url": "https://upload.wikimedia.org/wikipedia/commons/8/8a/2005_Christian_Dior_shoes%2C_cream_and_black_snakeskin_heels.jpg",
+      "source_url": "https://commons.wikimedia.org/wiki/File:2005_Christian_Dior_shoes,_cream_and_black_snakeskin_heels.jpg",
+      "license": "CC0",
+      "license_url": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
+      "creator": "Staff photographer, Rhode Island School of Design Museum of Art",
+      "attribution": "Christian Dior snakeskin heels — Staff photographer, Rhode Island School of Design Museum of Art; CC0; resized and converted to WebP."
+    },
+    {
+      "name": "Chanel No. 5 perfume",
+      "category": "perfume",
+      "image_url": "https://upload.wikimedia.org/wikipedia/commons/0/0e/Chanel_N%C2%B05.jpg",
+      "source_url": "https://commons.wikimedia.org/wiki/File:Chanel_N%C2%B05.jpg",
+      "license": "CC BY 2.0",
+      "license_url": "https://creativecommons.org/licenses/by/2.0",
+      "creator": "Lily",
+      "attribution": "Chanel No. 5 perfume — Lily; CC BY 2.0; resized and converted to WebP."
+    },
+    {
+      "name": "Hermès Birkin bag",
+      "category": "handbags",
+      "image_url": "https://upload.wikimedia.org/wikipedia/commons/7/7a/Hermes_Birkin-2.jpg",
+      "source_url": "https://commons.wikimedia.org/wiki/File:Hermes_Birkin-2.jpg",
+      "license": "Public domain",
+      "license_url": "https://commons.wikimedia.org/wiki/Commons:Public_domain",
+      "creator": "Hermes_Birkin.JPG: Theorb\nderivative work: Regi51 (talk)",
+      "attribution": "Hermès Birkin bag — Hermes_Birkin.JPG: Theorb\nderivative work: Regi51 (talk); Public domain; resized and converted to WebP."
+    },
+    {
+      "name": "Red lipstick",
+      "category": "makeup",
+      "image_url": "https://upload.wikimedia.org/wikipedia/commons/d/d5/Lipstick.jpg",
+      "source_url": "https://commons.wikimedia.org/wiki/File:Lipstick.jpg",
+      "license": "CC BY-SA 3.0",
+      "license_url": "http://creativecommons.org/licenses/by-sa/3.0/",
+      "creator": "user:KaurJmeb",
+      "attribution": "Red lipstick — user:KaurJmeb; CC BY-SA 3.0; resized and converted to WebP."
+    }
+  ]
+}

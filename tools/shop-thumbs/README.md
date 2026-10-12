@@ -23,3 +23,16 @@ The permission gate prints notes and exits 2 before any network request or outpu
 Exit codes: 0 completed; 1 partial/failed network collection (gallery and catalog still written); 2 reuse not permitted or evidence missing. Errors are printed per URL/query, so a failed run can be rerun safely. Openverse can return 403 challenges in automated environments; do not bypass access controls. Run again from an allowed environment. Public-domain results can include irrelevant photos: the gallery is a human review step, not a product recognizer.
 
 Offline checks: `python tools/shop-thumbs/test_collect.py`.
+
+## Working alternatives (verified 2026-10-12)
+
+```sh
+python tools/shop-thumbs/collect.py tools/shop-thumbs/sources/wikimedia-fashion.json
+python tools/shop-thumbs/collect.py tools/shop-thumbs/sources/pexels-fashion.json
+```
+
+The curated Commons manifest includes specific photos of Chanel, Hermès, Christian Dior, Christian Louboutin and Guerlain products. These are individual photographers' licensed images, not a blanket licence for a brand's catalog. The Pexels manifest adds generic handbag and dress photos; their brands are unverified and must not be labelled JW PEI or ZIMMERMANN.
+
+CC BY and CC BY-SA photos must retain their creator credit, source, licence link and the resize/WebP change notice wherever used. CC BY-SA thumbnails retain their original photo licence; this does not license the game's code. The review gallery displays the full attribution. Public-domain and CC0 images can be reused without attribution obligations, but provenance is retained. Pexels permits downloading and use in websites/apps, including commercial projects; do not imply endorsement or redistribute the photos as a stock-photo service.
+
+JW PEI's direct site terms (https://www.jwpei.com/pages/terms-conditions) restrict its content to personal, noncommercial use. No reusable licence for ZIMMERMANN product catalog photos was verified. Google Images and Pinterest may help locate a photo, but the original source's licence is what must be recorded in `reuse.evidence`. Do not mark those search platforms themselves as permission evidence.

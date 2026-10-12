@@ -1467,6 +1467,32 @@ async def _cast_vote(code: str, payload: VoteRequest):
     if existing_res is not None and existing_res.data:
         raise HTTPException(400, "You have already voted for this scene")
 
+    supreme = await is_supreme_room(code)
+    if supreme:
+        # Only the original Test99 creator controls an accelerated room.
+        # Claim the node in PostgreSQL before advancing. The conditional update
+        # protects against double taps even across multiple Railway workers.
+        if not player.get("is_host"):
+            raise HTTPException(403, "Only the Supreme Test Mode host can select choices")
+        claimed = await _q(lambda: supa.table("rooms").update({
+            "phase": "resolving", "phase_ends_at": None,
+        }).eq("code", code).eq("current_node_id", nid)
+          .eq("phase", "voting").execute())
+        if not (claimed.data or []):
+            raise HTTPException(409, "This scene has already advanced")
+        _cancel_room_task(code)
+        winning = next(c for c in filtered if c["id"] == payload.choice_id)
+        try:
+            await advance_with_choice(code, winning, room.get("flags") or [])
+        except Exception:
+            # Do not strand a room in resolving if Supabase fails downstream.
+            await _q(lambda: supa.table("rooms").update({
+                "phase": "voting",
+            }).eq("code", code).eq("current_node_id", nid)
+              .eq("phase", "resolving").execute())
+            raise
+        return {"ok": True}
+
     vote_doc = {
         "id": str(uuid.uuid4()),
         "room_code": code,
@@ -1476,11 +1502,6 @@ async def _cast_vote(code: str, payload: VoteRequest):
         "created_at": _now_iso(),
     }
     await _q(lambda: supa.table("votes").insert(vote_doc).execute())
-    if await is_supreme_room(code):
-        _cancel_room_task(code)
-        winning = next(c for c in filtered if c["id"] == payload.choice_id)
-        await advance_with_choice(code, winning, room.get("flags") or [])
-        return {"ok": True}
     await broadcast_room_state(code)
 
     # If everyone has voted, immediately resolve

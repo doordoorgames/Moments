@@ -35,9 +35,9 @@ export default function Shoug2Story({ state, player, code }) {
   if (!node) return null;
   const remaining = room.phase_ends_at ? Math.max(0, Math.ceil((new Date(room.phase_ends_at).getTime() - now - clockOffset.current) / 1000)) : null;
   const choose = async id => {
-    if (pending || voted || phase !== "voting") return;
+    if (pending || voted || phase !== "voting" || (supreme && !host)) return;
     setPending(true);
-    try { await api.castVote(code, player.id, id, supreme ? node.id : undefined); }
+    try { await api.castVote(code, player.id, id, supreme ? node.id : undefined, supreme ? player.session_token : undefined); }
     catch (err) { toast.error(err?.response?.data?.detail || "Vote failed"); setPending(false); }
   };
   const next = async () => {
@@ -80,7 +80,7 @@ export default function Shoug2Story({ state, player, code }) {
       </AnimatePresence>
     </div>
     <section className="shoug2-actions" aria-label="Story actions">
-      {!narration && <div className="shoug2-choices" data-testid="choice-list">{choices.map((choice,i)=><ShougShape as="button" shape={pickChoiceShape(node.id,i)} key={choice.id} data-testid={`choice-vote-${choice.id}`} disabled={phase !== "voting" || voted || pending} onClick={()=>choose(choice.id)}><span className="shoug2-choice-label">CHOICE {String(i+1).padStart(2,"0")}</span><strong>{choice.text}</strong></ShougShape>)}</div>}
+      {!narration && <div className="shoug2-choices" data-testid="choice-list">{choices.map((choice,i)=><ShougShape as="button" shape={pickChoiceShape(node.id,i)} key={choice.id} data-testid={`choice-vote-${choice.id}`} disabled={phase !== "voting" || voted || pending || (supreme && !host)} onClick={()=>choose(choice.id)}><span className="shoug2-choice-label">CHOICE {String(i+1).padStart(2,"0")}</span><strong>{choice.text}</strong></ShougShape>)}</div>}
       {narration && (host ? <ShougShape as="button" shape={CONTINUE_SHAPE} className="shoug2-next" disabled={pending || !node.narration_next_node_id} onClick={next} data-testid="narration-next-button">Continue</ShougShape> : <p>Waiting for the host to continue…</p>)}
       {phase === "reading" && <p className="shoug2-meta">Read together. Voting opens shortly.</p>}
       {phase === "voting" && !supreme && <div className="shoug2-voting" data-testid="vote-status-row"><span data-testid="vote-counter">{stats.voted_count || 0}/{stats.total_players ?? players.length} voted</span><span>{remaining === null ? "Voting" : `${remaining}s remaining`}</span><div className="shoug2-track"><div style={{width:`${remaining === null ? 0 : Math.max(0,Math.min(100,(20-remaining)/20*100))}%`}} /></div>{voted && <small>Your vote is locked. Waiting for others.</small>}</div>}

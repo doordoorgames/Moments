@@ -82,7 +82,7 @@ export const api = {
             params: { _ts: Date.now() },
             headers: { "Cache-Control": "no-cache" },
         }).then((r) => r.data),
-    createRoom: () => axios.post(apiUrl("/rooms")).then((r) => r.data),
+    createRoom: (nickname) => axios.post(apiUrl("/rooms"), nickname ? { nickname } : {}).then((r) => r.data),
     getRoom: (code) => axios.get(apiUrl(`/rooms/${code}`)).then((r) => r.data),
     joinRoom: (code, nickname) =>
         axios.post(apiUrl(`/rooms/${code}/join`), { nickname }).then((r) => r.data),
@@ -90,8 +90,8 @@ export const api = {
         axios.post(apiUrl(`/rooms/${code}/select-story`), { story_id, presentation }).then((r) => r.data),
     startRoom: (code) => axios.post(apiUrl(`/rooms/${code}/start`)).then((r) => r.data),
     resetRoom: (code) => axios.post(apiUrl(`/rooms/${code}/reset`)).then((r) => r.data),
-    castVote: (code, player_id, choice_id, node_id) =>
-        axios.post(apiUrl(`/rooms/${code}/vote`), { player_id, choice_id, node_id }).then((r) => r.data),
+    castVote: (code, player_id, choice_id, node_id, session_token) =>
+        axios.post(apiUrl(`/rooms/${code}/vote`), { player_id, choice_id, node_id, session_token }).then((r) => r.data),
     advanceNarration: (code, player_id, session_token) =>
         axios
             .post(apiUrl(`/rooms/${code}/narration/next`), { player_id, session_token })

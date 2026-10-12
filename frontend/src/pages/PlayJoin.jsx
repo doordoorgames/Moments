@@ -39,8 +39,8 @@ export default function PlayJoin() {
         }
         setBusy(true);
         try {
-            const room = await api.createRoom();
-            const player = await api.joinRoom(room.code, nickname.trim());
+            const room = await api.createRoom(nickname.trim());
+            const player = room.player || await api.joinRoom(room.code, nickname.trim());
             localStorage.setItem(`player_${room.code}`, JSON.stringify(player));
             nav(`/play/${room.code}`);
         } catch (err) {

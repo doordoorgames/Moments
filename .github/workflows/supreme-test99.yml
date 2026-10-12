@@ -1,0 +1,47 @@
+name: Supreme Test99 full-stack checks
+
+on:
+  push:
+    branches: [main, feature/supreme-test99-production-20261012]
+  pull_request:
+    branches: [main]
+
+jobs:
+  backend-tests:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+          cache-dependency-path: backend/requirements.txt
+      - run: pip install -r requirements.txt pytest-xdist
+      - run: python -m compileall -q server.py
+      - run: python -m pytest -q test_supreme_mode.py test_solo_voting.py -n 0
+
+  frontend-build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: yarn
+          cache-dependency-path: frontend/yarn.lock
+      - run: corepack enable
+      - run: yarn install --frozen-lockfile
+      - run: yarn build
+        env:
+          CI: 'false'
+          REACT_APP_BACKEND_URL: https://example.invalid
+      - name: Verify content-hashed bundles
+        run: |
+          test -f build/index.html
+          find build/static/js -maxdepth 1 -name '*.js' | grep -E '[a-f0-9]{8}' || exit 1

@@ -58,11 +58,11 @@ def test_consecutive_choices_and_persisted_mode(monkeypatch):
             # Re-read persisted data each time, as a refresh/reconnect does.
             assert await server.is_supreme_room('TEST')
             assert db.rows['rooms'][0]['phase_ends_at'] is None
-            await server.cast_vote('TEST', server.VoteRequest(player_id=host.id, choice_id=f'c{i}'))
+            await server.cast_vote('TEST', server.VoteRequest(player_id=host.id, choice_id=f'c{i}', node_id=f'n{i}', session_token=host.session_token))
             assert db.rows['rooms'][0]['current_node_id'] == f'n{i+1}'
             if i < 4:
                 with pytest.raises(HTTPException) as stale:
-                    await server.cast_vote('TEST', server.VoteRequest(player_id=host.id, choice_id=f'c{i}', node_id=f'n{i}'))
+                    await server.cast_vote('TEST', server.VoteRequest(player_id=host.id, choice_id=f'c{i}', node_id=f'n{i}', session_token=host.session_token))
                 assert stale.value.status_code == 409
         assert db.rows['rooms'][0]['phase'] == 'ended'
         assert db.rows['rooms'][0]['flags'] == [f'f{i}' for i in range(5)]
@@ -94,3 +94,59 @@ def test_normal_multiplayer_vote_waits_for_other_players(monkeypatch):
     asyncio.run(server.cast_vote('TEST', server.VoteRequest(player_id='host', choice_id='c0')))
     assert db.rows['rooms'][0]['current_node_id'] == 'n0'
     assert len(db.rows['votes']) == 1
+
+
+@pytest.mark.parametrize('nickname', ['Test99', 'test99', 'TEST99', 'Test 99', ' T e s t 9 9 '])
+def test_create_room_activates_mode_before_first_client_join(monkeypatch, nickname):
+    db = DB(nickname)
+    monkeypatch.setattr(server, 'supa', db)
+    monkeypatch.setattr(server, 'generate_room_code', lambda: 'NEW99')
+    async def get_room(code):
+        return next((dict(row) for row in db.rows['rooms'] if row['code'] == code), None)
+    monkeypatch.setattr(server, 'get_room', get_room)
+    async def exercise():
+        result = await server.create_room(server.RoomCreateRequest(nickname=nickname))
+        assert result['code'] == 'NEW99'
+        assert result['supreme_test_mode'] is True
+        assert result['player']['is_host']
+        assert await server.is_supreme_room('NEW99')
+        assert len([p for p in db.rows['players'] if p['room_code'] == 'NEW99']) == 1
+    asyncio.run(exercise())
+
+
+def test_normal_creation_cannot_enable_supreme_mode(monkeypatch):
+    db = DB('Normal')
+    monkeypatch.setattr(server, 'supa', db)
+    monkeypatch.setattr(server, 'generate_room_code', lambda: 'NEW99')
+    async def get_room(code):
+        return next((dict(row) for row in db.rows['rooms'] if row['code'] == code), None)
+    monkeypatch.setattr(server, 'get_room', get_room)
+    async def exercise():
+        result = await server.create_room(server.RoomCreateRequest(nickname='Normal'))
+        assert result['supreme_test_mode'] is False
+        assert not await server.is_supreme_room('NEW99')
+    asyncio.run(exercise())
+
+
+def test_guest_and_missing_host_token_cannot_advance_test_room(monkeypatch):
+    db = DB('Test99')
+    db.rows['rooms'][0].update(phase='voting', current_node_id='n0')
+    db.rows['players'] = [
+        {'id': 'host', 'nickname': 'Test99', 'is_host': True, 'room_code': 'TEST', 'session_token': 'valid-token'},
+        {'id': 'guest', 'nickname': 'Guest', 'is_host': False, 'room_code': 'TEST', 'session_token': 'guest-token'},
+    ]
+    monkeypatch.setattr(server, 'supa', db)
+    async def room(code): return dict(db.rows['rooms'][0])
+    async def player(pid): return next(p for p in db.rows['players'] if p['id'] == pid)
+    async def node(nid): return {'id': nid, 'choices': [{'id': 'c0', 'destination_node_id': 'n1'}]}
+    monkeypatch.setattr(server, 'get_room', room)
+    monkeypatch.setattr(server, 'get_player', player)
+    monkeypatch.setattr(server, 'get_node', node)
+    async def exercise():
+        for pid, token in [('guest', 'guest-token'), ('host', ''), ('host', 'invalid')]:
+            with pytest.raises(HTTPException) as err:
+                await server.cast_vote('TEST', server.VoteRequest(
+                    player_id=pid, choice_id='c0', node_id='n0', session_token=token))
+            assert err.value.status_code == 403
+        assert db.rows['rooms'][0]['current_node_id'] == 'n0'
+    asyncio.run(exercise())

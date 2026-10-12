@@ -17,7 +17,7 @@ import { Check, ArrowRight, Crown, BookOpen } from "lucide-react";
  * Phases: reading (10s, no vote UI) -> voting (20s or all voted) -> wheel (on tie) -> next node.
  * Server is the source of truth for phases; client mirrors it and animates from `phase_ends_at`.
  */
-export default function SharedStory({ state, player, code, onState }) {
+export default function SharedStory({ state, player, code, onState, onChoose, navigationReady = true }) {
     const room = state.room;
     const supreme = !!room?.supreme_test_mode;
     const node = state.current_node;
@@ -76,6 +76,7 @@ export default function SharedStory({ state, player, code, onState }) {
 
     const pendingRef = useRef(false);
     const submitVote = async (choiceId) => {
+        if (onChoose) { onChoose(choiceId); return; }
         if (pendingRef.current || voting || myVote) return;
         pendingRef.current = true;
         setVoting(true);
@@ -116,7 +117,7 @@ export default function SharedStory({ state, player, code, onState }) {
                         className={shoug ? "shoug-content" : undefined}
                         initial={supreme ? false : { opacity: 0, y: 8 }}
                         animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: supreme ? 0 : 0.24, ease: [0.16, 1, 0.3, 1] }}
+                        transition={{ duration: 0.1, ease: [0.16, 1, 0.3, 1] }}
                     >
                         <div className="player-eyebrow" {...band(2)}>
                             {isNarration && (
@@ -157,10 +158,10 @@ export default function SharedStory({ state, player, code, onState }) {
                                 const canVote = phase === "voting" && !myVote && (!supreme || isHost);
                                 return (
                                     <button
-                                        key={c.id}
+                                        key={`${room.node_visit_id || node.id}:${c.id}`}
                                         {...band(3 + index)}
-                                        disabled={!canVote}
-                                        onClick={() => submitVote(c.id)}
+                                        disabled={!canVote || !navigationReady}
+                                        onClick={e => { if (e.detail > 1) return; e.currentTarget.dataset.selected = "true"; e.currentTarget.setAttribute("aria-pressed", "true"); submitVote(c.id); }}
                                         className={shoug ? `player-choice shoug-choice shoug-choice-${c === choices[1] ? { airport: "taped", shopping: "cutout", phone: "bubble", london: "caption" }[scene] : choiceStyles[scene]} ${c === choices[1] ? "shoug-choice-alt" : ""}` : "player-choice"}
                                         data-testid={`choice-vote-${c.id}`}
                                     >

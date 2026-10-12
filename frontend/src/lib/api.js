@@ -97,6 +97,7 @@ export const api = {
             .post(apiUrl(`/rooms/${code}/narration/next`), { player_id, session_token, visit_id })
             .then((r) => r.data),
 
+    navigationGraph: (code, session) => axios.post(apiUrl(`/rooms/${code}/navigation`), session).then(r => r.data),
     testNodes: (code, session) => axios.post(apiUrl(`/rooms/${code}/test/nodes`), session).then(r => r.data),
     testControl: (code, payload) => axios.post(apiUrl(`/rooms/${code}/test/control`), payload).then(r => r.data),
 

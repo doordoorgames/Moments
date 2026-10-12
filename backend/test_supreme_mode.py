@@ -311,3 +311,15 @@ def test_http_and_websocket_authoritative_state(control_room):
     assert refreshed['room']['current_node_id'] == 'c'
     with client.websocket_connect('/api/ws/rooms/TEST') as ws:
         assert ws.receive_json()['state']['room']['current_node_id'] == 'c'
+
+
+def test_prefetch_requires_room_session_and_returns_real_graph(control_room):
+    db, _ = control_room
+    async def exercise():
+        result = await server.navigation_graph('TEST', server.RoomSessionRequest(player_id='host',session_token='secret'))
+        assert {n['id'] for n in result['nodes']} == {'a','b','c'}
+        for token in ['', 'wrong']:
+            with pytest.raises(HTTPException) as err:
+                await server.navigation_graph('TEST', server.RoomSessionRequest(player_id='host',session_token=token))
+            assert err.value.status_code == 403
+    asyncio.run(exercise())

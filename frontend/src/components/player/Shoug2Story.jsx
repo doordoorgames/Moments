@@ -6,8 +6,8 @@ import Wheel from "@/components/player/Wheel";
 import { ShougShape, NARRATION_SHAPE, CONTINUE_SHAPE, pickChoiceShape } from "@/components/shoug2/ShougShapes";
 import "@/components/player/Shoug2Story.css";
 
-// The existing room WebSocket owns progression; this component never moves a node locally.
-export default function Shoug2Story({ state, player, code, onState }) {
+// The room session owns progression and reconciles prefetched display with server saves.
+export default function Shoug2Story({ state, player, code, onState, onChoose, navigationReady = true }) {
   const node = state.current_node;
   const room = state.room;
   const choices = state.choices || [];
@@ -35,6 +35,7 @@ export default function Shoug2Story({ state, player, code, onState }) {
   if (!node) return null;
   const remaining = room.phase_ends_at ? Math.max(0, Math.ceil((new Date(room.phase_ends_at).getTime() - now - clockOffset.current) / 1000)) : null;
   const choose = async id => {
+    if (onChoose) { onChoose(id); return; }
     if (pending || voted || phase !== "voting" || (supreme && !host)) return;
     setPending(true);
     try { const updated = await api.castVote(code, player.id, id, supreme ? node.id : undefined, supreme ? player.session_token : undefined, supreme ? room.node_visit_id : undefined);
@@ -75,14 +76,14 @@ export default function Shoug2Story({ state, player, code, onState }) {
       <div className="shoug2-kicker">{type === "airport" ? "DEPARTURES · UPDATE" : type === "phone" ? "INCOMING" : type === "decision" ? "YOUR MOVE" : "THE STORY CONTINUES"}</div>
       {type === "airport" && <div className="shoug2-board" aria-label="Airport information"><span>DEPARTURES</span><motion.span key={supreme ? room.node_visit_id : node.id} initial={reduced ? false : {opacity:0,y:-8}} animate={{opacity:1,y:0}}>GATE UPDATE</motion.span></div>}
       <AnimatePresence mode={supreme ? "sync" : "wait"}>
-        <motion.section key={supreme ? room.node_visit_id : node.id} className="shoug2-story" initial={reduced ? false : {opacity:0,y:26}} animate={{opacity:1,y:0}} exit={reduced ? undefined : {opacity:0,y:-16}} transition={{duration:reduced ? 0 : .38}}>
+        <motion.section key={supreme ? room.node_visit_id : node.id} className="shoug2-story" initial={reduced ? false : {opacity:0,y:26}} animate={{opacity:1,y:0}} exit={reduced ? undefined : {opacity:0,y:-16}} transition={{duration:reduced ? 0 : .1}}>
           <ShougShape shape={NARRATION_SHAPE}><p data-testid="story-reading-text">{text}</p></ShougShape>
           {(room.flags || []).length > 0 && <div className="shoug2-flags">{room.flags.map(f=><span key={f}>{f.replace(/_/g," ")}</span>)}</div>}
         </motion.section>
       </AnimatePresence>
     </div>
     <section className="shoug2-actions" aria-label="Story actions">
-      {!narration && <div className="shoug2-choices" data-testid="choice-list">{choices.map((choice,i)=><ShougShape as="button" shape={pickChoiceShape(node.id,i)} key={choice.id} data-testid={`choice-vote-${choice.id}`} disabled={phase !== "voting" || voted || pending || (supreme && !host)} onClick={()=>choose(choice.id)}><span className="shoug2-choice-label">CHOICE {String(i+1).padStart(2,"0")}</span><strong>{choice.text}</strong></ShougShape>)}</div>}
+      {!narration && <div className="shoug2-choices" data-testid="choice-list">{choices.map((choice,i)=><ShougShape as="button" shape={pickChoiceShape(node.id,i)} key={`${room.node_visit_id || node.id}:${choice.id}`} data-testid={`choice-vote-${choice.id}`} disabled={phase !== "voting" || voted || pending || !navigationReady || (supreme && !host)} onClick={e=>{ if(e.detail>1)return; e.currentTarget.dataset.selected="true"; e.currentTarget.setAttribute("aria-pressed","true"); choose(choice.id); }}><span className="shoug2-choice-label">CHOICE {String(i+1).padStart(2,"0")}</span><strong>{choice.text}</strong></ShougShape>)}</div>}
       {narration && (host ? <ShougShape as="button" shape={CONTINUE_SHAPE} className="shoug2-next" disabled={pending || !node.narration_next_node_id} onClick={next} data-testid="narration-next-button">Continue</ShougShape> : <p>Waiting for the host to continue…</p>)}
       {phase === "reading" && <p className="shoug2-meta">Read together. Voting opens shortly.</p>}
       {phase === "voting" && !supreme && <div className="shoug2-voting" data-testid="vote-status-row"><span data-testid="vote-counter">{stats.voted_count || 0}/{stats.total_players ?? players.length} voted</span><span>{remaining === null ? "Voting" : `${remaining}s remaining`}</span><div className="shoug2-track"><div style={{width:`${remaining === null ? 0 : Math.max(0,Math.min(100,(20-remaining)/20*100))}%`}} /></div>{voted && <small>Your vote is locked. Waiting for others.</small>}</div>}

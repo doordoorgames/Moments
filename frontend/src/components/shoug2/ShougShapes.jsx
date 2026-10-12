@@ -1,3 +1,4 @@
+import { useShapeFit } from "./useShapeFit";
 /*
  * ShougShapes.jsx  —  Shoug 2.0 shape library (27 shapes)
  * Drawn once in code by Claude for Dordor Games. Do NOT redesign these;
@@ -568,10 +569,12 @@ export function ShougShape({
   ...rest
 }) {
   const s = SHOUG_SHAPES[shape] || SHOUG_SHAPES.toast;
+  const ref = useShapeFit(shape, s, children);
   const [t, r, b, l] = s.inset;
   const rot = rotate ?? s.rotate;
   return (
     <Tag
+      ref={ref}
       className={`shoug-shape shoug-shape--${shape} ${className}`}
       style={{
         position: "relative",
@@ -620,6 +623,7 @@ export function ShougShape({
           top: `${t}%`, right: `${r}%`, bottom: `${b}%`, left: `${l}%`,
           display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
           textAlign: "center",
+          overflow: "visible", overflowWrap: "anywhere", whiteSpace: "normal",
         }}
       >
         {children}

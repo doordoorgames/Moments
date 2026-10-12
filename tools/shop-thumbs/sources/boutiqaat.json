@@ -1,0 +1,10 @@
+{
+  "source": "boutiqaat",
+  "adapter": "manifest",
+  "reuse": {
+    "status": "not_permitted",
+    "evidence": ""
+  },
+  "items": [],
+  "notes": "Boutiqaat refused automated requests and no public licence covers reuse of its product photos. The photos belong to Boutiqaat and the brands. Get written permission, record it in reuse.evidence, set status to permitted, then list approved items."
+}

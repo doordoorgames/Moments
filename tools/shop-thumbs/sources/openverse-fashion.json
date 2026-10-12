@@ -1,0 +1,45 @@
+{
+  "source": "openverse-fashion",
+  "adapter": "openverse",
+  "reuse": {
+    "status": "permitted",
+    "evidence": "Openverse returns licence data per image; only CC0 and Public Domain Mark are requested."
+  },
+  "limit_per_category": 8,
+  "categories": {
+    "handbags": [
+      "leather handbag",
+      "tote bag",
+      "clutch purse",
+      "shoulder bag"
+    ],
+    "shoes": [
+      "high heels shoes",
+      "sneakers white background",
+      "ballet flats",
+      "ankle boots"
+    ],
+    "perfume": [
+      "perfume bottle",
+      "fragrance bottle",
+      "perfume flacon"
+    ],
+    "makeup": [
+      "lipstick",
+      "makeup palette",
+      "mascara",
+      "makeup brushes"
+    ],
+    "skincare": [
+      "skincare bottle",
+      "face cream jar",
+      "serum dropper bottle"
+    ],
+    "accessories": [
+      "sunglasses",
+      "silk scarf",
+      "earrings jewelry",
+      "wristwatch"
+    ]
+  }
+}

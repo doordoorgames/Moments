@@ -37,7 +37,7 @@ export default function Shoug2Story({ state, player, code }) {
   const choose = async id => {
     if (pending || voted || phase !== "voting") return;
     setPending(true);
-    try { await api.castVote(code, player.id, id, supreme ? node.id : undefined); }
+    try { await api.castVote(code, player.id, id, supreme ? node.id : undefined, supreme ? player.session_token : undefined); }
     catch (err) { toast.error(err?.response?.data?.detail || "Vote failed"); setPending(false); }
   };
   const next = async () => {

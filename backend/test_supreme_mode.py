@@ -2,6 +2,8 @@ import asyncio
 from types import SimpleNamespace
 
 import server
+import pytest
+from fastapi import HTTPException
 
 
 class Query:
@@ -58,6 +60,10 @@ def test_consecutive_choices_and_persisted_mode(monkeypatch):
             assert db.rows['rooms'][0]['phase_ends_at'] is None
             await server.cast_vote('TEST', server.VoteRequest(player_id=host.id, choice_id=f'c{i}'))
             assert db.rows['rooms'][0]['current_node_id'] == f'n{i+1}'
+            if i < 4:
+                with pytest.raises(HTTPException) as stale:
+                    await server.cast_vote('TEST', server.VoteRequest(player_id=host.id, choice_id=f'c{i}', node_id=f'n{i}'))
+                assert stale.value.status_code == 409
         assert db.rows['rooms'][0]['phase'] == 'ended'
         assert db.rows['rooms'][0]['flags'] == [f'f{i}' for i in range(5)]
     asyncio.run(exercise())

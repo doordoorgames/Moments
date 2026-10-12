@@ -183,7 +183,10 @@ def control_room(monkeypatch):
     async def story(sid): return stories.get(sid)
     async def player(pid): return next((p for p in db.rows['players'] if p['id'] == pid), None)
     broadcasts = []
-    async def broadcast(code): broadcasts.append(await server.compute_room_state(code))
+    async def broadcast(code):
+        state = await server.compute_room_state(code)
+        broadcasts.append(state)
+        return state
     monkeypatch.setattr(server, 'get_room', room)
     monkeypatch.setattr(server, 'get_node', node)
     monkeypatch.setattr(server, 'get_story', story)

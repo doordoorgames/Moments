@@ -206,6 +206,10 @@ class RambleApplyRequest(BaseModel):
     proposal: Dict[str, Any]
 
 
+class RoomCreateRequest(BaseModel):
+    nickname: Optional[str] = None
+
+
 class RoomJoinRequest(BaseModel):
     nickname: str
 
@@ -219,6 +223,7 @@ class VoteRequest(BaseModel):
     player_id: str
     choice_id: str
     node_id: Optional[str] = None
+    session_token: Optional[str] = None
 
 
 class NarrationAdvanceRequest(BaseModel):
@@ -1321,13 +1326,20 @@ async def admin_set_start_node(story_id: str, node_id: str, _: bool = Depends(re
 # ============================================================
 
 @api_router.post("/rooms")
-async def create_room():
+async def create_room(payload: Optional[RoomCreateRequest] = None):
     for _ in range(10):
         code = generate_room_code()
         existing = await get_room(code)
         if not existing:
             room = Room(code=code)
             await _q(lambda: supa.table("rooms").insert(room.model_dump()).execute())
+            if payload and payload.nickname and payload.nickname.strip():
+                # The creator is persisted as host before returning the room,
+                # so Test99 activates on creation, not after a separate join.
+                player = Player(room_code=code, nickname=payload.nickname.strip(), is_host=True)
+                await _q(lambda: supa.table("players").insert(player.model_dump()).execute())
+                return {**room.model_dump(), "player": player.model_dump(),
+                        "supreme_test_mode": supreme_nickname(player.nickname)}
             return room
     raise HTTPException(500, "Could not generate unique room code")
 
@@ -1472,7 +1484,9 @@ async def _cast_vote(code: str, payload: VoteRequest):
         # Only the original Test99 creator controls an accelerated room.
         # Claim the node in PostgreSQL before advancing. The conditional update
         # protects against double taps even across multiple Railway workers.
-        if not player.get("is_host"):
+        if (not player.get("is_host") or not payload.session_token
+                or not secrets.compare_digest(
+                    player.get("session_token") or "", payload.session_token)):
             raise HTTPException(403, "Only the Supreme Test Mode host can select choices")
         claimed = await _q(lambda: supa.table("rooms").update({
             "phase": "resolving", "phase_ends_at": None,
@@ -1550,7 +1564,23 @@ async def advance_narration(code: str, payload: NarrationAdvanceRequest):
     if not await get_node(destination):
         raise HTTPException(400, "The narration card's next destination does not exist")
 
-    await advance_to_node(code, destination, room.get("flags") or [])
+    if await is_supreme_room(code):
+        claimed = await _q(lambda: supa.table("rooms").update({
+            "phase": "resolving", "phase_ends_at": None,
+        }).eq("code", code).eq("current_node_id", room["current_node_id"])
+          .eq("phase", "narration").execute())
+        if not (claimed.data or []):
+            raise HTTPException(409, "This narration card has already advanced")
+        try:
+            await advance_to_node(code, destination, room.get("flags") or [])
+        except Exception:
+            await _q(lambda: supa.table("rooms").update({
+                "phase": "narration",
+            }).eq("code", code).eq("current_node_id", room["current_node_id"])
+              .eq("phase", "resolving").execute())
+            raise
+    else:
+        await advance_to_node(code, destination, room.get("flags") or [])
     return {"ok": True}
 
 

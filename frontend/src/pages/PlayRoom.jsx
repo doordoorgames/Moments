@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import Lobby from "@/components/player/Lobby";
 import SharedStory from "@/components/player/SharedStory";
 import Shoug2Story from "@/components/player/Shoug2Story";
+import SupremeControls from "@/components/player/SupremeControls";
 import Ending from "@/components/player/Ending";
 import { Loader2 } from "lucide-react";
 
@@ -19,7 +20,7 @@ export default function PlayRoom({ shoug2 = false }) {
             return null;
         }
     });
-    const { state, connected } = useRoomSocket(code);
+    const { state, connected, applyState } = useRoomSocket(code);
 
     // Fallback initial fetch in case WS is slow
     const [bootState, setBootState] = useState(null);
@@ -39,9 +40,10 @@ export default function PlayRoom({ shoug2 = false }) {
 
     const roomState = state || bootState;
 
+    const session = { player_id: player?.id, session_token: player?.session_token };
     const handleSelectStory = async (storyId, variant = false) => {
         try {
-            await api.selectStory(code, storyId, variant ? "shoug2" : "classic");
+            await api.selectStory(code, storyId, variant ? "shoug2" : "classic", session);
         } catch (err) {
             toast.error(err?.response?.data?.detail || "Failed to select story");
         }
@@ -49,7 +51,7 @@ export default function PlayRoom({ shoug2 = false }) {
     const handleSelectShoug2 = (storyId) => handleSelectStory(storyId, true);
     const handleStart = async () => {
         try {
-            await api.startRoom(code);
+            await api.startRoom(code, session);
 
         } catch (err) {
             toast.error(err?.response?.data?.detail || "Failed to start");
@@ -57,7 +59,7 @@ export default function PlayRoom({ shoug2 = false }) {
     };
     const handleReset = async () => {
         try {
-            await api.resetRoom(code);
+            await api.resetRoom(code, session);
         } catch (err) {
             toast.error(err?.response?.data?.detail || "Failed to reset");
         }
@@ -79,10 +81,12 @@ export default function PlayRoom({ shoug2 = false }) {
     const shoug2Active = shoug2Selected;
     const players = roomState.players || [];
 
+    const controls = <SupremeControls code={code} player={player} state={roomState} onState={applyState} />;
+
     // Ended -> Ending screen
     if (room?.phase === "ended") {
         return (
-            <Ending
+            <> {controls}<Ending
                 node={roomState.current_node}
                 story={roomState.story}
                 code={code}
@@ -92,7 +96,7 @@ export default function PlayRoom({ shoug2 = false }) {
                     nav("/");
                 }}
                 isHost={player?.is_host || players.find((p) => p.id === player?.id)?.is_host}
-            />
+            /></>
         );
     }
 
@@ -114,7 +118,7 @@ export default function PlayRoom({ shoug2 = false }) {
     }
 
     // Story runtime
-    return shoug2Active && /shoug[’\x27]?s tale/i.test(roomState.story?.title || "")
-        ? <Shoug2Story state={roomState} player={player} code={code} />
-        : <SharedStory state={roomState} player={player} code={code} />;
+    return <>{controls}{shoug2Active && /shoug[’\x27]?s tale/i.test(roomState.story?.title || "")
+        ? <Shoug2Story state={roomState} player={player} code={code} onState={applyState} />
+        : <SharedStory state={roomState} player={player} code={code} onState={applyState} />}</>;
 }

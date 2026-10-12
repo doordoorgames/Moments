@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { wsUrlFor } from "@/lib/api";
+import { wsUrlFor, api } from "@/lib/api";
 
 /**
  * Subscribe to the room's WebSocket and expose the latest server-authoritative state.
@@ -16,6 +16,7 @@ export function useRoomSocket(code) {
         let cancelled = false;
 
         const connect = () => {
+            if (cancelled) return;
             const ws = new WebSocket(wsUrlFor(code));
             wsRef.current = ws;
             ws.onopen = () => {
@@ -55,5 +56,13 @@ export function useRoomSocket(code) {
         };
     }, [code]);
 
-    return { state, connected };
+    useEffect(() => {
+        if (connected || !code) return;
+        let cancelled = false;
+        const fetch = () => api.getRoom(code).then(s => { if (!cancelled) setState(s); }).catch(() => {});
+        fetch();
+        const timer = setInterval(fetch, 2000);
+        return () => { cancelled = true; clearInterval(timer); };
+    }, [code, connected]);
+    return { state, connected, applyState: setState };
 }

@@ -17,7 +17,7 @@ import { Check, ArrowRight, Crown, BookOpen } from "lucide-react";
  * Phases: reading (10s, no vote UI) -> voting (20s or all voted) -> wheel (on tie) -> next node.
  * Server is the source of truth for phases; client mirrors it and animates from `phase_ends_at`.
  */
-export default function SharedStory({ state, player, code }) {
+export default function SharedStory({ state, player, code, onState }) {
     const room = state.room;
     const supreme = !!room?.supreme_test_mode;
     const node = state.current_node;
@@ -74,14 +74,18 @@ export default function SharedStory({ state, player, code }) {
         return Math.min(1, elapsed / total);
     }, [phase, room?.phase_ends_at, now]);
 
+    const pendingRef = useRef(false);
     const submitVote = async (choiceId) => {
-        if (voting || myVote) return;
+        if (pendingRef.current || voting || myVote) return;
+        pendingRef.current = true;
         setVoting(true);
         try {
-            await api.castVote(code, player.id, choiceId, supreme ? node.id : undefined, supreme ? player.session_token : undefined);
+            const updated = await api.castVote(code, player.id, choiceId, supreme ? node.id : undefined, supreme ? player.session_token : undefined, supreme ? room.node_visit_id : undefined);
+            if (updated?.room) onState?.(updated);
         } catch (err) {
             toast.error(err?.response?.data?.detail || "Vote failed");
         } finally {
+            pendingRef.current = false;
             setVoting(false);
         }
     };
@@ -91,7 +95,8 @@ export default function SharedStory({ state, player, code }) {
         if (!isHost || advancing) return;
         setAdvancing(true);
         try {
-            await api.advanceNarration(code, player.id, player.session_token);
+            const updated = await api.advanceNarration(code, player.id, player.session_token, supreme ? room.node_visit_id : undefined);
+            if (updated?.room) onState?.(updated);
         } catch (err) {
             toast.error(err?.response?.data?.detail || "Could not advance narration");
         } finally {
@@ -107,7 +112,7 @@ export default function SharedStory({ state, player, code }) {
                 {shoug && <div className="shoug-scene-header" {...band(1)} aria-hidden="true"><strong>{scene === "airport" ? "DEPARTURES" : scene === "shopping" ? "OXFORD" : scene === "phone" ? "ON THE LINE" : "LONDON"}</strong></div>}
                 <AnimatePresence mode={supreme ? "sync" : "wait"}>
                     <motion.div
-                        key={node.id}
+                        key={supreme ? room.node_visit_id : node.id}
                         className={shoug ? "shoug-content" : undefined}
                         initial={supreme ? false : { opacity: 0, y: 8 }}
                         animate={{ opacity: 1, y: 0 }}

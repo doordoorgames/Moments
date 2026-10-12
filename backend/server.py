@@ -214,19 +214,34 @@ class RoomJoinRequest(BaseModel):
     nickname: str
 
 
-class RoomSelectStoryRequest(BaseModel):
+class RoomSessionRequest(BaseModel):
+    player_id: Optional[str] = None
+    session_token: Optional[str] = None
+
+
+class RoomSelectStoryRequest(RoomSessionRequest):
     story_id: str
     presentation: Literal["classic", "shoug2"] = "classic"
+
+
+class TestControlRequest(RoomSessionRequest):
+    action: Literal["jump", "restart_node", "back", "restart_story", "switch_story"]
+    node_id: Optional[str] = None
+    story_id: Optional[str] = None
+    presentation: Literal["classic", "shoug2"] = "classic"
+    visit_id: str
 
 
 class VoteRequest(BaseModel):
     player_id: str
     choice_id: str
+    visit_id: Optional[str] = None
     node_id: Optional[str] = None
     session_token: Optional[str] = None
 
 
 class NarrationAdvanceRequest(BaseModel):
+    visit_id: Optional[str] = None
     player_id: str
     session_token: str
 
@@ -769,12 +784,36 @@ def supreme_nickname(nickname: str) -> bool:
     return "".join(nickname.split()).casefold() == "test99"
 
 
+def test_metadata(room: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    # Versioned room metadata uses the existing JSONB wheel_options column.
+    # Supreme rooms never run tie wheels. No production schema migration needed.
+    options = room.get("wheel_options") or []
+    if options and isinstance(options[0], dict) and options[0].get("supreme_v1"):
+        return options[0]
+    return None
+
+
 async def is_supreme_room(code: str) -> bool:
-    # The original host is persisted in players; guests cannot activate the mode.
-    result = await _q(lambda: supa.table("players").select("nickname,is_host")
-                      .eq("room_code", code).eq("is_host", True).execute())
-    return any(p.get("is_host") and supreme_nickname(p.get("nickname", ""))
-               for p in (result.data or []))
+    return test_metadata(await get_room(code) or {}) is not None
+
+
+async def authorize_test_room(code: str, payload: RoomSessionRequest) -> Dict[str, Any]:
+    room = await get_room(code)
+    metadata = test_metadata(room or {})
+    if not metadata:
+        raise HTTPException(403, "This is not a Supreme Test99 room")
+    player = await get_player(payload.player_id) if payload.player_id else None
+    if (not player or player.get("room_code") != code
+            or player.get("id") != metadata.get("creator_id")
+            or not player.get("is_host") or not payload.session_token
+            or not secrets.compare_digest(player.get("session_token") or "", payload.session_token)):
+        raise HTTPException(403, "Only this room's authenticated creator can use test controls")
+    return room
+
+
+async def guard_test_mutation(code: str, payload: Optional[RoomSessionRequest]) -> None:
+    if await is_supreme_room(code):
+        await authorize_test_room(code, payload or RoomSessionRequest())
 
 
 async def compute_room_state(code: str) -> Optional[Dict[str, Any]]:
@@ -788,7 +827,14 @@ async def compute_room_state(code: str) -> Optional[Dict[str, Any]]:
         .eq("room_code", code).execute()
     )
     players = players_res.data or []
-    room["supreme_test_mode"] = any(p.get("is_host") and supreme_nickname(p.get("nickname", "")) for p in players)
+    metadata = test_metadata(room)
+    room["supreme_test_mode"] = metadata is not None
+    if metadata:
+        room["test_creator_id"] = metadata["creator_id"]
+        room["node_visit_id"] = room.get("wheel_winner_choice_id")
+        room["test_history_length"] = len(metadata.get("history", []))
+        room["wheel_options"] = None
+        room["wheel_winner_choice_id"] = None
 
     story = None
     if room.get("story_id"):
@@ -856,19 +902,33 @@ async def _start_phase_task(code: str, coro) -> None:
     _room_tasks[code] = task
 
 
-async def advance_to_node(code: str, node_id: str, flags: List[str]) -> None:
+async def advance_to_node(code: str, node_id: str, flags: List[str], history_override=None) -> None:
     """Enter a node, skipping the reading buffer only for one-player rooms."""
     _cancel_room_task(code)
+    previous = await get_room(code) or {}
+    metadata = test_metadata(previous)
+    visit_id = None
+    if metadata:
+        metadata = dict(metadata)
+        history = list(metadata.get("history", []))
+        if history_override is not None:
+            history = history_override
+        elif previous.get("current_node_id"):
+            history.append({"node_id": previous["current_node_id"], "flags": previous.get("flags") or []})
+        metadata["history"] = history
+        visit_id = str(uuid.uuid4())
     node = await get_node(node_id)
 
+    if metadata and (not node or node.get("story_id") != previous.get("story_id")):
+        raise HTTPException(400, "Node must belong to the room's story")
     if not node:
         await _q(lambda: supa.table("rooms").update({
             "current_node_id": node_id,
             "phase": "ended",
             "phase_ends_at": None,
             "flags": flags,
-            "wheel_options": None,
-            "wheel_winner_choice_id": None,
+            "wheel_options": [metadata] if metadata else None,
+            "wheel_winner_choice_id": visit_id,
         }).eq("code", code).execute())
         await broadcast_room_state(code)
         return
@@ -879,8 +939,8 @@ async def advance_to_node(code: str, node_id: str, flags: List[str]) -> None:
             "phase": "narration",
             "phase_ends_at": None,
             "flags": flags,
-            "wheel_options": None,
-            "wheel_winner_choice_id": None,
+            "wheel_options": [metadata] if metadata else None,
+            "wheel_winner_choice_id": visit_id,
         }).eq("code", code).execute())
         await _q(lambda: supa.table("votes").delete().eq("room_code", code).execute())
         await broadcast_room_state(code)
@@ -895,8 +955,8 @@ async def advance_to_node(code: str, node_id: str, flags: List[str]) -> None:
             "phase": "ended",
             "phase_ends_at": None,
             "flags": flags,
-            "wheel_options": None,
-            "wheel_winner_choice_id": None,
+            "wheel_options": [metadata] if metadata else None,
+            "wheel_winner_choice_id": visit_id,
         }).eq("code", code).execute())
         await _q(lambda: supa.table("votes").delete().eq("room_code", code).execute())
         await broadcast_room_state(code)
@@ -918,8 +978,8 @@ async def advance_to_node(code: str, node_id: str, flags: List[str]) -> None:
             "phase": "voting",
             "phase_ends_at": None if supreme else voting_ends.isoformat(),
             "flags": flags,
-            "wheel_options": None,
-            "wheel_winner_choice_id": None,
+            "wheel_options": [metadata] if metadata else None,
+            "wheel_winner_choice_id": visit_id,
         }).eq("code", code).execute())
         await _q(lambda: supa.table("votes").delete()
                  .eq("room_code", code).eq("node_id", node_id).execute())
@@ -935,8 +995,8 @@ async def advance_to_node(code: str, node_id: str, flags: List[str]) -> None:
         "phase": "reading",
         "phase_ends_at": reading_ends.isoformat(),
         "flags": flags,
-        "wheel_options": None,
-        "wheel_winner_choice_id": None,
+        "wheel_options": [metadata] if metadata else None,
+        "wheel_winner_choice_id": visit_id,
     }).eq("code", code).execute())
     # Clear votes for this node (fresh start)
     await _q(lambda: supa.table("votes").delete()
@@ -1047,13 +1107,17 @@ async def advance_with_choice(code: str, choice: Dict[str, Any], current_flags: 
         new_flags.append(choice["sets_flag"])
     dest = choice.get("destination_node_id")
     if not dest:
-        # Dangling choice — end the story
+        # Keep test-room identity and controls available at a dangling ending.
+        room = await get_room(code) or {}
+        metadata = test_metadata(room)
+        if metadata:
+            metadata = {**metadata, "history": [*metadata.get("history", []), {"node_id": room["current_node_id"], "flags": current_flags}]}
         await _q(lambda: supa.table("rooms").update({
             "phase": "ended",
             "phase_ends_at": None,
             "flags": new_flags,
-            "wheel_options": None,
-            "wheel_winner_choice_id": None,
+            "wheel_options": [metadata] if metadata else None,
+            "wheel_winner_choice_id": str(uuid.uuid4()) if metadata else None,
         }).eq("code", code).execute())
         await broadcast_room_state(code)
         return
@@ -1066,7 +1130,7 @@ async def advance_with_choice(code: str, choice: Dict[str, Any], current_flags: 
 
 @api_router.get("/")
 async def root():
-    return {"message": "Narrative RPG Engine", "ok": True}
+    return {"message": "Narrative RPG Engine", "ok": True, "release": "supreme-test99-v2", "commit": os.environ.get("RAILWAY_GIT_COMMIT_SHA", "local")}
 
 
 @api_router.get("/health/database")
@@ -1331,12 +1395,13 @@ async def create_room(payload: Optional[RoomCreateRequest] = None):
         code = generate_room_code()
         existing = await get_room(code)
         if not existing:
-            room = Room(code=code)
+            creator = Player(room_code=code, nickname=payload.nickname.strip(), is_host=True) if payload and payload.nickname and payload.nickname.strip() else None
+            room = Room(code=code, wheel_options=[{"supreme_v1": True, "creator_id": creator.id, "history": []}] if creator and supreme_nickname(creator.nickname) else None)
             await _q(lambda: supa.table("rooms").insert(room.model_dump()).execute())
             if payload and payload.nickname and payload.nickname.strip():
                 # The creator is persisted as host before returning the room,
                 # so Test99 activates on creation, not after a separate join.
-                player = Player(room_code=code, nickname=payload.nickname.strip(), is_host=True)
+                player = creator
                 await _q(lambda: supa.table("players").insert(player.model_dump()).execute())
                 return {**room.model_dump(), "player": player.model_dump(),
                         "supreme_test_mode": supreme_nickname(player.nickname)}
@@ -1380,12 +1445,15 @@ async def join_room(code: str, payload: RoomJoinRequest):
 
 @api_router.post("/rooms/{code}/select-story")
 async def select_story(code: str, payload: RoomSelectStoryRequest):
+    await guard_test_mutation(code, payload)
     room = await get_room(code)
     if not room:
         raise HTTPException(404, "Room not found")
     story = await get_story(payload.story_id)
     if not story:
         raise HTTPException(404, "Story not found")
+    if room.get("started"):
+        raise HTTPException(409, "Use the test menu to switch an active story")
     sid = payload.story_id
     if payload.presentation == "shoug2" and not __import__("re").search(r"shoug[’\x27]?s tale", story.get("title", ""), __import__("re").IGNORECASE):
         raise HTTPException(400, "Shoug 2.0 is only available for Shoug’s Tale")
@@ -1397,7 +1465,8 @@ async def select_story(code: str, payload: RoomSelectStoryRequest):
 
 
 @api_router.post("/rooms/{code}/start")
-async def start_room(code: str):
+async def start_room(code: str, payload: Optional[RoomSessionRequest] = None):
+    await guard_test_mutation(code, payload)
     room = await get_room(code)
     if not room:
         raise HTTPException(404, "Room not found")
@@ -1410,15 +1479,16 @@ async def start_room(code: str):
     await _q(lambda: supa.table("rooms").update({
         "started": True,
         "flags": [],
-        "wheel_options": None,
+        "wheel_options": [{**test_metadata(room), "history": []}] if test_metadata(room) else None,
         "wheel_winner_choice_id": None,
     }).eq("code", code).execute())
-    await advance_to_node(code, story["start_node_id"], [])
+    await advance_to_node(code, story["start_node_id"], [], history_override=[])
     return {"ok": True}
 
 
 @api_router.post("/rooms/{code}/reset")
-async def reset_room(code: str):
+async def reset_room(code: str, payload: Optional[RoomSessionRequest] = None):
+    await guard_test_mutation(code, payload)
     room = await get_room(code)
     if not room:
         raise HTTPException(404, "Room not found")
@@ -1430,7 +1500,7 @@ async def reset_room(code: str):
         "phase": "lobby",
         "phase_ends_at": None,
         "flags": [],
-        "wheel_options": None,
+        "wheel_options": [{**test_metadata(room), "history": []}] if test_metadata(room) else None,
         "wheel_winner_choice_id": None,
     }).eq("code", code).execute())
     await broadcast_room_state(code)
@@ -1481,6 +1551,9 @@ async def _cast_vote(code: str, payload: VoteRequest):
 
     supreme = await is_supreme_room(code)
     if supreme:
+        await authorize_test_room(code, payload)
+        if not payload.node_id or not payload.visit_id or payload.visit_id != room.get("wheel_winner_choice_id"):
+            raise HTTPException(409, "This node visit has already advanced")
         # Only the original Test99 creator controls an accelerated room.
         # Claim the node in PostgreSQL before advancing. The conditional update
         # protects against double taps even across multiple Railway workers.
@@ -1491,7 +1564,7 @@ async def _cast_vote(code: str, payload: VoteRequest):
         claimed = await _q(lambda: supa.table("rooms").update({
             "phase": "resolving", "phase_ends_at": None,
         }).eq("code", code).eq("current_node_id", nid)
-          .eq("phase", "voting").execute())
+          .eq("phase", "voting").eq("wheel_winner_choice_id", payload.visit_id).execute())
         if not (claimed.data or []):
             raise HTTPException(409, "This scene has already advanced")
         _cancel_room_task(code)
@@ -1505,7 +1578,7 @@ async def _cast_vote(code: str, payload: VoteRequest):
             }).eq("code", code).eq("current_node_id", nid)
               .eq("phase", "resolving").execute())
             raise
-        return {"ok": True}
+        return await compute_room_state(code)
 
     vote_doc = {
         "id": str(uuid.uuid4()),
@@ -1565,10 +1638,13 @@ async def advance_narration(code: str, payload: NarrationAdvanceRequest):
         raise HTTPException(400, "The narration card's next destination does not exist")
 
     if await is_supreme_room(code):
+        await authorize_test_room(code, payload)
+        if not payload.visit_id or payload.visit_id != room.get("wheel_winner_choice_id"):
+            raise HTTPException(409, "This narration visit has already advanced")
         claimed = await _q(lambda: supa.table("rooms").update({
             "phase": "resolving", "phase_ends_at": None,
         }).eq("code", code).eq("current_node_id", room["current_node_id"])
-          .eq("phase", "narration").execute())
+          .eq("phase", "narration").eq("wheel_winner_choice_id", payload.visit_id).execute())
         if not (claimed.data or []):
             raise HTTPException(409, "This narration card has already advanced")
         try:
@@ -1581,7 +1657,64 @@ async def advance_narration(code: str, payload: NarrationAdvanceRequest):
             raise
     else:
         await advance_to_node(code, destination, room.get("flags") or [])
-    return {"ok": True}
+    return await compute_room_state(code)
+
+
+@api_router.post("/rooms/{code}/test/nodes")
+async def test_nodes(code: str, payload: RoomSessionRequest):
+    room = await authorize_test_room(code, payload)
+    if not room.get("story_id"):
+        return {"nodes": []}
+    result = await _q(lambda: supa.table("nodes").select("*").eq("story_id", room["story_id"]).execute())
+    return {"nodes": result.data or []}
+
+
+@api_router.post("/rooms/{code}/test/control")
+async def test_control(code: str, payload: TestControlRequest):
+    async with _vote_locks[code]:
+        room = await authorize_test_room(code, payload)
+        if not room.get("started") or not payload.visit_id or payload.visit_id != room.get("wheel_winner_choice_id"):
+            raise HTTPException(409, "Refresh the room before using this control")
+        metadata = test_metadata(room)
+        history = list(metadata.get("history", []))
+        flags = list(room.get("flags") or [])
+        story_id = room["story_id"]
+        presentation = room.get("presentation", "classic")
+        override = None
+        if payload.action == "back":
+            if not history:
+                raise HTTPException(400, "No previously visited node")
+            snapshot = history.pop()
+            target, flags, override = snapshot["node_id"], snapshot["flags"], history
+        elif payload.action == "restart_node":
+            target, override = room["current_node_id"], history
+        elif payload.action in ("restart_story", "switch_story"):
+            story_id = payload.story_id if payload.action == "switch_story" else story_id
+            story = await get_story(story_id)
+            if not story or not story.get("start_node_id"):
+                raise HTTPException(400, "Story has no start node")
+            if payload.action == "switch_story":
+                presentation = payload.presentation
+                if presentation == "shoug2" and not re.search(r"shoug[’\x27]?s tale", story.get("title", ""), re.IGNORECASE):
+                    raise HTTPException(400, "Shoug 2.0 is only available for Shoug's Tale")
+            target, flags, override = story["start_node_id"], [], []
+        else:
+            target = payload.node_id
+        node = await get_node(target) if target else None
+        if not node or node.get("story_id") != story_id:
+            raise HTTPException(400, "Node must belong to the selected story")
+        claimed = await _q(lambda: supa.table("rooms").update({"phase": "resolving", "phase_ends_at": None})
+                           .eq("code", code).eq("phase", room["phase"])
+                           .eq("wheel_winner_choice_id", payload.visit_id).execute())
+        if not claimed.data:
+            raise HTTPException(409, "The room has already advanced")
+        try:
+            await _q(lambda: supa.table("rooms").update({"story_id": story_id, "presentation": presentation}).eq("code", code).execute())
+            await advance_to_node(code, target, flags, history_override=override)
+        except Exception:
+            await _q(lambda: supa.table("rooms").update({"story_id": room["story_id"], "presentation": room.get("presentation", "classic"), "phase": room["phase"]}).eq("code", code).eq("wheel_winner_choice_id", payload.visit_id).execute())
+            raise
+        return await compute_room_state(code)
 
 
 # ============================================================

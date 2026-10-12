@@ -37,6 +37,7 @@ jobs:
           cache-dependency-path: frontend/yarn.lock
       - run: corepack enable
       - run: yarn install --frozen-lockfile
+      - run: CI=true yarn test --watchAll=false --runInBand
       - run: yarn build
         env:
           CI: 'false'

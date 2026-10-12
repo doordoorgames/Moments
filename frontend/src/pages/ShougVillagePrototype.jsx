@@ -28,7 +28,7 @@ export default function ShougVillagePrototype() {
       const roomCode = joining ? code.trim().toUpperCase() : createdRoom.code;
       const player = createdRoom?.player || await api.joinRoom(roomCode, nickname.trim());
       localStorage.setItem(`player_${roomCode}`, JSON.stringify(player));
-      if (!joining) await api.selectStory(roomCode, story.id, "shoug2");
+      if (!joining) await api.selectStory(roomCode, story.id, "shoug2", { player_id: player.id, session_token: player.session_token });
       nav(`/shoug-2/room/${encodeURIComponent(roomCode)}`);
     } catch (err) { toast.error(err?.response?.data?.detail || "Unable to enter room."); }
     finally { setBusy(false); }

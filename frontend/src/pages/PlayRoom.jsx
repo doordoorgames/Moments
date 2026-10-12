@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { api } from "@/lib/api";
+import { useInstantStory } from "@/hooks/useInstantStory";
 import { useRoomSocket } from "@/hooks/useRoomSocket";
 import { toast } from "sonner";
 import Lobby from "@/components/player/Lobby";
@@ -38,7 +39,8 @@ export default function PlayRoom({ shoug2 = false }) {
         if (!player) nav("/play", { replace: true });
     }, [player, nav]);
 
-    const roomState = state || bootState;
+    const instant = useInstantStory(code, player, state || bootState, applyState);
+    const roomState = instant.state;
 
     const session = { player_id: player?.id, session_token: player?.session_token };
     const handleSelectStory = async (storyId, variant = false) => {
@@ -81,7 +83,7 @@ export default function PlayRoom({ shoug2 = false }) {
     const shoug2Active = shoug2Selected;
     const players = roomState.players || [];
 
-    const controls = <SupremeControls code={code} player={player} state={roomState} onState={applyState} />;
+    const controls = <SupremeControls code={code} player={player} state={roomState} onState={applyState} saving={instant.saving} />;
 
     // Ended -> Ending screen
     if (room?.phase === "ended") {
@@ -119,6 +121,6 @@ export default function PlayRoom({ shoug2 = false }) {
 
     // Story runtime
     return <>{controls}{shoug2Active && /shoug[’\x27]?s tale/i.test(roomState.story?.title || "")
-        ? <Shoug2Story state={roomState} player={player} code={code} onState={applyState} />
-        : <SharedStory state={roomState} player={player} code={code} onState={applyState} />}</>;
+        ? <Shoug2Story state={roomState} player={player} code={code} onState={applyState} onChoose={instant.choose} navigationReady={instant.ready} />
+        : <SharedStory state={roomState} player={player} code={code} onState={applyState} onChoose={instant.choose} navigationReady={instant.ready} />}</>;
 }

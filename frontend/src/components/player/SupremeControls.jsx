@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { api } from "@/lib/api";
 import { toast } from "sonner";
 
-export default function SupremeControls({ code, player, state, onState }) {
+export default function SupremeControls({ code, player, state, onState, saving = false }) {
     const [open, setOpen] = useState(false);
     const [nodes, setNodes] = useState([]);
     const [stories, setStories] = useState([]);
@@ -36,11 +36,11 @@ export default function SupremeControls({ code, player, state, onState }) {
         {open && <section aria-label="Supreme testing controls" style={{ background: "#FBF4E4", color: "#2F4524", border: "1px solid #6E1F35", padding: 12, width: "min(340px, 90vw)", maxHeight: "65vh", overflowY: "auto" }}>
             <p style={{ overflowWrap: "anywhere" }}>Story: {room.story_id}<br />Node: {room.current_node_id}</p>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 8, margin: "8px 0" }}>
-                <button disabled={busy} onClick={() => run("restart_node")}>Restart node</button>
-                <button disabled={busy || !room.test_history_length} onClick={() => run("back")}>Back</button>
-                <button disabled={busy} onClick={() => run("restart_story")}>Restart story</button>
+                <button disabled={busy || saving} onClick={() => run("restart_node")}>Restart node</button>
+                <button disabled={busy || saving || !room.test_history_length} onClick={() => run("back")}>Back</button>
+                <button disabled={busy || saving} onClick={() => run("restart_story")}>Restart story</button>
             </div>
-            <label>Switch tale<select aria-label="Switch tale" disabled={busy} value="" onChange={e => { const [story_id, presentation] = e.target.value.split("|"); run("switch_story", { story_id, presentation }); }} style={{ display: "block", width: "100%", marginBottom: 8 }}>
+            <label>Switch tale<select aria-label="Switch tale" disabled={busy || saving} value="" onChange={e => { const [story_id, presentation] = e.target.value.split("|"); run("switch_story", { story_id, presentation }); }} style={{ display: "block", width: "100%", marginBottom: 8 }}>
                 <option value="">Choose tale</option>
                 {stories.map(s => <option key={s.id} value={`${s.id}|classic`}>{s.title}</option>)}
                 {stories.filter(s => /shoug[’\x27]?s tale/i.test(s.title)).map(s => <option key={`${s.id}-shoug2`} value={`${s.id}|shoug2`}>Shoug 2.0</option>)}
@@ -48,7 +48,7 @@ export default function SupremeControls({ code, player, state, onState }) {
             <label>Search nodes<input aria-label="Search nodes" placeholder="Node ID or text" value={search} onChange={e => setSearch(e.target.value)} style={{ display: "block", width: "100%" }} /></label>
             <p>{filtered.length} nodes</p>
             <div style={{ display: "grid", gap: 6 }}>
-                {filtered.map(n => <button type="button" disabled={busy} key={n.id} onClick={() => run("jump", { node_id: n.id })} style={{ textAlign: "left", overflowWrap: "anywhere", border: "1px solid #8DB36B", padding: 6 }}><strong>{n.id}</strong><br />{(n.story_text || n.title || "").slice(0, 110)}</button>)}
+                {filtered.map(n => <button type="button" disabled={busy || saving} key={n.id} onClick={() => run("jump", { node_id: n.id })} style={{ textAlign: "left", overflowWrap: "anywhere", border: "1px solid #8DB36B", padding: 6 }}><strong>{n.id}</strong><br />{(n.story_text || n.title || "").slice(0, 110)}</button>)}
             </div>
         </section>}
     </div>;

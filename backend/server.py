@@ -1661,6 +1661,17 @@ async def advance_narration(code: str, payload: NarrationAdvanceRequest):
     return await compute_room_state(code)
 
 
+@api_router.post("/rooms/{code}/navigation")
+async def navigation_graph(code: str, payload: RoomSessionRequest):
+    room = await get_room(code)
+    player = await get_player(payload.player_id) if payload.player_id else None
+    if (not room or not player or player.get("room_code") != code or not payload.session_token
+            or not secrets.compare_digest(player.get("session_token") or "", payload.session_token)):
+        raise HTTPException(403, "A valid session in this room is required")
+    result = await _q(lambda: supa.table("nodes").select("*").eq("story_id", room.get("story_id")).execute())
+    return {"nodes": result.data or []}
+
+
 @api_router.post("/rooms/{code}/test/nodes")
 async def test_nodes(code: str, payload: RoomSessionRequest):
     room = await authorize_test_room(code, payload)

@@ -11,17 +11,17 @@
 .shoug2-board{background:#2F4524;border-left-color:#F6CFD8}
 .shoug2-story{background:transparent;border:0;box-shadow:none;padding:0;width:100%;max-width:660px}
 .shoug2-story .shoug-shape{min-height:185px;aspect-ratio:auto!important}
-.shoug2-story .shoug-shape__content{overflow:auto}
-.shoug2-story p{font-family:'Lora',Georgia,serif;font-style:italic;font-weight:700;font-size:clamp(17px,4.4vw,27px);line-height:1.35;color:#0C0C0C;max-height:100%;overflow:auto}
+.shoug2-story .shoug-shape__content{overflow:visible}
+.shoug2-story p{font-family:'Lora',Georgia,serif;font-style:italic;font-weight:700;font-size:clamp(17px,4.4vw,27px);line-height:1.35;color:#0C0C0C;max-height:none;overflow:visible}
 .shoug2-flags{background:#FBF4E4;padding:10px}
 .shoug2-flags span{border-color:#0C0C0C;color:#0C0C0C}
 .shoug2-choices{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,230px),1fr));gap:16px}
 .shoug2-choices .shoug-shape{min-height:116px;aspect-ratio:auto!important}
-.shoug2-choices .shoug-shape__content{overflow:auto}
+.shoug2-choices .shoug-shape__content{overflow:visible}
 .shoug2-choices .shoug-shape strong{font-family:'Quicksand',sans-serif;font-size:clamp(13px,3.5vw,18px);font-weight:700;line-height:1.3;color:inherit;overflow-wrap:anywhere}
 .shoug2-choice-label{font-size:10px;letter-spacing:.16em;font-weight:700;margin-bottom:4px}
 .shoug2-choices .shoug-shape:disabled,.shoug2-next:disabled{opacity:.6;cursor:not-allowed}
-.shoug2-next.shoug-shape{min-height:65px;max-height:88px;aspect-ratio:auto!important;color:#0C0C0C;font-family:'Lora',Georgia,serif;font-style:italic;font-weight:700;font-size:23px}
+.shoug2-next.shoug-shape{min-height:65px;max-height:none;aspect-ratio:auto!important;color:#0C0C0C;font-family:'Lora',Georgia,serif;font-style:italic;font-weight:700;font-size:23px}
 .shoug2-voting,.shoug2-meta{color:#0C0C0C;background:#FBF4E4e6;padding:8px;font-weight:700}
 .shoug2-track{background:#D7EACD}.shoug2-track>div{background:#4F6E3A}
 .shoug2-root .shoug-shape:focus-visible{outline:3px solid #6E1F35;outline-offset:10px}
@@ -30,3 +30,15 @@
 /* Full-opacity image; exactly 35% cream wash above it. */
 .shoug2-root .shoug2-environment{opacity:1}
 .shoug2-root::before{background:#FBF4E4;opacity:.35}
+
+/* Text stays inside an expanding safe area; no disabled-opacity waiting state. */
+.shoug2-root{overflow:visible}
+.shoug-shape{min-width:0;max-height:none!important;flex-shrink:0}
+.shoug-shape__content{overflow:visible!important;min-width:0;white-space:normal;overflow-wrap:anywhere}
+.shoug-shape__content>*{max-height:none!important;overflow:visible!important;min-width:0;max-width:100%;box-sizing:border-box;flex-shrink:0;white-space:normal;overflow-wrap:anywhere}
+.shoug2-story p{font-size:calc(clamp(17px,4.4vw,27px) * var(--shape-fit-scale,1))!important}
+.shoug2-choices .shoug-shape strong{font-size:calc(clamp(15px,3.5vw,18px) * var(--shape-fit-scale,1))!important}
+.shoug2-next.shoug-shape{font-size:calc(23px * var(--shape-fit-scale,1))}
+.shoug2-choices .shoug-shape:disabled,.shoug2-next:disabled{opacity:1;filter:none;transition:none}
+.shoug2-choices [data-selected="true"],.player-choice[data-selected="true"]{outline:3px solid currentColor;outline-offset:3px;opacity:1}
+.shoug2-root [data-selected="true"]::after{content:"Selected";position:absolute;right:8px;bottom:4px;font:700 11px/1.2 system-ui;background:#FBF4E4;color:#2F4524;padding:2px 4px}

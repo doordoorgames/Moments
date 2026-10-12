@@ -68,3 +68,13 @@
 @media(prefers-reduced-motion:reduce){.tale-shoug .shoug-scene-header::before{animation:none}}
 
 /* Shoug owns the full viewport; no shared gadget hardware or television effects. */
+
+/* All story/dialogue/choice boxes grow around their full content. */
+.player-story-card,.player-story-text,.player-choice,.player-choice-text,.story-text{height:auto;max-height:none!important;overflow:visible!important;white-space:pre-wrap;overflow-wrap:anywhere;min-width:0}
+.player-choice:disabled{opacity:1}
+.player-choice[data-selected="true"]{outline:3px solid currentColor;outline-offset:3px;opacity:1}
+.player-choice-row{min-width:0;flex-wrap:wrap}
+.player-panel{overflow:visible!important}
+.player-display-shell{height:auto;min-height:100%;overflow:visible}
+.player-theme-root:not(.shoug-canvas) .vt-device{height:auto;min-height:calc(100dvh - 36px)}
+.player-theme-root{overflow:visible}

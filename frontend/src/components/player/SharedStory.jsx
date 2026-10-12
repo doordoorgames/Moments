@@ -19,6 +19,7 @@ import { Check, ArrowRight, Crown, BookOpen } from "lucide-react";
  */
 export default function SharedStory({ state, player, code }) {
     const room = state.room;
+    const supreme = !!room?.supreme_test_mode;
     const node = state.current_node;
     const shoug = isShougTale(state.story);
     const scene = shougScene(node);
@@ -77,7 +78,7 @@ export default function SharedStory({ state, player, code }) {
         if (voting || myVote) return;
         setVoting(true);
         try {
-            await api.castVote(code, player.id, choiceId);
+            await api.castVote(code, player.id, choiceId, supreme ? node.id : undefined);
         } catch (err) {
             toast.error(err?.response?.data?.detail || "Vote failed");
         } finally {
@@ -104,13 +105,13 @@ export default function SharedStory({ state, player, code }) {
         <PlayerFrame code={code} playerName={player?.nickname} taleTheme={shoug ? "shoug" : null} themeKey={node.id}>
             <div className={`player-panel ${shoug ? `shoug-scene shoug-${scene}` : ""}`}>
                 {shoug && <div className="shoug-scene-header" {...band(1)} aria-hidden="true"><strong>{scene === "airport" ? "DEPARTURES" : scene === "shopping" ? "OXFORD" : scene === "phone" ? "ON THE LINE" : "LONDON"}</strong></div>}
-                <AnimatePresence mode="wait">
+                <AnimatePresence mode={supreme ? "sync" : "wait"}>
                     <motion.div
                         key={node.id}
                         className={shoug ? "shoug-content" : undefined}
-                        initial={{ opacity: 0, y: 8 }}
+                        initial={supreme ? false : { opacity: 0, y: 8 }}
                         animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.24, ease: [0.16, 1, 0.3, 1] }}
+                        transition={{ duration: supreme ? 0 : 0.24, ease: [0.16, 1, 0.3, 1] }}
                     >
                         <div className="player-eyebrow" {...band(2)}>
                             {isNarration && (
@@ -217,7 +218,7 @@ export default function SharedStory({ state, player, code }) {
                 </div>
             )}
 
-            {phase === "voting" && (
+            {phase === "voting" && !supreme && (
                 <div className="player-dock" {...band(3 + choices.length)}>
                     <div className="player-dock-inner">
                         <div className="player-vote-row" data-testid="vote-status-row">

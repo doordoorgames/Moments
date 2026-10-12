@@ -218,6 +218,7 @@ class RoomSelectStoryRequest(BaseModel):
 class VoteRequest(BaseModel):
     player_id: str
     choice_id: str
+    node_id: Optional[str] = None
 
 
 class NarrationAdvanceRequest(BaseModel):
@@ -759,6 +760,18 @@ async def broadcast_room_state(code: str) -> None:
         await manager.broadcast(code, {"type": "room_state", "state": state})
 
 
+def supreme_nickname(nickname: str) -> bool:
+    return "".join(nickname.split()).casefold() == "test99"
+
+
+async def is_supreme_room(code: str) -> bool:
+    # The original host is persisted in players; guests cannot activate the mode.
+    result = await _q(lambda: supa.table("players").select("nickname,is_host")
+                      .eq("room_code", code).eq("is_host", True).execute())
+    return any(p.get("is_host") and supreme_nickname(p.get("nickname", ""))
+               for p in (result.data or []))
+
+
 async def compute_room_state(code: str) -> Optional[Dict[str, Any]]:
     room = await get_room(code)
     if not room:
@@ -770,6 +783,7 @@ async def compute_room_state(code: str) -> Optional[Dict[str, Any]]:
         .eq("room_code", code).execute()
     )
     players = players_res.data or []
+    room["supreme_test_mode"] = any(p.get("is_host") and supreme_nickname(p.get("nickname", "")) for p in players)
 
     story = None
     if room.get("story_id"):
@@ -888,15 +902,16 @@ async def advance_to_node(code: str, node_id: str, flags: List[str]) -> None:
         .eq("room_code", code).execute()
     )
     is_solo = (players_res.count or 0) == 1
+    supreme = await is_supreme_room(code)
 
     # A solo player can vote as soon as the node is displayed. Multiplayer
     # retains the synchronized reading buffer unchanged.
-    if is_solo:
+    if is_solo or supreme:
         voting_ends = _now() + timedelta(seconds=VOTING_SECONDS)
         await _q(lambda: supa.table("rooms").update({
             "current_node_id": node_id,
             "phase": "voting",
-            "phase_ends_at": voting_ends.isoformat(),
+            "phase_ends_at": None if supreme else voting_ends.isoformat(),
             "flags": flags,
             "wheel_options": None,
             "wheel_winner_choice_id": None,
@@ -904,7 +919,8 @@ async def advance_to_node(code: str, node_id: str, flags: List[str]) -> None:
         await _q(lambda: supa.table("votes").delete()
                  .eq("room_code", code).eq("node_id", node_id).execute())
         await broadcast_room_state(code)
-        await _start_phase_task(code, _voting_timeout(code, node_id))
+        if not supreme:
+            await _start_phase_task(code, _voting_timeout(code, node_id))
         return
 
     # Non-terminal multiplayer room: start reading phase
@@ -1409,8 +1425,17 @@ async def reset_room(code: str):
     return {"ok": True}
 
 
+_vote_locks: Dict[str, asyncio.Lock] = defaultdict(asyncio.Lock)
+
+
 @api_router.post("/rooms/{code}/vote")
 async def cast_vote(code: str, payload: VoteRequest):
+    # Serialize requests so duplicate taps cannot resolve the same node twice.
+    async with _vote_locks[code]:
+        return await _cast_vote(code, payload)
+
+
+async def _cast_vote(code: str, payload: VoteRequest):
     room = await get_room(code)
     if not room:
         raise HTTPException(404, "Room not found")
@@ -1423,6 +1448,8 @@ async def cast_vote(code: str, payload: VoteRequest):
     if not player or player["room_code"] != code:
         raise HTTPException(404, "Player not found in this room")
 
+    if payload.node_id and payload.node_id != room["current_node_id"]:
+        raise HTTPException(409, "This scene has already advanced")
     node = await get_node(room["current_node_id"])
     if not node:
         raise HTTPException(400, "Invalid current node")
@@ -1449,6 +1476,11 @@ async def cast_vote(code: str, payload: VoteRequest):
         "created_at": _now_iso(),
     }
     await _q(lambda: supa.table("votes").insert(vote_doc).execute())
+    if await is_supreme_room(code):
+        _cancel_room_task(code)
+        winning = next(c for c in filtered if c["id"] == payload.choice_id)
+        await advance_with_choice(code, winning, room.get("flags") or [])
+        return {"ok": True}
     await broadcast_room_state(code)
 
     # If everyone has voted, immediately resolve

@@ -78,7 +78,7 @@ export default function SharedStory({ state, player, code }) {
         if (voting || myVote) return;
         setVoting(true);
         try {
-            await api.castVote(code, player.id, choiceId, supreme ? node.id : undefined);
+            await api.castVote(code, player.id, choiceId, supreme ? node.id : undefined, supreme ? player.session_token : undefined);
         } catch (err) {
             toast.error(err?.response?.data?.detail || "Vote failed");
         } finally {

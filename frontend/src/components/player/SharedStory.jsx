@@ -149,7 +149,7 @@ export default function SharedStory({ state, player, code }) {
                         {/* Choice list */}
                         {!isNarration && <div className="player-choice-list" data-testid="choice-list">
                             {choices.map((c, index) => {
-                                const canVote = phase === "voting" && !myVote;
+                                const canVote = phase === "voting" && !myVote && (!supreme || isHost);
                                 return (
                                     <button
                                         key={c.id}

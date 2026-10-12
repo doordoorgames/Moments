@@ -38,9 +38,14 @@ class FakeSupabase:
         return FakeQuery(name, self.player_count, self.updates)
 
 
-def run_advance(monkeypatch, player_count):
+def run_advance(monkeypatch, player_count, supreme=False):
     fake = FakeSupabase(player_count)
     monkeypatch.setattr(server, "supa", fake)
+
+    async def mode(_code):
+        return supreme
+
+    monkeypatch.setattr(server, "is_supreme_room", mode)
 
     async def get_node(_node_id):
         return {
@@ -78,3 +83,17 @@ def test_multiplayer_keeps_reading_buffer(monkeypatch):
     assert update["phase"] == "reading"
     assert update["phase_ends_at"] is not None
     assert len(scheduled) == 1
+
+
+def test_supreme_multiplayer_has_no_timer(monkeypatch):
+    update, scheduled = run_advance(monkeypatch, player_count=5, supreme=True)
+    assert update["phase"] == "voting"
+    assert update["phase_ends_at"] is None
+    assert scheduled == []
+
+
+def test_nickname_normalization():
+    for name in ("Test99", "test99", "TEST99", "Test 99", " T e S t 9 9 "):
+        assert server.supreme_nickname(name)
+    for name in ("Tester", "Test990", "99Test", "normal"):
+        assert not server.supreme_nickname(name)

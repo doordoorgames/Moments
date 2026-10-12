@@ -21,7 +21,9 @@ export default function Shoug2Story({ state, player, code }) {
   const [now, setNow] = useState(Date.now());
   const clockOffset = useRef(0);
   const lastBackground = useRef("/shoug2/bg/airport.jpg");
-  const reduced = useReducedMotion();
+  const prefersReduced = useReducedMotion();
+  const supreme = !!room?.supreme_test_mode;
+  const reduced = prefersReduced || supreme;
   useEffect(() => {
     if (state.server_time) clockOffset.current = new Date(state.server_time).getTime() - Date.now();
   }, [state.server_time]);
@@ -35,7 +37,7 @@ export default function Shoug2Story({ state, player, code }) {
   const choose = async id => {
     if (pending || voted || phase !== "voting") return;
     setPending(true);
-    try { await api.castVote(code, player.id, id); }
+    try { await api.castVote(code, player.id, id, supreme ? node.id : undefined); }
     catch (err) { toast.error(err?.response?.data?.detail || "Vote failed"); setPending(false); }
   };
   const next = async () => {
@@ -70,7 +72,7 @@ export default function Shoug2Story({ state, player, code }) {
     <div className="shoug2-stage">
       <div className="shoug2-kicker">{type === "airport" ? "DEPARTURES · UPDATE" : type === "phone" ? "INCOMING" : type === "decision" ? "YOUR MOVE" : "THE STORY CONTINUES"}</div>
       {type === "airport" && <div className="shoug2-board" aria-label="Airport information"><span>DEPARTURES</span><motion.span key={node.id} initial={reduced ? false : {opacity:0,y:-8}} animate={{opacity:1,y:0}}>GATE UPDATE</motion.span></div>}
-      <AnimatePresence mode="wait">
+      <AnimatePresence mode={supreme ? "sync" : "wait"}>
         <motion.section key={node.id} className="shoug2-story" initial={reduced ? false : {opacity:0,y:26}} animate={{opacity:1,y:0}} exit={reduced ? undefined : {opacity:0,y:-16}} transition={{duration:reduced ? 0 : .38}}>
           <ShougShape shape={NARRATION_SHAPE}><p data-testid="story-reading-text">{text}</p></ShougShape>
           {(room.flags || []).length > 0 && <div className="shoug2-flags">{room.flags.map(f=><span key={f}>{f.replace(/_/g," ")}</span>)}</div>}
@@ -81,7 +83,7 @@ export default function Shoug2Story({ state, player, code }) {
       {!narration && <div className="shoug2-choices" data-testid="choice-list">{choices.map((choice,i)=><ShougShape as="button" shape={pickChoiceShape(node.id,i)} key={choice.id} data-testid={`choice-vote-${choice.id}`} disabled={phase !== "voting" || voted || pending} onClick={()=>choose(choice.id)}><span className="shoug2-choice-label">CHOICE {String(i+1).padStart(2,"0")}</span><strong>{choice.text}</strong></ShougShape>)}</div>}
       {narration && (host ? <ShougShape as="button" shape={CONTINUE_SHAPE} className="shoug2-next" disabled={pending || !node.narration_next_node_id} onClick={next} data-testid="narration-next-button">Continue</ShougShape> : <p>Waiting for the host to continue…</p>)}
       {phase === "reading" && <p className="shoug2-meta">Read together. Voting opens shortly.</p>}
-      {phase === "voting" && <div className="shoug2-voting" data-testid="vote-status-row"><span data-testid="vote-counter">{stats.voted_count || 0}/{stats.total_players ?? players.length} voted</span><span>{remaining === null ? "Voting" : `${remaining}s remaining`}</span><div className="shoug2-track"><div style={{width:`${remaining === null ? 0 : Math.max(0,Math.min(100,(20-remaining)/20*100))}%`}} /></div>{voted && <small>Your vote is locked. Waiting for others.</small>}</div>}
+      {phase === "voting" && !supreme && <div className="shoug2-voting" data-testid="vote-status-row"><span data-testid="vote-counter">{stats.voted_count || 0}/{stats.total_players ?? players.length} voted</span><span>{remaining === null ? "Voting" : `${remaining}s remaining`}</span><div className="shoug2-track"><div style={{width:`${remaining === null ? 0 : Math.max(0,Math.min(100,(20-remaining)/20*100))}%`}} /></div>{voted && <small>Your vote is locked. Waiting for others.</small>}</div>}
     </section>
     {phase === "wheel" && room.wheel_options && <Wheel taleTheme="shoug" themeKey={node.id} options={room.wheel_options} winnerId={room.wheel_winner_choice_id} durationMs={4200}/>}
   </main>;

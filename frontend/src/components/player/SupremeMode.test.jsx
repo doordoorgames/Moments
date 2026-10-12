@@ -16,16 +16,16 @@ test.each([SharedStory, Shoug2Story])("%p permits consecutive Supreme choices wi
     const host = document.createElement("div"); document.body.append(host);
     const root = createRoot(host);
     const state = {
-        story: { title: "Shoug’s Tale" }, room: { phase: "voting", flags: [], supreme_test_mode: true, phase_ends_at: null },
+        story: { title: "Shoug’s Tale" }, room: { phase: "voting", flags: [], supreme_test_mode: true, phase_ends_at: null, node_visit_id: "visit" },
         players: [{ id: "p", is_host: true }], vote_stats: { voted_player_ids: [], voted_count: 0, total_players: 2 },
     };
     for (let i = 0; i < 5; i++) {
-        await act(async () => root.render(<Story state={{ ...state, current_node: { id: `n${i}`, story_text: "London" }, choices: [{ id: `c${i}`, text: "Continue" }] }} player={{ id: "p" }} code="TEST" />));
+        await act(async () => root.render(<Story state={{ ...state, current_node: { id: `n${i}`, story_text: "London" }, choices: [{ id: `c${i}`, text: "Continue" }] }} player={{ id: "p", session_token: "token" }} code="TEST" />));
         const button = host.querySelector(`[data-testid="choice-vote-c${i}"]`);
         expect(button.disabled).toBe(false);
         expect(host.querySelector('[data-testid="vote-status-row"]')).toBeNull();
         await act(async () => button.click());
-        expect(api.castVote).toHaveBeenLastCalledWith("TEST", "p", `c${i}`, `n${i}`);
+        expect(api.castVote).toHaveBeenLastCalledWith("TEST", "p", `c${i}`, `n${i}`, "token", "visit");
     }
     expect(api.castVote).toHaveBeenCalledTimes(5);
     await act(async () => root.unmount()); host.remove();

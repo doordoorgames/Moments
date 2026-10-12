@@ -47,9 +47,14 @@ def run_advance(monkeypatch, player_count, supreme=False):
 
     monkeypatch.setattr(server, "is_supreme_room", mode)
 
+    async def get_room(_code):
+        return {"story_id": "story", "wheel_options": [{"supreme_v1": True, "creator_id": "host", "history": []}]} if supreme else {}
+    monkeypatch.setattr(server, "get_room", get_room)
+
     async def get_node(_node_id):
         return {
             "id": "node-1",
+            "story_id": "story",
             "node_type": "story",
             "is_end": False,
             "choices": [{"id": "choice-1", "destination_node_id": "node-2"}],

@@ -99,6 +99,15 @@ export const api = {
             .post(apiUrl(`/rooms/${code}/narration/next`), { player_id, session_token, visit_id })
             .then((r) => r.data),
 
+    // The Baccarat Hunt adventure (a mini game played inside a normal room).
+    createAdventure: (nickname) => axios.post(apiUrl("/rooms/adventure"), { nickname }).then((r) => r.data),
+    adventureMap: (code, runId) => axios.get(apiUrl(`/rooms/${code}/adventure/map`), { params: { run_id: runId } }).then((r) => r.data),
+    adventureStart: (code, session) => axios.post(apiUrl(`/rooms/${code}/adventure/start`), session).then((r) => r.data),
+    adventureAction: (code, payload) => axios.post(apiUrl(`/rooms/${code}/adventure/action`), payload).then((r) => r.data),
+    adventureMove: (code, payload) => axios.post(apiUrl(`/rooms/${code}/adventure/move`), payload).then((r) => r.data),
+    adventurePrivate: (code, session) => axios.post(apiUrl(`/rooms/${code}/adventure/private`), session).then((r) => r.data),
+    adventureDev: (code, payload) => axios.post(apiUrl(`/rooms/${code}/adventure/dev`), payload).then((r) => r.data),
+
     navigationGraph: (code, session) => axios.post(apiUrl(`/rooms/${code}/navigation`), session).then(r => r.data),
     testNodes: (code, session) => axios.post(apiUrl(`/rooms/${code}/test/nodes`), session).then(r => r.data),
     testControl: (code, payload) => axios.post(apiUrl(`/rooms/${code}/test/control`), payload).then(r => r.data),

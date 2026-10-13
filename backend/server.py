@@ -21,6 +21,7 @@ import re
 import secrets
 import socket
 import string
+import time
 import uuid
 
 import httpx
@@ -50,6 +51,8 @@ from supabase import create_client, Client, ClientOptions
 from pydantic import BaseModel, ConfigDict, Field
 from starlette.middleware.cors import CORSMiddleware
 from pack_light import PackLightResult, read_pack, pack_flags, story_flags, public_pack
+import adventure_engine as AE
+from adventure_map import get_layout as adventure_layout
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / ".env")
@@ -87,6 +90,10 @@ def _now() -> datetime:
 
 def _now_iso() -> str:
     return _now().isoformat()
+
+
+def _ms() -> int:
+    return int(time.time() * 1000)
 
 
 class Choice(BaseModel):
@@ -760,6 +767,11 @@ async def admin_ramble_apply(
 class ConnectionManager:
     def __init__(self) -> None:
         self.rooms: Dict[str, List[WebSocket]] = defaultdict(list)
+        # Sockets that authenticated with a player session (adventure presence,
+        # private messages). Story rooms never need this and keep working unbound.
+        self.bound: Dict[WebSocket, Any] = {}
+        self.last_seen: Dict[str, Dict[str, int]] = defaultdict(dict)
+        self.http_seen: Dict[str, Dict[str, int]] = defaultdict(dict)
         self._lock = asyncio.Lock()
 
     async def connect(self, room_code: str, ws: WebSocket) -> None:
@@ -771,13 +783,50 @@ class ConnectionManager:
         conns = self.rooms.get(room_code, [])
         if ws in conns:
             conns.remove(ws)
+        binding = self.bound.pop(ws, None)
+        if binding:
+            self.last_seen[binding[0]][binding[1]] = _ms()
+
+    def bind(self, room_code: str, ws: WebSocket, player_id: str) -> None:
+        self.bound[ws] = (room_code, player_id)
+        self.last_seen[room_code][player_id] = _ms()
+
+    def player_of(self, ws: WebSocket) -> Optional[str]:
+        binding = self.bound.get(ws)
+        return binding[1] if binding else None
+
+    def touch_http(self, room_code: str, player_id: str) -> None:
+        now = _ms()
+        self.http_seen[room_code][player_id] = now
+        self.last_seen[room_code][player_id] = now
+
+    def presence(self, room_code: str) -> Dict[str, bool]:
+        online = {pid: True for ws, (code, pid) in list(self.bound.items()) if code == room_code}
+        now = _ms()
+        for pid, seen in self.http_seen.get(room_code, {}).items():
+            if now - seen < 5_000:
+                online[pid] = True
+        return online
+
+    def count(self, room_code: str) -> int:
+        return len(self.rooms.get(room_code, []))
+
+    async def send_to_player(self, room_code: str, player_id: str, message: Dict[str, Any]) -> None:
+        text = json.dumps(message)
+        for ws, (code, pid) in list(self.bound.items()):
+            if code == room_code and pid == player_id:
+                try:
+                    await ws.send_text(text)
+                except Exception:
+                    self.disconnect(room_code, ws)
 
     async def broadcast(self, room_code: str, message: Dict[str, Any]) -> None:
         conns = list(self.rooms.get(room_code, []))
         dead: List[WebSocket] = []
+        text = json.dumps(message)
         for c in conns:
             try:
-                await c.send_text(json.dumps(message))
+                await c.send_text(text)
             except Exception:
                 dead.append(c)
         for d in dead:
@@ -843,6 +892,16 @@ async def compute_room_state(code: str) -> Optional[Dict[str, Any]]:
     players = players_res.data or []
     pack = read_pack(room)
     room = {**room, "flags": story_flags(room.get("flags")) if pack else room.get("flags", [])}
+    adventure_view = None
+    stored_adventure = AE.read_envelope(room.get("flags"))
+    if stored_adventure:
+        # Never expose the raw envelope: it holds the private confirmation code.
+        room["flags"] = AE.strip_envelope(room.get("flags"))
+        cached = _adventures.get(code)
+        live = cached["adv"] if cached else stored_adventure
+        ctx = {"players": players, "presence": manager.presence(code), "last_seen": manager.last_seen.get(code, {}),
+               "test_creator_id": (test_metadata(room) or {}).get("creator_id")}
+        adventure_view = AE.public_view(live, ctx, _ms())
     metadata = test_metadata(room)
     room["supreme_test_mode"] = metadata is not None
     if metadata:
@@ -896,6 +955,7 @@ async def compute_room_state(code: str) -> Optional[Dict[str, Any]]:
         },
         "server_time": _now_iso(),
         **({"pack_light": public_pack(pack)} if pack else {}),
+        **({"adventure": adventure_view} if adventure_view else {}),
     }
 
 
@@ -1452,6 +1512,8 @@ async def join_room(code: str, payload: RoomJoinRequest):
         is_host=(existing == 0),
     )
     await _q(lambda: supa.table("players").insert(player.model_dump()).execute())
+    if code in _adventures:
+        _adventures[code]["players_at"] = 0
     if room.get("presentation") == "shoug2" and room.get("phase") == "pack_light":
         async with _pack_locks[code]:
             for _ in range(5):
@@ -1475,6 +1537,8 @@ async def select_story(code: str, payload: RoomSelectStoryRequest):
     room = await get_room(code)
     if not room:
         raise HTTPException(404, "Room not found")
+    if AE.read_envelope(room.get("flags")):
+        raise HTTPException(409, "This room is playing The Baccarat Hunt")
     story = await get_story(payload.story_id)
     if not story:
         raise HTTPException(404, "Story not found")
@@ -1496,6 +1560,8 @@ async def start_room(code: str, payload: Optional[RoomSessionRequest] = None):
     room = await get_room(code)
     if not room:
         raise HTTPException(404, "Room not found")
+    if AE.read_envelope(room.get("flags")):
+        raise HTTPException(409, "This room is playing The Baccarat Hunt")
     if not room.get("story_id"):
         raise HTTPException(400, "No story selected")
     story = await get_story(room["story_id"])
@@ -1862,6 +1928,336 @@ async def test_control(code: str, payload: TestControlRequest):
 
 
 # ============================================================
+# The Baccarat Hunt adventure (multiplayer mini game in a room)
+# ============================================================
+# The room row stays the durable store (flags envelope + phase), exactly like
+# Pack Light. While a room is active its adventure lives in memory here and is
+# written through on every story change; Shoug's position is relayed over the
+# room WebSocket and saved at a low rate.
+
+_adventures: Dict[str, Dict[str, Any]] = {}
+_adventure_locks: Dict[str, asyncio.Lock] = defaultdict(asyncio.Lock)
+_adventure_write_locks: Dict[str, asyncio.Lock] = defaultdict(asyncio.Lock)
+_adventure_tasks: Dict[str, asyncio.Task] = {}
+ADVENTURE_TICK_SECONDS = 0.2
+ADVENTURE_POSITION_SAVE_MS = 2_500
+ADVENTURE_IDLE_EVICT_MS = 180_000
+
+
+class AdventureCreateRequest(BaseModel):
+    nickname: str
+
+
+class AdventureActionRequest(RoomSessionRequest):
+    run_id: str
+    action: str
+    inst: Optional[str] = None
+    value: Optional[str] = None
+    # Navigator's latest movement seq when pressing A, so the door check waits for an in-flight step.
+    seq: Optional[int] = None
+
+
+class AdventureDevRequest(RoomSessionRequest):
+    command: str
+    x: Optional[int] = None
+    y: Optional[int] = None
+    dir: Optional[str] = None
+    code: Optional[str] = None
+    decoy: Optional[str] = None
+    seed: Optional[int] = None
+    variant: Optional[str] = None
+
+
+class AdventureMoveRequest(RoomSessionRequest):
+    type: Literal["adv_step", "adv_face"]
+    run: str
+    seq: int
+    dir: str
+    x: Optional[int] = None
+    y: Optional[int] = None
+
+
+async def _adventure_entry(code: str, refresh_players: bool = False) -> Optional[Dict[str, Any]]:
+    entry = _adventures.get(code)
+    if entry is None:
+        room = await get_room(code)
+        adv = AE.read_envelope((room or {}).get("flags"))
+        if not room or not adv:
+            return None
+        entry = {"adv": adv, "room": room, "players": None, "players_at": 0, "pos_dirty": False,
+                 "saved_at": 0, "write_seq": 0, "written_seq": 0}
+        _adventures[code] = entry
+    if refresh_players or entry["players"] is None or _ms() - entry["players_at"] > 10_000:
+        res = await _q(lambda: supa.table("players").select("id,room_code,nickname,joined_at,is_host")
+                       .eq("room_code", code).execute())
+        entry["players"] = sorted(res.data or [], key=lambda p: p.get("joined_at") or "")
+        entry["players_at"] = _ms()
+    _ensure_adventure_loop(code)
+    return entry
+
+
+def _adventure_ctx(code: str, entry: Dict[str, Any]) -> Dict[str, Any]:
+    return {"players": entry["players"] or [], "presence": manager.presence(code),
+            "last_seen": manager.last_seen.get(code, {}),
+            "test_creator_id": (test_metadata(entry["room"]) or {}).get("creator_id")}
+
+
+def _adventure_snapshot(entry: Dict[str, Any]) -> Dict[str, Any]:
+    adv = entry["adv"]
+    entry["write_seq"] += 1
+    entry["pos_dirty"] = False
+    entry["saved_at"] = _ms()
+    return {"seq": entry["write_seq"], "update": {
+        "flags": AE.envelope_flags([], adv), "phase": AE.room_phase(adv), "started": adv["status"] != "lobby",
+        "current_node_id": None, "phase_ends_at": None}}
+
+
+async def _adventure_write(code: str, entry: Dict[str, Any], snapshot: Dict[str, Any]) -> None:
+    # Written outside the game lock; an older snapshot never overwrites a newer one.
+    async with _adventure_write_locks[code]:
+        if snapshot["seq"] <= entry["written_seq"]:
+            return
+        update = snapshot["update"]
+        await _q(lambda: supa.table("rooms").update(update).eq("code", code).execute())
+        entry["written_seq"] = snapshot["seq"]
+
+
+async def _adventure_publish(code: str, entry: Dict[str, Any]) -> Dict[str, Any]:
+    adv = entry["adv"]
+    now = _ms()
+    ctx = _adventure_ctx(code, entry)
+    view = AE.public_view(adv, ctx, now)
+    await manager.broadcast(code, {"type": "adv_state", "state": view})
+    for ws, (room_code, pid) in list(manager.bound.items()):
+        if room_code != code:
+            continue
+        private = AE.private_view(adv, pid, ctx, now)
+        if private:
+            try:
+                await ws.send_text(json.dumps({"type": "adv_private", "data": private}))
+            except Exception:
+                manager.disconnect(code, ws)
+    return view
+
+
+def _ensure_adventure_loop(code: str) -> None:
+    task = _adventure_tasks.get(code)
+    if task and not task.done():
+        return
+    try:
+        _adventure_tasks[code] = asyncio.get_running_loop().create_task(_adventure_loop(code))
+    except RuntimeError:
+        pass  # No running loop (synchronous tests); actions still work.
+
+
+async def _adventure_loop(code: str) -> None:
+    idle_since: Optional[int] = None
+    try:
+        while True:
+            await asyncio.sleep(ADVENTURE_TICK_SECONDS)
+            entry = _adventures.get(code)
+            if entry is None:
+                return
+            snapshot = None
+            try:
+                async with _adventure_locks[code]:
+                    now = _ms()
+                    if now - entry["players_at"] > 10_000:
+                        res = await _q(lambda: supa.table("players").select("id,room_code,nickname,joined_at,is_host")
+                                       .eq("room_code", code).execute())
+                        entry["players"] = sorted(res.data or [], key=lambda p: p.get("joined_at") or "")
+                        entry["players_at"] = now
+                    if AE.tick(entry["adv"], _adventure_ctx(code, entry), now):
+                        snapshot = _adventure_snapshot(entry)
+                        await _adventure_publish(code, entry)
+                    elif entry["pos_dirty"] and now - entry["saved_at"] > ADVENTURE_POSITION_SAVE_MS:
+                        snapshot = _adventure_snapshot(entry)
+                if snapshot:
+                    await _adventure_write(code, entry, snapshot)
+            except Exception:
+                logger.exception(f"adventure tick failed for {code}")
+            if manager.count(code) == 0:
+                idle_since = idle_since or _ms()
+                if _ms() - idle_since > ADVENTURE_IDLE_EVICT_MS:
+                    if entry.get("pos_dirty"):
+                        await _adventure_write(code, entry, _adventure_snapshot(entry))
+                    _adventures.pop(code, None)
+                    return
+            else:
+                idle_since = None
+    except asyncio.CancelledError:
+        return
+    finally:
+        if _adventure_tasks.get(code) is asyncio.current_task():
+            _adventure_tasks.pop(code, None)
+
+
+async def _adventure_player(code: str, payload: RoomSessionRequest) -> Dict[str, Any]:
+    player = await get_player(payload.player_id) if payload.player_id else None
+    if (not player or player.get("room_code") != code or not payload.session_token
+            or not secrets.compare_digest(player.get("session_token") or "", payload.session_token)):
+        raise HTTPException(403, "A valid session in this room is required")
+    manager.touch_http(code, player["id"])
+    return player
+
+
+async def _adventure_commit(code: str, entry: Dict[str, Any]) -> Dict[str, Any]:
+    snapshot = _adventure_snapshot(entry)
+    view = await _adventure_publish(code, entry)
+    return {"snapshot": snapshot, "view": view}
+
+
+@api_router.post("/rooms/adventure")
+async def create_adventure_room(payload: AdventureCreateRequest):
+    nickname = payload.nickname.strip()
+    if not nickname:
+        raise HTTPException(400, "Enter a nickname first")
+    created = await create_room(RoomCreateRequest(nickname=nickname))
+    code, player = created["code"], created["player"]
+    adv = AE.new_adventure(player["id"], bool(created.get("supreme_test_mode")), _ms())
+    if adv["test"]:
+        # TEST99 skips the lobby: straight into a playable solo session.
+        AE.start_intro(adv, _ms())
+    await _q(lambda: supa.table("rooms").update({
+        "flags": AE.envelope_flags([], adv), "phase": AE.room_phase(adv), "started": adv["status"] != "lobby",
+    }).eq("code", code).execute())
+    await _adventure_entry(code, refresh_players=True)
+    return {**created, "adventure": True}
+
+
+@api_router.get("/rooms/{code}/adventure/map")
+async def adventure_map(code: str, response: Response, run_id: Optional[str] = None):
+    entry = await _adventure_entry(code)
+    if not entry:
+        raise HTTPException(404, "This room is not playing The Baccarat Hunt")
+    adv = entry["adv"]
+    if run_id and run_id != adv["run_id"]:
+        raise HTTPException(409, "The hunt has restarted")
+    if run_id:
+        response.headers["Cache-Control"] = "private, max-age=3600"
+    return {"run_id": adv["run_id"], "layout": adventure_layout(adv["seed"], adv["variant"]).public()}
+
+
+@api_router.post("/rooms/{code}/adventure/start")
+async def adventure_start(code: str, payload: RoomSessionRequest):
+    player = await _adventure_player(code, payload)
+    entry = await _adventure_entry(code, refresh_players=True)
+    if not entry:
+        raise HTTPException(404, "This room is not playing The Baccarat Hunt")
+    async with _adventure_locks[code]:
+        adv = entry["adv"]
+        if player["id"] != adv["host_id"]:
+            raise HTTPException(403, "The host starts the hunt")
+        if adv["status"] == "lobby":
+            AE.start_intro(adv, _ms())
+        result = await _adventure_commit(code, entry)
+    await _adventure_write(code, entry, result["snapshot"])
+    return {"ok": True, "adventure": result["view"]}
+
+
+@api_router.post("/rooms/{code}/adventure/action")
+async def adventure_action(code: str, payload: AdventureActionRequest):
+    player = await _adventure_player(code, payload)
+    entry = await _adventure_entry(code)
+    if not entry:
+        raise HTTPException(404, "This room is not playing The Baccarat Hunt")
+    if payload.action == "interact" and payload.seq:
+        # Steps travel over the socket, A over HTTP: give a step that is still in flight a moment to land.
+        for _ in range(16):
+            if entry["adv"].get("pos", {}).get("seq", 0) >= payload.seq:
+                break
+            await asyncio.sleep(0.05)
+    async with _adventure_locks[code]:
+        adv = entry["adv"]
+        if payload.run_id != adv["run_id"]:
+            raise HTTPException(409, "The hunt has restarted")
+        try:
+            outcome = AE.act(adv, _adventure_ctx(code, entry), player["id"], payload.action,
+                             {"inst": payload.inst, "value": payload.value}, _ms())
+        except AE.ActionError as err:
+            raise HTTPException(err.status, err.detail)
+        result = await _adventure_commit(code, entry)
+    await _adventure_write(code, entry, result["snapshot"])
+    return {"ok": True, "result": outcome, "adventure": result["view"]}
+
+
+@api_router.post("/rooms/{code}/adventure/move")
+async def adventure_move(code: str, payload: AdventureMoveRequest):
+    """HTTP fallback for steering while the WebSocket reconnects."""
+    player = await _adventure_player(code, payload)
+    entry = await _adventure_entry(code)
+    if not entry:
+        raise HTTPException(404, "This room is not playing The Baccarat Hunt")
+    accepted, pos = await _adventure_handle_move(code, entry, player["id"], payload.model_dump())
+    return {"accepted": accepted, "pos": pos}
+
+
+@api_router.post("/rooms/{code}/adventure/private")
+async def adventure_private(code: str, payload: RoomSessionRequest):
+    player = await _adventure_player(code, payload)
+    entry = await _adventure_entry(code)
+    if not entry:
+        raise HTTPException(404, "This room is not playing The Baccarat Hunt")
+    return {"private": AE.private_view(entry["adv"], player["id"], _adventure_ctx(code, entry), _ms())}
+
+
+@api_router.post("/rooms/{code}/adventure/dev")
+async def adventure_dev(code: str, payload: AdventureDevRequest):
+    await authorize_test_room(code, payload)
+    entry = await _adventure_entry(code, refresh_players=True)
+    if not entry:
+        raise HTTPException(404, "This room is not playing The Baccarat Hunt")
+    manager.touch_http(code, payload.player_id)
+    async with _adventure_locks[code]:
+        try:
+            out = AE.dev(entry["adv"], _adventure_ctx(code, entry), payload.command,
+                         payload.model_dump(exclude={"player_id", "session_token", "command"}), _ms())
+        except AE.ActionError as err:
+            raise HTTPException(err.status, err.detail)
+        result = await _adventure_commit(code, entry)
+        await manager.broadcast(code, {"type": "adv_pos", "pos": entry["adv"]["pos"], "run": entry["adv"]["run_id"],
+                                       "server_ms": _ms(), "teleport": True})
+    await _adventure_write(code, entry, result["snapshot"])
+    return {"ok": True, "dev": out, "adventure": result["view"]}
+
+
+async def _adventure_handle_move(code: str, entry: Dict[str, Any], player_id: str, msg: Dict[str, Any],
+                                 ws: Optional[WebSocket] = None):
+    snapshot = None
+    async with _adventure_locks[code]:
+        adv = entry["adv"]
+        now = _ms()
+        accepted, triggers = AE.handle_move(adv, player_id, msg, now)
+        if accepted:
+            entry["pos_dirty"] = True
+            await manager.broadcast(code, {"type": "adv_pos", "pos": adv["pos"], "run": adv["run_id"], "server_ms": now})
+            if triggers:
+                AE.tick(adv, _adventure_ctx(code, entry), now)
+                snapshot = (await _adventure_commit(code, entry))["snapshot"]
+        elif ws is not None:
+            try:
+                await ws.send_text(json.dumps({"type": "adv_correction", "pos": adv["pos"], "run": adv["run_id"],
+                                               "lock": AE.movement_lock(adv), "nav_id": adv.get("nav_id")}))
+            except Exception:
+                manager.disconnect(code, ws)
+        pos = dict(adv["pos"])
+    if snapshot:
+        await _adventure_write(code, entry, snapshot)
+    return accepted, pos
+
+
+async def _adventure_presence_changed(code: str) -> None:
+    entry = _adventures.get(code)
+    if not entry:
+        return
+    snapshot = None
+    async with _adventure_locks[code]:
+        AE.tick(entry["adv"], _adventure_ctx(code, entry), _ms())
+        snapshot = (await _adventure_commit(code, entry))["snapshot"]
+    await _adventure_write(code, entry, snapshot)
+
+
+# ============================================================
 # WebSocket endpoint
 # ============================================================
 
@@ -1879,11 +2275,40 @@ async def websocket_room(ws: WebSocket, code: str):
             msg = await ws.receive_text()
             if msg == "ping":
                 await ws.send_text("pong")
+                continue
+            try:
+                data = json.loads(msg)
+            except ValueError:
+                continue
+            if not isinstance(data, dict):
+                continue
+            kind = data.get("type")
+            if kind == "hello":
+                player = await get_player(str(data.get("player_id") or "")) if data.get("player_id") else None
+                if (not player or player.get("room_code") != code or not data.get("session_token")
+                        or not secrets.compare_digest(player.get("session_token") or "", str(data.get("session_token")))):
+                    await ws.send_text(json.dumps({"type": "hello_error", "detail": "Session not recognised"}))
+                    continue
+                manager.bind(code, ws, player["id"])
+                await ws.send_text(json.dumps({"type": "hello_ok", "player_id": player["id"]}))
+                if await _adventure_entry(code, refresh_players=True):
+                    await _adventure_presence_changed(code)
+            elif kind in ("adv_step", "adv_face"):
+                player_id = manager.player_of(ws)
+                entry = _adventures.get(code) or await _adventure_entry(code)
+                if player_id and entry:
+                    await _adventure_handle_move(code, entry, player_id, data, ws)
     except WebSocketDisconnect:
         manager.disconnect(code, ws)
     except Exception as e:
         logger.warning(f"WS error: {e}")
         manager.disconnect(code, ws)
+    finally:
+        if code in _adventures:
+            try:
+                await _adventure_presence_changed(code)
+            except Exception:
+                logger.exception("adventure presence update failed")
 
 
 # ============================================================
@@ -2024,6 +2449,9 @@ async def _startup():
 
 @app.on_event("shutdown")
 async def _shutdown():
+    for t in list(_adventure_tasks.values()):
+        t.cancel()
+    _adventure_tasks.clear()
     if database_http is not None:
         database_http.close()
     for t in list(_room_tasks.values()):

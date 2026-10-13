@@ -8,11 +8,14 @@ import Lobby from "@/components/player/Lobby";
 import SharedStory from "@/components/player/SharedStory";
 import Shoug2Story from "@/components/player/Shoug2Story";
 import SupremeControls from "@/components/player/SupremeControls";
+import PackLightShoug from "@/components/shoug2/PackLightShoug";
 import Ending from "@/components/player/Ending";
 import { Loader2 } from "lucide-react";
 
 export default function PlayRoom({ shoug2 = false }) {
     const { code } = useParams();
+    const [packing, setPacking] = useState(false);
+    const [packLightResult, setPackLightResult] = useState(() => { try { return JSON.parse(localStorage.getItem(`packLight_${code}`) || "null"); } catch { return null; } });
     const nav = useNavigate();
     const [player, setPlayer] = useState(() => {
         try {
@@ -52,6 +55,11 @@ export default function PlayRoom({ shoug2 = false }) {
     };
     const handleSelectShoug2 = (storyId) => handleSelectStory(storyId, true);
     const handleStart = async () => {
+        if (roomState?.room?.presentation === "shoug2") {
+            if ((roomState.players || []).length > 1) { toast.error("Group play is not ready in this preview."); return; }
+            setPacking(true);
+            return;
+        }
         try {
             await api.startRoom(code, session);
 
@@ -82,6 +90,17 @@ export default function PlayRoom({ shoug2 = false }) {
     const shoug2Selected = room?.presentation === "shoug2";
     const shoug2Active = shoug2Selected;
     const players = roomState.players || [];
+
+    const savePacking = result => {
+        localStorage.setItem(`packLight_${code}`, JSON.stringify(result));
+        setPackLightResult(result);
+    };
+    if (packing && shoug2Active) return <PackLightShoug onResult={savePacking} onContinue={async result => {
+        savePacking(result);
+        await api.startRoom(code, session);
+        await fetchBoot();
+        setPacking(false);
+    }} />;
 
     const controls = <SupremeControls code={code} player={player} state={roomState} onState={applyState} saving={instant.saving} />;
 
@@ -121,6 +140,6 @@ export default function PlayRoom({ shoug2 = false }) {
 
     // Story runtime
     return <>{controls}{shoug2Active && /shoug[’\x27]?s tale/i.test(roomState.story?.title || "")
-        ? <Shoug2Story state={roomState} player={player} code={code} onState={applyState} onChoose={instant.choose} navigationReady={instant.ready} />
+        ? <Shoug2Story state={{...roomState, miniGames:{packLight:packLightResult}}} player={player} code={code} onState={applyState} onChoose={instant.choose} navigationReady={instant.ready} />
         : <SharedStory state={roomState} player={player} code={code} onState={applyState} onChoose={instant.choose} navigationReady={instant.ready} />}</>;
 }

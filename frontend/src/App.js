@@ -11,6 +11,8 @@ import AdminStories from "@/pages/AdminStories";
 import AdminCanvas from "@/pages/AdminCanvas";
 import ShougVillagePrototype from "@/pages/ShougVillagePrototype";
 
+import SoloMiniGame from "@/components/miniGames/MiniGames";
+
 function AdminGate({ children }) {
     const token = localStorage.getItem("admin_token");
     if (!token) return <Navigate to="/admin" replace />;
@@ -23,6 +25,7 @@ function App() {
             <BrowserRouter>
                 <Routes>
                     <Route path="/" element={<Landing />} />
+                    <Route path="/mini-games/:gameId" element={<SoloMiniGame />} />
                     <Route path="/visual-test" element={<Navigate to="/" replace />} />
                     <Route path="/shoug-2" element={<ShougVillagePrototype />} />
                     <Route path="/shoug-2/room/:code" element={<PlayRoom shoug2 />} />

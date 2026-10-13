@@ -42,7 +42,12 @@ export default function PlayRoom({ shoug2 = false }) {
     }, [player, nav]);
 
     const instant = useInstantStory(code, player, state || bootState, applyState);
-    const roomState = instant.state;
+    const sourceState = instant.state;
+    let packingChallenge = null;
+    if (sourceState?.room?.presentation === "shoug2" && sourceState.pack_light?.run_id && player) {
+        try { packingChallenge = JSON.parse(localStorage.getItem(`packingChallenge_${code}_${player.id}_${sourceState.pack_light.run_id}`) || "null"); } catch { /* Unavailable local storage does not block play. */ }
+    }
+    const roomState = packingChallenge ? { ...sourceState, packing_challenge: { ...packingChallenge, results: { [player.id]: packingChallenge } } } : sourceState;
 
     const session = { player_id: player?.id, session_token: player?.session_token };
     const handleSelectStory = async (storyId, variant = false) => {

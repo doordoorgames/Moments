@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { api, apiErrorMessage } from "@/lib/api";
 import PackLightShoug from "./PackLightShoug";
+import PackingChallenge from "./PackingChallenge";
 import "./PackLightStage.css";
 
 export default function PackLightStage({ code, player, state, onState }) {
@@ -8,6 +9,11 @@ export default function PackLightStage({ code, player, state, onState }) {
   const storageKey = `packLight_${code}_${player.id}_${pack.run_id}`;
   const [cached] = useState(() => { try { return JSON.parse(localStorage.getItem(storageKey) || "null"); } catch { return null; } });
   const [result, setResult] = useState(cached);
+  const challengeKey = `packingChallenge_${code}_${player.id}_${pack.run_id}`;
+  const [challenge, setChallenge] = useState(() => { try { return JSON.parse(localStorage.getItem(challengeKey) || "null"); } catch { return null; } });
+  const [packing, setPacking] = useState(Boolean(cached && !challenge));
+  const saveChallenge = value => { setChallenge(value); try { localStorage.setItem(challengeKey, JSON.stringify(value)); } catch { /* Current React state remains available. */ } };
+
   const [submitted, setSubmitted] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -58,7 +64,8 @@ export default function PackLightStage({ code, player, state, onState }) {
     catch (err) { if (alive.current) setError(apiErrorMessage(err, "Could not continue. Please retry.")); }
     finally { pending.current = false; if (alive.current) setBusy(false); }
   };
-  if (!waiting && !cached) return <PackLightShoug onResult={saveLocal} onContinue={submit} />;
+  if (!waiting && packing) return <PackingChallenge onResult={saveChallenge} onContinue={value => { saveChallenge(value); submit(result); }} />;
+  if (!waiting && !cached && !packing) return <PackLightShoug onResult={saveLocal} onContinue={value => { saveLocal(value); setPacking(true); }} />;
 
   const done = Math.min(pack.total_count, pack.done_count + (submitted && !saved ? 1 : 0));
   const remaining = pack.host_continue_at ? Math.max(0, Math.ceil((new Date(pack.host_continue_at).getTime() - now - serverOffset.current) / 1000)) : null;

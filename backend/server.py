@@ -49,6 +49,7 @@ from fastapi.staticfiles import StaticFiles
 from supabase import create_client, Client, ClientOptions
 from pydantic import BaseModel, ConfigDict, Field
 from starlette.middleware.cors import CORSMiddleware
+from pack_light import PackLightResult, read_pack, pack_flags, story_flags, public_pack
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / ".env")
@@ -220,6 +221,15 @@ class RoomJoinRequest(BaseModel):
 class RoomSessionRequest(BaseModel):
     player_id: Optional[str] = None
     session_token: Optional[str] = None
+
+
+class PackLightSubmission(RoomSessionRequest):
+    run_id: str
+    result: PackLightResult
+
+
+class PackLightContinue(RoomSessionRequest):
+    run_id: str
 
 
 class RoomSelectStoryRequest(RoomSessionRequest):
@@ -831,6 +841,8 @@ async def compute_room_state(code: str) -> Optional[Dict[str, Any]]:
         .eq("room_code", code).execute()
     )
     players = players_res.data or []
+    pack = read_pack(room)
+    room = {**room, "flags": story_flags(room.get("flags")) if pack else room.get("flags", [])}
     metadata = test_metadata(room)
     room["supreme_test_mode"] = metadata is not None
     if metadata:
@@ -883,6 +895,7 @@ async def compute_room_state(code: str) -> Optional[Dict[str, Any]]:
             "tally": tally,
         },
         "server_time": _now_iso(),
+        **({"pack_light": public_pack(pack)} if pack else {}),
     }
 
 
@@ -1439,6 +1452,19 @@ async def join_room(code: str, payload: RoomJoinRequest):
         is_host=(existing == 0),
     )
     await _q(lambda: supa.table("players").insert(player.model_dump()).execute())
+    if room.get("presentation") == "shoug2" and room.get("phase") == "pack_light":
+        async with _pack_locks[code]:
+            for _ in range(5):
+                current = await get_room(code)
+                pack = read_pack(current or {})
+                if not pack or current.get("phase") != "pack_light":
+                    break
+                pack["participants"] = list(dict.fromkeys(pack["participants"] + [player.id]))
+                saved = await _q(lambda: supa.table("rooms").update({"flags": pack_flags(current.get("flags"), pack)})
+                    .eq("code", code).eq("phase", "pack_light")
+                    .eq("flags", json.dumps(current.get("flags") or [])).execute())
+                if saved.data:
+                    break
     await broadcast_room_state(code)
     return player
 
@@ -1475,6 +1501,9 @@ async def start_room(code: str, payload: Optional[RoomSessionRequest] = None):
     story = await get_story(room["story_id"])
     if not story or not story.get("start_node_id"):
         raise HTTPException(400, "Story has no start node")
+    if room.get("presentation") == "shoug2":
+        async with _pack_locks[code]:
+            return await start_pack_light(code, payload or RoomSessionRequest())
     await _q(lambda: supa.table("votes").delete().eq("room_code", code).execute())
     await _q(lambda: supa.table("rooms").update({
         "started": True,
@@ -1484,6 +1513,109 @@ async def start_room(code: str, payload: Optional[RoomSessionRequest] = None):
     }).eq("code", code).execute())
     await advance_to_node(code, story["start_node_id"], [], history_override=[])
     return {"ok": True}
+
+
+# Shoug 2.0's opening stage. Classic room start/voting never enter these routes.
+_pack_locks: Dict[str, asyncio.Lock] = defaultdict(asyncio.Lock)
+
+
+async def authorize_pack_player(code, payload, host_only=False):
+    room = await get_room(code)
+    if not room:
+        raise HTTPException(404, "Room not found")
+    if room.get("presentation") != "shoug2":
+        raise HTTPException(403, "Pack Light is only available in Shoug 2.0")
+    player = await get_player(payload.player_id) if payload.player_id else None
+    if (not player or player.get("room_code") != code or not payload.session_token
+            or not secrets.compare_digest(player.get("session_token") or "", payload.session_token)
+            or (host_only and not player.get("is_host"))):
+        raise HTTPException(403, "A valid room host session is required" if host_only else "A valid session in this room is required")
+    return room, player
+
+
+async def start_pack_light(code, payload):
+    room, player = await authorize_pack_player(code, payload, host_only=True)
+    if room.get("started"):
+        return await compute_room_state(code)
+    roster = await _q(lambda: supa.table("players").select("id").eq("room_code", code).execute())
+    pack = {"run_id": str(uuid.uuid4()), "participants": [p["id"] for p in roster.data or []],
+            "results": {}, "started_at": _now_iso(), "waiting_started_at": None,
+            "completed_at": None, "forced_by_host": False}
+    await _q(lambda: supa.table("votes").delete().eq("room_code", code).execute())
+    await _q(lambda: supa.table("rooms").update({
+        "started": True, "current_node_id": None, "phase": "pack_light", "phase_ends_at": None,
+        "flags": pack_flags([], pack),
+        "wheel_options": [{**test_metadata(room), "history": []}] if test_metadata(room) else None,
+        "wheel_winner_choice_id": None,
+    }).eq("code", code).eq("started", False).execute())
+    return await broadcast_room_state(code)
+
+
+async def finish_pack_light(code, room, pack, forced=False):
+    story = await get_story(room["story_id"])
+    if not story or not story.get("start_node_id"):
+        raise HTTPException(400, "The tale has no first scene")
+    completed = {**pack, "completed_at": _now_iso(), "forced_by_host": forced}
+    flags = pack_flags(room.get("flags"), completed)
+    claimed = await _q(lambda: supa.table("rooms").update({"phase": "pack_light_finishing", "flags": flags})
+        .eq("code", code).eq("phase", "pack_light").execute())
+    if not claimed.data:
+        return await compute_room_state(code)
+    try:
+        await advance_to_node(code, story["start_node_id"], flags, history_override=[])
+    except Exception:
+        await _q(lambda: supa.table("rooms").update({"phase": "pack_light", "flags": pack_flags(room.get("flags"), pack)})
+            .eq("code", code).eq("phase", "pack_light_finishing").execute())
+        raise
+    return await compute_room_state(code)
+
+
+@api_router.post("/rooms/{code}/shoug2/pack-light/result")
+async def submit_pack_light(code: str, payload: PackLightSubmission):
+    async with _pack_locks[code]:
+        # CAS also protects a request landing on a different worker/replica.
+        for _ in range(5):
+            room, player = await authorize_pack_player(code, payload)
+            pack = read_pack(room)
+            if not pack or pack["run_id"] != payload.run_id:
+                raise HTTPException(409, "This packing session has changed. Reopen the room.")
+            if room.get("phase") != "pack_light":
+                if player["id"] in pack["results"]:
+                    return await compute_room_state(code)
+                raise HTTPException(409, "The room has already continued to the story")
+            roster = await _q(lambda: supa.table("players").select("id").eq("room_code", code).execute())
+            participants = list(dict.fromkeys(pack["participants"] + [p["id"] for p in roster.data or []]))
+            results = dict(pack["results"])
+            results.setdefault(player["id"], payload.result.model_dump())
+            updated = {**pack, "participants": participants, "results": results,
+                       "waiting_started_at": pack.get("waiting_started_at") or _now_iso()}
+            flags = pack_flags(room.get("flags"), updated)
+            saved = await _q(lambda: supa.table("rooms").update({"flags": flags})
+                .eq("code", code).eq("phase", "pack_light")
+                .eq("flags", json.dumps(room.get("flags") or [])).execute())
+            if not saved.data:
+                continue
+            room = {**room, "flags": flags}
+            if all(pid in results for pid in participants):
+                return await finish_pack_light(code, room, updated)
+            return await broadcast_room_state(code)
+        raise HTTPException(409, "Someone else just finished. Tap Continue again to save your result.")
+
+
+@api_router.post("/rooms/{code}/shoug2/pack-light/continue")
+async def force_pack_light_continue(code: str, payload: PackLightContinue):
+    async with _pack_locks[code]:
+        room, player = await authorize_pack_player(code, payload, host_only=True)
+        pack = read_pack(room)
+        if not pack or pack["run_id"] != payload.run_id:
+            raise HTTPException(409, "This packing session has changed")
+        if room.get("phase") != "pack_light":
+            return await compute_room_state(code)
+        if player["id"] not in pack["results"]:
+            raise HTTPException(409, "Finish packing before continuing")
+        if not public_pack(pack)["host_can_continue"]:
+            raise HTTPException(409, "The host can continue after 90 seconds of waiting")
+        return await finish_pack_light(code, room, pack, forced=True)
 
 
 @api_router.post("/rooms/{code}/reset")
@@ -1856,7 +1988,9 @@ app.include_router(api_router)
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,
-    allow_origins=os.environ.get("CORS_ORIGINS", "*").split(","),
+    allow_origins=list(dict.fromkeys([origin.strip() for origin in os.environ.get("CORS_ORIGINS", "*").split(",") if origin.strip()] + ["https://moments-ten-psi.vercel.app"])),
+    # Only this Moments project's Vercel aliases/previews; unrelated Vercel sites stay blocked.
+    allow_origin_regex=r"https://moments(?:-[a-z0-9-]+)?-doordoorgames-projects\.vercel\.app",
     allow_methods=["*"],
     allow_headers=["*"],
 )

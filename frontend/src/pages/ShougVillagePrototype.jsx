@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { api } from "@/lib/api";
+import { api, apiErrorMessage } from "@/lib/api";
 import { toast } from "sonner";
 
 // Shoug 2.0 is a presentation variant of the original Supabase story.
@@ -17,11 +17,12 @@ export default function ShougVillagePrototype() {
     api.listStories().then(stories => {
       const match = stories.find(s => /shoug[’']?s tale/i.test(s.title || ""));
       if (active) { setStory(match || null); if (!match) setError("Shoug’s Tale was not found in the live story database."); }
-    }).catch(err => { if (active) setError(err?.message || "Could not load stories."); });
+    }).catch(err => { if (active) setError(apiErrorMessage(err, "Could not load tales. Please try again.")); });
     return () => { active = false; };
   }, []);
   const enter = async (joining) => {
     if (!nickname.trim() || !story || busy) return;
+    setError("");
     setBusy(true);
     try {
       const createdRoom = joining ? null : await api.createRoom(nickname.trim());
@@ -30,7 +31,7 @@ export default function ShougVillagePrototype() {
       localStorage.setItem(`player_${roomCode}`, JSON.stringify(player));
       if (!joining) await api.selectStory(roomCode, story.id, "shoug2", { player_id: player.id, session_token: player.session_token });
       nav(`/shoug-2/room/${encodeURIComponent(roomCode)}`);
-    } catch (err) { toast.error(err?.response?.data?.detail || "Unable to enter room."); }
+    } catch (err) { const message = apiErrorMessage(err, "Unable to enter room. Please try again."); setError(message); toast.error(message); }
     finally { setBusy(false); }
   };
   return <main style={{minHeight:"100dvh",backgroundImage:"linear-gradient(rgba(251,244,228,.35),rgba(251,244,228,.35)),url(/IMG_2640.webp)",backgroundSize:"cover",backgroundPosition:"center",backgroundColor:"#172c22",color:"#fff7f0",padding:"max(env(safe-area-inset-top),32px) 24px max(env(safe-area-inset-bottom),32px)",fontFamily:"Avenir,system-ui,sans-serif"}}>

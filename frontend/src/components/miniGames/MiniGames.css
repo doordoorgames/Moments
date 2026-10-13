@@ -1,3 +1,4 @@
+@import url('https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@1,6..96,600;1,6..96,700&display=swap');
 .mini-games{background:#FBF4E4;color:#111;padding:24px 18px 28px;margin-top:32px;border:3px solid #111;box-shadow:7px 7px 0 #000;min-width:0}
 .mini-games h2,.mini-games h3{font-family:'Bodoni Moda','Didot',Georgia,serif;font-style:italic;line-height:1.05;text-transform:none;overflow-wrap:anywhere}
 .mini-games h2{font-size:36px;margin:0 0 20px}.mini-games-list{display:flex;flex-direction:column;gap:22px}

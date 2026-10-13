@@ -4,7 +4,7 @@ import "./MiniGames.css";
 
 export function MiniGamesList() {
   const navigate = useNavigate();
-  return <section className="mini-games" id="mini-games" aria-labelledby="mini-games-title">
+  return <section className="mini-games" data-typography-ignore id="mini-games" aria-labelledby="mini-games-title">
     <h2 id="mini-games-title">Mini games</h2>
     <div className="mini-games-list">{miniGames.map(game => <article className="mini-game-card" key={game.id}>
       <h3>{game.name}</h3><p>{game.description}</p>

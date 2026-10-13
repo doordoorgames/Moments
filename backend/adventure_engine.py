@@ -26,6 +26,8 @@ ALL_EVENTS = ("sharifa_1", "otp", "sharifa_2", "zain_call", "train", "gulf", "sh
 # Scene stages that stop the shared countdown (nothing for players to do).
 PAUSING_SCENES = {("gulf", "greet"), ("gulf", "react"), ("gulf", "leave"), ("gulf", "wrong"),
                   ("door", "show"), ("door_locked", "show"), ("shop", "show")}
+# Durations the clients need to draw countdown bars.
+PUBLIC_TIMING = ("ring_ms", "otp_visible_ms", "otp_entry_ms", "train_answer_ms", "gulf_inspect_ms", "gulf_leave_ms", "finale_ms")
 
 
 class ActionError(Exception):
@@ -467,6 +469,8 @@ def _tick_playing(adv, ctx, now: int) -> None:
     changed |= _tick_phone(adv, ctx, now)
     changed |= _tick_scene(adv, ctx, now)
     if adv["status"] != "playing":
+        # The shop cutscene just handed over to the counter: everyone must hear about it now.
+        _bump(adv)
         return
     # Standing at the right door too early: bring the next story beat forward
     # instead of making everyone wait for the schedule.
@@ -808,15 +812,13 @@ def _a_interact(adv, ctx, actor, p, now, inst):
         raise ActionError(409, "Hold on a second")
     layout = layout_of(adv)
     pos = adv["pos"]
-    if pos["dir"] != "up":
-        raise ActionError(409, "Face the door first")
-    door = layout.door_at_front(pos["x"], pos["y"])
+    npc_line = _npc_line(adv, layout, pos)
+    if npc_line:
+        _feed(adv, npc_line, now, "npc")
+        return {"talk": npc_line}
+    door = layout.door_at_front(pos["x"], pos["y"]) if pos["dir"] == "up" else None
     if not door:
-        npc_line = _npc_line(adv, layout, pos)
-        if npc_line:
-            _feed(adv, npc_line, now, "npc")
-            return {"talk": npc_line}
-        raise ActionError(409, "Nothing to open here")
+        raise ActionError(409, "Face a door or a person first")
     if door["correct"]:
         if required_done(adv):
             adv["scene"] = {"kind": "shop", "stage": "show", "inst": uuid.uuid4().hex[:10], "until": now + T["shop_cutscene_ms"],
@@ -832,7 +834,7 @@ def _a_interact(adv, ctx, actor, p, now, inst):
     if not first_time:
         line = C.DOOR_LINES["repeat"]
     adv["scene"] = {"kind": "door", "stage": "show", "inst": uuid.uuid4().hex[:10], "line": line, "door": door["id"],
-                    "sign": door["sign"], "until": now + T["door_scene_ms"], "since": now}
+                    "sign": door["sign"], "until": now + T["door_scene_ms"], "since": now, "first": first_time}
     if first_time:
         adv["doors"].append(door["id"])
         _penalty(adv, "wrong_door", "Wrong shop", now)
@@ -847,7 +849,8 @@ NPC_LINES = {
 
 
 def _npc_line(adv, layout, pos) -> Optional[str]:
-    tx, ty = pos["x"], pos["y"] - 1
+    dx, dy = DIRS.get(pos.get("dir"), (0, -1))
+    tx, ty = pos["x"] + dx, pos["y"] + dy
     for npc in layout.npcs:
         if (npc["x"], npc["y"]) == (tx, ty):
             return NPC_LINES.get(npc["id"])
@@ -955,6 +958,7 @@ def start_finale(adv, ctx, now: int) -> None:
         hands.append(hand)
     adv["finale"] = {"grid": grid, "hands": hands, "dur": T["finale_ms"], "spent": 0, "since": now,
                      "assignee": assign(adv, ctx), "choice": None, "grabbed": []}
+    _bump(adv)
 
 
 def finish(adv, ctx, code: str, now: int, decoy: Optional[str] = None) -> None:
@@ -968,6 +972,7 @@ def finish(adv, ctx, code: str, now: int, decoy: Optional[str] = None) -> None:
     adv["outcome"] = {
         "result": "win" if code.startswith("win") else "lose", "code": code, "title": base["title"], "body": base["body"],
         "shaheen": base.get("shaheen"), "choice": (adv.get("finale") or {}).get("choice"),
+        "choice_name": PERFUMES.get((adv.get("finale") or {}).get("choice") or "", {}).get("name"),
         "chooser": (adv.get("finale") or {}).get("chooser"),
         "stats": {"remaining_ms": remaining, "penalty_s": sum(p["s"] for p in adv.get("pen", [])), "penalties": adv.get("pen", [])[-12:],
                   "doors": len(adv.get("doors", []))},
@@ -1204,6 +1209,8 @@ def public_view(adv, ctx, now: int) -> Dict[str, Any]:
         "doors_tried": list(adv.get("doors", [])), "gulf_state": adv.get("gulf_state", "waiting"),
         "finale": finale_view, "outcome": adv.get("outcome"), "feed": adv.get("feed", []),
         "penalties": adv.get("pen", [])[-6:], "paused": adv.get("paused", False),
+        "penalty_s": dict(C.PENALTY_S),
+        "timing": {k: T[k] for k in PUBLIC_TIMING},
     }
     if adv.get("test"):
         view["test_info"] = {

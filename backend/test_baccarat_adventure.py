@@ -417,6 +417,37 @@ def _at_counter(ctx, clock):
     return adv
 
 
+def test_shop_cutscene_hands_over_to_the_counter_with_a_published_change():
+    """The tick that turns the cutscene into the counter must report a change (it gets broadcast)."""
+    clock, ctx = Clock(), ctx_for()
+    adv = started(ctx, clock)
+    for eid in C.REQUIRED_EVENTS:
+        E._finish_event(adv, eid, True, clock.now)
+    layout = M.get_layout(adv["seed"], adv["variant"])
+    walk(adv, ctx, clock, layout.door_index[layout.destination_id]["front"], handle=lambda a: _auto(a, ctx, clock))
+    run_until(adv, ctx, clock, lambda a: (_auto(a, ctx, clock) or True) and not E.movement_lock(a) and not a.get("phone"))
+    face(adv, clock, "up")
+    assert E.act(adv, ctx, HOST, "interact", {}, clock.now)["door"] == "open"
+    clock.advance(C.TIMING["shop_cutscene_ms"] + 10)
+    assert E.tick(adv, ctx, clock.now) is True
+    assert adv["status"] == "finale" and E.public_view(adv, ctx, clock.now)["finale"]["grid"]
+
+
+def test_npcs_answer_whichever_way_shoug_faces():
+    clock, ctx = Clock(), ctx_for()
+    adv = started(ctx, clock)
+    layout = M.get_layout(adv["seed"], adv["variant"])
+    npc = next(n for n in layout.npcs if n["id"] in E.NPC_LINES)
+    spots = [(npc["x"] + dx, npc["y"] + dy, d) for d, (dx, dy) in {"left": (1, 0), "right": (-1, 0), "up": (0, 1), "down": (0, -1)}.items()]
+    x, y, direction = next(s for s in spots if E.walkable(adv, s[0], s[1]))
+    adv["pos"].update({"x": x, "y": y, "dir": direction})
+    out = E.act(adv, ctx, HOST, "interact", {}, clock.now)
+    assert out["talk"] == E.NPC_LINES[npc["id"]]
+    adv["pos"]["dir"] = {"left": "right", "right": "left", "up": "down", "down": "up"}[direction]
+    with pytest.raises(E.ActionError):
+        E.act(adv, ctx, HOST, "interact", {}, clock.now)
+
+
 def test_gucci_oud_is_wrong_while_the_swan_is_available():
     clock, ctx = Clock(), ctx_for()
     adv = _at_counter(ctx, clock)

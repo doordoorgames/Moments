@@ -381,7 +381,10 @@ def _decor(layout: Layout, rng: random.Random) -> None:
 
     # Fountain and clock tower (landmarks)
     g.props.append({"kind": "fountain", "x": 25, "y": 42, "variant": "grand"})
-    _prop(g, "clock_tower", 25, 24, [(x, y) for x in range(25, 29) for y in range(26, 29)], "classic")
+    # Landmark: deliberately inside the corridor, people walk around it.
+    for tile in [(x, y) for x in range(25, 29) for y in range(26, 29)]:
+        g.blocked.add(tile)
+    g.props.append({"kind": "clock_tower", "x": 25, "y": 24, "variant": "classic"})
     # Entrance gate arch
     g.props.append({"kind": "gate", "x": 21, "y": 84, "variant": "bicester"})
     for (x, y) in ((21, 87), (21, 88), (32, 87), (32, 88)):
@@ -425,6 +428,17 @@ def _decor(layout: Layout, rng: random.Random) -> None:
     for (x, y) in ((22, 31), (31, 32), (16, 41), (37, 41), (22, 75), (31, 75), (23, 53), (30, 53)):
         _prop(g, "bush", x, y, [(x, y)], rng.choice(["round", "cone"]))
     _prop(g, "phonebox", 36, 85, [(36, 85), (36, 86)], "red")
+    # Courts: benches and planters along the edges, never in front of doors.
+    for (x, y) in ((2, 15), (13, 15), (19, 14), (32, 14), (37, 14), (49, 15)):
+        _prop(g, "planter", x, y, [(x, y)], rng.choice(["pink", "white", "lilac", "red"]))
+    # Gardens: topiary rows along the gravel walks and benches to rest on.
+    for y in range(52, 72, 4):
+        for x in (7, 9, 44, 46):
+            _prop(g, "tree", x, y, [(x, y)], "topiary")
+    for (x, y, v) in ((4, 51, "h"), (10, 51, "h"), (41, 51, "h"), (47, 51, "h")):
+        _prop(g, "bench", x, y, [(x, y), (x + 1, y)], v)
+    for (x, y) in ((4, 79), (8, 83), (12, 78), (41, 79), (45, 83), (49, 78), (6, 75), (47, 75)):
+        _prop(g, "tree", x, y, [(x, y)], rng.choice(["blossom", "round", "oak"]))
     _prop(g, "signpost", 22, 51, [(22, 51)], "village")
     _prop(g, "cafe_table", 21, 23, [(21, 23)], "green")
     _prop(g, "cafe_table", 32, 23, [(32, 23)], "pink")
@@ -468,9 +482,9 @@ def _walkers(layout: Layout, rng: random.Random) -> None:
 
 def _stationary_npcs(layout: Layout) -> None:
     spots = [
-        ("busker", "busker", 22, 44, "right"),
-        ("shopkeeper", "shopkeeper", 25, 76, "down"),
-        ("bench_sitter", "flatcap", 3, 32, "right"),
+        ("busker", "busker", 19, 50, "right"),
+        ("shopkeeper", "shopkeeper", 22, 79, "down"),
+        ("bench_sitter", "flatcap", 3, 31, "right"),
     ]
     for npc_id, skin, x, y, facing in spots:
         if layout.walkable(x, y) and (x, y) not in layout.keep_clear:

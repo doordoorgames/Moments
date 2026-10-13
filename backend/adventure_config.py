@@ -59,34 +59,24 @@ SCHEDULE = {
 
 REQUIRED_EVENTS = ("otp", "zain_call", "train", "gulf")
 
+_VOICE_CLUE = (
+    "Shoug, it's Shaheen. I need a huge favour. I want to surprise Mama with her perfume, "
+    "but I can't remember the name. It's a see-through bottle, the cap is a little gold animal, "
+    "and it's something to do with water. The shop is at the far end of the village. "
+)
+_VOICE_ROUTE = {
+    "west": "Walk straight up the main street to the fountain, turn left, and follow that lane all the way up to the end. ",
+    "north": "Walk straight up the main street, go past the fountain and past the clock tower, and keep going all the way to the end. ",
+    "east": "Walk straight up the main street to the fountain, turn right, and follow that lane all the way up to the end. ",
+}
+_VOICE_END = (
+    "Golden double doors. It's discounted, so it sells out fast. If they've sold out of it, get Gucci Oud instead. "
+    "But only if you really can't get the first one. Yalla, hurry before someone grabs it!"
+)
+
 VOICE_NOTE = {
     "from": "Shaheen",
-    "scripts": {
-        "west": (
-            "Shoug, it's Shaheen. I need a huge favour. I want to surprise Mama with her perfume, "
-            "but I can't remember the name. It's a see-through bottle, the cap is a little gold animal, "
-            "and it's something to do with water. The shop is at the far end of the village. "
-            "Walk straight up the main street to the fountain, turn left, and follow that lane all the way up to the end. "
-            "Golden double doors. It's discounted, so it sells out fast. If you can't find anything with the gold animal cap, "
-            "get Gucci Oud instead. But only if you can't find the first one. Yalla, hurry before someone grabs it!"
-        ),
-        "north": (
-            "Shoug, it's Shaheen. I need a huge favour. I want to surprise Mama with her perfume, "
-            "but I can't remember the name. It's a see-through bottle, the cap is a little gold animal, "
-            "and it's something to do with water. The shop is at the far end of the village. "
-            "Walk straight up the main street, go past the fountain and past the clock tower, and keep going all the way to the end. "
-            "Golden double doors. It's discounted, so it sells out fast. If you can't find anything with the gold animal cap, "
-            "get Gucci Oud instead. But only if you can't find the first one. Yalla, hurry before someone grabs it!"
-        ),
-        "east": (
-            "Shoug, it's Shaheen. I need a huge favour. I want to surprise Mama with her perfume, "
-            "but I can't remember the name. It's a see-through bottle, the cap is a little gold animal, "
-            "and it's something to do with water. The shop is at the far end of the village. "
-            "Walk straight up the main street to the fountain, turn right, and follow that lane all the way up to the end. "
-            "Golden double doors. It's discounted, so it sells out fast. If you can't find anything with the gold animal cap, "
-            "get Gucci Oud instead. But only if you can't find the first one. Yalla, hurry before someone grabs it!"
-        ),
-    },
+    "scripts": {variant: _VOICE_CLUE + route + _VOICE_END for variant, route in _VOICE_ROUTE.items()},
     # Set to a public audio URL (e.g. "/baccarat-adventure/audio/shaheen-west.mp3") once recorded.
     "audio": {"west": None, "north": None, "east": None},
 }
@@ -226,11 +216,11 @@ HANDS = [
 ]
 
 OUTCOMES = {
-    "win_primary": {"title": "Mission complete", "body": "Cygne Marin. Clear bottle, gold swan, all about water. Shaheen's mama is going to cry.",
+    "win_primary": {"title": "The swan is ours", "body": "Clear bottle, gold swan, all about water. Exactly the one Shaheen described.",
                     "shaheen": "YOU'RE A LEGEND. Mama is going to cry."},
-    "win_fallback": {"title": "Mission complete", "body": "The swan got snatched, so Gucci Oud it is. Exactly what Shaheen said to do.",
+    "win_fallback": {"title": "Gucci Oud it is", "body": "The swan got snatched, so you took the backup. Exactly what Shaheen said to do.",
                      "shaheen": "Gucci Oud?? Wait... the swan was gone? Then that's PERFECT. Thank you!!"},
-    "lose_fallback_early": {"title": "Wrong bottle", "body": "Shaheen said Gucci Oud ONLY if you couldn't find the first one. Cygne Marin was right there.",
+    "lose_fallback_early": {"title": "Too soon for Gucci", "body": "Shaheen said Gucci Oud ONLY if the first one was gone. Cygne Marin was still on the shelf.",
                             "shaheen": "Gucci Oud?? I said ONLY if you couldn't find the first one..."},
     "lose_decoy": {"title": "Wrong bottle", "shaheen": "Shoug. That is not Mama's perfume."},
     "lose_finale_timeout": {"title": "Too slow", "body": "The counter emptied while everyone argued.",

@@ -1953,6 +1953,8 @@ class AdventureActionRequest(RoomSessionRequest):
     action: str
     inst: Optional[str] = None
     value: Optional[str] = None
+    # Navigator's latest movement seq when pressing A, so the door check waits for an in-flight step.
+    seq: Optional[int] = None
 
 
 class AdventureDevRequest(RoomSessionRequest):
@@ -2159,6 +2161,12 @@ async def adventure_action(code: str, payload: AdventureActionRequest):
     entry = await _adventure_entry(code)
     if not entry:
         raise HTTPException(404, "This room is not playing The Baccarat Hunt")
+    if payload.action == "interact" and payload.seq:
+        # Steps travel over the socket, A over HTTP: give a step that is still in flight a moment to land.
+        for _ in range(16):
+            if entry["adv"].get("pos", {}).get("seq", 0) >= payload.seq:
+                break
+            await asyncio.sleep(0.05)
     async with _adventure_locks[code]:
         adv = entry["adv"]
         if payload.run_id != adv["run_id"]:

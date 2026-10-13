@@ -1,4 +1,5 @@
 import "@/App.css";
+import { lazy, Suspense } from "react";
 import MomentsTypography from "@/components/typography/MomentsTypography";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { Toaster } from "@/components/ui/sonner";
@@ -13,6 +14,8 @@ import ShougVillagePrototype from "@/pages/ShougVillagePrototype";
 
 import SoloMiniGame from "@/components/miniGames/MiniGames";
 
+const BaccaratAdventureRoom = lazy(() => import("@/components/baccaratAdventure/BaccaratAdventureRoom"));
+
 function AdminGate({ children }) {
     const token = localStorage.getItem("admin_token");
     if (!token) return <Navigate to="/admin" replace />;
@@ -25,6 +28,7 @@ function App() {
             <BrowserRouter>
                 <Routes>
                     <Route path="/" element={<Landing />} />
+                    <Route path="/mini-games/baccarat-hunt/room/:code" element={<Suspense fallback={null}><BaccaratAdventureRoom /></Suspense>} />
                     <Route path="/mini-games/:gameId" element={<SoloMiniGame />} />
                     <Route path="/visual-test" element={<Navigate to="/" replace />} />
                     <Route path="/shoug-2" element={<ShougVillagePrototype />} />

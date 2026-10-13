@@ -41,6 +41,12 @@ export default function PlayRoom({ shoug2 = false }) {
         if (!player) nav("/play", { replace: true });
     }, [player, nav]);
 
+    // Rooms created for The Baccarat Hunt play in their own adventure screen.
+    const roomPhase = (state || bootState)?.room?.phase || "";
+    useEffect(() => {
+        if (roomPhase.startsWith("adventure")) nav(`/mini-games/baccarat-hunt/room/${encodeURIComponent(code)}`, { replace: true });
+    }, [roomPhase, code, nav]);
+
     const instant = useInstantStory(code, player, state || bootState, applyState);
     const sourceState = instant.state;
     let packingChallenge = null;

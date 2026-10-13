@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
-import { api } from "@/lib/api";
+import { api, apiErrorMessage } from "@/lib/api";
 import { ArrowLeft, DoorOpen, Plus } from "lucide-react";
 
 export default function PlayJoin() {
@@ -13,6 +13,7 @@ export default function PlayJoin() {
     const [code, setCode] = useState("");
     const [nickname, setNickname] = useState("");
     const [busy, setBusy] = useState(false);
+    const [error, setError] = useState("");
 
     const handleJoin = async (e) => {
         e?.preventDefault?.();
@@ -20,13 +21,15 @@ export default function PlayJoin() {
             toast.error("Enter a room code and nickname.");
             return;
         }
+        setError("");
         setBusy(true);
         try {
             const player = await api.joinRoom(code.trim().toUpperCase(), nickname.trim());
             localStorage.setItem(`player_${code.trim().toUpperCase()}`, JSON.stringify(player));
             nav(`/play/${code.trim().toUpperCase()}`);
         } catch (err) {
-            toast.error(err?.response?.data?.detail || "Could not join room.");
+            const message = apiErrorMessage(err, "Could not join room. Please try again.");
+            setError(message); toast.error(message);
         } finally {
             setBusy(false);
         }
@@ -37,6 +40,7 @@ export default function PlayJoin() {
             toast.error("Enter a nickname first.");
             return;
         }
+        setError("");
         setBusy(true);
         try {
             const room = await api.createRoom(nickname.trim());
@@ -44,7 +48,8 @@ export default function PlayJoin() {
             localStorage.setItem(`player_${room.code}`, JSON.stringify(player));
             nav(`/play/${room.code}`);
         } catch (err) {
-            toast.error(err?.response?.data?.detail || "Could not create room.");
+            const message = apiErrorMessage(err, "Could not create room. Please try again.");
+            setError(message); toast.error(message);
         } finally {
             setBusy(false);
         }
@@ -53,6 +58,7 @@ export default function PlayJoin() {
     return (
         <div className="min-h-screen bg-background">
             <div className="mx-auto max-w-md px-4 pt-6 pb-24 sm:px-6">
+                {error && <p role="alert" className="mb-4 rounded-md border border-destructive p-3 text-sm">{error}</p>}
                 <button
                     onClick={() => nav("/")}
                     className="mb-6 inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"

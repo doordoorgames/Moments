@@ -89,6 +89,8 @@ export const api = {
     selectStory: (code, story_id, presentation = "classic", session = {}) =>
         axios.post(apiUrl(`/rooms/${code}/select-story`), { story_id, presentation, ...session }).then((r) => r.data),
     startRoom: (code, session = {}) => axios.post(apiUrl(`/rooms/${code}/start`), session).then((r) => r.data),
+    submitPackLight: (code, payload) => axios.post(apiUrl(`/rooms/${code}/shoug2/pack-light/result`), payload).then(r => r.data),
+    continuePackLight: (code, payload) => axios.post(apiUrl(`/rooms/${code}/shoug2/pack-light/continue`), payload).then(r => r.data),
     resetRoom: (code, session = {}) => axios.post(apiUrl(`/rooms/${code}/reset`), session).then((r) => r.data),
     castVote: (code, player_id, choice_id, node_id, session_token, visit_id) =>
         axios.post(apiUrl(`/rooms/${code}/vote`), { player_id, choice_id, node_id, session_token, visit_id }).then((r) => r.data),

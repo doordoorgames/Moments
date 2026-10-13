@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { api } from "@/lib/api";
+import { api, apiErrorMessage } from "@/lib/api";
 import { useInstantStory } from "@/hooks/useInstantStory";
 import { useRoomSocket } from "@/hooks/useRoomSocket";
 import { toast } from "sonner";
@@ -8,14 +8,12 @@ import Lobby from "@/components/player/Lobby";
 import SharedStory from "@/components/player/SharedStory";
 import Shoug2Story from "@/components/player/Shoug2Story";
 import SupremeControls from "@/components/player/SupremeControls";
-import PackLightShoug from "@/components/shoug2/PackLightShoug";
+import PackLightStage from "@/components/shoug2/PackLightStage";
 import Ending from "@/components/player/Ending";
 import { Loader2 } from "lucide-react";
 
 export default function PlayRoom({ shoug2 = false }) {
     const { code } = useParams();
-    const [packing, setPacking] = useState(false);
-    const [packLightResult, setPackLightResult] = useState(() => { try { return JSON.parse(localStorage.getItem(`packLight_${code}`) || "null"); } catch { return null; } });
     const nav = useNavigate();
     const [player, setPlayer] = useState(() => {
         try {
@@ -28,11 +26,12 @@ export default function PlayRoom({ shoug2 = false }) {
 
     // Fallback initial fetch in case WS is slow
     const [bootState, setBootState] = useState(null);
+    const [bootError, setBootError] = useState("");
     const fetchBoot = useCallback(async () => {
         try {
             const s = await api.getRoom(code);
-            setBootState(s);
-        } catch {}
+            setBootState(s); setBootError("");
+        } catch (err) { setBootError(apiErrorMessage(err, "Could not connect to your room.")); }
     }, [code]);
     useEffect(() => {
         fetchBoot();
@@ -55,16 +54,12 @@ export default function PlayRoom({ shoug2 = false }) {
     };
     const handleSelectShoug2 = (storyId) => handleSelectStory(storyId, true);
     const handleStart = async () => {
-        if (roomState?.room?.presentation === "shoug2") {
-            if ((roomState.players || []).length > 1) { toast.error("Group play is not ready in this preview."); return; }
-            setPacking(true);
-            return;
-        }
         try {
-            await api.startRoom(code, session);
+            const actual = await api.startRoom(code, session);
+            if (actual?.room) applyState(actual);
 
         } catch (err) {
-            toast.error(err?.response?.data?.detail || "Failed to start");
+            toast.error(apiErrorMessage(err, "Could not start the tale. Please retry."));
         }
     };
     const handleReset = async () => {
@@ -80,7 +75,7 @@ export default function PlayRoom({ shoug2 = false }) {
         return (
             <div className="flex min-h-screen items-center justify-center bg-background">
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Loader2 className="h-4 w-4 animate-spin" /> Connecting to room {code}…
+                    {bootError ? <div role="alert">{bootError}<button className="block mt-4" onClick={fetchBoot}>Retry connection</button></div> : <><Loader2 className="h-4 w-4 animate-spin" /> Connecting to room {code}…</>}
                 </div>
             </div>
         );
@@ -91,16 +86,9 @@ export default function PlayRoom({ shoug2 = false }) {
     const shoug2Active = shoug2Selected;
     const players = roomState.players || [];
 
-    const savePacking = result => {
-        localStorage.setItem(`packLight_${code}`, JSON.stringify(result));
-        setPackLightResult(result);
-    };
-    if (packing && shoug2Active) return <PackLightShoug onResult={savePacking} onContinue={async result => {
-        savePacking(result);
-        await api.startRoom(code, session);
-        await fetchBoot();
-        setPacking(false);
-    }} />;
+    if (shoug2Active && roomState.pack_light && ["pack_light", "pack_light_finishing"].includes(room.phase)) {
+        return <PackLightStage key={`${code}_${roomState.pack_light.run_id}`} code={code} player={player} state={roomState} onState={applyState} />;
+    }
 
     const controls = <SupremeControls code={code} player={player} state={roomState} onState={applyState} saving={instant.saving} />;
 
@@ -140,6 +128,6 @@ export default function PlayRoom({ shoug2 = false }) {
 
     // Story runtime
     return <>{controls}{shoug2Active && /shoug[’\x27]?s tale/i.test(roomState.story?.title || "")
-        ? <Shoug2Story state={{...roomState, miniGames:{packLight:packLightResult}}} player={player} code={code} onState={applyState} onChoose={instant.choose} navigationReady={instant.ready} />
+        ? <Shoug2Story state={roomState} player={player} code={code} onState={applyState} onChoose={instant.choose} navigationReady={instant.ready} />
         : <SharedStory state={roomState} player={player} code={code} onState={applyState} onChoose={instant.choose} navigationReady={instant.ready} />}</>;
 }

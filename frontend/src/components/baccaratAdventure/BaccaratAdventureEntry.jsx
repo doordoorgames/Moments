@@ -1,13 +1,22 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { flushSync } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { api, apiErrorMessage } from "@/lib/api";
 import { shougPortrait } from "./ui/pixelImages";
+import { guideTarget } from "./ui/guide";
 import { SFX } from "./sound";
 import "./BaccaratAdventure.css";
 
 export function roomPath(code) {
     return `/mini-games/baccarat-hunt/room/${encodeURIComponent(code)}`;
+}
+
+// Blinking black arrow with a hard white shadow, pointing at where to type or tap.
+function GuideArrow({ below = false }) {
+    return <svg className={`bh-guide ${below ? "bh-guide--below" : ""}`} viewBox="0 0 40 28" aria-hidden="true">
+        <path d="M2 14 L16 2 V9 H38 V19 H16 V26 Z" fill="#0C0C0C" />
+    </svg>;
 }
 
 // Mini games → The Baccarat Hunt: create a room (TEST99 starts a solo test) or join one.
@@ -18,6 +27,11 @@ export default function BaccaratAdventureEntry({ onContinue }) {
     const [code, setCode] = useState((params.get("code") || "").toUpperCase());
     const [busy, setBusy] = useState(false);
     const [error, setError] = useState("");
+    const [mode, setMode] = useState(null);
+    const [codeStep, setCodeStep] = useState(false);
+    const [buttonArrow, setButtonArrow] = useState(false);
+    const nickRef = useRef(null);
+    const codeRef = useRef(null);
     const create = async () => {
         if (!nickname.trim() || busy) return;
         SFX.unlock();
@@ -55,6 +69,46 @@ export default function BaccaratAdventureEntry({ onContinue }) {
             setBusy(false);
         }
     };
+    // iOS only opens the keyboard when focus() runs inside the tap or Enter handler on an
+    // input that is already mounted and visible, so the field is rendered synchronously first.
+    const choose = (next) => {
+        SFX.unlock();
+        setError("");
+        flushSync(() => { setMode(next); setCodeStep(false); setButtonArrow(false); });
+        const input = nickRef.current;
+        if (input) {
+            input.focus();
+            input.scrollIntoView({ block: "center" });
+        }
+    };
+    const toCode = () => {
+        setCodeStep(true);
+        const input = codeRef.current;
+        if (input) {
+            input.focus();
+            input.scrollIntoView({ block: "center" });
+        }
+    };
+    const onNickKey = (e) => {
+        if (e.key !== "Enter") return;
+        e.preventDefault();
+        if (mode === "create") create();
+        else toCode();
+    };
+    const onCodeKey = (e) => {
+        if (e.key !== "Enter") return;
+        e.preventDefault();
+        join();
+    };
+    // Guide arrow: on the nickname until the first character; on the create path it comes
+    // back 2s later on the Create button; on the join path it moves to the room code.
+    const typed = nickname.length > 0;
+    useEffect(() => {
+        if (mode !== "create" || !typed) { setButtonArrow(false); return undefined; }
+        const t = setTimeout(() => setButtonArrow(true), 2000);
+        return () => clearTimeout(t);
+    }, [mode, typed]);
+    const arrowAt = guideTarget({ mode, nickname, code, codeStep, buttonArrow });
     return <main className="bh-page" data-typography-ignore>
         <section className="bh-card bh-entry">
             <span className="bh-kicker">Shoug's Tale · Mini game</span>
@@ -62,15 +116,35 @@ export default function BaccaratAdventureEntry({ onContinue }) {
             <img className="bh-entry-shoug" src={shougPortrait(3)} alt="Shoug seen from behind, ready to walk" />
             <p className="bh-lead">Golden hour at Bicester Village. Shaheen needs his mama's perfume, Zain needs a code, and Sharifa will not stop calling. Play together, one room, every phone.</p>
             {error && <p className="bh-error" role="alert">{error}</p>}
-            <label className="bh-field"><span>Your name</span>
-                <input value={nickname} onChange={(e) => setNickname(e.target.value)} maxLength={20} placeholder="Nickname" autoComplete="off" />
-            </label>
-            <button type="button" className="bh-btn" disabled={!nickname.trim() || busy} onClick={create}>Create a room</button>
-            <div className="bh-or"><span>or join friends</span></div>
-            <label className="bh-field"><span>Room code</span>
-                <input value={code} onChange={(e) => setCode(e.target.value.toUpperCase())} maxLength={8} placeholder="E.g. Z8H4Q" autoComplete="off" className="bh-code-input" />
-            </label>
-            <button type="button" className="bh-btn bh-btn--ghost" disabled={!nickname.trim() || !code.trim() || busy} onClick={join}>Join room</button>
+            {!mode && <div className="bh-choose">
+                <h2 className="bh-choose-q">Create a room or join a room?</h2>
+                <button type="button" className="bh-btn" onClick={() => choose("create")}>Create Room</button>
+                <button type="button" className="bh-btn bh-btn--ghost" onClick={() => choose("join")}>Join Room</button>
+            </div>}
+            {mode && <div className="bh-choose">
+                <h2 className="bh-choose-q">{mode === "create" ? "Create a room" : "Join a room"}</h2>
+                <div className="bh-aim">
+                    <input ref={nickRef} className="bh-input" value={nickname} onChange={(e) => setNickname(e.target.value)} onKeyDown={onNickKey}
+                        maxLength={20} placeholder="Nickname" aria-label="Nickname" autoComplete="off" autoCorrect="off" spellCheck={false}
+                        enterKeyHint={mode === "create" ? "go" : "next"} />
+                    {arrowAt === "nick" && <GuideArrow />}
+                </div>
+                {mode === "join" && <div className="bh-aim">
+                    <input ref={codeRef} className="bh-input bh-code-input" value={code} onChange={(e) => setCode(e.target.value.toUpperCase())}
+                        onKeyDown={onCodeKey} onFocus={() => setCodeStep(true)} maxLength={8} placeholder="Room code" aria-label="Room code"
+                        autoComplete="off" autoCorrect="off" autoCapitalize="characters" spellCheck={false} enterKeyHint="go" />
+                    {arrowAt === "code" && <GuideArrow />}
+                </div>}
+                <div className="bh-aim">
+                    {mode === "create"
+                        ? <button type="button" className="bh-btn" disabled={!nickname.trim() || busy} onClick={create}>Create</button>
+                        : <button type="button" className="bh-btn" disabled={!nickname.trim() || !code.trim() || busy} onClick={join}>Join</button>}
+                    {arrowAt === "create" && <GuideArrow below />}
+                </div>
+                <button type="button" className="bh-link bh-switch" onClick={() => choose(mode === "create" ? "join" : "create")}>
+                    {mode === "create" ? "Join a room instead" : "Create a room instead"}
+                </button>
+            </div>}
             <div className="bh-entry-links">
                 <button type="button" className="bh-link" onClick={() => navigate("/mini-games/baccarat-classic")}>Play the classic one-screen version</button>
                 <button type="button" className="bh-link" onClick={onContinue}>Back to mini games</button>

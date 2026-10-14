@@ -72,7 +72,8 @@ def word_ms(word: str) -> int:
 
 
 def voice_duration(script: str) -> int:
-    return sum(word_ms(w) for w in script.split()) + 700
+    # **markers** only style key words on screen; they are never spoken.
+    return sum(word_ms(w) for w in script.replace("**", "").split()) + 700
 
 
 def layout_of(adv) :
@@ -1179,12 +1180,14 @@ def public_view(adv, ctx, now: int) -> Dict[str, Any]:
     intro = adv["intro"]
     voice = intro["voice"]
     voice_view = {"status": voice["status"], "start_ms": voice["start_ms"], "dur_ms": voice["dur_ms"], "from": C.VOICE_NOTE["from"]}
-    if voice["status"] == "playing" and now < voice["start_ms"] + voice["dur_ms"] + 1500:
-        # The only moment the clues exist on anyone's screen.
+    if adv["status"] != "lobby":
+        # The full transcript shows as one block the moment the voice note appears,
+        # and stays in Shoug's phone for the rest of the hunt. The audio still plays once.
         voice_view["script"] = C.VOICE_NOTE["scripts"][adv["variant"]]
         voice_view["audio"] = C.VOICE_NOTE["audio"].get(adv["variant"])
     intro_view = {"stage": intro["stage"], "voice": voice_view, "ready": list(intro["ready"]), "zain_ms": intro.get("zain_ms")}
-    if adv["status"] == "intro" and intro["stage"] == "zain":
+    if adv["status"] != "lobby" and intro["stage"] in ("zain", "done"):
+        # Zain's texts, once received, stay readable in Shoug's phone.
         intro_view["zain"] = C.ZAIN_INTRO
     f = adv.get("finale") or {}
     finale_view = None

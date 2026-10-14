@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { SFX } from "../sound";
+import { highlightParts, plainText } from "./guide";
 
 export function useNow(intervalMs = 250) {
     const [now, setNow] = useState(() => Date.now());
@@ -55,6 +56,18 @@ export function PhoneFrame({ children, label = "Shoug's phone", tone = "" }) {
         </div>
     </div>;
 }
+
+// Voice-note transcripts: one full block, all at once. **Key words** in the message
+// data render bold with a yolk highlighter behind them.
+export function Transcript({ text, className = "" }) {
+    const parts = highlightParts(text);
+    if (!parts.length) return null;
+    return <p className={`bh-transcript ${className}`}>
+        {parts.map((p, i) => (p.hl ? <b key={i} className="bh-hl">{p.text}</b> : <span key={i}>{p.text}</span>))}
+    </p>;
+}
+
+export { plainText };
 
 export function Keypad({ length = 4, maxLength = 6, autoSubmit = true, onSubmit, disabled = false, prefix = "", hint = "" }) {
     const [value, setValue] = useState("");

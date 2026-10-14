@@ -136,7 +136,10 @@ def test_voice_note_plays_once_and_gates_the_start():
     with pytest.raises(E.ActionError):
         E.act(adv, ctx, HOST, "begin", {}, clock.now)
     view = E.public_view(adv, ctx, clock.now)
-    assert "script" not in view["intro"]["voice"]
+    # The whole transcript is there as one block as soon as the voice note appears.
+    script = view["intro"]["voice"]["script"]
+    assert "**golden double doors**" in script and "**if not, Gucci Oud**" in script
+    assert "zain" not in view["intro"]
     E.act(adv, ctx, GUEST1, "voice_play", {}, clock.now)
     assert "turn left" in json.dumps(E.public_view(adv, ctx, clock.now)) or adv["variant"] != "west"
     with pytest.raises(E.ActionError) as again:
@@ -145,14 +148,23 @@ def test_voice_note_plays_once_and_gates_the_start():
     clock.advance(adv["intro"]["voice"]["dur_ms"] + 2000)
     E.tick(adv, ctx, clock.now)
     view = E.public_view(adv, ctx, clock.now)
-    assert "script" not in view["intro"]["voice"] and view["intro"]["stage"] == "zain"
+    assert view["intro"]["voice"]["script"] == script and view["intro"]["stage"] == "zain"
     assert any("7 PM" in m for m in view["intro"]["zain"])
     with pytest.raises(E.ActionError):
         E.act(adv, ctx, GUEST1, "begin", {}, clock.now)
     E.act(adv, ctx, HOST, "begin", {}, clock.now)
     assert adv["status"] == "playing"
     view = E.public_view(adv, ctx, clock.now)
-    assert "zain" not in view["intro"] and "script" not in view["intro"]["voice"]
+    # Received messages stay available for the in-game phone.
+    assert view["intro"]["voice"]["script"] == script and view["intro"]["zain"]
+
+
+def test_voice_note_is_short_and_markers_are_not_timed():
+    for script in E.C.VOICE_NOTE["scripts"].values():
+        plain = script.replace("**", "")
+        assert plain.count(".") <= 3 and len(plain.split()) <= 50
+        assert E.voice_duration(script) == E.voice_duration(plain)
+        assert script.count("**") % 2 == 0
 
 
 # ------------------------------------------------------------------ movement

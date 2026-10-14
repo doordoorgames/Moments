@@ -1,28 +1,15 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { PhoneFrame, formatClock } from "./common";
-import { SFX, wordMs } from "../sound";
+import { useEffect, useRef, useState } from "react";
+import { PhoneFrame, Transcript, formatClock } from "./common";
+import { SFX } from "../sound";
 
 const BARS = Array.from({ length: 34 }, (_, i) => 0.25 + 0.75 * Math.abs(Math.sin(i * 1.7) * Math.cos(i * 0.6)));
 const ZAIN_GAP = 1300;
 
+export const VOICE_BARS = BARS;
+
 function VoiceNote({ voice, serverNow, onPlay, busy }) {
-    const words = useMemo(() => (voice.script ? voice.script.split(/\s+/) : []), [voice.script]);
-    const ends = useMemo(() => {
-        let t = 0;
-        return words.map((w) => (t += wordMs(w)));
-    }, [words]);
     const elapsed = voice.status === "playing" ? Math.max(0, serverNow() - voice.start_ms) : 0;
-    const shown = voice.status === "playing" ? ends.filter((e) => e - wordMs("a") <= elapsed).length : 0;
     const progress = voice.status === "done" ? 1 : voice.status === "playing" ? Math.min(1, elapsed / voice.dur_ms) : 0;
-    const lastWord = useRef(0);
-    useEffect(() => {
-        if (shown > lastWord.current) {
-            const word = words[shown - 1] || "";
-            const syllables = Math.min(3, Math.max(1, (word.match(/[aeiouy]+/gi) || []).length));
-            for (let k = 0; k < syllables; k++) setTimeout(() => SFX.blip(130), k * 70);
-        }
-        lastWord.current = shown;
-    }, [shown, words]);
     const audioRef = useRef(null);
     useEffect(() => {
         const el = audioRef.current;
@@ -30,8 +17,6 @@ function VoiceNote({ voice, serverNow, onPlay, busy }) {
         el.currentTime = Math.max(0, (serverNow() - voice.start_ms) / 1000);
         el.play().catch(() => { /* captions still carry the message */ });
     }, [voice.status, voice.start_ms, serverNow]);
-    // Karaoke window: the last few lines only, so nothing ever needs scrolling.
-    const windowStart = Math.max(0, shown - 22);
     return <div className={`bh-voice bh-voice--${voice.status}`}>
         <div className="bh-voice-row">
             <button type="button" className="bh-voice-play" disabled={voice.status !== "ready" || busy}
@@ -45,13 +30,10 @@ function VoiceNote({ voice, serverNow, onPlay, busy }) {
             </div>
             <span className="bh-voice-time">{voice.status === "playing" ? formatClock(voice.dur_ms - elapsed) : formatClock(voice.dur_ms)}</span>
         </div>
+        <Transcript text={voice.script} />
         {voice.status === "ready" && <p className="bh-voice-note">Plays once. Listen together.</p>}
-        {voice.status === "playing" && <p className="bh-voice-captions" aria-live="polite">
-            {windowStart > 0 && <span className="bh-dim">... </span>}
-            {words.slice(windowStart, shown).join(" ")}
-        </p>}
         {voice.status === "done" && <p className="bh-voice-note">Played. Hope someone was listening.</p>}
-        <p className="bh-placeholder-tag">Audio placeholder: captions play in sync, once</p>
+        <p className="bh-placeholder-tag">Audio placeholder</p>
         {voice.audio && voice.status === "playing" && <audio ref={audioRef} src={voice.audio} preload="auto" />}
     </div>;
 }

@@ -6,6 +6,7 @@ import { Hud, FeedToasts } from "./ui/Hud";
 import { Controls } from "./ui/Controls";
 import { IntroOverlay } from "./ui/IntroOverlay";
 import { PhoneOverlay } from "./ui/PhoneOverlay";
+import { PhoneButton, useReceivedOtp } from "./ui/PhoneButton";
 import { SceneDialog } from "./ui/SceneDialog";
 import { PerfumeCounter } from "./ui/PerfumeCounter";
 import { EndingCard } from "./ui/EndingCard";
@@ -58,6 +59,7 @@ export default function AdventureGame({ code, player, room, onExit }) {
     const advRef = useRef(adventure);
     advRef.current = adventure;
     useNow(250);
+    const receivedOtp = useReceivedOtp(adventure.run_id, privateData);
 
     const runId = adventure.run_id;
     useEffect(() => {
@@ -167,6 +169,7 @@ export default function AdventureGame({ code, player, room, onExit }) {
             <SceneDialog adventure={adventure} me={me} act={act} busy={busy} serverNow={serverNow} />
             {showControls && <Controls onDir={(d) => controller?.setInput(d)} onA={() => interactRef.current()} hint={hint} disabled={!!adventure.lock || !layout} />}
             {!isNav && !sceneActive && <div className="bh-role" role="status"><b>{navName}</b> is steering Shoug. Shout directions!</div>}
+            {!phoneActive && !sceneActive && <PhoneButton adventure={adventure} me={me} otp={receivedOtp} />}
         </>}
         {status === "finale" && <PerfumeCounter adventure={adventure} me={me} act={act} busy={busy} serverNow={serverNow} />}
         {status === "ended" && <EndingCard adventure={adventure} me={me} isHost={isHost} act={act} busy={busy} onExit={onExit} />}

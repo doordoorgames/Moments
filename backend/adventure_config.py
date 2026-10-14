@@ -59,20 +59,18 @@ SCHEDULE = {
 
 REQUIRED_EVENTS = ("otp", "zain_call", "train", "gulf")
 
+# Key words are wrapped in **double asterisks**: every phone renders them bold with a
+# yolk highlighter. Timing ignores the markers.
 _VOICE_CLUE = (
-    "Shoug, it's Shaheen. I need a huge favour. I want to surprise Mama with her perfume, "
-    "but I can't remember the name. It's a see-through bottle, the cap is a little gold animal, "
-    "and it's something to do with water. The shop is at the far end of the village. "
+    "Shoug, get Mama's perfume for me: a **see-through bottle** with a **little gold animal cap**, "
+    "something to do with **water**. "
 )
 _VOICE_ROUTE = {
-    "west": "Walk straight up the main street to the fountain, turn left, and follow that lane all the way up to the end. ",
-    "north": "Walk straight up the main street, go past the fountain and past the clock tower, and keep going all the way to the end. ",
-    "east": "Walk straight up the main street to the fountain, turn right, and follow that lane all the way up to the end. ",
+    "west": "Go up the main street and **turn left at the fountain**, all the way to the end. ",
+    "north": "Go up the main street, **straight past the fountain and the clock tower**, all the way to the end. ",
+    "east": "Go up the main street and **turn right at the fountain**, all the way to the end. ",
 }
-_VOICE_END = (
-    "Golden double doors. It's discounted, so it sells out fast. If they've sold out of it, get Gucci Oud instead. "
-    "But only if you really can't get the first one. Yalla, hurry before someone grabs it!"
-)
+_VOICE_END = "Look for the **golden double doors**, and **if not, Gucci Oud**."
 
 VOICE_NOTE = {
     "from": "Shaheen",

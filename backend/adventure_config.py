@@ -7,7 +7,8 @@ Times are milliseconds unless the key ends in _s.
 TIMING = {
     "journey_ms": 180_000,          # shared countdown for the walk through the village
     "step_ms": 180,                 # Shoug's walk speed per tile (clients animate this)
-    "min_step_interval_ms": 95,     # server rejects faster steps
+    "min_step_interval_ms": 95,     # long-run step rate cap
+    "step_burst_ms": 300,           # steps that arrive bunched by network jitter are still accepted
     "ring_ms": 9_000,               # an unanswered call rings out
     "sharifa_talk_ms": 4_200,
     "otp_visible_ms": 4_000,        # private code stays on the receiver's phone
@@ -21,7 +22,7 @@ TIMING = {
     "train_typing_ms": 2_200,
     "train_reply_ms": 3_400,
     "gulf_greet_ms": 2_800,
-    "gulf_inspect_ms": 30_000,
+    "gulf_inspect_ms": 35_000,      # includes the short reveal before "Tap here to type"
     "gulf_wrong_ms": 1_800,
     "gulf_react_ms": 3_200,
     "gulf_leave_ms": 2_600,
@@ -82,9 +83,9 @@ VOICE_NOTE = {
 ZAIN_INTRO = [
     "SHOUG. Big news",
     "I'm on standby for tickets to our play today!! I couldn't get any earlier and I'm DYING to go",
-    "A confirmation code might come to your phone. I'll call you later to get it, so PICK UP",
-    "Also the last train back is at 7 PM. Don't make me miss it",
-    "And whatever you do, do NOT answer Sharifa today. She will talk for an hour",
+    "A confirmation code might come to your phone. **I'll call you later to get it, so PICK UP**",
+    "Also the **last train back is at 7 PM**. Don't make me miss it",
+    "And whatever you do, ^^do NOT answer Sharifa today^^. She will talk for an hour",
     "Okay go go go",
 ]
 

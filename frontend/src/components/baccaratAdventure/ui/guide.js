@@ -1,11 +1,21 @@
-// **Key words** in message data → [{ text, hl }] parts. Unmatched markers stay as text.
+// Message data markup → [{ text, hl }] parts. **key words** are highlighted ("key"),
+// ^^warnings^^ get the maroon warning style ("warn"). Unmatched markers stay as text.
 export function highlightParts(text) {
-    return String(text || "").split(/\*\*(.+?)\*\*/g)
-        .map((part, i) => ({ text: part, hl: i % 2 === 1 }))
-        .filter((p) => p.text);
+    const out = [];
+    const re = /\*\*(.+?)\*\*|\^\^(.+?)\^\^/g;
+    const src = String(text || "");
+    let last = 0;
+    let m;
+    while ((m = re.exec(src))) {
+        if (m.index > last) out.push({ text: src.slice(last, m.index), hl: false });
+        out.push({ text: m[1] || m[2], hl: m[1] ? "key" : "warn" });
+        last = re.lastIndex;
+    }
+    if (last < src.length) out.push({ text: src.slice(last), hl: false });
+    return out;
 }
 
-export const plainText = (text) => String(text || "").replace(/\*\*/g, "");
+export const plainText = (text) => String(text || "").replace(/\*\*|\^\^/g, "");
 
 // Where the entry screen's guide arrow points, or null for nowhere.
 // create: nickname until the first character, then the Create button (after 2s).

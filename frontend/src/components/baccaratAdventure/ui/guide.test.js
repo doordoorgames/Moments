@@ -3,13 +3,18 @@ import { guideTarget, highlightParts, plainText } from "./guide";
 test("key words become highlighted parts", () => {
     expect(highlightParts("Look for the **golden double doors**, and **if not, Gucci Oud**.")).toEqual([
         { text: "Look for the ", hl: false },
-        { text: "golden double doors", hl: true },
+        { text: "golden double doors", hl: "key" },
         { text: ", and ", hl: false },
-        { text: "if not, Gucci Oud", hl: true },
+        { text: "if not, Gucci Oud", hl: "key" },
         { text: ".", hl: false },
     ]);
     expect(highlightParts("")).toEqual([]);
-    expect(plainText("a **b** c")).toBe("a b c");
+    expect(plainText("a **b** ^^c^^")).toBe("a b c");
+    expect(highlightParts("And ^^do NOT answer Sharifa^^. Today!! ok")).toEqual([
+        { text: "And ", hl: false },
+        { text: "do NOT answer Sharifa", hl: "warn" },
+        { text: ". Today!! ok", hl: false },
+    ]);
 });
 
 test("guide arrow follows the create path", () => {

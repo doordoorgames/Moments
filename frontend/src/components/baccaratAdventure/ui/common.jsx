@@ -57,14 +57,17 @@ export function PhoneFrame({ children, label = "Shoug's phone", tone = "" }) {
     </div>;
 }
 
-// Voice-note transcripts: one full block, all at once. **Key words** in the message
-// data render bold with a yolk highlighter behind them.
+// Inline message text: **key words** bold on soft matcha, ^^warnings^^ white on maroon.
+export function Marked({ text }) {
+    return highlightParts(text).map((p, i) => (p.hl
+        ? <b key={i} className={p.hl === "warn" ? "bh-hl bh-hl--warn" : "bh-hl"}>{p.text}</b>
+        : <span key={i}>{p.text}</span>));
+}
+
+// Voice-note transcripts: one full block, all at once.
 export function Transcript({ text, className = "" }) {
-    const parts = highlightParts(text);
-    if (!parts.length) return null;
-    return <p className={`bh-transcript ${className}`}>
-        {parts.map((p, i) => (p.hl ? <b key={i} className="bh-hl">{p.text}</b> : <span key={i}>{p.text}</span>))}
-    </p>;
+    if (!highlightParts(text).length) return null;
+    return <p className={`bh-transcript ${className}`}><Marked text={text} /></p>;
 }
 
 export { plainText };

@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Countdown, Keypad, Ribbon, Stamp, canActFor, nameOf, penaltyLabel } from "./common";
 import { drawHandbag } from "../art/perfumes";
 import { SFX } from "../sound";
@@ -47,15 +47,30 @@ function GulfEncounter({ scene, adventure, me, act, busy, serverNow }) {
         prev.current = stage;
     }, [stage]);
     const reading = stage === "inspect" || stage === "wrong";
+    // Step by step: question and bag first, then "Tap here to type", then the keypad.
+    const [tapReady, setTapReady] = useState(false);
+    const [typing, setTyping] = useState(false);
+    const stagedFor = useRef(null);
+    useEffect(() => {
+        // Starts when she first asks (not at her greeting); a wrong price keeps the keypad open.
+        if (!reading || stagedFor.current === scene.inst) return undefined;
+        stagedFor.current = scene.inst;
+        setTapReady(false);
+        setTyping(false);
+        const t = setTimeout(() => setTapReady(true), 1600);
+        return () => { clearTimeout(t); stagedFor.current = null; };
+    }, [scene.inst, reading]);
     return <div className="bh-gulf">
         {reading && <div className={`bh-gulf-card ${stage === "wrong" ? "bh-gulf-card--wrong" : ""}`}>
             <p className="bh-gulf-ask"><b>Umm Fahad</b>{scene.line}{stage === "wrong" && <Stamp>{penaltyLabel(adventure, "price_wrong")}</Stamp>}</p>
             <PriceScreenshot shot={scene.screenshot} />
-            {stage === "inspect" && <Ribbon adventure={adventure} me={me} assigneeId={scene.assignee} verb="read her the price" other="is reading the price" />}
-            {stage === "inspect" && <Countdown until={scene.until} total={adventure.timing?.gulf_inspect_ms} serverNow={serverNow} label="Time before Shoug reads it herself" />}
-            {stage === "inspect" && mine && <Keypad autoSubmit={false} maxLength={6} prefix="£" hint="price" disabled={busy}
+            {stage === "inspect" && tapReady && <Ribbon adventure={adventure} me={me} assigneeId={scene.assignee} verb="read her the price" other="is reading the price" />}
+            {stage === "inspect" && tapReady && <Countdown until={scene.until} total={adventure.timing?.gulf_inspect_ms} serverNow={serverNow} label="Time before Shoug reads it herself" />}
+            {stage === "inspect" && mine && typing && <Keypad autoSubmit={false} maxLength={6} prefix="£" hint="price" disabled={busy}
                 onSubmit={(value) => act("price", { inst: scene.inst, value })} />}
-            {stage === "inspect" && !mine && <p className="bh-gulf-wait">Help {nameOf(adventure, scene.assignee)} read it. Only they can type.</p>}
+            {stage === "inspect" && mine && !typing && tapReady && <button type="button" className="bh-btn bh-tap-type"
+                onClick={() => { SFX.tap(); setTyping(true); }}>Tap here to type the price</button>}
+            {stage === "inspect" && tapReady && !mine && <p className="bh-gulf-wait">Help {nameOf(adventure, scene.assignee)} read it. Only they can type.</p>}
         </div>}
         {stage === "greet" && <DialogBox speaker="Umm Fahad">{scene.line}</DialogBox>}
         {stage === "react" && <DialogBox speaker="Umm Fahad" tone="bh-dialog--shout" big>

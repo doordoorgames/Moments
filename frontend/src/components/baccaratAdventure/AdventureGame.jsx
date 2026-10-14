@@ -149,6 +149,14 @@ export default function AdventureGame({ code, player, room, onExit }) {
     const navName = nameOf(adventure, adventure.nav_id);
     const phoneActive = !!adventure.phone;
     const sceneActive = !!adventure.scene;
+    // While typing Zain's code the phone stays reachable; after a wrong code it points at the OTP.
+    const call = adventure.phone;
+    const zainEntry = !!call && call.kind === "call" && call.caller === "zain" && (call.stage === "otp_entry" || call.stage === "wrong");
+    const [wrongInst, setWrongInst] = useState(null);
+    const callInst = call?.inst;
+    const callStage = call?.stage;
+    useEffect(() => { if (zainEntry && callStage === "wrong") setWrongInst(callInst); }, [zainEntry, callStage, callInst]);
+    const otpHint = zainEntry && wrongInst === callInst;
     // Scenes freeze Shoug and need the bottom of the screen for their own buttons.
     const showControls = isNav && status === "playing" && !sceneActive;
     useEffect(() => { if (!showControls) controller?.setInput(null); }, [showControls, controller]);
@@ -167,9 +175,10 @@ export default function AdventureGame({ code, player, room, onExit }) {
         {status === "playing" && <>
             <PhoneOverlay adventure={adventure} me={me} act={act} busy={busy} privateData={privateData} serverNow={serverNow} compact={isNav} />
             <SceneDialog adventure={adventure} me={me} act={act} busy={busy} serverNow={serverNow} />
-            {showControls && <Controls onDir={(d) => controller?.setInput(d)} onA={() => interactRef.current()} hint={hint} disabled={!!adventure.lock || !layout} />}
+            {showControls && <Controls onDir={(d) => controller?.setInput(d)} onA={() => interactRef.current()} hint={zainEntry ? null : hint} disabled={!!adventure.lock || !layout} />}
             {!isNav && !sceneActive && <div className="bh-role" role="status"><b>{navName}</b> is steering Shoug. Shout directions!</div>}
-            {!phoneActive && !sceneActive && <PhoneButton adventure={adventure} me={me} otp={receivedOtp} />}
+            {(!phoneActive || zainEntry) && !sceneActive && <PhoneButton adventure={adventure} me={me} otp={receivedOtp} otpHint={otpHint}
+                docked={zainEntry} showLabel={callStage === "wrong"} />}
         </>}
         {status === "finale" && <PerfumeCounter adventure={adventure} me={me} act={act} busy={busy} serverNow={serverNow} />}
         {status === "ended" && <EndingCard adventure={adventure} me={me} isHost={isHost} act={act} busy={busy} onExit={onExit} />}

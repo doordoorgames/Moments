@@ -8,7 +8,7 @@ TIMING = {
     "journey_ms": 180_000,          # shared countdown for the walk through the village
     "step_ms": 180,                 # Shoug's walk speed per tile (clients animate this)
     "min_step_interval_ms": 95,     # long-run step rate cap
-    "step_burst_ms": 300,           # steps that arrive bunched by network jitter are still accepted
+    "step_burst_ms": 1_500,         # steps bunched by a network or server stall are still accepted
     "ring_ms": 9_000,               # an unanswered call rings out
     "sharifa_talk_ms": 4_200,
     "otp_visible_ms": 4_000,        # private code stays on the receiver's phone
@@ -63,15 +63,15 @@ REQUIRED_EVENTS = ("otp", "zain_call", "train", "gulf")
 # Key words are wrapped in **double asterisks**: every phone renders them bold with a
 # yolk highlighter. Timing ignores the markers.
 _VOICE_CLUE = (
-    "Shoug, get Mama's perfume for me: a **see-through bottle** with a **little gold animal cap**, "
-    "something to do with **water**. "
+    "Shoug, get Mama's perfume: a **see-through bottle**, **little gold animal cap**, something with **water**. "
+    "**If you can't find it, get Gucci Oud**, quickly, before someone else gets them! "
 )
 _VOICE_ROUTE = {
-    "west": "Go up the main street and **turn left at the fountain**, all the way to the end. ",
-    "north": "Go up the main street, **straight past the fountain and the clock tower**, all the way to the end. ",
-    "east": "Go up the main street and **turn right at the fountain**, all the way to the end. ",
+    "west": "Go up the main street, **turn left at the fountain** to the end: ",
+    "north": "Go up the main street, **straight past the fountain and clock tower** to the end: ",
+    "east": "Go up the main street, **turn right at the fountain** to the end: ",
 }
-_VOICE_END = "Look for the **golden double doors**, and **if not, Gucci Oud**."
+_VOICE_END = "the **golden double doors**."
 
 VOICE_NOTE = {
     "from": "Shaheen",

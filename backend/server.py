@@ -2060,13 +2060,16 @@ async def _adventure_loop(code: str) -> None:
                 return
             snapshot = None
             try:
+                # Refresh the roster OUTSIDE the game lock: holding the lock across a database
+                # round trip froze every step for that long, then the bunched steps were
+                # rejected and Shoug snapped back while walking straight.
+                if _ms() - entry["players_at"] > 10_000:
+                    res = await _q(lambda: supa.table("players").select("id,room_code,nickname,joined_at,is_host")
+                                   .eq("room_code", code).execute())
+                    entry["players"] = sorted(res.data or [], key=lambda p: p.get("joined_at") or "")
+                    entry["players_at"] = _ms()
                 async with _adventure_locks[code]:
                     now = _ms()
-                    if now - entry["players_at"] > 10_000:
-                        res = await _q(lambda: supa.table("players").select("id,room_code,nickname,joined_at,is_host")
-                                       .eq("room_code", code).execute())
-                        entry["players"] = sorted(res.data or [], key=lambda p: p.get("joined_at") or "")
-                        entry["players_at"] = now
                     if AE.tick(entry["adv"], _adventure_ctx(code, entry), now):
                         snapshot = _adventure_snapshot(entry)
                         await _adventure_publish(code, entry)
@@ -2188,8 +2191,8 @@ async def adventure_move(code: str, payload: AdventureMoveRequest):
     entry = await _adventure_entry(code)
     if not entry:
         raise HTTPException(404, "This room is not playing The Baccarat Hunt")
-    accepted, pos = await _adventure_handle_move(code, entry, player["id"], payload.model_dump())
-    return {"accepted": accepted, "pos": pos}
+    accepted, pos, lock = await _adventure_handle_move(code, entry, player["id"], payload.model_dump())
+    return {"accepted": accepted, "pos": pos, "lock": lock}
 
 
 @api_router.post("/rooms/{code}/adventure/private")
@@ -2237,13 +2240,15 @@ async def _adventure_handle_move(code: str, entry: Dict[str, Any], player_id: st
         elif ws is not None:
             try:
                 await ws.send_text(json.dumps({"type": "adv_correction", "pos": adv["pos"], "run": adv["run_id"],
-                                               "lock": AE.movement_lock(adv), "nav_id": adv.get("nav_id")}))
+                                               "lock": AE.movement_lock(adv), "nav_id": adv.get("nav_id"),
+                                               "seq": msg.get("seq")}))
             except Exception:
                 manager.disconnect(code, ws)
         pos = dict(adv["pos"])
+        lock = AE.movement_lock(adv)
     if snapshot:
         await _adventure_write(code, entry, snapshot)
-    return accepted, pos
+    return accepted, pos, lock
 
 
 async def _adventure_presence_changed(code: str) -> None:

@@ -1090,7 +1090,9 @@ def dev(adv, ctx, command: str, payload: Dict[str, Any], now: int) -> Dict[str, 
     elif command == "zain":
         _clear_phone_for_dev(adv, now)
         if adv["ev"]["otp"]["st"] != "done":
+            # Skipping straight to Zain still lands the code in the tester's phone.
             adv["otp"]["receiver"] = ctx.get("test_creator_id")
+            adv["otp"]["until"] = now
             _finish_event(adv, "otp", True, now)
         adv["otp"].update({"attempts": T["otp_attempts"], "solved": False})
         adv["ev"]["zain_call"] = {"st": "pending"}
@@ -1241,11 +1243,13 @@ def public_view(adv, ctx, now: int) -> Dict[str, Any]:
 
 
 def private_view(adv, pid: str, ctx, now: int) -> Optional[Dict[str, Any]]:
-    """Only the OTP receiver ever gets the digits, and only while visible."""
+    """Only the OTP receiver ever gets the digits. The big on-screen flash lasts until
+    `until`; after that the code stays in that player's phone (messages) for the run, so
+    they can look it up again after a wrong try with Zain."""
     otp = adv.get("otp") or {}
     receiver = otp.get("receiver")
     until = otp.get("until")
-    if not receiver or not until or now > until:
+    if not receiver or until is None:
         return None
     sims = {s["id"] for s in adv.get("sims", [])}
     if pid == receiver or (adv.get("test") and pid == ctx.get("test_creator_id") and receiver in sims):

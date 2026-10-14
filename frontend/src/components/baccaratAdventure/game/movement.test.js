@@ -1,4 +1,4 @@
-import { adjacent, dirFromVector, makeBlockedGrid, targetInFront, walkableTile, walkerAt } from "./movement";
+import { adjacent, dirFromVector, freshCorrection, glideMs, makeBlockedGrid, targetInFront, walkableTile, walkerAt } from "./movement";
 
 // 5x4 test village: a hedge at (0, 1), one blocked tile, a shop whose door is at (1, 0) and a busker at (4, 2).
 const layout = {
@@ -51,4 +51,16 @@ test("adjacency is four-way only", () => {
     expect(adjacent({ x: 2, y: 2 }, { x: 2, y: 3 })).toBe(true);
     expect(adjacent({ x: 2, y: 2 }, { x: 3, y: 3 })).toBe(false);
     expect(adjacent({ x: 2, y: 2 }, { x: 2, y: 2 })).toBe(false);
+});
+
+test("stale corrections for steps already undone are ignored", () => {
+    expect(freshCorrection({ seq: 10 }, 12)).toBe(false);
+    expect(freshCorrection({ seq: 13 }, 12)).toBe(true);
+    expect(freshCorrection(undefined, 12)).toBe(true);
+});
+
+test("small corrections glide, big ones jump", () => {
+    expect(glideMs({ x: 1, y: 1 }, { x: 1, y: 1 }, 180)).toBe(0);
+    expect(glideMs({ x: 1, y: 1 }, { x: 1, y: 2 }, 180)).toBeGreaterThan(0);
+    expect(glideMs({ x: 1, y: 1 }, { x: 1, y: 9 }, 180)).toBe(0);
 });

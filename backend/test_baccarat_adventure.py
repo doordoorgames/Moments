@@ -139,7 +139,10 @@ def test_voice_note_plays_once_and_gates_the_start():
     view = E.public_view(adv, ctx, clock.now)
     # The whole transcript is there as one block as soon as the voice note appears.
     script = view["intro"]["voice"]["script"]
-    assert "**golden double doors**" in script and "**if not, Gucci Oud**" in script
+    assert "**golden double doors**" in script and "**If you can't find it, get Gucci Oud**" in script
+    # Order: perfume first, then the Gucci fallback, then the route and the doors last.
+    assert script.index("gold animal cap") < script.index("Gucci Oud") < script.index("golden double doors")
+    assert script.rstrip().endswith("**golden double doors**.")
     assert "zain" not in view["intro"]
     E.act(adv, ctx, GUEST1, "voice_play", {}, clock.now)
     assert "turn left" in json.dumps(E.public_view(adv, ctx, clock.now)) or adv["variant"] != "west"
@@ -200,16 +203,22 @@ def test_only_navigator_moves_and_walls_hold():
     assert ok and adv["pos"]["y"] == y - 1
     # Teleport attempts and too-fast steps are rejected.
     assert not E.handle_move(adv, HOST, {"type": "adv_step", "run": adv["run_id"], "seq": 999, "x": x, "y": y - 5, "dir": "up"}, clock.now)[0]
-    # Two steps bunched up by network jitter both land (no snap-back) ...
+    # Steps bunched up by a stall (~1s of walking arriving at once) all land (no snap-back) ...
     burst = copy.deepcopy(adv)
+    open_ahead = 0
+    while open_ahead < 6 and E.walkable(burst, x, y - 2 - open_ahead):
+        open_ahead += 1
     results = []
-    for i in range(8):
+    for i in range(open_ahead):
         p = burst["pos"]
         results.append(E.handle_move(burst, HOST, {"type": "adv_step", "run": burst["run_id"], "seq": p["seq"] + 1,
                                                    "x": p["x"], "y": p["y"] - 1, "dir": "up"}, clock.now + 10)[0])
-    assert results[0] and results[1]
+    assert open_ahead >= 3 and all(results)
     # ... but a sustained too-fast rate is still refused.
-    assert not all(results)
+    fast = copy.deepcopy(adv)
+    fast["pos"]["ms"] = clock.now + E.T["step_burst_ms"]
+    assert not E.handle_move(fast, HOST, {"type": "adv_step", "run": fast["run_id"], "seq": fast["pos"]["seq"] + 1,
+                                          "x": x, "y": y - 2, "dir": "up"}, clock.now)[0]
     # A building wall is never walkable.
     b = M.get_layout(adv["seed"], adv["variant"]).buildings[0]
     assert not E.walkable(adv, b.x, b.y)
@@ -233,9 +242,11 @@ def test_full_playthrough_wins_with_shared_penalties_and_private_otp():
             visible = clock.now <= adv["otp"]["until"]
             for pid in (HOST, GUEST1, GUEST2):
                 private = E.private_view(adv, pid, ctx, clock.now)
-                if pid == phone["receiver"] and visible:
+                if pid == phone["receiver"]:
+                    # The receiver keeps the code in their phone, even after the flash.
                     assert private and len(private["otp"]["code"]) == 4
-                    seen_code["code"] = private["otp"]["code"]
+                    if visible:
+                        seen_code["code"] = private["otp"]["code"]
                 else:
                     assert private is None
             assert "code" in seen_code, "the receiver never saw the code"

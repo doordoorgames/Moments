@@ -1,4 +1,5 @@
 """Baccarat Hunt adventure: engine, map and privacy tests (no database)."""
+import copy
 import json
 from collections import deque
 
@@ -159,6 +160,26 @@ def test_voice_note_plays_once_and_gates_the_start():
     assert view["intro"]["voice"]["script"] == script and view["intro"]["zain"]
 
 
+def test_voice_note_can_be_skipped_to_zain():
+    clock, ctx = Clock(), ctx_for()
+    adv = E.new_adventure(HOST, False, clock.now)
+    E.start_intro(adv, clock.now)
+    E.act(adv, ctx, GUEST1, "voice_play", {}, clock.now)
+    clock.advance(500)
+    E.act(adv, ctx, GUEST1, "voice_skip", {}, clock.now)
+    view = E.public_view(adv, ctx, clock.now)
+    assert view["intro"]["stage"] == "zain" and view["intro"]["voice"]["status"] == "done"
+    assert view["intro"]["voice"]["script"] and view["intro"]["zain"]
+    E.act(adv, ctx, HOST, "begin", {}, clock.now)
+    assert adv["status"] == "playing"
+
+
+def test_zain_texts_mark_the_key_lines():
+    joined = " ".join(C.ZAIN_INTRO)
+    assert "**last train back is at 7 PM**" in joined and "^^do NOT answer Sharifa today^^" in joined
+    assert "**I'll call you later to get it, so PICK UP**" in joined
+
+
 def test_voice_note_is_short_and_markers_are_not_timed():
     for script in E.C.VOICE_NOTE["scripts"].values():
         plain = script.replace("**", "")
@@ -179,7 +200,16 @@ def test_only_navigator_moves_and_walls_hold():
     assert ok and adv["pos"]["y"] == y - 1
     # Teleport attempts and too-fast steps are rejected.
     assert not E.handle_move(adv, HOST, {"type": "adv_step", "run": adv["run_id"], "seq": 999, "x": x, "y": y - 5, "dir": "up"}, clock.now)[0]
-    assert not E.handle_move(adv, HOST, {"type": "adv_step", "run": adv["run_id"], "seq": 1000, "x": x, "y": y - 2, "dir": "up"}, clock.now + 10)[0]
+    # Two steps bunched up by network jitter both land (no snap-back) ...
+    burst = copy.deepcopy(adv)
+    results = []
+    for i in range(8):
+        p = burst["pos"]
+        results.append(E.handle_move(burst, HOST, {"type": "adv_step", "run": burst["run_id"], "seq": p["seq"] + 1,
+                                                   "x": p["x"], "y": p["y"] - 1, "dir": "up"}, clock.now + 10)[0])
+    assert results[0] and results[1]
+    # ... but a sustained too-fast rate is still refused.
+    assert not all(results)
     # A building wall is never walkable.
     b = M.get_layout(adv["seed"], adv["variant"]).buildings[0]
     assert not E.walkable(adv, b.x, b.y)

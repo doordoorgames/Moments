@@ -3,7 +3,7 @@
 /* ------------------------------------------------------------------ tokens */
 .bh, .bh-page {
     --cream: #FBF4E4; --paper: #FFFBF4; --matcha: #8DB36B; --matcha-d: #4F6E3A; --maroon: #6E1F35;
-    --sakura: #F6CFD8; --mint: #CFE8D5; --ink: #0C0C0C; --yolk: #F2B705; --gold: #E8B84A; --gold-hi: #FFE08A;
+    --sakura: #F6CFD8; --mint: #CFE8D5; --matcha-soft: #C9E3A9; --ink: #0C0C0C; --yolk: #F2B705; --gold: #E8B84A; --gold-hi: #FFE08A;
     --display: 'Bodoni Moda', Didot, 'Bodoni 72', Georgia, serif;
     --ui: 'Bricolage Grotesque', 'Avenir Next', system-ui, sans-serif;
     --mono: 'DM Mono', ui-monospace, Menlo, monospace;
@@ -88,6 +88,32 @@
 .bh-lobby-how li { font: 500 15px/1.4 var(--ui); padding-left: 34px; position: relative; counter-increment: how; }
 .bh-lobby-how li::before { content: counter(how); position: absolute; left: 0; top: 0; width: 24px; height: 24px; border-radius: 50%; background: var(--ink); color: var(--paper); display: grid; place-items: center; font: 500 12px var(--mono); }
 .bh-wait-host { margin: 0; text-align: center; font: 600 15px var(--ui); color: var(--maroon); }
+
+/* Warnings in message data (^^like this^^): white on dark maroon. */
+.bh-hl.bh-hl--warn { background: var(--maroon); color: #fff; }
+/* A closed message: tap to open it. */
+.bh-view-msg {
+    display: flex; align-items: center; gap: 10px; width: 100%; min-height: 56px; padding: 12px 14px; text-align: left;
+    background: var(--paper); border: 2.5px solid var(--ink); border-radius: 16px 16px 16px 4px; box-shadow: 3px 3px 0 var(--ink);
+    font: 700 16px/1.3 var(--ui); animation: bh-pulse 1.4s ease-in-out infinite;
+}
+.bh-view-msg svg { width: 24px; height: 24px; flex: none; }
+.bh-view-msg:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 var(--ink); }
+/* Idle A button is gone: keep the D-pad on the left. */
+.bh-a-slot { width: 84px; }
+.bh-tap-type { margin-top: 2px; }
+/* OTP hint: blinking black arrow with hard white shadow over the phone icon, plus a label. */
+.bh-phone-btn.bh-phone-btn--hint { z-index: 46; animation: bh-pulse 1s ease-in-out infinite; }
+.bh-otp-hint {
+    position: absolute; z-index: 46; right: 8px; bottom: calc(var(--bottom) + 128px + 62px); display: grid; justify-items: end; gap: 4px;
+    pointer-events: none;
+}
+.bh-otp-hint span { background: var(--ink); color: #fff; font: 800 14px var(--ui); padding: 6px 11px; border-radius: 999px; box-shadow: 3px 3px 0 #fff; white-space: nowrap; }
+.bh-otp-hint-arrow { width: 24px; height: 34px; margin-right: 16px; filter: drop-shadow(3px 3px 0 #fff); animation: bh-blink 1s steps(1, end) infinite; }
+@media (max-height: 720px) { .bh-otp-hint { bottom: calc(var(--bottom) + 112px + 56px); } }
+/* During Zain's call the icon docks in the corner, clear of the code keypad. */
+.bh-phone-btn.bh-phone-btn--docked { bottom: max(4px, env(safe-area-inset-bottom)); width: 50px; height: 50px; }
+.bh-otp-hint.bh-otp-hint--docked { bottom: calc(max(4px, env(safe-area-inset-bottom)) + 56px); }
 
 /* Create / join: the question first, then one field at a time. */
 .bh-choose { display: grid; gap: 14px; }
@@ -183,7 +209,7 @@
 
 /* ------------------------------------------------------------------ phone button + mini phone */
 .bh-phone-btn {
-    position: absolute; z-index: 39; right: 16px; bottom: calc(var(--bottom) + 128px); width: 56px; height: 56px; border-radius: 18px;
+    position: absolute; z-index: 45; right: 16px; bottom: calc(var(--bottom) + 128px); width: 56px; height: 56px; border-radius: 18px;
     border: 3px solid var(--ink); background: var(--paper); color: var(--ink); display: grid; place-items: center; box-shadow: 4px 4px 0 var(--ink);
     pointer-events: auto; touch-action: manipulation;
 }
@@ -263,7 +289,7 @@
 .bh-voice-note { margin: 0; font: 700 15px var(--ui); color: var(--maroon); }
 /* Transcript: one full block, sized to its text. No scrolling, no line swapping. */
 .bh-transcript { margin: 0; font: 600 16px/1.45 var(--ui); background: var(--paper); border: 2.5px solid var(--ink); border-radius: 16px 16px 16px 4px; padding: 10px 12px; }
-.bh-hl { font-weight: 800; background: var(--yolk); padding: 0 .18em; border-radius: 3px; -webkit-box-decoration-break: clone; box-decoration-break: clone; }
+.bh-hl { font-weight: 800; background: var(--matcha-soft); padding: 0 .18em; border-radius: 3px; -webkit-box-decoration-break: clone; box-decoration-break: clone; }
 .bh-placeholder-tag { margin: 0; font: 500 10px var(--mono); letter-spacing: .08em; text-transform: uppercase; color: rgba(12, 12, 12, .5); }
 .bh-eq { display: flex; align-items: flex-end; gap: 3px; height: 18px; }
 .bh-eq i { width: 4px; background: currentColor; animation: bh-eq .5s ease-in-out infinite alternate; }

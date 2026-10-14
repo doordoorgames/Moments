@@ -312,11 +312,14 @@ def handle_move(adv, pid: str, msg: Dict[str, Any], now: int) -> Tuple[bool, Lis
     dx, dy = DIRS[direction]
     if (x, y) != (pos["x"] + dx, pos["y"] + dy):
         return False, []
-    if now - pos.get("ms", 0) < T["min_step_interval_ms"]:
+    # Token-bucket pacing: "ms" is a virtual clock that advances one interval per step.
+    # Steps bunched up by network jitter are accepted; a sustained fast rate is not.
+    paced = max(now, pos.get("ms", 0) + T["min_step_interval_ms"])
+    if paced - now > T["step_burst_ms"]:
         return False, []
     if not walkable(adv, x, y):
         return False, []
-    pos.update({"x": x, "y": y, "dir": direction, "seq": seq, "ms": now})
+    pos.update({"x": x, "y": y, "dir": direction, "seq": seq, "ms": paced})
     triggers = []
     layout = layout_of(adv)
     if (x, y) in layout.zones["fountain"] and adv["ev"]["train"]["st"] == "pending":
@@ -681,6 +684,19 @@ def _a_voice_play(adv, ctx, actor, p, now, inst):
     return {}
 
 
+def _a_voice_skip(adv, ctx, actor, p, now, inst):
+    """Move on without waiting for the whole voice note: the transcript stays on screen."""
+    if adv["status"] != "intro":
+        raise ActionError(409, "Already started")
+    intro = adv["intro"]
+    if intro["stage"] != "voice":
+        return {}
+    intro["voice"]["status"] = "done"
+    intro["stage"] = "zain"
+    intro["zain_ms"] = now
+    return {}
+
+
 def _a_ready(adv, ctx, actor, p, now, inst):
     if adv["status"] != "intro":
         raise ActionError(409, "Already started")
@@ -914,7 +930,7 @@ def _a_restart(adv, ctx, actor, p, now, inst):
 
 
 ACTIONS = {
-    "voice_play": _a_voice_play, "ready": _a_ready, "begin": _a_begin,
+    "voice_play": _a_voice_play, "voice_skip": _a_voice_skip, "ready": _a_ready, "begin": _a_begin,
     "answer": _a_answer, "decline": _a_decline, "call_back": _a_call_back, "otp": _a_otp,
     "train": _a_train, "price": _a_price, "interact": _a_interact, "choose": _a_choose, "restart": _a_restart,
 }

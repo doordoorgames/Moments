@@ -254,7 +254,9 @@ export async function createVillageGame(parent, options) {
             const cam = this.cameras.main;
             cam.setBounds(0, -this.skyH, L.w * T, L.h * T + this.skyH);
             cam.setRoundPixels(true);
-            cam.startFollow(this.shoug, true, 0.18, 0.18, 0, 12);
+            // Locked follow (lerp 1): an eased camera rounded to whole pixels made Shoug
+            // stutter and trail when she set off up the main street.
+            cam.startFollow(this.shoug, true, 1, 1, 0, 12);
             this.fitCamera();
             cam.centerOn(this.shoug.x, this.shoug.y);
         }

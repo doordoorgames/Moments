@@ -77,7 +77,7 @@ export function useAdventureRoom(code, player) {
                 else if (msg.type === "adv_pos") {
                     learnClock(msg.server_ms);
                     posSubs.current.forEach((cb) => cb(msg.pos, !!msg.teleport, msg.run));
-                } else if (msg.type === "adv_correction") correctionSubs.current.forEach((cb) => cb(msg.pos, msg.run));
+                } else if (msg.type === "adv_correction") correctionSubs.current.forEach((cb) => cb(msg.pos, msg.run, { seq: msg.seq, lock: msg.lock }));
                 else if (msg.type === "adv_private") setPrivateData({ ...msg.data, received: Date.now() });
             };
             ws.onclose = () => {
@@ -117,6 +117,9 @@ export function useAdventureRoom(code, player) {
         return () => { cancelled = true; clearInterval(timer); };
     }, [code, player, connected, acceptRoom]);
 
+    // HTTP fallback steps go one at a time: parallel requests could land out of order,
+    // get rejected and snap Shoug back.
+    const httpChain = useRef(Promise.resolve());
     const sendMove = useCallback((msg) => {
         const ws = wsRef.current;
         if (ws && ws.readyState === WebSocket.OPEN) {
@@ -124,9 +127,9 @@ export function useAdventureRoom(code, player) {
             return;
         }
         const p = playerRef.current;
-        api.adventureMove(code, { ...msg, player_id: p.id, session_token: p.session_token })
-            .then((res) => { if (!res.accepted) correctionSubs.current.forEach((cb) => cb(res.pos, msg.run)); })
-            .catch(() => { /* the next state update realigns Shoug */ });
+        httpChain.current = httpChain.current.then(() => api.adventureMove(code, { ...msg, player_id: p.id, session_token: p.session_token })
+            .then((res) => { if (!res.accepted) correctionSubs.current.forEach((cb) => cb(res.pos, msg.run, { seq: msg.seq, lock: res.lock })); })
+            .catch(() => { /* the next state update realigns Shoug */ }));
     }, [code]);
 
     const onPos = useCallback((cb) => { posSubs.current.add(cb); return () => posSubs.current.delete(cb); }, []);

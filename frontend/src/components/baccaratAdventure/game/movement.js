@@ -68,3 +68,17 @@ export function targetInFront(layout, x, y, dir) {
 export function adjacent(a, b) {
     return Math.abs(a.x - b.x) + Math.abs(a.y - b.y) === 1;
 }
+
+// A correction is only worth acting on if the rejected step was sent after the last
+// time we snapped; older in-flight steps are already undone by that snap.
+export function freshCorrection(info, snapSeq) {
+    if (!info || info.seq === undefined || info.seq === null) return true;
+    return Number(info.seq) > snapSeq;
+}
+
+// Small corrections glide back over a few frames instead of jumping.
+export function glideMs(from, to, stepMs) {
+    const dist = Math.abs(from.x - to.x) + Math.abs(from.y - to.y);
+    if (dist === 0 || dist > 3) return 0;
+    return Math.round(stepMs * Math.min(1, 0.45 + dist * 0.2));
+}

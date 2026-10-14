@@ -112,7 +112,8 @@
 .bh-otp-hint-arrow { width: 24px; height: 34px; margin-right: 16px; filter: drop-shadow(3px 3px 0 #fff); animation: bh-blink 1s steps(1, end) infinite; }
 @media (max-height: 720px) { .bh-otp-hint { bottom: calc(var(--bottom) + 112px + 56px); } }
 /* During Zain's call the icon docks in the corner, clear of the code keypad. */
-.bh-phone-btn.bh-phone-btn--docked { bottom: max(4px, env(safe-area-inset-bottom)); width: 50px; height: 50px; }
+.bh-phone-btn.bh-phone-btn--docked { bottom: max(4px, env(safe-area-inset-bottom)); width: 54px; height: 54px; }
+.bh-phone-btn.bh-phone-btn--docked svg { width: 38px; height: 38px; }
 .bh-otp-hint.bh-otp-hint--docked { bottom: calc(max(4px, env(safe-area-inset-bottom)) + 56px); }
 
 /* Create / join: the question first, then one field at a time. */
@@ -208,13 +209,20 @@
 }
 
 /* ------------------------------------------------------------------ phone button + mini phone */
+/* The phone button: a round matcha sticker with a stitched ring, holding a tiny pink phone. */
 .bh-phone-btn {
-    position: absolute; z-index: 45; right: 16px; bottom: calc(var(--bottom) + 128px); width: 56px; height: 56px; border-radius: 18px;
-    border: 3px solid var(--ink); background: var(--paper); color: var(--ink); display: grid; place-items: center; box-shadow: 4px 4px 0 var(--ink);
-    pointer-events: auto; touch-action: manipulation;
+    position: absolute; z-index: 45; right: 16px; bottom: calc(var(--bottom) + 128px); width: 62px; height: 62px; border-radius: 50%;
+    border: 3px solid var(--ink); color: var(--ink); display: grid; place-items: center; box-shadow: 4px 4px 0 var(--ink);
+    background: radial-gradient(circle at 34% 30%, #E4F2D2 0 18%, var(--matcha-soft) 46%, #B3D58F 100%);
+    pointer-events: auto; touch-action: manipulation; padding: 0;
 }
-.bh-phone-btn svg { width: 28px; height: 28px; }
+.bh-phone-btn::before {
+    content: ""; position: absolute; inset: 4px; border-radius: 50%; border: 2px dashed rgba(255, 255, 255, .95); pointer-events: none;
+}
+.bh-phone-btn svg { position: relative; width: 44px; height: 44px; overflow: visible; }
 .bh-phone-btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--ink); }
+@media (hover: hover) { .bh-phone-btn:hover .bh-phone-ico { transform: rotate(6deg) scale(1.06); } }
+.bh-phone-ico { transition: transform .18s cubic-bezier(.2, 1.4, .4, 1); }
 .bh-mini {
     position: absolute; inset: 0; z-index: 70; display: flex; justify-content: center; align-items: flex-start;
     padding: calc(var(--top) + 56px) 12px calc(var(--bottom) + 12px); background: rgba(12, 12, 12, .45); animation: bh-fade .15s;
@@ -234,7 +242,7 @@
 }
 .bh-mini-close svg { width: 20px; height: 20px; }
 .bh-mini-close:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 var(--ink); }
-@media (max-height: 720px) { .bh-phone-btn { bottom: calc(var(--bottom) + 112px); width: 50px; height: 50px; } }
+@media (max-height: 720px) { .bh-phone-btn { bottom: calc(var(--bottom) + 112px); width: 54px; height: 54px; } .bh-phone-btn svg { width: 38px; height: 38px; } }
 @media (min-width: 760px) { .bh-mini { align-items: center; } .bh-mini-wrap { max-height: min(100%, 760px); } }
 
 /* ------------------------------------------------------------------ the luxury phone */

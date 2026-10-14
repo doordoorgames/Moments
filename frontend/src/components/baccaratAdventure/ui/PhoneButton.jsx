@@ -79,9 +79,28 @@ function PhoneVoiceNote({ from, avatar, script, audio, durMs }) {
     </section>;
 }
 
-const PhoneIcon = () => <svg viewBox="0 0 24 24" aria-hidden="true">
-    <rect x="6.5" y="2.5" width="11" height="19" rx="2.6" fill="none" stroke="currentColor" strokeWidth="2.2" />
-    <path d="M10.5 18.2h3" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
+// A tiny version of Shoug's real phone: the pink quilted case with gold studs, a cream
+// screen with the island and two chat bubbles (matcha + sakura), tilted like a sticker.
+const PhoneIcon = () => <svg viewBox="0 0 40 40" aria-hidden="true" className="bh-phone-ico">
+    <defs>
+        <pattern id="bh-quilt" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+            <rect width="5" height="5" fill="#F6CFD8" />
+            <path d="M0 0H5" stroke="#6E1F35" strokeOpacity=".28" strokeWidth="1" />
+        </pattern>
+    </defs>
+    <g transform="rotate(-9 20 20)">
+        <rect x="11.5" y="5" width="18" height="31" rx="5" fill="#0C0C0C" transform="translate(1.6 1.6)" />
+        <rect x="11.5" y="5" width="18" height="31" rx="5" fill="url(#bh-quilt)" stroke="#0C0C0C" strokeWidth="1.8" />
+        <rect x="29.6" y="12" width="1.6" height="5" rx=".8" fill="#0C0C0C" />
+        <rect x="14" y="8" width="13" height="25.5" rx="3" fill="#FBF4E4" stroke="#0C0C0C" strokeWidth="1.4" />
+        <rect x="17.8" y="9.7" width="5.4" height="1.9" rx=".95" fill="#0C0C0C" />
+        <rect x="15.6" y="14" width="7.6" height="4" rx="2" fill="#8DB36B" stroke="#0C0C0C" strokeWidth=".9" />
+        <rect x="18" y="19.6" width="7.4" height="4" rx="2" fill="#F6CFD8" stroke="#0C0C0C" strokeWidth=".9" />
+        <rect x="15.6" y="25.2" width="5.6" height="4" rx="2" fill="#8DB36B" stroke="#0C0C0C" strokeWidth=".9" />
+        <rect x="17.6" y="31" width="5.8" height="1.1" rx=".55" fill="#0C0C0C" />
+        <circle cx="13.6" cy="7" r="1.1" fill="#E8B84A" stroke="#0C0C0C" strokeWidth=".7" />
+        <circle cx="27.4" cy="7" r="1.1" fill="#E8B84A" stroke="#0C0C0C" strokeWidth=".7" />
+    </g>
 </svg>;
 
 const CloseIcon = () => <svg viewBox="0 0 24 24" aria-hidden="true">

@@ -7,7 +7,7 @@ import { drawBuilding } from "../art/buildings";
 import * as P from "../art/props";
 import { CELL_H, CELL_W, emoteSheet, gulfWomanSheet, npcSheet, shougSheet } from "../art/characters";
 import { glowCanvas, makeCanvas } from "../art/pixel";
-import { DIRS, makeBlockedGrid, targetInFront, walkableTile, walkerAt } from "./movement";
+import { DIRS, freshCorrection, glideMs, makeBlockedGrid, targetInFront, walkableTile, walkerAt } from "./movement";
 
 const DIR_BASE = { down: 0, up: 3, left: 6, right: 9 };
 const TURN_MS = 70;
@@ -214,7 +214,7 @@ export async function createVillageGame(parent, options) {
             const pos = state.pos || L.spawn;
             this.me = {
                 x: pos.x, y: pos.y, dir: pos.dir || "up", moving: null, seq: pos.seq || 0, turnedAt: 0, parity: 0,
-                queue: [], lastSeq: pos.seq || 0, hidden: false,
+                queue: [], lastSeq: pos.seq || 0, hidden: false, snapSeq: pos.seq || 0,
             };
             this.shougShadow = this.add.image(0, 0, "foot-shadow").setDepth(0);
             this.shoug = this.add.sprite(0, 0, "shoug", DIR_BASE[this.me.dir]).setOrigin(0.5, 1);
@@ -322,14 +322,30 @@ export async function createVillageGame(parent, options) {
             me.queue.push({ x: pos.x, y: pos.y, dir: pos.dir, seq: pos.seq });
         }
 
-        applyCorrection(pos) {
-            if (!state.navigator) return;
-            this.snap(pos);
-            this.me.blockUntil = this.time.now + 160;
+        applyCorrection(pos, info) {
+            if (!state.navigator || !pos) return;
+            // A movement lock (call, scene...) is the usual reason: stop walking right away
+            // instead of firing more steps that would each bounce back.
+            // Short hold only: the real lock arrives with the next state update.
+            if (info && info.lock) this.me.holdUntil = this.time.now + 1200;
+            // Steps that were already in flight when we last snapped bounce too; ignore them.
+            if (!freshCorrection(info, this.me.snapSeq)) return;
+            const me = this.me;
+            const at = me.moving ? { x: me.moving.toX, y: me.moving.toY } : { x: me.x, y: me.y };
+            if (at.x === pos.x && at.y === pos.y) {
+                // Already there: just finish the current step, no jump.
+                me.snapSeq = me.seq;
+                return;
+            }
+            this.snap(pos, true);
+            me.blockUntil = this.time.now + 120;
         }
 
-        snap(pos) {
+        snap(pos, glide = false) {
             const me = this.me;
+            const fromX = me.moving ? me.moving.fromX + (me.moving.toX - me.moving.fromX) * Math.min(1, (this.time.now - me.moving.t0) / me.moving.dur) : me.x;
+            const fromY = me.moving ? me.moving.fromY + (me.moving.toY - me.moving.fromY) * Math.min(1, (this.time.now - me.moving.t0) / me.moving.dur) : me.y;
+            const dur = glide ? glideMs({ x: fromX, y: fromY }, pos, state.stepMs) : 0;
             me.moving = null;
             me.queue = [];
             me.x = pos.x;
@@ -337,6 +353,12 @@ export async function createVillageGame(parent, options) {
             me.dir = pos.dir || me.dir;
             me.seq = Math.max(me.seq, pos.seq || 0);
             me.lastSeq = Math.max(me.lastSeq, pos.seq || 0);
+            me.snapSeq = me.seq;
+            if (dur > 0) {
+                // Slide back from where she is drawn now, so a correction never looks like a teleport.
+                me.moving = { fromX, fromY, toX: pos.x, toY: pos.y, t0: this.time.now, dur, glide: true };
+                return;
+            }
             this.placeShoug(me.x, me.y);
             this.shoug.setFrame(DIR_BASE[me.dir]);
         }
@@ -379,7 +401,7 @@ export async function createVillageGame(parent, options) {
                 this.shoug.setPosition(Math.round(x * T + 8), Math.round(feetY(y)));
                 this.shoug.setDepth(feetY(Math.max(me.moving.fromY, me.moving.toY)));
                 this.shougShadow.setPosition(Math.round(x * T + 9), Math.round(feetY(y) - 2)).setDepth(this.shoug.depth - 2);
-                const stepFrame = p < 0.55 ? (me.parity ? 1 : 2) : 0;
+                const stepFrame = me.moving.glide ? 0 : p < 0.55 ? (me.parity ? 1 : 2) : 0;
                 this.shoug.setFrame(DIR_BASE[me.dir] + stepFrame);
                 if (p >= 1) {
                     me.x = me.moving.toX;
@@ -392,7 +414,7 @@ export async function createVillageGame(parent, options) {
             if (me.moving) return;
             if (state.navigator) {
                 const dir = this.currentInput();
-                if (!dir || state.lock || (me.blockUntil && time < me.blockUntil)) {
+                if (!dir || state.lock || (me.blockUntil && time < me.blockUntil) || (me.holdUntil && time < me.holdUntil)) {
                     this.shoug.setFrame(DIR_BASE[me.dir]);
                     return;
                 }
@@ -584,7 +606,7 @@ export async function createVillageGame(parent, options) {
         setLock(lock) { state.lock = lock || null; },
         setStepMs(ms) { if (ms) state.stepMs = ms; },
         applyServerPos(pos, teleport = false) { if (scene) scene.applyServerPos(pos, teleport); else state.pos = pos; },
-        applyCorrection(pos) { if (scene) scene.applyCorrection(pos); },
+        applyCorrection(pos, info) { if (scene) scene.applyCorrection(pos, info); },
         setGulf(gulf) {
             const prev = state.gulf || {};
             state.gulf = gulf;

@@ -90,7 +90,7 @@ export default function AdventureGame({ code, player, room, onExit }) {
     const onError = useCallback((err) => setLayoutError(err?.message || "The village could not start."), []);
 
     useEffect(() => onPos((pos, teleport, run) => { if (run === runRef.current) controller?.applyServerPos(pos, teleport); }), [onPos, controller]);
-    useEffect(() => onCorrection((pos, run) => { if (run === runRef.current) controller?.applyCorrection(pos); }), [onCorrection, controller]);
+    useEffect(() => onCorrection((pos, run, info) => { if (run === runRef.current) controller?.applyCorrection(pos, info); }), [onCorrection, controller]);
 
     const isNav = adventure.nav_id === me.id;
     const pos = adventure.pos;

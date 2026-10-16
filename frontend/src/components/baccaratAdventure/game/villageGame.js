@@ -25,7 +25,7 @@ export function zoomFor(width, height) {
 export async function createVillageGame(parent, options) {
     const Phaser = await loadPhaser();
     const listeners = {};
-    // Arabic-mode dusk experiment: every light source twice the size and more yellow.
+    // Arabic-mode dusk look: purple wash with warmer, more yellow lights (original size).
     const DUSK = !!options.dusk;
     const AR = !!options.ar;
     if (AR && typeof document !== "undefined" && document.fonts?.load) {
@@ -190,8 +190,7 @@ export async function createVillageGame(parent, options) {
         }
 
         addGlow(x, y, r, alpha, key) {
-            const size = DUSK && key === "glow" ? r * 2 : r;
-            const g = this.add.image(x, y, key).setDepth(DEPTH_GLOW).setAlpha(alpha).setScale((size * 2) / 64)
+            const g = this.add.image(x, y, key).setDepth(DEPTH_GLOW).setAlpha(alpha).setScale((r * 2) / 64)
                 .setBlendMode(Phaser.BlendModes.ADD);
             this.glows.push(g);
             return g;

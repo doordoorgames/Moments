@@ -14,6 +14,8 @@ import ShougVillagePrototype from "@/pages/ShougVillagePrototype";
 
 import SoloMiniGame from "@/components/miniGames/MiniGames";
 
+const PlotTwist = lazy(() => import("@/components/plotTwist/PlotTwist"));
+
 const BaccaratAdventureRoom = lazy(() => import("@/components/baccaratAdventure/BaccaratAdventureRoom"));
 
 function AdminGate({ children }) {
@@ -29,6 +31,7 @@ function App() {
                 <Routes>
                     <Route path="/" element={<Landing />} />
                     <Route path="/mini-games/baccarat-hunt/room/:code" element={<Suspense fallback={null}><BaccaratAdventureRoom /></Suspense>} />
+                    <Route path="/mini-games/plot-twist/room/:code" element={<Suspense fallback={null}><PlotTwist /></Suspense>} />
                     <Route path="/mini-games/:gameId" element={<SoloMiniGame />} />
                     <Route path="/visual-test" element={<Navigate to="/" replace />} />
                     <Route path="/shoug-2" element={<ShougVillagePrototype />} />

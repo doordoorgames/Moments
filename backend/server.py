@@ -2417,6 +2417,10 @@ async def seed_zayn_story():
 
 app.include_router(api_router)
 
+# Plot Twist has isolated sessions and encrypted state; existing games are unchanged.
+from plot_twist_api import router as plot_twist_router
+app.include_router(plot_twist_router(lambda: supa, _q))
+
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,

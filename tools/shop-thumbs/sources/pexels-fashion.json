@@ -1,0 +1,40 @@
+{
+  "source": "pexels-fashion",
+  "adapter": "manifest",
+  "reuse": {
+    "status": "permitted",
+    "evidence": "https://www.pexels.com/license/ explicitly allows downloading, using and modifying photos in websites/apps; https://help.pexels.com/hc/en-us/articles/360042295214 confirms commercial use. Each listed photo has a Free download link. Verified 2026-10-12. Do not imply endorsement or label unverified brands."
+  },
+  "items": [
+    {
+      "name": "White and brown handbag",
+      "category": "handbags",
+      "image_url": "https://images.pexels.com/photos/27174565/pexels-photo-27174565.jpeg",
+      "source_url": "https://www.pexels.com/photo/photo-of-a-white-handbag-27174565/",
+      "license": "Pexels License",
+      "license_url": "https://www.pexels.com/license/",
+      "creator": "José Martin Segura Benites",
+      "attribution": "White and brown handbag — José Martin Segura Benites, Pexels License; resized and converted to WebP. Brand not verified."
+    },
+    {
+      "name": "Black dress on hanger",
+      "category": "dresses",
+      "image_url": "https://images.pexels.com/photos/19895964/pexels-photo-19895964.jpeg",
+      "source_url": "https://www.pexels.com/photo/black-dress-on-cloth-hanger-19895964/",
+      "license": "Pexels License",
+      "license_url": "https://www.pexels.com/license/",
+      "creator": "Marcelo Verfe",
+      "attribution": "Black dress on hanger — Marcelo Verfe, Pexels License; resized and converted to WebP. Brand not verified."
+    },
+    {
+      "name": "White floral dress",
+      "category": "dresses",
+      "image_url": "https://images.pexels.com/photos/30590678/pexels-photo-30590678.jpeg",
+      "source_url": "https://www.pexels.com/photo/elegant-woman-in-stylish-white-floral-dress-30590678/",
+      "license": "Pexels License",
+      "license_url": "https://www.pexels.com/license/",
+      "creator": "Andrea Musto",
+      "attribution": "White floral dress — Andrea Musto, Pexels License; resized and converted to WebP. Brand not verified."
+    }
+  ]
+}

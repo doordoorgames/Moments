@@ -6,7 +6,7 @@ import { api, apiErrorMessage } from "@/lib/api";
 import { shougPortrait } from "./ui/pixelImages";
 import { guideTarget } from "./ui/guide";
 import { SFX } from "./sound";
-import { LangToggle, useLang } from "./i18n";
+import { getLang, setLang, useLang } from "./i18n";
 import "./BaccaratAdventure.css";
 
 export function roomPath(code) {
@@ -21,8 +21,10 @@ function GuideArrow({ below = false }) {
 }
 
 // Mini games → The Baccarat Hunt: create a room (TEST99 starts a solo test) or join one.
-export default function BaccaratAdventureEntry({ onContinue }) {
+export default function BaccaratAdventureEntry({ onContinue, lang = "en" }) {
     const navigate = useNavigate();
+    // The card decides the language: The Baccarat Hunt is English, عطر شاهين is Arabic.
+    if (getLang() !== lang) setLang(lang);
     const { t, dir, ar } = useLang();
     const params = new URLSearchParams(typeof window !== "undefined" ? window.location.search : "");
     const [nickname, setNickname] = useState("");
@@ -40,7 +42,7 @@ export default function BaccaratAdventureEntry({ onContinue }) {
         setBusy(true);
         setError("");
         try {
-            const created = await api.createAdventure(nickname.trim());
+            const created = await api.createAdventure(nickname.trim(), lang);
             localStorage.setItem(`player_${created.code}`, JSON.stringify(created.player));
             navigate(roomPath(created.code));
         } catch (err) {
@@ -113,7 +115,6 @@ export default function BaccaratAdventureEntry({ onContinue }) {
     const arrowAt = guideTarget({ mode, nickname, code, codeStep, buttonArrow });
     return <main className="bh-page" data-typography-ignore dir={dir} lang={ar ? "ar" : "en"}>
         <section className="bh-card bh-entry">
-            <LangToggle className="bh-lang--corner" />
             <span className="bh-kicker">{t("Shoug's Tale · Mini game")}</span>
             {ar ? <h1 className="bh-display">عطر <em>شاهين.</em></h1> : <h1 className="bh-display">The Baccarat <em>Hunt.</em></h1>}
             <img className="bh-entry-shoug" src={shougPortrait(3)} alt="Shoug seen from behind, ready to walk" />
@@ -149,7 +150,7 @@ export default function BaccaratAdventureEntry({ onContinue }) {
                 </button>
             </div>}
             <div className="bh-entry-links">
-                <button type="button" className="bh-link" onClick={() => navigate("/mini-games/baccarat-classic")}>{t("Play the classic one-screen version")}</button>
+                {!ar && <button type="button" className="bh-link" onClick={() => navigate("/mini-games/baccarat-classic")}>{t("Play the classic one-screen version")}</button>}
                 <button type="button" className="bh-link" onClick={onContinue}>{t("Back to mini games")}</button>
             </div>
         </section>

@@ -238,7 +238,7 @@ const DISPLAY = [
     },
 ];
 
-function shopfront(ctx, b, body, x0, gfTop, W, gfH, r, glows) {
+function shopfront(ctx, b, body, x0, gfTop, W, gfH, r, glows, out = {}) {
     const doorX = b.door.dx * 16;
     const fasciaH = 8;
     const fasciaColors = { black: "#1f1d27", stone: "#3d3b4d", brick: "#2f4a3c", white: "#2f3b5e" };
@@ -246,7 +246,9 @@ function shopfront(ctx, b, body, x0, gfTop, W, gfH, r, glows) {
     rect(ctx, 3, gfTop, W - 6, fasciaH, fascia);
     hline(ctx, 3, gfTop, W - 6, mix(fascia, "#ffffff", 0.25));
     hline(ctx, 3, gfTop + fasciaH - 1, W - 6, INK);
-    if (b.sign) {
+    if (b.sign) out.sign = { x: 3, y: gfTop, w: W - 6, h: fasciaH, text: b.sign, color: b.ornate || b.sign === "PARFUMERIE" ? "#f2c766" : "#fbf1dc" };
+    // Arabic signs are set as crisp text over the fascia by the scene, not in pixels.
+    if (b.sign && !b.textless) {
         let text = b.sign;
         while (textWidth(text) > W - 12 && text.length > 3) text = text.slice(0, -1);
         const tx = Math.round((W - textWidth(text)) / 2);
@@ -299,7 +301,9 @@ function shopfront(ctx, b, body, x0, gfTop, W, gfH, r, glows) {
     return door;
 }
 
-export function drawBuilding(b) {
+export function drawBuilding(b, opts = {}) {
+    if (opts.textless) b = { ...b, textless: true };
+    const out = {};
     const W = b.w * 16;
     const H = b.h * 16;
     const body = BODIES[b.body] || BODIES.cream;
@@ -338,7 +342,7 @@ export function drawBuilding(b) {
     }
     if (b.ornate || b.body === "black" || b.body === "stone") pilasters(ctx, body, 0, facadeTop + 3, W, facadeH - 3);
     const gfTop = facadeTop + facadeH - gfH;
-    const door = shopfront(ctx, b, body, 0, gfTop + 2, W, gfH - 2, r, glows);
+    const door = shopfront(ctx, b, body, 0, gfTop + 2, W, gfH - 2, r, glows, out);
     drawRoof(ctx, b, roof, W, rh, r);
     // Shadow cast by the eaves onto the facade.
     rect(ctx, 0, facadeTop, W, 2, "rgba(40, 24, 60, .35)");
@@ -352,5 +356,5 @@ export function drawBuilding(b) {
             px(ctx, tx + 2, door.y + door.h - 11, "#88b25a");
         }
     }
-    return { canvas, glows, door, topMargin: TOP_MARGIN };
+    return { canvas, glows, door, topMargin: TOP_MARGIN, sign: out.sign || null };
 }

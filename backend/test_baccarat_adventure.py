@@ -640,3 +640,12 @@ def test_envelope_round_trip_and_flags_isolation():
     flags = E.envelope_flags(["story_flag"], adv)
     assert E.read_envelope(flags)["run_id"] == adv["run_id"]
     assert E.strip_envelope(flags) == ["story_flag"]
+
+
+def test_arabic_room_keeps_its_language_across_restarts():
+    clock, ctx = Clock(), ctx_for()
+    adv = E.new_adventure(HOST, False, clock.now, "ar")
+    assert E.public_view(adv, ctx, clock.now)["lang"] == "ar"
+    E.restart(adv, clock.now)
+    assert E.public_view(adv, ctx, clock.now)["lang"] == "ar"
+    assert E.public_view(E.new_adventure(HOST, False, clock.now), ctx, clock.now)["lang"] == "en"

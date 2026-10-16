@@ -76,7 +76,7 @@ export default function AdventureGame({ code, player, room, onExit }) {
     // Everything the scene needs at birth, read once per layout.
     const initialRef = useRef({});
     initialRef.current = {
-        dusk: getLang() === "ar",
+        dusk: getLang() === "ar", ar: getLang() === "ar",
         pos: adventure.pos, navigator: adventure.nav_id === me.id, lock: adventure.lock, stepMs: adventure.step_ms, serverNow,
         gulf: { state: adventure.gulf_state, stage: adventure.scene?.kind === "gulf" ? adventure.scene.stage : null },
     };

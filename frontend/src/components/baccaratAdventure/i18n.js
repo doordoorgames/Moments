@@ -15,7 +15,8 @@ export function getLang() { return current; }
 export function setLang(next) {
     current = next === "ar" ? "ar" : "en";
     try { localStorage.setItem(KEY, current); } catch (_) { /* this tab still switches */ }
-    listeners.forEach((fn) => fn(current));
+    // Deferred: setLang may run during a render; components read `current` fresh anyway.
+    setTimeout(() => listeners.forEach((fn) => fn(current)), 0);
 }
 
 // ------------------------------------------------------------------ server copy
@@ -169,6 +170,46 @@ const AR = {
     "Only the host can restart": "بس المضيف يقدر يعيد",
     "That didn't go through.": "ما مشت.",
 
+    // Store signs (also the speaker on door scenes)
+    "BICESTER VILLAGE": "بيستر فيليج",
+    "PARFUMERIE": "عطور",
+    "FRAGRANCE": "روائح",
+    "ESSENCE": "خلاصة",
+    "MAISON DOREE": "البيت الذهبي",
+    "VERDANT": "الأخضر",
+    "MAISON LUNE": "بيت القمر",
+    "HARTWELL": "هارتويل",
+    "ROSIER": "الورد",
+    "ATELIER": "أتيليه",
+    "KENSAL": "كنسال",
+    "VELOUR": "مخمل",
+    "MARLOWE": "مارلو",
+    "BELLAMY": "بيلامي",
+    "PETAL & CO": "بتلة",
+    "TEA HOUSE": "بيت الشاي",
+    "CASHMERE": "كشمير",
+    "LINEN": "كتان",
+    "CANDLE CO": "شموع",
+    "FROMAGE": "أجبان",
+    "DOLCE": "دولتشي",
+    "TWEED": "تويد",
+    "SILK ROAD": "طريق الحرير",
+    "PEARL": "لؤلؤة",
+    "COCO": "كوكو",
+    "ORCHARD": "البستان",
+    "SAVOY": "سافوي",
+    "BLOOM": "زهرة",
+    "NOVA": "نوفا",
+    "LACE": "دانتيل",
+    "AMBER": "عنبر",
+    "THE EDIT": "المختارات",
+    "MERIDIAN": "ميريديان",
+    "OLIVE": "زيتون",
+    "SORBET": "سوربيه",
+    "HALCYON": "هالسيون",
+    "ROW 9": "الصف 9",
+    "SATIN": "ساتان",
+
     // ------------------------------------------------------------------ UI
     "Shoug's Tale · Mini game": "حكاية شوق · لعبة قصيرة",
     "Shoug's Tale · The Baccarat Hunt": "حكاية شوق · عطر شاهين",
@@ -224,8 +265,9 @@ const AR = {
     "Voice note · just now": "فويس · توه",
     "Voice note": "فويس",
     "Messages": "الرسايل",
-    "mobile": "موبايل",
-    "calling... again": "تتصل... مرة ثانية",
+    "mobile": "تتصل...",
+    "calling... again": "تتصل...",
+    "Sharifa is calling": "شريفة تتصل",
     "on the line": "على الخط",
     "Next": "التالي",
     "Got it": "فهمت",
@@ -303,6 +345,8 @@ const AR = {
     "Open Shoug's phone": "افتحي تلفون شوق",
     "Close phone": "سكري التلفون",
     "The Baccarat Hunt server isn't live yet. Try again after the next update.": "سيرفر اللعبة مو شغال للحين. جربي بعد التحديث الجاي.",
+    "Could not open the live connection.": "ما قدرنا نفتح الاتصال.",
+    "This room no longer exists.": "هالغرفة ما عادت موجودة.",
     "Could not load the village.": "ما قدرنا نحمّل الفيليج.",
     "The village could not start.": "الفيليج ما اشتغل.",
 };
@@ -335,12 +379,13 @@ export function t(text, lang = current) {
 
 // Re-renders on a language switch; returns { lang, t, ar }.
 export function useLang() {
-    const [lang, setState] = useState(current);
+    const [, force] = useState(0);
     useEffect(() => {
-        listeners.add(setState);
-        setState(current);
-        return () => listeners.delete(setState);
+        const bump = () => force((n) => n + 1);
+        listeners.add(bump);
+        return () => listeners.delete(bump);
     }, []);
+    const lang = current;
     return { lang, ar: lang === "ar", t: (text) => t(text, lang), dir: lang === "ar" ? "rtl" : "ltr" };
 }
 

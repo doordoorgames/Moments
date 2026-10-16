@@ -88,7 +88,7 @@ function ShopCutscene({ scene }) {
     useEffect(() => { SFX.door(); const t = setTimeout(() => SFX.success(), 900); return () => clearTimeout(t); }, []);
     return <div className="bh-shop" role="dialog" aria-label="Entering the perfume shop">
         <div className="bh-shop-doors" aria-hidden="true"><span className="bh-door-leaf bh-door-leaf--l" /><span className="bh-door-leaf bh-door-leaf--r" /><span className="bh-shop-light" /></div>
-        <div className="bh-shop-sign"><small>{t(scene.subtitle)}</small><b dir="ltr">{scene.title}</b></div>
+        <div className="bh-shop-sign"><small>{t(scene.subtitle)}</small><b>{t(scene.title)}</b></div>
         <div className="bh-shop-lines">{(scene.lines || []).map((l, i) => <p key={l} style={{ animationDelay: `${0.9 + i * 1.1}s` }}>{t(l)}</p>)}</div>
     </div>;
 }

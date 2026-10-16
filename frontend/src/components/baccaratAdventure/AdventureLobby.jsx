@@ -3,7 +3,7 @@ import { toast } from "sonner";
 import { api, apiErrorMessage } from "@/lib/api";
 import { shougPortrait } from "./ui/pixelImages";
 import { SFX } from "./sound";
-import { LangToggle, useLang } from "./i18n";
+import { useLang } from "./i18n";
 
 export default function AdventureLobby({ code, player, adventure, onState, onExit }) {
     const [busy, setBusy] = useState(false);
@@ -29,7 +29,6 @@ export default function AdventureLobby({ code, player, adventure, onState, onExi
     };
     return <main className="bh-page" data-typography-ignore dir={dir} lang={ar ? "ar" : "en"}>
         <section className="bh-card bh-lobby">
-            <LangToggle className="bh-lang--corner" />
             <span className="bh-kicker">{t("The Baccarat Hunt · Room")}</span>
             <button type="button" className="bh-code" onClick={copy} aria-label={`Room code ${code}. Tap to copy.`}>{code}</button>
             <p className="bh-lead">{t("Friends join from Mini games → The Baccarat Hunt → Join, with this code.")}</p>

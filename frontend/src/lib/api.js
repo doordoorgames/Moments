@@ -100,7 +100,7 @@ export const api = {
             .then((r) => r.data),
 
     // The Baccarat Hunt adventure (a mini game played inside a normal room).
-    createAdventure: (nickname) => axios.post(apiUrl("/rooms/adventure"), { nickname }).then((r) => r.data),
+    createAdventure: (nickname, lang = "en") => axios.post(apiUrl("/rooms/adventure"), { nickname, lang }).then((r) => r.data),
     adventureMap: (code, runId) => axios.get(apiUrl(`/rooms/${code}/adventure/map`), { params: { run_id: runId } }).then((r) => r.data),
     adventureStart: (code, session) => axios.post(apiUrl(`/rooms/${code}/adventure/start`), session).then((r) => r.data),
     adventureAction: (code, payload) => axios.post(apiUrl(`/rooms/${code}/adventure/action`), payload).then((r) => r.data),

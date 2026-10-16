@@ -5,7 +5,7 @@ import { api, apiErrorMessage } from "@/lib/api";
 import { useAdventureRoom } from "./useAdventureRoom";
 import AdventureLobby from "./AdventureLobby";
 import AdventureGame from "./AdventureGame";
-import { useLang } from "./i18n";
+import { getLang, setLang, useLang } from "./i18n";
 import "./BaccaratAdventure.css";
 
 function readPlayer(code) {
@@ -58,6 +58,8 @@ export default function BaccaratAdventureRoom() {
     }, []);
     if (!player) return <JoinHere code={code} onJoined={setPlayer} onExit={exit} />;
     const adventure = room.adventure;
+    // Every phone in the room plays in the language the room was made in.
+    if (adventure?.lang && getLang() !== adventure.lang) setLang(adventure.lang);
     if (!adventure) {
         return <main className="bh-page" data-typography-ignore dir={dir} lang={ar ? "ar" : "en"}>
             <section className="bh-card bh-card--center">

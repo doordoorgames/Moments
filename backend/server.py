@@ -1946,6 +1946,8 @@ ADVENTURE_IDLE_EVICT_MS = 180_000
 
 class AdventureCreateRequest(BaseModel):
     nickname: str
+    # "ar" for عطر شاهين (the Kuwaiti Arabic card); every phone in the room follows it.
+    lang: Optional[str] = "en"
 
 
 class AdventureActionRequest(RoomSessionRequest):
@@ -2117,7 +2119,7 @@ async def create_adventure_room(payload: AdventureCreateRequest):
         raise HTTPException(400, "Enter a nickname first")
     created = await create_room(RoomCreateRequest(nickname=nickname))
     code, player = created["code"], created["player"]
-    adv = AE.new_adventure(player["id"], bool(created.get("supreme_test_mode")), _ms())
+    adv = AE.new_adventure(player["id"], bool(created.get("supreme_test_mode")), _ms(), payload.lang)
     if adv["test"]:
         # TEST99 skips the lobby: straight into a playable solo session.
         AE.start_intro(adv, _ms())

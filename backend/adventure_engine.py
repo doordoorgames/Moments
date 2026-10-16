@@ -200,8 +200,8 @@ def _sync_finale_clock(adv, now: int) -> None:
 # Runs
 # ============================================================
 
-def new_adventure(host_id: str, test: bool, now: int) -> Dict[str, Any]:
-    adv = {"v": 1, "status": "lobby", "test": bool(test), "host_id": host_id, "created_ms": now,
+def new_adventure(host_id: str, test: bool, now: int, lang: Optional[str] = "en") -> Dict[str, Any]:
+    adv = {"v": 1, "status": "lobby", "test": bool(test), "host_id": host_id, "created_ms": now, "lang": "ar" if lang == "ar" else "en",
            "sims": [dict(s) for s in C.SIM_PLAYERS] if test else [], "rev": 0}
     _new_run_fields(adv, now)
     adv["status"] = "lobby"
@@ -1224,7 +1224,7 @@ def public_view(adv, ctx, now: int) -> Dict[str, Any]:
         }
     people = roster(adv, ctx)
     view = {
-        "run_id": adv["run_id"], "seed": adv["seed"], "status": adv["status"], "test": adv.get("test", False), "rev": adv.get("rev", 0),
+        "run_id": adv["run_id"], "seed": adv["seed"], "status": adv["status"], "lang": adv.get("lang", "en"), "test": adv.get("test", False), "rev": adv.get("rev", 0),
         "host_id": adv["host_id"], "nav_id": adv.get("nav_id"), "roster": people,
         "pos": adv["pos"], "teleport_seq": adv.get("teleport_seq"), "lock": movement_lock(adv),
         "clock": {"remaining_ms": clock_remaining(adv, now), "running": bool(adv["clock"].get("since")), "limit_ms": adv["clock"]["limit"]},

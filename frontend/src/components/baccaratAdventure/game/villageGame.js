@@ -7,6 +7,7 @@ import { drawBuilding } from "../art/buildings";
 import * as P from "../art/props";
 import { CELL_H, CELL_W, emoteSheet, gulfWomanSheet, npcSheet, shougSheet } from "../art/characters";
 import { glowCanvas, makeCanvas } from "../art/pixel";
+import { t as tr } from "../i18n";
 import { DIRS, freshCorrection, glideMs, makeBlockedGrid, targetInFront, walkableTile, walkerAt } from "./movement";
 
 const DIR_BASE = { down: 0, up: 3, left: 6, right: 9 };
@@ -26,6 +27,11 @@ export async function createVillageGame(parent, options) {
     const listeners = {};
     // Arabic-mode dusk experiment: every light source twice the size and more yellow.
     const DUSK = !!options.dusk;
+    const AR = !!options.ar;
+    if (AR && typeof document !== "undefined" && document.fonts?.load) {
+        // Signs are drawn with Cairo; give it a moment to arrive so the first frame is right.
+        await Promise.race([document.fonts.load("800 16px Cairo").catch(() => null), new Promise((r) => setTimeout(r, 1500))]);
+    }
     const state = {
         navigator: !!options.navigator,
         lock: options.lock || null,
@@ -104,12 +110,12 @@ export async function createVillageGame(parent, options) {
         }
 
         propTexture(p) {
-            const key = `prop:${p.kind}:${p.variant}:${p.kind === "tree" ? (p.x * 7 + p.y) % 3 : 0}`;
+            const key = `prop:${p.kind}:${p.variant}:${p.kind === "tree" ? (p.x * 7 + p.y) % 3 : 0}${AR ? ":ar" : ""}`;
             if (!this.textures.exists(key)) {
                 const make = {
                     tree: () => P.tree(p.variant, ((p.x * 7 + p.y) % 3) + 1), lamp: () => P.lamp(p.variant), bench: () => P.bench(p.variant),
                     planter: () => P.planter(p.variant), bush: () => P.bush(p.variant), fountain: P.fountain, clock_tower: P.clockTower,
-                    gate: P.gate, phonebox: P.phonebox, signpost: P.signpost, cafe_table: () => P.cafeTable(p.variant),
+                    gate: () => P.gate(AR), phonebox: P.phonebox, signpost: P.signpost, cafe_table: () => P.cafeTable(p.variant),
                 }[p.kind];
                 if (!make) return null;
                 const art = make();
@@ -127,11 +133,12 @@ export async function createVillageGame(parent, options) {
             this.add.image(0, 0, "ground").setOrigin(0, 0).setDepth(-2);
             this.glows = [];
             for (const b of L.buildings) {
-                const art = drawBuilding(b);
+                const art = drawBuilding(b, { textless: AR });
                 this.addCanvasTexture(`b:${b.id}`, art.canvas);
                 const left = b.x * T;
                 const top = b.y * T - art.topMargin;
                 this.add.image(left, top, `b:${b.id}`).setOrigin(0, 0).setDepth((b.y + b.h) * T);
+                if (AR && art.sign) this.addSign(left + art.sign.x, top + art.sign.y, art.sign, (b.y + b.h) * T + 0.5);
                 for (const g of art.glows) this.addGlow(left + g.x, top + g.y, g.r, g.a * 0.8, "glow");
                 if (b.door.style === "gold_double" || b.door.style === "gold_single") this.addSparkles(left + art.door.x, top + art.door.y, art.door.w, art.door.h);
             }
@@ -144,6 +151,7 @@ export async function createVillageGame(parent, options) {
                 const x = p.x * T - tex.art.ox;
                 const y = baseY - tex.art.oy;
                 this.add.image(x, y, tex.key).setOrigin(0, 0).setDepth(baseY - 1);
+                if (AR && tex.art.label) this.addSign(x + tex.art.label.x, y + tex.art.label.y, tex.art.label, baseY - 0.5);
                 for (const [lx, ly] of tex.art.lights || []) {
                     const glow = this.addGlow(x + lx, y + ly, p.kind === "lamp" ? 30 : 22, 0.72, "glow");
                     this.flicker(glow);
@@ -167,6 +175,18 @@ export async function createVillageGame(parent, options) {
                 m.drift = { vx: 4 + (i % 5), vy: -2 - (i % 3), phase: i };
                 this.motes.push(m);
             }
+        }
+
+        // Crisp Arabic shop sign laid over a pixel fascia, shrunk to fit its width.
+        addSign(x, y, sign, depth) {
+            const res = Math.min(18, Math.ceil(6 * (window.devicePixelRatio || 1))); // max camera zoom x screen density
+            const label = this.add.text(x + sign.w / 2, y + sign.h / 2, tr(sign.text, "ar"), {
+                fontFamily: "Cairo, system-ui, sans-serif", fontStyle: "800", fontSize: `${Math.max(6, sign.h - 1)}px`, color: sign.color,
+                stroke: "rgba(0,0,0,.55)", strokeThickness: 0.6, padding: { x: 1, y: 2 }, rtl: true,
+            }).setOrigin(0.5, 0.55).setResolution(res).setDepth(depth);
+            const fit = (sign.w - 3) / Math.max(1, label.width);
+            if (fit < 1) label.setScale(fit);
+            return label;
         }
 
         addGlow(x, y, r, alpha, key) {

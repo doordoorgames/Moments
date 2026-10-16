@@ -226,7 +226,7 @@ export function clockTower() {
     return { canvas, ox, oy: 110, lights: [[ox + 16, 90], [ox + 48, 90], [cx, cy]] };
 }
 
-export function gate() {
+export function gate(textless = false) {
     const W = 12 * 16;
     const { canvas, ctx } = makeCanvas(W + 4, 92);
     const ox = 2;
@@ -253,7 +253,7 @@ export function gate() {
     hline(ctx, sx, 6, signW, "#e5b95e");
     hline(ctx, sx, 20, signW, "#e5b95e");
     const text = "BICESTER VILLAGE";
-    drawText(ctx, text, sx + Math.round((signW - textWidth(text)) / 2), 11, "#f2c766", "rgba(0,0,0,.4)");
+    if (!textless) drawText(ctx, text, sx + Math.round((signW - textWidth(text)) / 2), 11, "#f2c766", "rgba(0,0,0,.4)");
     // Hanging flower baskets
     for (const x of [ox + 40, ox + W - 46]) {
         vline(ctx, x + 3, 22, 8, "#2c2a38");
@@ -261,7 +261,7 @@ export function gate() {
         for (let i = 0; i < 8; i++) px(ctx, x + i, 29 - (i % 2), i % 2 ? "#f59fba" : "#e9566f");
     }
     outline(canvas, INK);
-    return { canvas, ox, oy: 90, lights: [[ox + 8, 22], [ox + W - 8, 22]] };
+    return { canvas, ox, oy: 90, lights: [[ox + 8, 22], [ox + W - 8, 22]], label: { x: sx + 1, y: 7, w: signW - 2, h: 13, text, color: "#f2c766" } };
 }
 
 export function phonebox() {

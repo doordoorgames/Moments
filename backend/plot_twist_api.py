@@ -48,11 +48,11 @@ def router(db, query):
         return [PREFIX + cipher().encrypt(json.dumps(g).encode()).decode()]
 
     async def load(code):
-        result = await query(lambda: db().table('rooms').select('flags').eq('code', code).maybe_single().execute())
+        result = await query(lambda: db().table('rooms').select('flags,wheel_winner_choice_id').eq('code', code).maybe_single().execute())
         flags = result.data.get('flags') if result and result.data else None
         if not flags or not isinstance(flags[0], str) or not flags[0].startswith(PREFIX):
             raise HTTPException(404, 'Rooftop not found. Check the room code.')
-        try: return json.loads(cipher().decrypt(flags[0][len(PREFIX):].encode())), flags
+        try: return json.loads(cipher().decrypt(flags[0][len(PREFIX):].encode())), result.data['wheel_winner_choice_id']
         except InvalidToken: raise HTTPException(503, 'Room cannot be decrypted with the current server key.')
 
     def auth(g, authorization):
@@ -74,7 +74,7 @@ def router(db, query):
 
     async def save(code, g, old):
         flags = pack(g)
-        result = await query(lambda: db().table('rooms').update({'flags':flags}).eq('code',code).eq('flags',json.dumps(old)).execute())
+        result = await query(lambda: db().table('rooms').update({'flags':flags,'wheel_winner_choice_id':secrets.token_hex(16)}).eq('code',code).eq('wheel_winner_choice_id',old).execute())
         if not result.data: raise HTTPException(409, 'Room changed. Please try again.')
         await asyncio.gather(*(notify(ws) for ws in list(sockets[code])))
 
@@ -91,7 +91,7 @@ def router(db, query):
             code = 'P' + ''.join(secrets.choice('ABCDEFGHJKLMNPQRSTUVWXYZ23456789') for _ in range(5))
             existing = await query(lambda: db().table('rooms').select('code').eq('code',code).maybe_single().execute())
             if existing and existing.data: continue
-            await query(lambda: db().table('rooms').insert({'code':code,'flags':pack(g),'created_at':datetime.now(timezone.utc).isoformat()}).execute())
+            await query(lambda: db().table('rooms').insert({'code':code,'flags':pack(g),'wheel_winner_choice_id':secrets.token_hex(16),'created_at':datetime.now(timezone.utc).isoformat()}).execute())
             return dict(code=code, player_id=p['id'], token=p['token'], state=engine.view(g,p['id']))
         raise HTTPException(503, 'Could not reserve a room. Try again.')
 

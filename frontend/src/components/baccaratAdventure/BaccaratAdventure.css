@@ -644,3 +644,23 @@
 /* Chat bubbles land one by one. */
 .bh-bubble--in { animation: bh-bubble-in .28s cubic-bezier(.2, 1.4, .4, 1) both; }
 @keyframes bh-bubble-in { from { opacity: 0; transform: translateY(8px) scale(.92); } to { opacity: 1; transform: none; } }
+
+/* Arabic: Cairo runs taller than the Latin faces, so phone overlays get room to breathe
+   and never run off the screen. */
+.bh[lang="ar"] .bh-phone-layer { bottom: var(--bottom); align-items: flex-start; pointer-events: none; }
+.bh[lang="ar"] .bh-phone { max-height: 100%; display: flex; flex-direction: column; pointer-events: auto; }
+.bh[lang="ar"] .bh-phone-case { min-height: 0; display: flex; flex-direction: column; }
+.bh[lang="ar"] .bh-phone-screen { min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
+.bh[lang="ar"] small { font-family: var(--ui); letter-spacing: 0; }
+.bh[lang="ar"] .bh-call-name { font-style: normal; font-size: 28px; line-height: 1.3; }
+.bh[lang="ar"] .bh-call-who small { font-size: 13px; }
+.bh[lang="ar"] .bh-call-actions { padding-bottom: 30px; }
+.bh[lang="ar"] .bh-call-actions + * { margin-top: 0; }
+.bh[lang="ar"] .bh-round em { font: 800 14px/1.3 var(--ui); }
+.bh[lang="ar"] :is(.bh-bubble, .bh-line p, .bh-transcript, .bh-dialog-text) { line-height: 1.5; }
+.bh[lang="ar"] :is(.bh-call-wait, .bh-frozen, .bh-ribbon, .bh-attempts) { line-height: 1.45; }
+.bh[lang="ar"] .bh-ribbon { white-space: normal; text-align: center; }
+@media (max-height: 720px) {
+    .bh[lang="ar"] .bh-call-name { font-size: 24px; }
+    .bh[lang="ar"] .bh-call { gap: 8px; }
+}

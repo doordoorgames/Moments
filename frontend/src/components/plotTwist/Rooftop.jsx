@@ -1,6 +1,6 @@
-import React from 'react';
+import React, {memo} from 'react';
 
-export default function Rooftop() {
+function Rooftop() {
   return <div className="pt-world" aria-hidden="true"><svg className="pt-scenery" viewBox="0 0 1440 1100" preserveAspectRatio="xMidYMax slice">
     <defs>
       <linearGradient id="pt-sky" x2="0" y2="1"><stop stopColor="#251645"/><stop offset=".35" stopColor="#79467c"/><stop offset=".62" stopColor="#dd7297"/><stop offset=".79" stopColor="#ffbd98"/><stop offset="1" stopColor="#976399"/></linearGradient>
@@ -25,3 +25,5 @@ export default function Rooftop() {
     <g fill="#ffe9ba" opacity=".65"><circle cx="154" cy="381" r="2"/><circle cx="1121" cy="334" r="2"/><circle cx="1290" cy="437" r="2"/><circle cx="800" cy="335" r="1.5"/></g>
   </svg><div className="pt-vignette"/></div>;
 }
+
+export default memo(Rooftop);

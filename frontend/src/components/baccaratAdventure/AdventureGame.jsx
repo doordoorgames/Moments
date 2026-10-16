@@ -13,6 +13,7 @@ import { EndingCard } from "./ui/EndingCard";
 import { TestPanel } from "./ui/TestPanel";
 import { nameOf, useNow } from "./ui/common";
 import { SFX } from "./sound";
+import { getLang, t } from "./i18n";
 
 function VillageCanvas({ layout, initialRef, onController, onError }) {
     const host = useRef(null);
@@ -68,13 +69,14 @@ export default function AdventureGame({ code, player, room, onExit }) {
         setLayoutError("");
         api.adventureMap(code, runId)
             .then((res) => { if (!cancelled && res.run_id === runId) setLayout(res.layout); })
-            .catch((err) => { if (!cancelled && err?.response?.status !== 409) setLayoutError(apiErrorMessage(err, "Could not load the village.")); });
+            .catch((err) => { if (!cancelled && err?.response?.status !== 409) setLayoutError(t(apiErrorMessage(err, "Could not load the village."))); });
         return () => { cancelled = true; };
     }, [code, runId]);
 
     // Everything the scene needs at birth, read once per layout.
     const initialRef = useRef({});
     initialRef.current = {
+        dusk: getLang() === "ar",
         pos: adventure.pos, navigator: adventure.nav_id === me.id, lock: adventure.lock, stepMs: adventure.step_ms, serverNow,
         gulf: { state: adventure.gulf_state, stage: adventure.scene?.kind === "gulf" ? adventure.scene.stage : null },
     };
@@ -87,7 +89,7 @@ export default function AdventureGame({ code, player, room, onExit }) {
         c.on("hint", (t) => setHint(t));
         c.on("interact", () => interactRef.current());
     }, [sendMove]);
-    const onError = useCallback((err) => setLayoutError(err?.message || "The village could not start."), []);
+    const onError = useCallback((err) => setLayoutError(err?.message || t("The village could not start.")), []);
 
     useEffect(() => onPos((pos, teleport, run) => { if (run === runRef.current) controller?.applyServerPos(pos, teleport); }), [onPos, controller]);
     useEffect(() => onCorrection((pos, run, info) => { if (run === runRef.current) controller?.applyCorrection(pos, info); }), [onCorrection, controller]);
@@ -127,7 +129,7 @@ export default function AdventureGame({ code, player, room, onExit }) {
             if (res?.result?.correct === false) SFX.wrong();
             if (res?.result?.correct === true) SFX.success();
         } catch (err) {
-            toast.error(apiErrorMessage(err, "That didn't go through."));
+            toast.error(t(apiErrorMessage(err, "That didn't go through.")));
         } finally {
             busyRef.current = false;
             setBusy(false);
@@ -166,17 +168,17 @@ export default function AdventureGame({ code, player, room, onExit }) {
         {layout && <VillageCanvas layout={layout} initialRef={initialRef} onController={onController} onError={onError} />}
         <div className="bh-grade" aria-hidden="true" />
         <div className="bh-vignette" aria-hidden="true" />
-        {!layout && !layoutError && <div className="bh-loading"><span className="bh-spinner" aria-hidden="true" />Walking into Bicester Village...</div>}
-        {layoutError && <div className="bh-loading bh-loading--error" role="alert">{layoutError}<button type="button" className="bh-btn" onClick={() => window.location.reload()}>Reload</button></div>}
+        {!layout && !layoutError && <div className="bh-loading"><span className="bh-spinner" aria-hidden="true" />{t("Walking into Bicester Village...")}</div>}
+        {layoutError && <div className="bh-loading bh-loading--error" role="alert">{layoutError}<button type="button" className="bh-btn" onClick={() => window.location.reload()}>{t("Reload")}</button></div>}
         {status !== "ended" && status !== "intro" && <Hud adventure={adventure} me={me} serverNow={serverNow} />}
         <FeedToasts feed={adventure.feed} />
-        {!connected && <div className="bh-offline" role="status">Reconnecting...</div>}
+        {!connected && <div className="bh-offline" role="status">{t("Reconnecting...")}</div>}
         {status === "intro" && <IntroOverlay adventure={adventure} me={me} act={act} serverNow={serverNow} isHost={isHost} busy={busy} />}
         {status === "playing" && <>
             <PhoneOverlay adventure={adventure} me={me} act={act} busy={busy} privateData={privateData} serverNow={serverNow} compact={isNav} />
             <SceneDialog adventure={adventure} me={me} act={act} busy={busy} serverNow={serverNow} />
             {showControls && <Controls onDir={(d) => controller?.setInput(d)} onA={() => interactRef.current()} hint={zainEntry ? null : hint} disabled={!!adventure.lock || !layout} />}
-            {!isNav && !sceneActive && <div className="bh-role" role="status"><b>{navName}</b> is steering Shoug. Shout directions!</div>}
+            {!isNav && !sceneActive && <div className="bh-role" role="status"><b>{navName}</b> {t("is steering Shoug. Shout directions!")}</div>}
             {(!phoneActive || zainEntry) && !sceneActive && <PhoneButton adventure={adventure} me={me} otp={receivedOtp} otpHint={otpHint}
                 docked={zainEntry} showLabel={callStage === "wrong"} />}
         </>}

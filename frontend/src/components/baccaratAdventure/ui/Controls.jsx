@@ -1,6 +1,7 @@
 import { useRef, useState } from "react";
 import { dirFromVector } from "../game/movement";
 import { SFX } from "../sound";
+import { t } from "../i18n";
 
 const ARMS = ["up", "right", "down", "left"];
 
@@ -46,7 +47,7 @@ export function Controls({ onDir, onA, hint, disabled = false, label }) {
         {/* Only there when Shoug faces a door or a person: Open / Talk. */}
         {hint ? <button type="button" className="bh-a bh-a--hint" disabled={disabled}
             onPointerDown={(e) => { e.preventDefault(); SFX.unlock(); onA(); }} aria-label={aLabel === "A" ? "Interact" : aLabel}>
-            <span>{aLabel}</span>
+            <span>{t(aLabel)}</span>
         </button> : <span className="bh-a-slot" aria-hidden="true" />}
     </div>;
 }

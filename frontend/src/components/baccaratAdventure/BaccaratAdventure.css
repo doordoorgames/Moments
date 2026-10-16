@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,600..900;1,6..96,600..900&family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=DM+Mono:wght@500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,600..900;1,6..96,600..900&family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=DM+Mono:wght@500&family=Cairo:wght@600;700;800;900&display=swap');
 
 /* ------------------------------------------------------------------ tokens */
 .bh, .bh-page {
@@ -622,3 +622,25 @@
 @keyframes bh-fade { from { opacity: 0; } to { opacity: 1; } }
 @keyframes bh-door { to { transform: perspective(600px) rotateY(-100deg); } }
 @keyframes bh-door-r { to { transform: perspective(600px) rotateY(100deg); } }
+
+/* ------------------------------------------------------------------ Arabic */
+/* Thick Kuwaiti-friendly face: every stroke stays visible on a phone. */
+:is(.bh, .bh-page)[lang="ar"] {
+    --display: 'Cairo', system-ui, sans-serif;
+    --ui: 'Cairo', system-ui, sans-serif;
+    font-weight: 700;
+}
+:is(.bh, .bh-page)[lang="ar"] .bh-display { font-style: normal; font-weight: 900; letter-spacing: 0; line-height: 1.15; }
+:is(.bh, .bh-page)[lang="ar"] .bh-display em { font-style: normal; }
+:is(.bh, .bh-page)[lang="ar"] .bh-kicker { font-family: 'Cairo', system-ui, sans-serif; font-weight: 800; letter-spacing: 0; font-size: 12px; }
+:is(.bh, .bh-page)[lang="ar"] :is(.bh-bubble, .bh-transcript, .bh-line p, .bh-dialog-text, .bh-lead) { line-height: 1.6; }
+
+.bh-lang { display: inline-flex; border: 2.5px solid var(--ink); box-shadow: 3px 3px 0 var(--ink); background: var(--paper); border-radius: 999px; overflow: hidden; }
+.bh-lang button { border: 0; background: transparent; padding: 6px 14px; font: 800 13px/1 'Cairo', var(--ui); color: var(--ink); }
+.bh-lang button.on { background: var(--ink); color: var(--cream); }
+.bh-lang--corner { position: absolute; top: 14px; inset-inline-end: 14px; z-index: 2; }
+.bh-entry, .bh-lobby { position: relative; }
+
+/* Chat bubbles land one by one. */
+.bh-bubble--in { animation: bh-bubble-in .28s cubic-bezier(.2, 1.4, .4, 1) both; }
+@keyframes bh-bubble-in { from { opacity: 0; transform: translateY(8px) scale(.92); } to { opacity: 1; transform: none; } }

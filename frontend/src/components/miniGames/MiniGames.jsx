@@ -8,7 +8,7 @@ export function MiniGamesList() {
   return <section className="mini-games" data-typography-ignore id="mini-games" aria-labelledby="mini-games-title">
     <h2 id="mini-games-title">Mini games</h2>
     <div className="mini-games-list">{miniGames.filter(game => !game.hidden).map(game => <article className="mini-game-card" key={game.id}>
-      <h3>{game.name}</h3><p>{game.description}</p>
+      <h3>{game.name}</h3>{game.subtitle && <p className="mini-game-subtitle" lang="ar" dir="rtl">{game.subtitle}</p>}<p>{game.description}</p>
       <button aria-label={`Play ${game.name}`} onClick={() => navigate(`/mini-games/${game.id}`)}>Play</button>
     </article>)}</div>
   </section>;

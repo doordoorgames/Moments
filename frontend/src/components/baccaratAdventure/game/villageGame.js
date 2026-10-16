@@ -24,6 +24,8 @@ export function zoomFor(width, height) {
 export async function createVillageGame(parent, options) {
     const Phaser = await loadPhaser();
     const listeners = {};
+    // Arabic-mode dusk experiment: every light source twice the size and more yellow.
+    const DUSK = !!options.dusk;
     const state = {
         navigator: !!options.navigator,
         lock: options.lock || null,
@@ -89,7 +91,7 @@ export async function createVillageGame(parent, options) {
             const emotes = emoteSheet();
             const etex = this.addCanvasTexture("emotes", emotes.canvas);
             for (const [name, [x, y, w, h]] of Object.entries(emotes.frames)) etex.add(name, 0, x, y, w, h);
-            this.addCanvasTexture("glow", glowCanvas(32, "#ffd98a"));
+            this.addCanvasTexture("glow", glowCanvas(32, DUSK ? "#ffe45c" : "#ffd98a"));
             this.addCanvasTexture("glow-rose", glowCanvas(32, "#ffb7a0"));
             this.addCanvasTexture("sparkle", P.sparkle());
             this.addCanvasTexture("dust", P.dust());
@@ -155,6 +157,8 @@ export async function createVillageGame(parent, options) {
                     this.tweens.add({ targets: s, alpha: { from: 0, to: 0.9 }, duration: 600, yoyo: true, repeat: -1, delay: i * 420, hold: 120 });
                 }
             }
+            // Dusk experiment: a 25% purple wash over the whole map, under the lights.
+            if (DUSK) this.add.rectangle(0, -this.skyH, L.w * T, L.h * T + this.skyH, 0x6e32a0, 0.25).setOrigin(0, 0).setDepth(DEPTH_GLOW - 2);
             // Drifting golden motes in the low sun.
             this.motes = [];
             for (let i = 0; i < 26; i++) {
@@ -166,7 +170,8 @@ export async function createVillageGame(parent, options) {
         }
 
         addGlow(x, y, r, alpha, key) {
-            const g = this.add.image(x, y, key).setDepth(DEPTH_GLOW).setAlpha(alpha).setScale((r * 2) / 64)
+            const size = DUSK && key === "glow" ? r * 2 : r;
+            const g = this.add.image(x, y, key).setDepth(DEPTH_GLOW).setAlpha(alpha).setScale((size * 2) / 64)
                 .setBlendMode(Phaser.BlendModes.ADD);
             this.glows.push(g);
             return g;

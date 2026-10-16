@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Marked, PhoneFrame, Transcript, formatClock } from "./common";
 import { SFX } from "../sound";
+import { getLang, t } from "../i18n";
 
 const BARS = Array.from({ length: 34 }, (_, i) => 0.25 + 0.75 * Math.abs(Math.sin(i * 1.7) * Math.cos(i * 0.6)));
 const ZAIN_GAP = 2600; // Zain's texts land one at a time, slowly enough to read
@@ -28,12 +29,12 @@ function VoiceNote({ voice, serverNow, onPlay, busy }) {
             <div className="bh-voice-wave" aria-hidden="true">
                 {BARS.map((h, i) => <i key={i} style={{ height: `${Math.round(h * 100)}%` }} className={i / BARS.length < progress ? "on" : ""} />)}
             </div>
-            <span className="bh-voice-time">{voice.status === "playing" ? formatClock(voice.dur_ms - elapsed) : formatClock(voice.dur_ms)}</span>
+            <span className="bh-voice-time" dir="ltr">{voice.status === "playing" ? formatClock(voice.dur_ms - elapsed) : formatClock(voice.dur_ms)}</span>
         </div>
-        <Transcript text={voice.script} />
-        {voice.status === "ready" && <p className="bh-voice-note">Plays once. Listen together.</p>}
-        {voice.status === "done" && <p className="bh-voice-note">Played. Hope someone was listening.</p>}
-        <p className="bh-placeholder-tag">Audio placeholder</p>
+        <Transcript text={t(voice.script)} />
+        {voice.status === "ready" && <p className="bh-voice-note">{t("Plays once. Listen together.")}</p>}
+        {voice.status === "done" && <p className="bh-voice-note">{t("Played. Hope someone was listening.")}</p>}
+        <p className="bh-placeholder-tag">{t("Audio placeholder")}</p>
         {voice.audio && voice.status === "playing" && <audio ref={audioRef} src={voice.audio} preload="auto" />}
     </div>;
 }
@@ -42,7 +43,7 @@ function VoiceNote({ voice, serverNow, onPlay, busy }) {
 export function ViewMessage({ name, onOpen }) {
     return <button type="button" className="bh-view-msg" onClick={onOpen}>
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16v10H9l-5 4z" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinejoin="round" /></svg>
-        <span>Tap here to view {name}'s message</span>
+        <span>{getLang() === "ar" ? `اضغطي هني وشوفي رسالة ${t(name)}` : `Tap here to view ${name}'s message`}</span>
     </button>;
 }
 
@@ -57,7 +58,7 @@ function ZainThread({ intro, serverNow }) {
         prev.current = count;
     }, [count]);
     return <div className="bh-thread" aria-live="polite">
-        {messages.slice(0, count).map((m, i) => <div key={i} className="bh-bubble bh-bubble--them"><Marked text={m} /></div>)}
+        {messages.slice(0, count).map((m, i) => <div key={i} className="bh-bubble bh-bubble--them"><Marked text={t(m)} /></div>)}
         {typing && <div className="bh-bubble bh-bubble--them bh-typing" aria-label="Zain is typing"><i /><i /><i /></div>}
     </div>;
 }
@@ -72,28 +73,28 @@ export function IntroOverlay({ adventure, me, act, serverNow, isHost, busy }) {
     const iAmReady = readyLocal || ready.includes(me.id);
     return <div className={`bh-intro bh-intro--${intro.stage}`} role="dialog" aria-modal="true" aria-label="Shoug's messages">
         <div className="bh-intro-head">
-            <span className="bh-kicker">Shoug's Tale · The Baccarat Hunt</span>
-            {intro.stage === "voice" && <h1 className="bh-display">Bicester Village,<br /><em>golden hour.</em></h1>}
+            <span className="bh-kicker">{t("Shoug's Tale · The Baccarat Hunt")}</span>
+            {intro.stage === "voice" && <h1 className="bh-display">{t("Bicester Village,")}<br /><em>{t("golden hour.")}</em></h1>}
         </div>
         {intro.stage === "voice" && <PhoneFrame>
-            <div className="bh-chat-head"><span className="bh-avatar bh-avatar--shaheen">S</span><div><b>Shaheen</b><small>Voice note · just now</small></div></div>
+            <div className="bh-chat-head"><span className="bh-avatar bh-avatar--shaheen">{getLang() === "ar" ? "ش" : "S"}</span><div><b>{t("Shaheen")}</b><small>{t("Voice note · just now")}</small></div></div>
             {opened ? <VoiceNote voice={intro.voice} serverNow={serverNow} onPlay={() => act("voice_play")} busy={busy} />
                 : <ViewMessage name="Shaheen" onOpen={() => { SFX.unlock(); SFX.tap(); setOpened(true); }} />}
         </PhoneFrame>}
         {intro.stage === "voice" && opened && <div className="bh-intro-actions">
-            <button type="button" className="bh-btn" disabled={busy} onClick={() => { SFX.unlock(); act("voice_skip"); }}>Next</button>
+            <button type="button" className="bh-btn" disabled={busy} onClick={() => { SFX.unlock(); act("voice_skip"); }}>{t("Next")}</button>
         </div>}
         {intro.stage === "zain" && <PhoneFrame>
-            <div className="bh-chat-head"><span className="bh-avatar bh-avatar--zain">Z</span><div><b>Zain</b><small>Messages</small></div></div>
+            <div className="bh-chat-head"><span className="bh-avatar bh-avatar--zain">{getLang() === "ar" ? "ز" : "Z"}</span><div><b>{t("Zain")}</b><small>{t("Messages")}</small></div></div>
             <ZainThread intro={intro} serverNow={serverNow} />
         </PhoneFrame>}
         {intro.stage === "zain" && <div className="bh-intro-actions">
             {!isHost && <button type="button" className="bh-btn" disabled={!zainDone || iAmReady || busy}
-                onClick={() => { SFX.unlock(); setReadyLocal(true); act("ready"); }}>{iAmReady ? "Ready. Waiting for the host" : "Got it"}</button>}
+                onClick={() => { SFX.unlock(); setReadyLocal(true); act("ready"); }}>{t(iAmReady ? "Ready. Waiting for the host" : "Got it")}</button>}
             {isHost && <button type="button" className="bh-btn" disabled={!zainDone || busy} onClick={() => { SFX.unlock(); act("begin"); }}>
-                Start the hunt {realPlayers.length > 1 && <small>{ready.filter((id) => id !== me.id).length}/{realPlayers.length - 1} ready</small>}
+                {t("Start the hunt")} {realPlayers.length > 1 && <small>{ready.filter((id) => id !== me.id).length}/{realPlayers.length - 1} ready</small>}
             </button>}
         </div>}
-        {intro.stage === "voice" && intro.voice.status !== "ready" && intro.voice.status !== "done" && <p className="bh-intro-hint">Listening...</p>}
+        {intro.stage === "voice" && intro.voice.status !== "ready" && intro.voice.status !== "done" && <p className="bh-intro-hint">{t("Listening...")}</p>}
     </div>;
 }

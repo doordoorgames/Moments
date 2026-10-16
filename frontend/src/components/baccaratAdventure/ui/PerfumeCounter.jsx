@@ -3,6 +3,7 @@ import { Ribbon, canActFor, nameOf } from "./common";
 import { handImage, perfumeImage } from "./pixelImages";
 import { handReach, takenBottles } from "../game/finale";
 import { SFX } from "../sound";
+import { getLang, t } from "../i18n";
 
 function useFrame(active) {
     const [, setTick] = useState(0);
@@ -66,8 +67,8 @@ export function PerfumeCounter({ adventure, me, act, busy, serverNow }) {
     return <div className="bh-counter" role="dialog" aria-label="The perfume counter">
         <header className="bh-counter-head">
             <div>
-                <span className="bh-kicker">Final reductions</span>
-                <h2 className="bh-display">Pick <em>one.</em></h2>
+                <span className="bh-kicker">{t("Final reductions")}</span>
+                <h2 className="bh-display">{t("Pick")} <em>{t("one.")}</em></h2>
             </div>
             <div className={`bh-ring ${secs <= 5 ? "bh-ring--hurry" : ""}`} role="timer" aria-label={`${secs} seconds left`}>
                 <svg viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="20" className="bh-ring-bg" />
@@ -83,23 +84,23 @@ export function PerfumeCounter({ adventure, me, act, busy, serverNow }) {
                     <button type="button" className="bh-bottle" disabled={gone || !!finale.choice} onClick={() => { SFX.tap(); setInspect(b.id); }}
                         aria-label={gone ? `${b.name}, taken` : `Inspect ${b.name}`}>
                         {!gone && <img src={perfumeImage(b.id)} alt="" />}
-                        {gone && <span className="bh-gone">Taken</span>}
+                        {gone && <span className="bh-gone">{t("Taken")}</span>}
                     </button>
-                    <span className="bh-tag">{b.name}</span>
+                    <span className="bh-tag" dir="ltr">{b.name}</span>
                     {(handsBySlot[slot] || []).map((h) => <Hand key={h.id} hand={h} />)}
                 </div>;
             })}
         </div>
-        {!mine && !pick && <p className="bh-counter-note">Shout your pick. Only {nameOf(adventure, finale.assignee)} can buy.</p>}
+        {!mine && !pick && <p className="bh-counter-note">{getLang() === "ar" ? `صارخوا باختياركم. بس ${nameOf(adventure, finale.assignee)} يقدر يشتري.` : `Shout your pick. Only ${nameOf(adventure, finale.assignee)} can buy.`}</p>}
         {pick && <div className="bh-sheet" role="dialog" aria-label={pick.name}>
             <img className="bh-sheet-bottle" src={perfumeImage(pick.id)} alt={pick.name} />
             <div className="bh-sheet-copy">
-                <b>{pick.name}</b>
-                <p>{pick.note}</p>
+                <b dir="ltr">{pick.name}</b>
+                <p>{t(pick.note)}</p>
                 {mine ? <button type="button" className="bh-btn" disabled={busy || !!finale.choice}
-                    onClick={() => { SFX.unlock(); act("choose", { value: pick.id }); }}>Buy this one</button>
-                    : <p className="bh-sheet-wait">Only {nameOf(adventure, finale.assignee)} can buy.</p>}
-                <button type="button" className="bh-btn bh-btn--ghost" onClick={() => setInspect(null)}>Back to the shelf</button>
+                    onClick={() => { SFX.unlock(); act("choose", { value: pick.id }); }}>{t("Buy this one")}</button>
+                    : <p className="bh-sheet-wait">{getLang() === "ar" ? `بس ${nameOf(adventure, finale.assignee)} يقدر يشتري.` : `Only ${nameOf(adventure, finale.assignee)} can buy.`}</p>}
+                <button type="button" className="bh-btn bh-btn--ghost" onClick={() => setInspect(null)}>{t("Back to the shelf")}</button>
             </div>
         </div>}
     </div>;

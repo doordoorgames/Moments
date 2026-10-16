@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { SFX } from "../sound";
 import { highlightParts, plainText } from "./guide";
+import { getLang, t } from "../i18n";
 
 export function useNow(intervalMs = 250) {
     const [now, setNow] = useState(() => Date.now());
@@ -19,7 +20,7 @@ export function formatClock(ms) {
 }
 
 export function nameOf(adventure, id) {
-    return (adventure.roster || []).find((p) => p.id === id)?.nickname || "Someone";
+    return (adventure.roster || []).find((p) => p.id === id)?.nickname || t("Someone");
 }
 
 // Who may press the buttons for an assignment: the assignee, or the TEST99
@@ -36,7 +37,7 @@ export function Ribbon({ adventure, me, assigneeId, verb = "this one's yours", o
     const acting = !mine && canActFor(adventure, me, assigneeId);
     const name = nameOf(adventure, assigneeId);
     return <div className={`bh-ribbon ${mine || acting ? "bh-ribbon--mine" : ""}`} role="status">
-        {mine ? <><b>{name}</b>, {verb}</> : acting ? <><b>TEST99</b> playing as {name}</> : <><b>{name}</b> {other}</>}
+        {mine ? <><b>{name}</b>{t(",")} {t(verb)}</> : acting ? <><b>TEST99</b> {t("playing as")} {name}</> : <><b>{name}</b> {t(other)}</>}
     </div>;
 }
 
@@ -47,7 +48,7 @@ export function PhoneFrame({ children, label = "Shoug's phone", tone = "" }) {
             <span className="bh-phone-stud bh-phone-stud--b" aria-hidden="true" />
             <div className="bh-phone-screen">
                 <div className="bh-phone-status" aria-hidden="true">
-                    <span>6:41</span>
+                    <span dir="ltr">6:41</span>
                     <span className="bh-island" />
                     <span className="bh-bars"><i /><i /><i /><i /></span>
                 </div>
@@ -121,7 +122,7 @@ export function Countdown({ until, total, serverNow, label }) {
 // Penalty seconds come from the server config so the UI never drifts from the rules.
 export function penaltyLabel(adventure, key) {
     const s = adventure?.penalty_s?.[key];
-    return s ? `-${s}s` : null;
+    return s ? (getLang() !== "ar" ? `-${s}s` : `-${s}ث`) : null;
 }
 
 export function Stamp({ children, tone = "maroon" }) {

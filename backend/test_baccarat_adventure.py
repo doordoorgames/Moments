@@ -409,6 +409,29 @@ def test_wrong_train_time_gets_typing_then_angry_reply():
     assert any(p["key"] == "train_wrong" for p in adv["pen"])
 
 
+
+def test_right_train_time_shows_shougs_text_first_then_zains_reply():
+    clock, ctx = Clock(), ctx_for()
+    adv = started(ctx, clock)
+    phone = _ring(adv, ctx, clock, "train")
+    E.act(adv, ctx, phone["assignee"], "train", {"inst": phone["inst"], "value": "7 PM"}, clock.now)
+    # Only Shoug's bubble at first: Zain's reply never lands at the same moment.
+    assert adv["phone"]["stage"] == "confirm" and adv["phone"].get("line") is None
+    sent_at = clock.now
+    seen = []
+    def watch(a):
+        p = a.get("phone")
+        if p and (not seen or seen[-1][0] != p["stage"]):
+            seen.append((p["stage"], clock.now - sent_at))
+        return p is None
+    run_until(adv, ctx, clock, watch)
+    stages = [s for s, _ in seen]
+    assert stages[:3] == ["confirm", "typing", "correct"]
+    reply_ms = dict(seen)["correct"]
+    assert 1_400 <= reply_ms <= 2_200
+    assert not any(p["key"] == "train_wrong" for p in adv["pen"])
+    assert adv["ev"]["train"]["ok"] is True
+
 # ------------------------------------------------------------------ doors and the Gulf encounter
 
 def test_wrong_doors_cost_once_and_right_door_waits_for_story():

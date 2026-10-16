@@ -18,8 +18,8 @@ TIMING = {
     "zain_line_ms": 2_600,
     "missed_call_open_ms": 15_000,  # after this anyone may call Zain back
     "train_answer_ms": 20_000,
-    "train_confirm_ms": 1_300,
-    "train_typing_ms": 2_200,
+    "train_confirm_ms": 450,        # Shoug's bubble alone before Zain starts typing
+    "train_typing_ms": 1_300,       # ~1.75s total from Shoug's text to Zain's reply
     "train_reply_ms": 3_400,
     "gulf_greet_ms": 2_800,
     "gulf_inspect_ms": 35_000,      # includes the short reveal before "Tap here to type"
@@ -120,7 +120,7 @@ TRAIN = {
     "options": ["6:30 PM", "7 PM", "7:30 PM", "8 PM"],
     "correct": "7 PM",
     "shoug_correct": "7 PM. Relax.",
-    "zain_correct": "That's my girl.",
+    "zain_correct": "That's my girl 🫶",
     "shoug_wrong": "Wait, is it {answer}?",
     "shoug_timeout": "Umm...",
     "zain_wrong": "ARE YOU SERIOUS? YALLA, HURRY UP! I TOLD YOU IT'S 7 PM!",

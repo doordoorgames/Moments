@@ -6,6 +6,7 @@ import { api, apiErrorMessage } from "@/lib/api";
 import { shougPortrait } from "./ui/pixelImages";
 import { guideTarget } from "./ui/guide";
 import { SFX } from "./sound";
+import { LangToggle, useLang } from "./i18n";
 import "./BaccaratAdventure.css";
 
 export function roomPath(code) {
@@ -22,6 +23,7 @@ function GuideArrow({ below = false }) {
 // Mini games → The Baccarat Hunt: create a room (TEST99 starts a solo test) or join one.
 export default function BaccaratAdventureEntry({ onContinue }) {
     const navigate = useNavigate();
+    const { t, dir, ar } = useLang();
     const params = new URLSearchParams(typeof window !== "undefined" ? window.location.search : "");
     const [nickname, setNickname] = useState("");
     const [code, setCode] = useState((params.get("code") || "").toUpperCase());
@@ -46,7 +48,7 @@ export default function BaccaratAdventureEntry({ onContinue }) {
                 ? "The Baccarat Hunt server isn't live yet. Try again after the next update."
                 : apiErrorMessage(err, "Could not create a room.");
             setError(message);
-            toast.error(message);
+            toast.error(t(message));
         } finally {
             setBusy(false);
         }
@@ -64,7 +66,7 @@ export default function BaccaratAdventureEntry({ onContinue }) {
         } catch (err) {
             const message = apiErrorMessage(err, "Could not join that room.");
             setError(message);
-            toast.error(message);
+            toast.error(t(message));
         } finally {
             setBusy(false);
         }
@@ -109,45 +111,46 @@ export default function BaccaratAdventureEntry({ onContinue }) {
         return () => clearTimeout(t);
     }, [mode, typed]);
     const arrowAt = guideTarget({ mode, nickname, code, codeStep, buttonArrow });
-    return <main className="bh-page" data-typography-ignore>
+    return <main className="bh-page" data-typography-ignore dir={dir} lang={ar ? "ar" : "en"}>
         <section className="bh-card bh-entry">
-            <span className="bh-kicker">Shoug's Tale · Mini game</span>
-            <h1 className="bh-display">The Baccarat <em>Hunt.</em></h1>
+            <LangToggle className="bh-lang--corner" />
+            <span className="bh-kicker">{t("Shoug's Tale · Mini game")}</span>
+            {ar ? <h1 className="bh-display">عطر <em>شاهين.</em></h1> : <h1 className="bh-display">The Baccarat <em>Hunt.</em></h1>}
             <img className="bh-entry-shoug" src={shougPortrait(3)} alt="Shoug seen from behind, ready to walk" />
-            <p className="bh-lead">Golden hour at Bicester Village. Shaheen needs his mama's perfume, Zain needs a code, and Sharifa will not stop calling. Play together, one room, every phone.</p>
-            {error && <p className="bh-error" role="alert">{error}</p>}
+            <p className="bh-lead">{t("Golden hour at Bicester Village. Shaheen needs his mama's perfume, Zain needs a code, and Sharifa will not stop calling. Play together, one room, every phone.")}</p>
+            {error && <p className="bh-error" role="alert">{t(error)}</p>}
             {!mode && <div className="bh-choose">
-                <h2 className="bh-choose-q">Create a room or join a room?</h2>
-                <button type="button" className="bh-btn" onClick={() => choose("create")}>Create Room</button>
-                <button type="button" className="bh-btn bh-btn--ghost" onClick={() => choose("join")}>Join Room</button>
+                <h2 className="bh-choose-q">{t("Create a room or join a room?")}</h2>
+                <button type="button" className="bh-btn" onClick={() => choose("create")}>{t("Create Room")}</button>
+                <button type="button" className="bh-btn bh-btn--ghost" onClick={() => choose("join")}>{t("Join Room")}</button>
             </div>}
             {mode && <div className="bh-choose">
-                <h2 className="bh-choose-q">{mode === "create" ? "Create a room" : "Join a room"}</h2>
+                <h2 className="bh-choose-q">{t(mode === "create" ? "Create a room" : "Join a room")}</h2>
                 <div className="bh-aim">
                     <input ref={nickRef} className="bh-input" value={nickname} onChange={(e) => setNickname(e.target.value)} onKeyDown={onNickKey}
-                        maxLength={20} placeholder="Nickname" aria-label="Nickname" autoComplete="off" autoCorrect="off" spellCheck={false}
+                        maxLength={20} placeholder={t("Nickname")} aria-label={t("Nickname")} autoComplete="off" autoCorrect="off" spellCheck={false}
                         enterKeyHint={mode === "create" ? "go" : "next"} />
                     {arrowAt === "nick" && <GuideArrow />}
                 </div>
                 {mode === "join" && <div className="bh-aim">
                     <input ref={codeRef} className="bh-input bh-code-input" value={code} onChange={(e) => setCode(e.target.value.toUpperCase())}
-                        onKeyDown={onCodeKey} onFocus={() => setCodeStep(true)} maxLength={8} placeholder="Room code" aria-label="Room code"
+                        onKeyDown={onCodeKey} onFocus={() => setCodeStep(true)} maxLength={8} placeholder={t("Room code")} aria-label={t("Room code")}
                         autoComplete="off" autoCorrect="off" autoCapitalize="characters" spellCheck={false} enterKeyHint="go" />
                     {arrowAt === "code" && <GuideArrow />}
                 </div>}
                 <div className="bh-aim">
                     {mode === "create"
-                        ? <button type="button" className="bh-btn" disabled={!nickname.trim() || busy} onClick={create}>Create</button>
-                        : <button type="button" className="bh-btn" disabled={!nickname.trim() || !code.trim() || busy} onClick={join}>Join</button>}
+                        ? <button type="button" className="bh-btn" disabled={!nickname.trim() || busy} onClick={create}>{t("Create")}</button>
+                        : <button type="button" className="bh-btn" disabled={!nickname.trim() || !code.trim() || busy} onClick={join}>{t("Join")}</button>}
                     {arrowAt === "create" && <GuideArrow below />}
                 </div>
                 <button type="button" className="bh-link bh-switch" onClick={() => choose(mode === "create" ? "join" : "create")}>
-                    {mode === "create" ? "Join a room instead" : "Create a room instead"}
+                    {t(mode === "create" ? "Join a room instead" : "Create a room instead")}
                 </button>
             </div>}
             <div className="bh-entry-links">
-                <button type="button" className="bh-link" onClick={() => navigate("/mini-games/baccarat-classic")}>Play the classic one-screen version</button>
-                <button type="button" className="bh-link" onClick={onContinue}>Back to mini games</button>
+                <button type="button" className="bh-link" onClick={() => navigate("/mini-games/baccarat-classic")}>{t("Play the classic one-screen version")}</button>
+                <button type="button" className="bh-link" onClick={onContinue}>{t("Back to mini games")}</button>
             </div>
         </section>
     </main>;

@@ -530,8 +530,12 @@ def _tick_phone(adv, ctx, now: int) -> bool:
         elif stage == "confirm":
             phone.update({"stage": "typing", "until": now + T["train_typing_ms"]})
         elif stage == "typing":
-            phone.update({"stage": "angry", "line": C.TRAIN["zain_wrong"], "until": now + T["train_reply_ms"]})
-            _penalty(adv, "train_wrong", "Wrong train time", now)
+            # Shoug's text lands first, Zain types, then her reply: never two bubbles at once.
+            if phone.get("ok"):
+                phone.update({"stage": "correct", "line": C.TRAIN["zain_correct"], "until": now + T["train_reply_ms"]})
+            else:
+                phone.update({"stage": "angry", "line": C.TRAIN["zain_wrong"], "until": now + T["train_reply_ms"]})
+                _penalty(adv, "train_wrong", "Wrong train time", now)
         elif stage in ("angry", "correct"):
             _end_phone(adv, now, stage == "correct")
     return True
@@ -793,8 +797,8 @@ def _a_train(adv, ctx, actor, p, now, inst):
     if answer not in C.TRAIN["options"]:
         raise ActionError(400, "Pick one of the times")
     if answer == C.TRAIN["correct"]:
-        phone.update({"stage": "correct", "answer": answer, "shoug": C.TRAIN["shoug_correct"], "line": C.TRAIN["zain_correct"],
-                      "until": now + T["train_reply_ms"]})
+        phone.update({"stage": "confirm", "ok": True, "answer": answer, "shoug": C.TRAIN["shoug_correct"],
+                      "until": now + T["train_confirm_ms"]})
         return {"correct": True}
     _train_wrong(adv, now, answer)
     return {"correct": False}

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Marked, PhoneFrame, Transcript, formatClock, plainText } from "./common";
 import { VOICE_BARS, ViewMessage } from "./IntroOverlay";
 import { SFX, wordMs } from "../sound";
+import { getLang, t } from "../i18n";
 
 const otpKey = (runId) => `bh_otp_${runId}`;
 
@@ -60,7 +61,7 @@ function PhoneVoiceNote({ from, avatar, script, audio, durMs }) {
     const elapsed = playing ? Math.max(0, now - startedAt) : 0;
     const progress = playing ? Math.min(1, elapsed / dur) : 0;
     return <section className="bh-msg">
-        <div className="bh-chat-head"><span className={`bh-avatar bh-avatar--${avatar}`}>{from[0]}</span><div><b>{from}</b><small>Voice note</small></div></div>
+        <div className="bh-chat-head"><span className={`bh-avatar bh-avatar--${avatar}`}>{t(from)[0]}</span><div><b>{t(from)}</b><small>{t("Voice note")}</small></div></div>
         {!opened && <ViewMessage name={from} onOpen={() => { SFX.tap(); setOpened(true); }} />}
         {opened && <div className="bh-voice">
             <div className="bh-voice-row">
@@ -71,9 +72,9 @@ function PhoneVoiceNote({ from, avatar, script, audio, durMs }) {
                 <div className="bh-voice-wave" aria-hidden="true">
                     {VOICE_BARS.map((h, i) => <i key={i} style={{ height: `${Math.round(h * 100)}%` }} className={i / VOICE_BARS.length < progress ? "on" : ""} />)}
                 </div>
-                <span className="bh-voice-time">{formatClock(playing ? dur - elapsed : dur)}</span>
+                <span className="bh-voice-time" dir="ltr">{formatClock(playing ? dur - elapsed : dur)}</span>
             </div>
-            <Transcript text={script} />
+            <Transcript text={t(script)} />
         </div>}
         {audio && <audio ref={audioRef} src={audio} preload="none" />}
     </section>;
@@ -126,30 +127,30 @@ export function PhoneButton({ adventure, me, otp, otpHint = false, docked = fals
     const hasAny = !!voice?.script || zain.length > 0 || mineOtp;
     return <>
         {!open && <button type="button" className={`bh-phone-btn ${docked ? "bh-phone-btn--docked" : ""} ${otpHint && mineOtp ? "bh-phone-btn--hint" : ""}`} onClick={() => { SFX.tap(); setOpen(true); }}
-            aria-label={otpHint && mineOtp ? "See the OTP here" : "Open Shoug's phone"}>
+            aria-label={t(otpHint && mineOtp ? "See the OTP here" : "Open Shoug's phone")}>
             <PhoneIcon />
         </button>}
         {!open && otpHint && showLabel && mineOtp && <div className={`bh-otp-hint ${docked ? "bh-otp-hint--docked" : ""}`} aria-hidden="true">
-            <span>See the OTP here</span>
+            <span>{t("See the OTP here")}</span>
             <svg className="bh-otp-hint-arrow" viewBox="0 0 28 40"><path d="M14 38 L2 24 H9 V2 H19 V24 H26 Z" fill="#0C0C0C" /></svg>
         </div>}
         {open && <div className="bh-mini" role="dialog" aria-modal="true" aria-label="Shoug's messages"
             onPointerDown={(e) => { if (e.target === e.currentTarget) setOpen(false); }}>
             <div className="bh-mini-wrap">
-                <button ref={closeRef} type="button" className="bh-mini-close" onClick={() => setOpen(false)} aria-label="Close phone"><CloseIcon /></button>
+                <button ref={closeRef} type="button" className="bh-mini-close" onClick={() => setOpen(false)} aria-label={t("Close phone")}><CloseIcon /></button>
                 <PhoneFrame label="Shoug's messages">
                     <div className="bh-mini-list">
-                        {!hasAny && <p className="bh-voice-note">No messages yet.</p>}
+                        {!hasAny && <p className="bh-voice-note">{t("No messages yet.")}</p>}
                         {voice?.script && <PhoneVoiceNote from={voice.from || "Shaheen"} avatar="shaheen" script={voice.script} audio={voice.audio} durMs={voice.dur_ms} />}
                         {zain.length > 0 && <section className="bh-msg">
-                            <div className="bh-chat-head"><span className="bh-avatar bh-avatar--zain">Z</span><div><b>Zain</b><small>Messages</small></div></div>
-                            <div className="bh-thread">{zain.map((m, i) => <div key={i} className="bh-bubble bh-bubble--them"><Marked text={m} /></div>)}</div>
+                            <div className="bh-chat-head"><span className="bh-avatar bh-avatar--zain">{getLang() === "ar" ? "ز" : "Z"}</span><div><b>{t("Zain")}</b><small>{t("Messages")}</small></div></div>
+                            <div className="bh-thread">{zain.map((m, i) => <div key={i} className="bh-bubble bh-bubble--them"><Marked text={t(m)} /></div>)}</div>
                         </section>}
                         {mineOtp && <section className="bh-msg" ref={otpRef}>
                             <div className="bh-sms-card bh-sms-card--private">
-                                <small>THEATRE BOX OFFICE</small>
-                                <p>Your confirmation code is</p>
-                                <strong className="bh-otp-digits" aria-label={`Code ${otp.code.split("").join(" ")}`}>{otp.code}</strong>
+                                <small>{t("THEATRE BOX OFFICE")}</small>
+                                <p>{t("Your confirmation code is")}</p>
+                                <strong dir="ltr" className="bh-otp-digits" aria-label={`Code ${otp.code.split("").join(" ")}`}>{otp.code}</strong>
                             </div>
                         </section>}
                     </div>

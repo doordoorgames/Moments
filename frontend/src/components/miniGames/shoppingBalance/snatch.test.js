@@ -46,7 +46,7 @@ describe("queue", () => {
     const rnd = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
     const { engine, events, runUntil } = setup({ snatchCount: n, snatchRng: rnd, rng: rnd });
     engine.start();
-    const end = runUntil(s => { if (inSnatch(s) && s.snatchTaps === 0) tapN(engine, 30); return false; });
+    const end = runUntil(s => { if (inSnatch(s) && s.snatchTaps === 0) tapN(engine, CONFIG.snatchTaps); return false; });
     expect(end.state).toBe(STATES.WIN);
     expect(end.snatchIndex).toBe(n);
     expect(end.snatchWins).toBe(n);
@@ -61,7 +61,7 @@ describe("queue", () => {
   test("a snatch never starts while a tip is active, and only after a calm beat", () => {
     const { engine, events, runUntil } = setup({ snatchCount: 6, snatchRng: () => 0 });
     engine.start();
-    runUntil(s => { if (inSnatch(s) && s.snatchTaps === 0) tapN(engine, 30); return false; });
+    runUntil(s => { if (inSnatch(s) && s.snatchTaps === 0) tapN(engine, CONFIG.snatchTaps); return false; });
     const seq = events.map(e => e.type).filter(k => ["tip", "save", "snatch", "neutral", "snatchsave"].includes(k));
     seq.forEach((k, i) => { if (k === "snatch") expect(seq[i - 1]).toBe("neutral"); });
   });
@@ -88,12 +88,12 @@ describe("a snatch", () => {
     expect(s.tipDir).toBe(null);
   });
 
-  test("30 taps in time: saved, no life lost, back to the queue", () => {
+  test("all taps in time: saved, no life lost, back to the queue", () => {
     const { engine, count, runUntil } = setup();
     engine.start();
     runUntil(inSnatch);
-    tapN(engine, 29);
-    expect(engine.snapshot().snatchProgress).toBeCloseTo(29 / 30);
+    tapN(engine, CONFIG.snatchTaps - 1);
+    expect(engine.snapshot().snatchProgress).toBeCloseTo((CONFIG.snatchTaps - 1) / CONFIG.snatchTaps);
     engine.tap();
     const s = engine.snapshot();
     expect(s.state).toBe(STATES.RECOVERING);
@@ -107,7 +107,7 @@ describe("a snatch", () => {
     const { engine, runUntil } = setup();
     engine.start();
     runUntil(inSnatch);
-    tapN(engine, 30);
+    tapN(engine, CONFIG.snatchTaps);
     expect(engine.tap()).toBe(false);
     expect(engine.snapshot().snatchWins).toBe(1);
   });
@@ -116,7 +116,7 @@ describe("a snatch", () => {
     const { engine, step, count, runUntil } = setup();
     engine.start();
     runUntil(inSnatch);
-    tapN(engine, 20);
+    tapN(engine, CONFIG.snatchTaps - 5);
     let s = step(CONFIG.snatchMs);
     expect(s.state).toBe(STATES.LIFE_LOST);
     expect(s.lives).toBe(2);
@@ -132,7 +132,7 @@ describe("a snatch", () => {
     const { engine, runUntil, jumpBy } = setup();
     engine.start();
     runUntil(inSnatch);
-    tapN(engine, 29);
+    tapN(engine, CONFIG.snatchTaps - 1);
     jumpBy(CONFIG.snatchMs + 50);
     expect(engine.tap()).toBe(false);
     expect(engine.snapshot().lives).toBe(2);

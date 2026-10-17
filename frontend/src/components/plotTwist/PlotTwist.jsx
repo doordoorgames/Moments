@@ -7,6 +7,7 @@ import Rooftop from './Rooftop';
 import './plotTwist.css';
 
 import {wordCount} from './words';
+const validRoomCode = value => /^\d{5}$/.test(value);
 const key = code => `plot-twist-session:${code}`;
 function session(code) { try {return JSON.parse(localStorage.getItem(key(code)) || 'null');} catch {return null;} }
 const modes = {story:{name:'Story Time',count:5,tag:'ONE STORY. ZERO RULES.*',desc:'Pass the story around. Five words at a time. See where the night takes you.',icon:BookOpen},trap:{name:'Word Trap',count:7,tag:'SWEET STORY. SECRET AGENDA.',desc:'Seven words. One secret mission. Make someone else say your word.',icon:Sparkles}};
@@ -108,9 +109,10 @@ export default function PlotTwist({onContinue}) {
   },[]);
   async function enter(e) {
     e?.preventDefault();if(pending.current)return;
+    if(intent==='join'&&!validRoomCode(joinCode)){setError('Enter exactly five digits for the room code.');return;}
     pending.current=true;setBusy(true);setError('');
     try {
-      const path=intent==='create'?'/rooms':`/rooms/${joinCode.trim().toUpperCase()}/join`;
+      const path=intent==='create'?'/rooms':`/rooms/${joinCode.trim()}/join`;
       const result=await request(path,intent==='create'?{nickname:name,mode,rounds,dev}:{nickname:name});
       const saved={player_id:result.player_id,token:result.token};
       localStorage.setItem(key(result.code),JSON.stringify(saved));
@@ -142,7 +144,7 @@ export default function PlotTwist({onContinue}) {
       {screen==='modes'&&<section className="pt-selection"><div className="pt-kicker">PICK THE VIBE</div><h1>What’s the<br/><em>story tonight?</em></h1><div className="pt-mode-grid">{Object.entries(modes).map(([id,m])=><button className={`pt-mode-card pt-mode-${id}`} key={id} onClick={()=>{setMode(id);setScreen('connect');setIntent(null);}}><span className="pt-mode-number">0{id==='story'?1:2} /</span><m.icon size={35} strokeWidth={1.3}/><h2>{m.name}</h2><p>{m.desc}</p><span className="pt-mode-meta">{m.count} WORDS / TURN <ArrowRight size={20}/></span></button>)}</div><p className="pt-fine">*Okay, one rule: exactly five words in Story Time.</p></section>}
       {screen==='connect'&&<section className="pt-connect"><div className="pt-kicker">YOUR EVENING STARTS HERE</div><h1>{auth?'Finding your':'Save yourself'}<br/><em>a rooftop seat.</em></h1>{!auth&&<><div className="pt-tabs"><button className={intent==='create'?'selected':''} onClick={()=>chooseIntent('create')}>Create a room</button><button className={intent==='join'?'selected':''} onClick={()=>chooseIntent('join')}>Join a room</button></div><form className="pt-paper pt-form" onSubmit={enter}>
         <div hidden={!intent}><label htmlFor="pt-nickname">WHAT SHOULD WE CALL YOU?</label><input id="pt-nickname" ref={nickRef} value={name} onChange={e=>setName(e.target.value)} autoComplete="nickname" maxLength={24} placeholder="Your nickname" required={!!intent} enterKeyHint={intent==='join'?'next':'go'} onKeyDown={e=>{if(e.key==='Enter'&&intent==='join'){e.preventDefault();codeRef.current?.focus();codeRef.current?.scrollIntoView({block:'nearest'});}}}/></div>
-        <div hidden={intent!=='join'}><label htmlFor="pt-room-code">THE ROOM CODE</label><input id="pt-room-code" ref={codeRef} disabled={intent!=='join'} className="pt-code-input" value={joinCode} onChange={e=>setJoinCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g,''))} placeholder="PXXXXX" required={intent==='join'} minLength={6} maxLength={6} autoCapitalize="characters" autoComplete="off" enterKeyHint="go"/></div>
+        <div hidden={intent!=='join'}><label htmlFor="pt-room-code">THE ROOM CODE</label><input id="pt-room-code" ref={codeRef} disabled={intent!=='join'} className="pt-code-input" value={joinCode} onChange={e=>setJoinCode(e.target.value.replace(/\D/g,'').slice(0,5))} placeholder="00000" required={intent==='join'} minLength={5} maxLength={5} inputMode="numeric" pattern="[0-9]{5}" autoComplete="off" enterKeyHint="go"/></div>
         {intent==='create'&&<><label htmlFor="pt-mode">TONIGHT’S VIBE</label><select id="pt-mode" value={mode} onChange={e=>setMode(e.target.value)}><option value="story">Story Time · exactly 5 words</option><option value="trap">Word Trap · exactly 7 words</option></select><div className="pt-rounds"><div><label htmlFor="pt-rounds">HOW MANY ROUNDS?</label><small>Everyone writes once per round.</small></div><select id="pt-rounds" value={rounds} onChange={e=>setRounds(Number(e.target.value))}>{[1,2,3,4,5,6,7,8,9,10].map(n=><option key={n}>{n}</option>)}</select></div><label className="pt-check"><input type="checkbox" checked={dev} onChange={e=>setDev(e.target.checked)}/> Developer room <span>Simulate friends on one device</span></label></>}
         {!intent?<p className="pt-invite-note">Start your own story or pull up a chair with friends.</p>:<button className="pt-primary" disabled={busy}>{busy?'Opening the rooftop…':intent==='create'?'CREATE THE ROOM':'JOIN THE PARTY'}<ArrowRight size={19}/></button>}
       </form></>}{auth&&<p className="pt-status">Reconnecting to your saved seat…</p>}</section>}

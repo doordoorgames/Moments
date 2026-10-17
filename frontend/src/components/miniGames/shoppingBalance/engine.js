@@ -36,8 +36,8 @@ export const CONFIG = Object.freeze({
   // Phone snatch
   snatchMin: 2,
   snatchMax: 6,
-  snatchTaps: 30,
-  snatchMs: 5000, // time to land all 30 taps
+  snatchTaps: 20,
+  snatchMs: 6000, // time to land all the taps
   snatchLeadScale: 0.5, // calm beat before a snatch = half a normal one (1 to 2 s)
   avgEventMs: 5500, // rough game time per queued event, used to spread snatches out
   snatchSaveMs: 700, // relief beat after a successful defence

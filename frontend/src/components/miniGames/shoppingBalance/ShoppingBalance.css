@@ -178,3 +178,74 @@
 
 @media (max-height:620px){.sb-ctl{min-height:68px}.sb-steps li{padding:7px 12px 7px 8px}.sb-panel{padding:14px 13px 10px; gap:9px}.sb-sticker{width:70px; height:70px; font-size:17px}}
 @media (prefers-reduced-motion:reduce){.sb-root *{animation-duration:.01ms!important; animation-iteration-count:1!important}}
+
+/* ---------------------------------------------------------------- phone snatch
+   Camera: slow zoom toward the phone (inline scale grows with --stress), a punch-in
+   on every tap, shake and tug that both grow as the timer runs down. */
+.sb-snatch{position:absolute; inset:0; overflow:hidden; overflow:clip; z-index:1; background:#0E0B14; --stress:0}
+.sb-cam{position:absolute; inset:0; transform-origin:55% 37%; transition:transform .12s linear; will-change:transform}
+.sb-punch{position:absolute; inset:0; transform-origin:55% 37%}
+.sb-punch-in{animation:sbPunchIn .42s cubic-bezier(.2,1.5,.4,1)}
+@keyframes sbPunchIn{0%{transform:scale(1.35)}100%{transform:none}}
+.sb-punch-0{animation:sbPunch0 .14s ease-out}
+.sb-punch-1{animation:sbPunch1 .14s ease-out}
+@keyframes sbPunch0{0%{transform:scale(1.045) translateX(-1.2%)}100%{transform:none}}
+@keyframes sbPunch1{0%{transform:scale(1.045) translateX(-1.2%)}100%{transform:none}}
+.sb-shake{position:absolute; inset:0; --amp:calc(1.5px + var(--stress) * 9px);
+  animation:sbTug calc(.5s - var(--stress) * .26s) ease-in-out infinite, sbShake .11s steps(2, end) infinite}
+/* Tug: the hand on the right keeps yanking the phone (and Shoug) to the right. */
+@keyframes sbTug{0%,100%{translate:0 0; rotate:0deg}45%{translate:calc(var(--amp) * 2.2) calc(var(--amp) * -.3); rotate:calc(var(--stress) * 1.2deg)}}
+@keyframes sbShake{0%{transform:translate(calc(var(--amp) * -.5), calc(var(--amp) * .4))}50%{transform:translate(calc(var(--amp) * .5), calc(var(--amp) * -.4))}100%{transform:none}}
+.sb-snatch-art{position:absolute; inset:-3%; width:106%; height:106%; object-fit:cover; object-position:50% 50%; pointer-events:none}
+/* Lost: the phone (and the shot) gets yanked out of frame to the right. */
+.sb-snatch.is-lost .sb-shake{animation:sbYanked .7s cubic-bezier(.5,0,.75,0) forwards}
+@keyframes sbYanked{0%{transform:none}20%{transform:translateX(-3%) rotate(-1deg)}100%{transform:translateX(26%) rotate(5deg); filter:blur(3px)}}
+.sb-snatch.is-lost .sb-yank{display:none}
+
+/* Motion strokes around the phone */
+.sb-yank{position:absolute; left:55%; top:37%; width:46%; aspect-ratio:1; transform:translate(-50%,-50%); overflow:visible; pointer-events:none}
+.sb-yank path{fill:none; stroke:var(--paper); stroke-width:3.4; stroke-linecap:round; filter:drop-shadow(1.5px 1.5px 0 var(--ink));
+  animation:sbStroke calc(.42s - var(--stress) * .18s) ease-out infinite; animation-delay:calc(var(--i) * -.07s)}
+@keyframes sbStroke{0%{opacity:0; transform:translateX(0)}30%{opacity:1}100%{opacity:0; transform:translateX(9px)}}
+
+/* Urgency: maroon vignette pulse, faster and stronger as time runs out */
+.sb-urgency{position:absolute; inset:0; pointer-events:none; background:radial-gradient(ellipse at 55% 40%, transparent 42%, rgba(107,29,43,.75) 100%);
+  opacity:calc(.25 + var(--stress) * .6); animation:sbUrge calc(.8s - var(--stress) * .5s) ease-in-out infinite alternate}
+@keyframes sbUrge{to{opacity:calc(.1 + var(--stress) * .35)}}
+.sb-grab-flash{position:absolute; inset:0; z-index:3; pointer-events:none; background:var(--paper); animation:sbGrab .35s ease-out forwards}
+@keyframes sbGrab{0%{opacity:.85}100%{opacity:0}}
+
+/* Tap surface: the whole screen counts */
+.sb-snatch-ui{position:absolute; inset:0; z-index:4; touch-action:none; cursor:pointer;
+  display:flex; flex-direction:column; justify-content:space-between; padding:calc(env(safe-area-inset-top,0px) + 74px) 14px calc(env(safe-area-inset-bottom,0px) + 16px)}
+.sb-snatch-top{display:flex; flex-direction:column; align-items:flex-start; gap:8px; pointer-events:none}
+.sb-snatch-tag{font:italic 800 clamp(34px,12cqw,48px)/1 var(--display); color:var(--paper); background:var(--maroon); border:3px solid var(--ink); border-radius:18px;
+  padding:6px 16px 8px; box-shadow:4px 4px 0 var(--ink); transform:rotate(-4deg); animation:sbTag .45s cubic-bezier(.2,1.6,.4,1), sbTagWob .6s .45s ease-in-out infinite alternate}
+@keyframes sbTag{from{transform:rotate(-4deg) scale(2); opacity:0}}
+@keyframes sbTagWob{to{transform:rotate(-1deg) scale(1.04)}}
+.sb-snatch-callout{margin:0; font:700 14px/1.25 var(--ui); background:var(--paper); color:var(--ink); border:2.5px solid var(--ink); border-radius:16px 16px 16px 4px; padding:7px 12px; box-shadow:3px 3px 0 var(--ink)}
+.sb-snatch-callout em{font:italic 700 16px var(--display); color:var(--maroon)}
+.sb-ripple{position:absolute; width:56px; height:56px; margin:-28px 0 0 -28px; border-radius:50%; border:3px solid var(--paper); box-shadow:0 0 0 2px var(--ink);
+  pointer-events:none; animation:sbRipple .4s ease-out forwards}
+@keyframes sbRipple{0%{transform:scale(.3); opacity:1}100%{transform:scale(1.5); opacity:0}}
+
+.sb-snatch-panel{pointer-events:none; background:var(--paper); color:var(--ink); border:3px solid var(--ink); border-radius:26px; box-shadow:5px 5px 0 var(--ink); padding:12px 14px 14px; display:grid; gap:10px;
+  animation:sbIn .3s cubic-bezier(.2,.9,.3,1)}
+.sb-tap-head{display:flex; align-items:center; justify-content:space-between; gap:10px}
+.sb-tap-call{font:italic 800 26px/1 var(--display); color:var(--ink); animation:sbCall .14s ease-out}
+@keyframes sbCall{from{transform:scale(1.12)}}
+.sb-tap-clock{font:500 22px/1 var(--mono); font-variant-numeric:tabular-nums; background:var(--mint); border:2.5px solid var(--ink); border-radius:999px; padding:6px 12px; box-shadow:2px 2px 0 var(--ink)}
+.sb-tap-clock small{font-size:12px; margin-left:1px}
+.sb-tap-clock.is-hurry{background:var(--blush); color:var(--maroon); animation:sbHurry .25s infinite alternate}
+.sb-grip{position:relative; height:40px; border:3px solid var(--ink); border-radius:999px; background:var(--cream); overflow:hidden}
+.sb-grip-fill{position:absolute; left:0; top:0; bottom:0; background:var(--matcha); border-right:3px solid var(--ink); transition:width .07s ease-out;
+  background-image:repeating-linear-gradient(-45deg, transparent 0 8px, rgba(255,255,255,.22) 8px 14px)}
+.sb-grip-ticks{position:absolute; inset:0; background:repeating-linear-gradient(90deg, transparent 0 calc(10% - 1.5px), rgba(17,17,17,.22) calc(10% - 1.5px) 10%)}
+.sb-grip-num{position:absolute; inset:0; display:flex; align-items:baseline; justify-content:center; padding-top:9px; gap:1px; font:500 18px/1 var(--mono); font-variant-numeric:tabular-nums}
+.sb-grip-num small{font-size:12px; opacity:.6}
+.sb-tap-time{height:8px; border:2px solid var(--ink); border-radius:999px; background:var(--cream); overflow:hidden}
+.sb-tap-time i{display:block; height:100%; background:var(--maroon); transform-origin:left}
+
+.sb-word-save, .sb-word-grab{color:var(--matcha-soft)}
+.sb-word-lost{color:var(--blush)}
+@media (prefers-reduced-motion:reduce){.sb-shake{animation:none}}

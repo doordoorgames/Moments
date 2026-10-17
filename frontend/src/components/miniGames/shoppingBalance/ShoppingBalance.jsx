@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ACTIONS, CONFIG, STATES, createEngine } from "./engine";
 import { createSound } from "./sound";
-import { TILT, createTiltDetector, motionSupported, requestMotionPermission, tryLockPortrait, unlockOrientation } from "./tilt";
+import { TILT, createTiltDetector, meterPos, motionSupported, requestMotionPermission, tryLockPortrait, unlockOrientation } from "./tilt";
 import "./ShoppingBalance.css";
 
 const ART_DIR = "/shoug2/shopping-balance/";
@@ -39,7 +39,8 @@ const RING = 2 * Math.PI * 44;
 
 export default function ShoppingBalance({ onContinue, continueLabel = "Back to mini games" }) {
   const [assets, setAssets] = useState("loading"); // loading | ready | error
-  const [screen, setScreen] = useState("intro"); // intro | play | result
+  const [screen, setScreen] = useState("intro"); // intro | countdown | play | result
+  const [count, setCount] = useState(3);
   const [snap, setSnap] = useState(null);
   const [fx, setFx] = useState({ kind: null, key: 0, word: "" });
   const [muted, setMuted] = useState(false);
@@ -148,21 +149,39 @@ export default function ShoppingBalance({ onContinue, continueLabel = "Back to m
     return () => window.removeEventListener("keydown", onKey);
   }, [screen, act]);
 
+  // Tap Start: ask for motion access (must happen inside the tap on iOS),
+  // then "Hold your phone straight" 3, 2, 1. The baseline is the pose at GO.
   const start = async () => {
-    if (assets !== "ready") return;
+    if (assets !== "ready" || screen === "countdown") return;
     sound.unlock();
-    // Must be requested inside the tap (iOS). Baseline is the pose at Start.
     const allowed = motionSupported() && await requestMotionPermission();
     setInput(allowed ? "tilt" : "buttons");
-    tiltRef.current.calibrate();
-    setAngle(0);
     if (allowed) tryLockPortrait();
-    sound.play("start");
     setFx({ kind: null, key: 0, word: "" });
-    engineRef.current.start();
-    setSnap(engineRef.current.snapshot());
-    setScreen("play");
+    setCount(3);
+    setScreen("countdown");
   };
+
+  useEffect(() => {
+    if (screen !== "countdown") return undefined;
+    if (count === 0) {
+      const t = setTimeout(() => {
+        tiltRef.current.calibrate();
+        setAngle(0);
+        sound.play("start");
+        engineRef.current.start();
+        setSnap(engineRef.current.snapshot());
+        setScreen("play");
+      }, 550);
+      return () => clearTimeout(t);
+    }
+    sound.play("tick");
+    const t = setTimeout(() => {
+      if (count === 1) sound.play("go");
+      setCount(c => c - 1);
+    }, 900);
+    return () => clearTimeout(t);
+  }, [screen, count, sound]);
 
   const toggleMute = () => { const v = !muted; setMuted(v); sound.setMuted(v); };
   const press = action => e => { e.preventDefault(); act(action); };
@@ -177,7 +196,7 @@ export default function ShoppingBalance({ onContinue, continueLabel = "Back to m
   const won = state === STATES.WIN;
   const tiltMode = input === "tilt";
   const verb = tiltMode ? "ROTATE" : "TAP";
-  const needle = Math.max(-1, Math.min(1, angle / (TILT.triggerDeg * 2)));
+  const needle = meterPos(angle);
 
   return (
     <div className="sb-root" data-status-bar-color="#0E0B14" data-testid="shopping-balance" style={{ "--sb-bg": `url(${ART.center})` }}>
@@ -206,25 +225,42 @@ export default function ShoppingBalance({ onContinue, continueLabel = "Back to m
                   </svg>
                   <div className="sb-alert-core"><Arrow dir={correct} /><b>{correct}</b></div>
                 </div>
-                <p className="sb-alert-text">TIPPING {snap.tipDir}!<br /><strong>{verb} {correct}!</strong></p>
+                <p className="sb-alert-text"><small>Tipping {snap.tipDir.toLowerCase()}</small><strong>{verb} {correct}</strong></p>
               </div>
             )}
 
           </>
         )}
 
+        {screen === "countdown" && (
+          <section className="sb-count" role="status" aria-live="assertive">
+            <div className="sb-count-card">
+              <p className="sb-eyebrow">Get ready</p>
+              <h2 className="sb-count-title">Hold your phone <em>straight.</em></h2>
+              <svg viewBox="0 0 40 64" className="sb-count-phone" aria-hidden="true">
+                <rect x="4" y="3" width="32" height="58" rx="7" />
+                <rect x="15" y="8" width="10" height="3" rx="1.5" className="sb-count-notch" />
+              </svg>
+            </div>
+            <div className={`sb-count-num ${count === 0 ? "is-go" : ""}`} key={count}>{count === 0 ? "Go!" : count}</div>
+          </section>
+        )}
+
         {screen === "intro" && (
           <section className="sb-panel sb-intro" aria-labelledby="sb-title">
-            <p className="sb-eyebrow">Shoug's Tale · Oxford Street</p>
-            <h1 id="sb-title" className="sb-title">Shopping <em>Balance</em></h1>
-            <ul className="sb-rules">
-              <li>Hold your phone straight!</li>
-              <li>The bags are heavy!</li>
-              <li><b>When Shoug tips, rotate your phone the opposite way to save her.</b> Hold it upright in front of your face, then turn it like a steering wheel, left or right.</li>
-              <li>Hold the phone straight when you tap Start. Turn on rotation lock so the screen stays upright.</li>
-              <li>You have 3 lives.</li>
-              <li>Survive 45 seconds!</li>
-            </ul>
+            <div className="sb-intro-top">
+              <div>
+                <p className="sb-eyebrow">Shoug's Tale · Oxford Street</p>
+                <h1 id="sb-title" className="sb-title">Shopping<br /><em>balance.</em></h1>
+              </div>
+              <span className="sb-sticker" aria-hidden="true">GRWM<small>bags<br />edition</small></span>
+            </div>
+            <ol className="sb-steps">
+              <li><b>01</b><span>Hold your phone straight up</span><small>like a mirror selfie</small></li>
+              <li><b>02</b><span>Shoug tips? Rotate the other way</span><small>a little turn is enough</small></li>
+              <li><b>03</b><span>Survive 45 seconds</span><small>3 lives</small></li>
+            </ol>
+            <p className="sb-note">Turn on rotation lock so the screen stays upright.</p>
             {assets === "error" ? (
               <>
                 <p className="sb-error">The artwork didn't load. Check your connection.</p>

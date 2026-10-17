@@ -83,18 +83,19 @@ test("late tap after the deadline is judged as a timeout, not a save", () => {
   const { engine, at, jump } = setup([0, LEFT_ROLL]);
   engine.start();
   at(2000);
-  jump(4500); // no frame ran since the tip began; the deadline passed before this tap
+  jump(2000 + CONFIG.responseMs + 500); // no frame ran since the tip began; the deadline passed before this tap
   expect(engine.act(ACTIONS.RIGHT)).toBe(false);
   expect(engine.snapshot().saves).toBe(0);
   expect(engine.snapshot().lives).toBe(2);
 });
 
-test("response indicator drains from 1 to 0 over 2 seconds", () => {
+test("response indicator drains from 1 to 0 over the response window", () => {
   const { engine, at } = setup([0, LEFT_ROLL]);
   engine.start();
+  const R = CONFIG.responseMs;
   expect(at(2000).responseLeft).toBeCloseTo(1);
-  expect(at(3000).responseLeft).toBeCloseTo(0.5);
-  expect(at(3999).responseLeft).toBeCloseTo(0.0005, 3);
+  expect(at(2000 + R / 2).responseLeft).toBeCloseTo(0.5);
+  expect(at(2000 + R - 1).responseLeft).toBeCloseTo(1 / R, 3);
 });
 
 test("three lost lives end the game", () => {

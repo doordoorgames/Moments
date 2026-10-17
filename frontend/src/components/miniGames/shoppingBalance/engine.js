@@ -21,7 +21,7 @@ export const CONFIG = Object.freeze({
   lives: 3,
   neutralMinMs: 2000,
   neutralMaxMs: 4000,
-  responseMs: 2000,
+  responseMs: 4000, // time to react to a tip
   recoverMs: 300,
   lifeLostMs: 650,
 });

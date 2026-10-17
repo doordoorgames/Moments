@@ -1,4 +1,4 @@
-import { createTiltDetector, rotationDeg } from "./tilt";
+import { createTiltDetector, meterPos, rotationDeg } from "./tilt";
 
 const G = 9.81;
 const rad = d => (d * Math.PI) / 180;
@@ -54,4 +54,13 @@ test("ignores readings while the phone is lying flat", () => {
   d.feed(...android(0));
   expect(d.feed(0.5, 0.5)).toBe(null);
   expect(d.angle).toBe(0);
+});
+
+test("meter stays still inside 7 degrees, reaches the mark at 15", () => {
+  expect(meterPos(0)).toBe(0);
+  expect(meterPos(6.9)).toBe(0);
+  expect(meterPos(-7)).toBe(0);
+  expect(meterPos(15)).toBeCloseTo(0.5, 5);
+  expect(meterPos(-15)).toBeCloseTo(-0.5, 5);
+  expect(meterPos(60)).toBe(1);
 });

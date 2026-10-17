@@ -10,6 +10,8 @@ const SOUND_DIR = "/shoug2/shopping-balance/sounds/";
 
 // cue -> list of files; one is picked at random each time.
 export const CLIPS = {
+  tick: [],
+  go: [],
   start: [],
   tip: [],        // e.g. ["voice-ooh.mp3", "voice-waili.mp3"]
   save: [],       // e.g. ["relief.mp3"]
@@ -19,6 +21,8 @@ export const CLIPS = {
 };
 
 const SYNTH = {
+  tick: [[587, 0.09]],
+  go: [[880, 0.07], [1175, 0.14]],
   start: [[523, 0.07], [659, 0.07], [784, 0.12]],
   tip: [[392, 0.06], [330, 0.09]],
   save: [[660, 0.05], [990, 0.11]],

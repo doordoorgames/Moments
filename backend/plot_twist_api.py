@@ -8,6 +8,7 @@ import hashlib
 import json
 import os
 import secrets
+import re
 from collections import defaultdict
 from datetime import datetime, timezone
 from typing import Literal
@@ -17,6 +18,7 @@ from pydantic import BaseModel, Field
 import plot_twist as engine
 
 PREFIX = 'plot_twist_v1:'
+ROOM_CODE_RE = re.compile(r'^\d{5}$')
 
 class Create(BaseModel):
     nickname: str = Field(min_length=1, max_length=100)
@@ -48,6 +50,8 @@ def router(db, query):
         return [PREFIX + cipher().encrypt(json.dumps(g).encode()).decode()]
 
     async def load(code):
+        if not ROOM_CODE_RE.fullmatch(code):
+            raise HTTPException(400, 'Room code must contain exactly five digits.')
         result = await query(lambda: db().table('rooms').select('flags,wheel_winner_choice_id').eq('code', code).maybe_single().execute())
         flags = result.data.get('flags') if result and result.data else None
         if not flags or not isinstance(flags[0], str) or not flags[0].startswith(PREFIX):
@@ -87,16 +91,22 @@ def router(db, query):
         response.headers['Cache-Control'] = 'no-store'
         try: g, p = engine.new_game(body.nickname, body.mode, body.rounds, body.dev)
         except engine.GameError as e: raise HTTPException(400, str(e))
-        for _ in range(10):
-            code = 'P' + ''.join(secrets.choice('ABCDEFGHJKLMNPQRSTUVWXYZ23456789') for _ in range(5))
+        for _ in range(50):
+            code = f'{secrets.randbelow(100000):05d}'
             existing = await query(lambda: db().table('rooms').select('code').eq('code',code).maybe_single().execute())
             if existing and existing.data: continue
-            await query(lambda: db().table('rooms').insert({'code':code,'flags':pack(g),'wheel_winner_choice_id':secrets.token_hex(16),'created_at':datetime.now(timezone.utc).isoformat()}).execute())
+            try:
+                await query(lambda: db().table('rooms').insert({'code':code,'flags':pack(g),'wheel_winner_choice_id':secrets.token_hex(16),'created_at':datetime.now(timezone.utc).isoformat()}).execute())
+            except Exception as exc:
+                if 'duplicate' in str(exc).lower() or '23505' in str(exc):
+                    continue
+                raise
             return dict(code=code, player_id=p['id'], token=p['token'], state=engine.view(g,p['id']))
         raise HTTPException(503, 'Could not reserve a room. Try again.')
 
     @api.post('/rooms/{code}/join')
     async def join(code: str, body: Join, response: Response):
+        if not ROOM_CODE_RE.fullmatch(code): raise HTTPException(400, 'Room code must contain exactly five digits.')
         response.headers['Cache-Control'] = 'no-store'
         async with locks[code]:
             g, old = await load(code)

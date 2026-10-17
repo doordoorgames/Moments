@@ -14,3 +14,44 @@
 
 /* Plot Twist: keep interface elements square at rest and during interactions. */
 .pt-app :is(button, .pt-ticket, .pt-ticket-stamp, .pt-mode-card, .pt-nameplate, .pt-paper, .pt-brand, .pt-invite, .pt-code-tag){rotate:0deg!important;skew:0deg!important;}
+
+/* ------------------------------------------------------------------ in-game
+   One screen, no page scroll: a slim status line, then ONE cream page that holds
+   the story so far and, at its end, the line you are writing. Tap the page to
+   write. The layout follows the visual viewport, so it shrinks above the keyboard. */
+.pt-app.pt-playing{position:fixed;left:0;right:0;top:var(--pt-top,0px);height:var(--pt-height,100dvh);min-height:0;overflow:hidden}
+.pt-playing .pt-shell{height:100%;display:flex;flex-direction:column;padding:0 16px;max-width:760px}
+.pt-play{flex:1;min-height:0;display:flex;flex-direction:column;gap:10px;padding:calc(env(safe-area-inset-top,0px) + 10px) 0 calc(env(safe-area-inset-bottom,0px) + 10px)}
+.pt-play-bar{display:flex;align-items:center;gap:12px;flex-shrink:0}
+.pt-play-status{flex:1;min-width:0;line-height:1.25}
+.pt-play-status b{display:block;font:600 21px/1.15 'Playfair Display',Georgia,serif;letter-spacing:-.02em;color:#fff2d9;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pt-play-status span{display:block;font-size:12px;color:#f0cfd6;opacity:.85}
+.pt-secret-chip{display:flex;align-items:center;gap:8px;flex-shrink:0;border:1px solid #c995ad80;background:#2f1e3b99;color:#ffe8c7;border-radius:999px;padding:8px 14px;font-size:12px!important;align-self:flex-start}
+.pt-secret-chip span{opacity:.75}
+.pt-secret-chip strong{font-family:'Playfair Display',serif;letter-spacing:1px;color:#ffd799}
+.pt-page{flex:1;min-height:0;display:flex;flex-direction:column;background:var(--pt-paper);color:var(--pt-ink);border:1px solid #eacbb3;border-radius:10px;box-shadow:0 12px 35px #22132933;padding:16px 18px 12px;color-scheme:light}
+.pt-page.is-mine{cursor:text;box-shadow:0 0 0 3px #ffd79966,0 12px 35px #22132933}
+.pt-page-label{flex-shrink:0;font-size:10px;letter-spacing:1.8px;font-weight:800;text-transform:uppercase;color:#a07882}
+.pt-page-story{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:8px 0 6px;font-family:'Playfair Display',Georgia,serif;font-size:21px;line-height:1.7;overflow-wrap:anywhere;-webkit-overflow-scrolling:touch}
+.pt-page-empty{color:#a78a98;font-style:italic}
+.pt-page-input{display:block;width:100%;margin-top:4px;resize:none;overflow:hidden;border:0;border-bottom:2px dashed #c9a2b0;background:transparent;color:#2b1a2e;font:inherit;line-height:1.6;padding:2px 0 4px;border-radius:0;outline:none}
+.pt-page-input::placeholder{color:#a78a98;font-style:italic}
+.pt-page-input:focus{border-bottom-color:#865174}
+.pt-page-foot{flex-shrink:0;display:flex;align-items:center;justify-content:space-between;gap:12px;padding-top:10px;border-top:1px solid #e3cfbe;font-size:13px;font-weight:700;color:#a88a96}
+.pt-page-foot .pt-count-ready{color:#447c60}
+.pt-page-foot .pt-count-over{color:#a63152}
+.pt-send{display:flex;align-items:center;gap:8px;border:0;border-radius:999px;background:#40263e;color:#fff2d9;padding:11px 20px;min-height:44px;font-size:14px!important;font-weight:800!important}
+.pt-page-wait{justify-content:flex-start;gap:12px;font-weight:600;font-style:italic;font-family:'Playfair Display',serif;font-size:15px;color:#8d6b7d}
+.pt-page-wait .pt-writing-dots i{background:#a07882}
+.pt-play-end{flex-shrink:0;display:grid;gap:10px}
+.pt-play-winner{font:600 22px/1.2 'Playfair Display',serif!important;color:#fff2d9}
+.pt-play-winner span{display:block;font:500 12px 'DM Sans',sans-serif;color:#f0cfd6;margin-top:4px}
+.pt-play-actions{display:flex;gap:10px;align-items:center}
+.pt-play-actions .pt-primary{flex:1;min-height:48px}
+.pt-play-actions p{flex:1;font-size:13px;color:#f0cfd6}
+.pt-ghost{display:flex;align-items:center;gap:8px;border:1px solid #ffecd380;background:transparent;color:#fff2d9;border-radius:6px;padding:12px 14px;min-height:48px;font-size:12px!important;font-weight:700!important;white-space:nowrap}
+.pt-playing .pt-message{position:fixed;left:16px;right:16px;top:calc(env(safe-area-inset-top,0px) + 64px);margin:0;z-index:20}
+.pt-playing .pt-dev{flex-shrink:0;margin:0 0 calc(env(safe-area-inset-bottom,0px) + 8px);padding:8px 10px}
+.pt-playing .pt-dev small{display:none}
+@media(max-height:560px){.pt-page-story{font-size:18px;line-height:1.55}.pt-play{gap:6px}.pt-page{padding:10px 14px 8px}.pt-play-status span{display:none}}
+.pt-app .pt-page-input:focus-visible{outline:none}

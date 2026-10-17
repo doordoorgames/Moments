@@ -1,7 +1,7 @@
 import "@/App.css";
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, useEffect } from "react";
 import MomentsTypography from "@/components/typography/MomentsTypography";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { Toaster } from "@/components/ui/sonner";
 
 import Landing from "@/pages/Landing";
@@ -24,10 +24,35 @@ function AdminGate({ children }) {
     return children;
 }
 
+function StatusBarTheme() {
+    const location = useLocation();
+    useEffect(() => {
+        const meta = document.querySelector('meta[name="theme-color"]');
+        if (!meta) return;
+        const choose = () => {
+            const path = window.location.pathname;
+            const palette = path.includes('plot-twist') ? '#352039'
+                : path.includes('baccarat') ? '#000000'
+                : path.includes('shoug') ? '#6E1F35'
+                : path.includes('admin') ? '#FBF4E4'
+                : '#392781';
+            // Prefer a page-provided theme when present; otherwise use the route palette.
+            const screen = document.querySelector('[data-status-bar-color]');
+            const color = screen?.getAttribute('data-status-bar-color') || palette;
+            if (meta.content !== color) meta.content = color;
+        };
+        choose();
+        const observer = new MutationObserver(choose);
+        observer.observe(document.getElementById('root'), {subtree:true,childList:true,attributes:true,attributeFilter:['data-status-bar-color','class','style']});
+        return () => observer.disconnect();
+    }, [location.pathname]);
+    return null;
+}
 function App() {
     return (
         <MomentsTypography><div className="App">
             <BrowserRouter>
+                <StatusBarTheme />
                 <Routes>
                     <Route path="/" element={<Landing />} />
                     <Route path="/mini-games/baccarat-hunt/room/:code" element={<Suspense fallback={null}><BaccaratAdventureRoom /></Suspense>} />

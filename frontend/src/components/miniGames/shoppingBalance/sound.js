@@ -18,6 +18,13 @@ export const CLIPS = {
   fail: [],       // e.g. ["voice-no-no-no.mp3", "stumble.mp3"]
   win: [],
   gameover: [],
+  // Phone snatch. Shoug's recorded voice reactions go here (PLACEHOLDERS:
+  // record and drop these files in the sounds folder, then list them).
+  snatch: [],      // startled squeal when the phone is grabbed, e.g. ["shoug-snatch-squeal.mp3"]
+  snatchPanic: [], // panicked line mid-struggle, e.g. ["shoug-snatch-panic.mp3"] ("la la la, my phone!")
+  snatchSave: [],  // relieved reaction, e.g. ["shoug-snatch-relief.mp3"]
+  snatchFail: [],  // funny frustrated reaction after losing a life, e.g. ["shoug-snatch-lost.mp3"]
+  snatchTap: [],   // optional tap tick
 };
 
 const SYNTH = {
@@ -29,6 +36,11 @@ const SYNTH = {
   fail: [[220, 0.12], [150, 0.22]],
   win: [[523, 0.08], [659, 0.08], [784, 0.08], [1046, 0.22]],
   gameover: [[330, 0.14], [262, 0.14], [196, 0.3]],
+  // Placeholder blips only; no synthetic voice. snatchPanic stays silent until recorded.
+  snatch: [[700, 0.05], [1050, 0.05], [1400, 0.1]],
+  snatchSave: [[660, 0.05], [880, 0.05], [1320, 0.14]],
+  snatchFail: [[300, 0.1], [200, 0.2]],
+  snatchTap: [[1200, 0.025]],
 };
 
 export function createSound() {

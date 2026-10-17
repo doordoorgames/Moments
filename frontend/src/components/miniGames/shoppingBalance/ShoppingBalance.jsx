@@ -7,9 +7,11 @@ import "./ShoppingBalance.css";
 const ART_DIR = "/shoug2/shopping-balance/";
 export const ART = {
   center: `${ART_DIR}shoug-center.webp`,
-  left: `${ART_DIR}shoug-left.webp`,
-  right: `${ART_DIR}shoug-right.webp`,
+  // Swapped on purpose: the "right" file is the pose that leans to Shoug's left on screen.
+  left: `${ART_DIR}shoug-right.webp`,
+  right: `${ART_DIR}shoug-left.webp`,
 };
+export const SNATCH_ART = `${ART_DIR}shoug-snatch.webp`;
 
 function preload(src) {
   return new Promise((resolve, reject) => {
@@ -34,6 +36,8 @@ const Arrow = ({ dir }) => (
   </svg>
 );
 
+const vibrate = ms => { try { navigator.vibrate?.(ms); } catch { /* unsupported (iPhone) */ } };
+
 const opposite = dir => (dir === "LEFT" ? "RIGHT" : "LEFT");
 const RING = 2 * Math.PI * 44;
 
@@ -46,6 +50,8 @@ export default function ShoppingBalance({ onContinue, continueLabel = "Back to m
   const [muted, setMuted] = useState(false);
   const [input, setInput] = useState("tilt"); // tilt | buttons
   const [angle, setAngle] = useState(0);
+  const [ripples, setRipples] = useState([]);
+  const panicRef = useRef(false);
 
   const sound = useMemo(() => createSound(), []);
   const engineRef = useRef(null);
@@ -56,7 +62,11 @@ export default function ShoppingBalance({ onContinue, continueLabel = "Back to m
   const onEvent = useCallback((type, { reason, snapshot }) => {
     if (type === "tip") sound.play("tip");
     if (type === "save") { sound.play("save"); setFx(f => ({ kind: "save", key: f.key + 1, word: "PHEW!" })); }
-    if (type === "lifelost") { sound.play("fail"); setFx(f => ({ kind: "fail", key: f.key + 1, word: reason === "wrong" ? "OOPS!" : "WAILI!" })); }
+    if (type === "lifelost" && reason !== "snatch") { sound.play("fail"); setFx(f => ({ kind: "fail", key: f.key + 1, word: reason === "wrong" ? "OOPS!" : "WAILI!" })); }
+    if (type === "snatch") { panicRef.current = false; sound.play("snatch"); vibrate([40, 30, 60]); setRipples([]); setFx(f => ({ kind: "grab", key: f.key + 1, word: "" })); }
+    if (type === "snatchtap") sound.play("snatchTap");
+    if (type === "snatchsave") { sound.play("snatchSave"); vibrate(50); setFx(f => ({ kind: "save", key: f.key + 1, word: "SAFE!" })); }
+    if (type === "snatchfail") { sound.play("snatchFail"); vibrate([80, 40, 80]); setFx(f => ({ kind: "lost", key: f.key + 1, word: "MY PHONE!" })); }
     if (type === "win" || type === "gameover") {
       sound.play(type);
       setSnap(snapshot);
@@ -69,7 +79,7 @@ export default function ShoppingBalance({ onContinue, continueLabel = "Back to m
   // Load all three illustrations before the game can start.
   const loadArt = useCallback(() => {
     setAssets("loading");
-    Promise.all(Object.values(ART).map(preload)).then(() => setAssets("ready"), () => setAssets("error"));
+    Promise.all([...Object.values(ART), SNATCH_ART].map(preload)).then(() => setAssets("ready"), () => setAssets("error"));
   }, []);
   useEffect(loadArt, [loadArt]);
 
@@ -90,11 +100,12 @@ export default function ShoppingBalance({ onContinue, continueLabel = "Back to m
       const s = engine.tick();
       setSnap(s);
       setAngle(tiltRef.current.angle);
+      if (s.snatching && !panicRef.current && s.snatchLeft < 0.5) { panicRef.current = true; sound.play("snatchPanic"); }
       if (s.state !== STATES.WIN && s.state !== STATES.GAME_OVER) frame = requestAnimationFrame(loop);
     };
     frame = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(frame);
-  }, [screen]);
+  }, [screen, sound]);
 
   // Pause when the page is hidden; resume when visible again.
   useEffect(() => {
@@ -119,6 +130,23 @@ export default function ShoppingBalance({ onContinue, continueLabel = "Back to m
     if (engineRef.current.act(action)) setSnap(engineRef.current.snapshot());
   }, [screen]);
 
+  // Rapid tapping during a snatch: one pointerdown = one tap (no click, so
+  // nothing is counted twice). Each finger counts.
+  const snatchTap = useCallback((x, y) => {
+    if (screen !== "play") return;
+    const engine = engineRef.current;
+    if (!engine.tap()) return;
+    vibrate(8);
+    if (x != null) setRipples(r => [...r.slice(-5), { id: `${Date.now()}-${Math.random()}`, x, y }]);
+    setSnap(engine.snapshot());
+  }, [screen]);
+
+  const onSnatchPointer = e => {
+    e.preventDefault();
+    const box = e.currentTarget.getBoundingClientRect();
+    snatchTap(e.clientX - box.left, e.clientY - box.top);
+  };
+
   // Phone rotation: hold the phone upright, rotate it like a steering wheel.
   // 15 degrees or more either way is one move. If no sensor data arrives,
   // fall back to on-screen buttons.
@@ -142,12 +170,13 @@ export default function ShoppingBalance({ onContinue, continueLabel = "Back to m
     if (screen !== "play") return undefined;
     const onKey = e => {
       if (e.repeat) return;
+      if (e.key === " " || e.key === "Enter") { e.preventDefault(); snatchTap(); return; }
       if (e.key === "ArrowLeft" || e.key === "a" || e.key === "A") { e.preventDefault(); act(ACTIONS.LEFT); }
       if (e.key === "ArrowRight" || e.key === "d" || e.key === "D") { e.preventDefault(); act(ACTIONS.RIGHT); }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [screen, act]);
+  }, [screen, act, snatchTap]);
 
   // Tap Start: ask for motion access (must happen inside the tap on iOS),
   // then "Hold your phone straight" 3, 2, 1. The baseline is the pose at GO.
@@ -194,6 +223,10 @@ export default function ShoppingBalance({ onContinue, continueLabel = "Back to m
   const seconds = snap ? Math.ceil(snap.remainingMs / 1000) : CONFIG.durationMs / 1000;
   const lives = snap?.lives ?? CONFIG.lives;
   const won = state === STATES.WIN;
+  const snatching = screen === "play" && !!snap?.snatching;
+  const lostPhone = screen === "play" && state === STATES.LIFE_LOST && snap?.lastFail === "snatch";
+  const showSnatch = snatching || lostPhone;
+  const stress = snatching ? 1 - snap.snatchLeft : 0;
   const tiltMode = input === "tilt";
   const verb = tiltMode ? "ROTATE" : "TAP";
   const needle = meterPos(angle);
@@ -208,11 +241,53 @@ export default function ShoppingBalance({ onContinue, continueLabel = "Back to m
           ))}
         </div>
 
+        {showSnatch && (
+          <div className={`sb-snatch ${lostPhone ? "is-lost" : ""}`} style={{ "--stress": stress.toFixed(3) }} aria-hidden="true">
+            <div className="sb-cam" style={{ transform: `scale(${(1.06 + 0.22 * stress).toFixed(4)})` }}>
+              <div className={`sb-punch ${snatching && snap.snatchTaps ? `sb-punch-${snap.snatchTaps % 2}` : "sb-punch-in"}`}>
+                <div className="sb-shake">
+                  <img src={SNATCH_ART} alt="" className="sb-snatch-art" draggable="false" />
+                </div>
+              </div>
+            </div>
+            <svg viewBox="-60 -60 120 120" className="sb-yank" aria-hidden="true">
+              {[[-38, -20], [-44, 4], [-36, 26], [40, -26], [46, 0], [38, 24]].map(([x, y], i) => (
+                <path key={i} d={`M${x} ${y} l${x > 0 ? 14 : -14} ${y / 6}`} style={{ "--i": i }} />
+              ))}
+            </svg>
+            <div className="sb-urgency" />
+          </div>
+        )}
+
+        {snatching && (
+          <section className="sb-snatch-ui" onPointerDown={onSnatchPointer} onContextMenu={e => e.preventDefault()}
+            role="button" aria-label={`Tap fast to keep your phone. ${snap.snatchTaps} of ${snap.snatchNeed}`}>
+            <div className="sb-snatch-top">
+              <span className="sb-snatch-tag">Snatch!</span>
+              <p className="sb-snatch-callout">Someone's grabbing <em>your phone!</em></p>
+            </div>
+            {ripples.map(r => <i key={r.id} className="sb-ripple" style={{ left: r.x, top: r.y }} />)}
+            <div className="sb-snatch-panel">
+              <div className="sb-tap-head">
+                <b className="sb-tap-call" key={snap.snatchTaps}>Tap tap tap!</b>
+                <span className={`sb-tap-clock ${snap.snatchMsLeft < 1600 ? "is-hurry" : ""}`}>{(snap.snatchMsLeft / 1000).toFixed(1)}<small>s</small></span>
+              </div>
+              <div className="sb-grip" role="progressbar" aria-valuemin={0} aria-valuemax={snap.snatchNeed} aria-valuenow={snap.snatchTaps}>
+                <i className="sb-grip-fill" style={{ width: `${snap.snatchProgress * 100}%` }} />
+                <span className="sb-grip-ticks" />
+                <span className="sb-grip-num">{snap.snatchTaps}<small>/{snap.snatchNeed}</small></span>
+              </div>
+              <div className="sb-tap-time"><i style={{ transform: `scaleX(${snap.snatchLeft})` }} /></div>
+            </div>
+          </section>
+        )}
+
         {screen === "play" && fx.kind === "save" && (
           <div className="sb-sparkles" key={`sp-${fx.key}`} aria-hidden="true">{Array.from({ length: 8 }, (_, i) => <i key={i} style={{ "--i": i }} />)}</div>
         )}
-        {screen === "play" && fx.kind && <div className={`sb-word sb-word-${fx.kind}`} key={`w-${fx.key}`} aria-hidden="true">{fx.word}</div>}
-        {screen === "play" && fx.kind === "fail" && <div className="sb-flash" key={`f-${fx.key}`} aria-hidden="true" />}
+        {screen === "play" && fx.kind && fx.word && <div className={`sb-word sb-word-${fx.kind}`} key={`w-${fx.key}`} aria-hidden="true">{fx.word}</div>}
+        {screen === "play" && (fx.kind === "fail" || fx.kind === "lost") && <div className="sb-flash" key={`f-${fx.key}`} aria-hidden="true" />}
+        {screen === "play" && fx.kind === "grab" && <div className="sb-grab-flash" key={`g-${fx.key}`} aria-hidden="true" />}
 
         {screen === "play" && (
           <>
@@ -289,6 +364,7 @@ export default function ShoppingBalance({ onContinue, continueLabel = "Back to m
                 <div><dt>Survival time</dt><dd>{(snap.elapsedMs / 1000).toFixed(1)} sec</dd></div>
               )}
               <div><dt>Successful saves</dt><dd>{snap.saves}</dd></div>
+              {snap.snatchIndex > 0 && <div><dt>Phones kept</dt><dd>{snap.snatchWins}/{snap.snatchIndex}</dd></div>}
             </dl>
             <button type="button" className="sb-btn" onClick={start}>{won ? "Play again" : "Try again"}</button>
             {onContinue && <button type="button" className="sb-link" onClick={() => onContinue()}>{continueLabel}</button>}
@@ -308,7 +384,7 @@ export default function ShoppingBalance({ onContinue, continueLabel = "Back to m
                 {muted ? "Muted" : "Sound"}
               </button>
             </header>
-            {tiltMode ? (
+            {showSnatch ? null : tiltMode ? (
               <div className="sb-tilt" aria-hidden="true">
                 <span className={`sb-tilt-side ${correct === ACTIONS.LEFT ? "is-target" : ""}`}><Arrow dir="LEFT" />LEFT</span>
                 <div className="sb-tilt-track">

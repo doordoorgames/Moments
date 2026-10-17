@@ -1,13 +1,19 @@
 // Shopping Balance — pure game engine. No DOM, no React, no timers of its own.
 // The host drives it with tick() from requestAnimationFrame and feeds player
 // actions through act("LEFT" | "RIGHT"). Any input source (on-screen buttons,
-// keyboard, and later device tilt) only ever calls act().
+// keyboard, phone rotation) only ever calls act().
+//
+// Phone-snatch events: 2 to 6 per game, spread across the run. While a snatch
+// is on, the balance clock is frozen (no tips, no tip timeouts, survival timer
+// paused) and the player taps rapidly via tap() to fill a 30-tap bar before
+// the snatch timer runs out. Success: no life lost. Failure: exactly one life.
 
 export const STATES = Object.freeze({
   READY: "READY",
   NEUTRAL: "NEUTRAL",
   TIPPING_LEFT: "TIPPING_LEFT",
   TIPPING_RIGHT: "TIPPING_RIGHT",
+  SNATCH: "SNATCH",
   RECOVERING: "RECOVERING",
   LIFE_LOST: "LIFE_LOST",
   WIN: "WIN",
@@ -24,7 +30,33 @@ export const CONFIG = Object.freeze({
   responseMs: 4000, // time to react to a tip
   recoverMs: 300,
   lifeLostMs: 650,
+  // Phone snatch
+  snatchMin: 2,
+  snatchMax: 6,
+  snatchTaps: 30,
+  snatchMs: 5000, // time to land all 30 taps
+  snatchWindowStart: 4000, // game-time window the snatches are spread across
+  snatchWindowEnd: 38000,
+  snatchMinGap: 3000, // minimum game time between two snatches
+  snatchSaveMs: 700, // relief beat after a successful defence
+  snatchFailMs: 900, // reaction beat after losing the phone
 });
+
+// Pick how many snatches (snatchMin..snatchMax) and when (game ms). The window
+// is cut into equal slots, one snatch per slot, kept away from slot edges so
+// two snatches are always at least snatchMinGap apart.
+export function planSnatches(rng = Math.random, config = CONFIG) {
+  const span = config.snatchMax - config.snatchMin + 1;
+  const n = config.snatchMin + Math.min(span - 1, Math.floor(rng() * span));
+  const slot = (config.snatchWindowEnd - config.snatchWindowStart) / n;
+  const margin = Math.min(slot / 2 - 1, config.snatchMinGap / 2);
+  const times = [];
+  for (let i = 0; i < n; i++) {
+    const from = config.snatchWindowStart + i * slot + margin;
+    times.push(Math.round(from + rng() * (slot - 2 * margin)));
+  }
+  return times;
+}
 
 const isTipping = s => s === STATES.TIPPING_LEFT || s === STATES.TIPPING_RIGHT;
 const isOver = s => s === STATES.WIN || s === STATES.GAME_OVER;
@@ -43,8 +75,9 @@ export function createClock(now = () => performance.now()) {
   };
 }
 
-export function createEngine({ config = CONFIG, rng = Math.random, now, onEvent } = {}) {
-  const clock = createClock(now);
+export function createEngine({ config = CONFIG, rng = Math.random, snatchRng = Math.random, snatchPlan, now, onEvent } = {}) {
+  const clock = createClock(now); // balance/game clock
+  const snatchClock = createClock(now); // runs only during a snatch
   let s;
 
   const emit = (type, extra) => onEvent?.(type, { ...extra, snapshot: snapshot() });
@@ -60,7 +93,11 @@ export function createEngine({ config = CONFIG, rng = Math.random, now, onEvent 
       phaseEnd: 0,
       nextTipAt: 0,
       endedAt: 0,
-      lastFail: null, // "wrong" | "timeout"
+      lastFail: null, // "wrong" | "timeout" | "snatch"
+      snatchTimes: [],
+      snatchIndex: 0, // how many snatches have started
+      snatchWins: 0,
+      snatchTaps: 0,
     };
   }
 
@@ -71,6 +108,8 @@ export function createEngine({ config = CONFIG, rng = Math.random, now, onEvent 
 
   function start() {
     reset();
+    snatchClock.stop();
+    s.snatchTimes = snatchPlan ? [...snatchPlan].sort((a, b) => a - b) : planSnatches(snatchRng, config);
     clock.start();
     s.state = STATES.NEUTRAL;
     scheduleNextTip(0);
@@ -85,13 +124,44 @@ export function createEngine({ config = CONFIG, rng = Math.random, now, onEvent 
     emit(state === STATES.WIN ? "win" : "gameover");
   }
 
-  function loseLife(t, reason) {
+  function loseLife(t, reason, beatMs = config.lifeLostMs) {
     s.lives = Math.max(0, s.lives - 1);
     s.lastFail = reason;
     if (s.lives === 0) { emit("lifelost", { reason }); finish(STATES.GAME_OVER, t); return; }
     s.state = STATES.LIFE_LOST;
-    s.phaseEnd = t + config.lifeLostMs;
+    s.phaseEnd = t + beatMs;
     emit("lifelost", { reason });
+  }
+
+  // Snatch start: freeze the balance clock, start the snatch clock.
+  function beginSnatch() {
+    clock.pause();
+    snatchClock.start();
+    s.snatchIndex += 1;
+    s.snatchTaps = 0;
+    s.tipDir = null;
+    s.state = STATES.SNATCH;
+    emit("snatch", { index: s.snatchIndex });
+  }
+
+  // Snatch end: resume the balance clock and play the relief/reaction beat.
+  function endSnatch(won) {
+    snatchClock.stop();
+    clock.resume();
+    const t = clock.elapsed();
+    if (won) {
+      s.snatchWins += 1;
+      s.state = STATES.RECOVERING;
+      s.phaseEnd = t + config.snatchSaveMs;
+      emit("snatchsave");
+    } else {
+      emit("snatchfail");
+      loseLife(t, "snatch", config.snatchFailMs);
+    }
+  }
+
+  function snatchExpired() {
+    return s.state === STATES.SNATCH && snatchClock.elapsed() >= config.snatchMs;
   }
 
   // Advance the state machine to time t. Loops so a long frame gap
@@ -99,9 +169,17 @@ export function createEngine({ config = CONFIG, rng = Math.random, now, onEvent 
   function advance(t) {
     for (let guard = 0; guard < 8; guard++) {
       if (isOver(s.state) || s.state === STATES.READY) return;
+      if (s.state === STATES.SNATCH) {
+        if (snatchExpired()) { endSnatch(false); t = clock.elapsed(); continue; }
+        return; // balance time is frozen while defending the phone
+      }
       if (t >= config.durationMs) {
         // Time is up. A tip still being resolved at the buzzer does not cost a life.
         finish(s.lives > 0 ? STATES.WIN : STATES.GAME_OVER, config.durationMs);
+        return;
+      }
+      if (s.state === STATES.NEUTRAL && s.snatchIndex < s.snatchTimes.length && t >= s.snatchTimes[s.snatchIndex]) {
+        beginSnatch();
         return;
       }
       if (s.state === STATES.NEUTRAL && t >= s.nextTipAt) {
@@ -133,6 +211,16 @@ export function createEngine({ config = CONFIG, rng = Math.random, now, onEvent 
     return snapshot();
   }
 
+  // One rapid tap during a snatch. Returns true if it counted.
+  function tap() {
+    if (s.state !== STATES.SNATCH || !snatchClock.running) return false;
+    if (snatchExpired()) { advance(clock.elapsed()); return false; } // too late
+    s.snatchTaps += 1;
+    emit("snatchtap", { taps: s.snatchTaps });
+    if (s.snatchTaps >= config.snatchTaps) endSnatch(true);
+    return true;
+  }
+
   function act(action) {
     if (action !== ACTIONS.LEFT && action !== ACTIONS.RIGHT) return false;
     if (!clock.running) return false;
@@ -151,12 +239,19 @@ export function createEngine({ config = CONFIG, rng = Math.random, now, onEvent 
     return true;
   }
 
-  function pause() { if (!isOver(s.state)) clock.pause(); }
-  function resume() { if (!isOver(s.state) && s.state !== STATES.READY) clock.resume(); }
+  function pause() {
+    if (isOver(s.state)) return;
+    if (s.state === STATES.SNATCH) snatchClock.pause(); else clock.pause();
+  }
+  function resume() {
+    if (isOver(s.state) || s.state === STATES.READY) return;
+    if (s.state === STATES.SNATCH) snatchClock.resume(); else clock.resume();
+  }
 
   function snapshot() {
     const t = Math.min(clock.elapsed(), config.durationMs);
     const tipping = isTipping(s.state);
+    const snatching = s.state === STATES.SNATCH;
     return {
       state: s.state,
       lives: s.lives,
@@ -167,10 +262,19 @@ export function createEngine({ config = CONFIG, rng = Math.random, now, onEvent 
       elapsedMs: isOver(s.state) ? s.endedAt : t,
       remainingMs: isOver(s.state) ? Math.max(0, config.durationMs - s.endedAt) : Math.max(0, config.durationMs - t),
       responseLeft: tipping ? Math.max(0, Math.min(1, 1 - (t - s.tipStart) / config.responseMs)) : 0,
-      paused: !clock.running && !isOver(s.state) && s.state !== STATES.READY,
+      paused: snatching ? !snatchClock.running : !clock.running && !isOver(s.state) && s.state !== STATES.READY,
+      snatching,
+      snatchTaps: s.snatchTaps,
+      snatchNeed: config.snatchTaps,
+      snatchProgress: Math.min(1, s.snatchTaps / config.snatchTaps),
+      snatchLeft: snatching ? Math.max(0, Math.min(1, 1 - snatchClock.elapsed() / config.snatchMs)) : 0,
+      snatchMsLeft: snatching ? Math.max(0, config.snatchMs - snatchClock.elapsed()) : 0,
+      snatchIndex: s.snatchIndex,
+      snatchTotal: s.snatchTimes.length,
+      snatchWins: s.snatchWins,
     };
   }
 
   reset();
-  return { start, tick, act, pause, resume, snapshot, reset() { clock.stop(); reset(); } };
+  return { start, tick, act, tap, pause, resume, snapshot, reset() { clock.stop(); snatchClock.stop(); reset(); } };
 }

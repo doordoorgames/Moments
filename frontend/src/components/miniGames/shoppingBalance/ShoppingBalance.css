@@ -139,3 +139,14 @@
 
 @media (max-height:620px){.sb-ctl{min-height:68px}.sb-rules li{font-size:14px}.sb-panel{padding:16px 14px 12px; gap:9px}}
 @media (prefers-reduced-motion:reduce){.sb-root *{animation-duration:.01ms!important; animation-iteration-count:1!important}}
+
+/* Rotation meter (tilt mode): shows how far the phone is turned; marks sit at the 15 degree trigger. */
+.sb-tilt{position:absolute; left:0; right:0; bottom:0; display:grid; grid-template-columns:auto 1fr auto; align-items:center; gap:10px;
+  padding:14px 14px calc(env(safe-area-inset-bottom,0px) + 18px); background:linear-gradient(transparent, rgba(0,0,0,.55))}
+.sb-tilt-side{display:flex; align-items:center; gap:2px; font:800 13px/1 var(--ui); letter-spacing:.1em; color:rgba(255,251,244,.7)}
+.sb-tilt-side .sb-arrow{width:18px; height:18px}
+.sb-tilt-side.is-target{color:var(--yolk)}
+.sb-tilt-track{position:relative; height:16px; border-radius:999px; border:2.5px solid var(--paper); background:rgba(17,17,17,.5); box-shadow:3px 3px 0 var(--ink)}
+.sb-tilt-mark{position:absolute; top:-5px; bottom:-5px; width:2.5px; margin-left:-1.25px; background:var(--yolk)}
+.sb-tilt-dot{position:absolute; top:50%; width:22px; height:22px; margin:-11px 0 0 -11px; border-radius:50%; background:var(--paper); border:2.5px solid var(--ink)}
+.sb-tilt-dot.is-hit{background:var(--yolk)}

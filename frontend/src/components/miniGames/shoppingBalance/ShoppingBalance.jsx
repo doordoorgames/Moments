@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ACTIONS, CONFIG, STATES, createEngine } from "./engine";
 import { createSound } from "./sound";
+import { TILT, createTiltDetector, motionSupported, requestMotionPermission, tryLockPortrait, unlockOrientation } from "./tilt";
 import "./ShoppingBalance.css";
 
 const ART_DIR = "/shoug2/shopping-balance/";
@@ -42,9 +43,13 @@ export default function ShoppingBalance({ onContinue, continueLabel = "Back to m
   const [snap, setSnap] = useState(null);
   const [fx, setFx] = useState({ kind: null, key: 0, word: "" });
   const [muted, setMuted] = useState(false);
+  const [input, setInput] = useState("tilt"); // tilt | buttons
+  const [angle, setAngle] = useState(0);
 
   const sound = useMemo(() => createSound(), []);
   const engineRef = useRef(null);
+  const tiltRef = useRef(null);
+  if (!tiltRef.current) tiltRef.current = createTiltDetector();
 
   // Engine events -> effects + sound. Rendering stays out of the engine.
   const onEvent = useCallback((type, { reason, snapshot }) => {
@@ -83,6 +88,7 @@ export default function ShoppingBalance({ onContinue, continueLabel = "Back to m
     const loop = () => {
       const s = engine.tick();
       setSnap(s);
+      setAngle(tiltRef.current.angle);
       if (s.state !== STATES.WIN && s.state !== STATES.GAME_OVER) frame = requestAnimationFrame(loop);
     };
     frame = requestAnimationFrame(loop);
@@ -103,7 +109,7 @@ export default function ShoppingBalance({ onContinue, continueLabel = "Back to m
   // Full cleanup on unmount.
   useEffect(() => {
     const engine = engineRef.current;
-    return () => { engine.reset(); sound.close(); };
+    return () => { engine.reset(); sound.close(); unlockOrientation(); };
   }, [sound]);
 
   // Single input interface. Buttons and keys call this; tilt can later too.
@@ -111,6 +117,25 @@ export default function ShoppingBalance({ onContinue, continueLabel = "Back to m
     if (screen !== "play") return;
     if (engineRef.current.act(action)) setSnap(engineRef.current.snapshot());
   }, [screen]);
+
+  // Phone rotation: hold the phone upright, rotate it like a steering wheel.
+  // 15 degrees or more either way is one move. If no sensor data arrives,
+  // fall back to on-screen buttons.
+  useEffect(() => {
+    if (screen !== "play" || input !== "tilt") return undefined;
+    const detector = tiltRef.current;
+    let gotSample = false;
+    const onMotion = e => {
+      const g = e.accelerationIncludingGravity;
+      if (!g || g.x == null || g.y == null) return;
+      gotSample = true;
+      const dir = detector.feed(g.x, g.y);
+      if (dir) act(dir);
+    };
+    window.addEventListener("devicemotion", onMotion);
+    const timer = setTimeout(() => { if (!gotSample) setInput("buttons"); }, TILT.noSignalMs);
+    return () => { window.removeEventListener("devicemotion", onMotion); clearTimeout(timer); };
+  }, [screen, input, act]);
 
   useEffect(() => {
     if (screen !== "play") return undefined;
@@ -123,9 +148,15 @@ export default function ShoppingBalance({ onContinue, continueLabel = "Back to m
     return () => window.removeEventListener("keydown", onKey);
   }, [screen, act]);
 
-  const start = () => {
+  const start = async () => {
     if (assets !== "ready") return;
     sound.unlock();
+    // Must be requested inside the tap (iOS). Baseline is the pose at Start.
+    const allowed = motionSupported() && await requestMotionPermission();
+    setInput(allowed ? "tilt" : "buttons");
+    tiltRef.current.calibrate();
+    setAngle(0);
+    if (allowed) tryLockPortrait();
     sound.play("start");
     setFx({ kind: null, key: 0, word: "" });
     engineRef.current.start();
@@ -144,6 +175,9 @@ export default function ShoppingBalance({ onContinue, continueLabel = "Back to m
   const seconds = snap ? Math.ceil(snap.remainingMs / 1000) : CONFIG.durationMs / 1000;
   const lives = snap?.lives ?? CONFIG.lives;
   const won = state === STATES.WIN;
+  const tiltMode = input === "tilt";
+  const verb = tiltMode ? "ROTATE" : "TAP";
+  const needle = Math.max(-1, Math.min(1, angle / (TILT.triggerDeg * 2)));
 
   return (
     <div className="sb-root" data-status-bar-color="#0E0B14" data-testid="shopping-balance" style={{ "--sb-bg": `url(${ART.center})` }}>
@@ -172,7 +206,7 @@ export default function ShoppingBalance({ onContinue, continueLabel = "Back to m
                   </svg>
                   <div className="sb-alert-core"><Arrow dir={correct} /><b>{correct}</b></div>
                 </div>
-                <p className="sb-alert-text">TIPPING {snap.tipDir}!<br /><strong>TAP {correct}!</strong></p>
+                <p className="sb-alert-text">TIPPING {snap.tipDir}!<br /><strong>{verb} {correct}!</strong></p>
               </div>
             )}
 
@@ -186,7 +220,8 @@ export default function ShoppingBalance({ onContinue, continueLabel = "Back to m
             <ul className="sb-rules">
               <li>Hold your phone straight!</li>
               <li>The bags are heavy!</li>
-              <li><b>When Shoug tips, tap the opposite direction to save her.</b> Use the LEFT and RIGHT buttons at the bottom.</li>
+              <li><b>When Shoug tips, rotate your phone the opposite way to save her.</b> Hold it upright in front of your face, then turn it like a steering wheel, left or right.</li>
+              <li>Hold the phone straight when you tap Start. Turn on rotation lock so the screen stays upright.</li>
               <li>You have 3 lives.</li>
               <li>Survive 45 seconds!</li>
             </ul>
@@ -237,6 +272,17 @@ export default function ShoppingBalance({ onContinue, continueLabel = "Back to m
                 {muted ? "Muted" : "Sound"}
               </button>
             </header>
+            {tiltMode ? (
+              <div className="sb-tilt" aria-hidden="true">
+                <span className={`sb-tilt-side ${correct === ACTIONS.LEFT ? "is-target" : ""}`}><Arrow dir="LEFT" />LEFT</span>
+                <div className="sb-tilt-track">
+                  <i className="sb-tilt-mark" style={{ left: "25%" }} />
+                  <i className="sb-tilt-mark" style={{ left: "75%" }} />
+                  <b className={`sb-tilt-dot ${Math.abs(angle) >= TILT.triggerDeg ? "is-hit" : ""}`} style={{ left: `${50 + needle * 50}%` }} />
+                </div>
+                <span className={`sb-tilt-side ${correct === ACTIONS.RIGHT ? "is-target" : ""}`}>RIGHT<Arrow dir="RIGHT" /></span>
+              </div>
+            ) : (
             <div className="sb-controls">
               {[ACTIONS.LEFT, ACTIONS.RIGHT].map(a => (
                 <button key={a} type="button" className={`sb-ctl ${correct === a ? "is-target" : ""}`}
@@ -245,6 +291,7 @@ export default function ShoppingBalance({ onContinue, continueLabel = "Back to m
                 </button>
               ))}
             </div>
+            )}
         </div>
       )}
     </div>

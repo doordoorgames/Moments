@@ -19,7 +19,7 @@ export default function PlotTwist({onContinue}) {
   const [screen,setScreen] = useState(routeCode?'connect':'landing');
   const [mode,setMode] = useState('story');
   const [rounds,setRounds] = useState(3);
-  const [dev,setDev] = useState(false);
+  const [dev] = useState(false); // developer rooms are hidden from players
   const [name,setName] = useState('');
   const [joinCode,setJoinCode] = useState(routeCode || params.get('room') || '');
   const [intent,setIntent] = useState(routeCode?'join':null);
@@ -136,14 +136,15 @@ export default function PlotTwist({onContinue}) {
   }
   const playerName=id=>game?.players.find(p=>p.id===id)?.name || 'A friend';
   const playing=screen==='room'&&game&&game.status!=='lobby';
+  const trapMood=(screen==='room'?game?.mode:screen==='connect'?mode:null)==='trap';
   // One line only: Enter never adds a new line (pasted line breaks become spaces).
   const typeDraft=value=>setDraft(value.replace(/[\r\n]+/g,' '));
   const send=()=>{if(myTurn&&count===required&&!busy)action('submit');};
   const chooseIntent=value=>{flushSync(()=>{setIntent(value);setError('');});nickRef.current?.focus();};
   const exit=()=>{if(onContinue)onContinue();else navigate('/#mini-games');};
   const playerList=<div className="pt-roster">{game?.players.map((p,i)=><div className={`pt-nameplate ${p.id===turnPlayer?.id&&game.status==='active'?'is-active':''}`} key={p.id}><span className={`pt-avatar pt-avatar-${i%4}`}>{p.name.slice(0,1).toUpperCase()}</span><span>{p.name}<small>{p.id===game.host?'HOST':p.simulated?'TEST PLAYER':p.id===credentials?.player_id?'YOU':'FRIEND'}</small></span>{game.mode==='trap'&&game.status!=='lobby'&&<b>{p.score} <span className="pt-sr">points</span></b>}</div>)}</div>;
-  return <main className={`pt-app ${screen==='room'?'pt-in-room':''} ${playing?'pt-playing':''}`} data-typography-ignore>
-    <Rooftop/>
+  return <main className={`pt-app ${screen==='room'?'pt-in-room':''} ${playing?'pt-playing':''} ${trapMood?'pt-trap':''} pt-screen-${screen}`} data-typography-ignore>
+    <Rooftop mood={trapMood?'trap':undefined}/>
     <div className="pt-shell">
       {!playing&&<header className="pt-header"><button className="pt-icon-button" aria-label="Back to mini games" onClick={exit}><ArrowLeft size={19}/></button><button className="pt-brand" onClick={()=>{if(!code)setScreen('landing');}}>PLOT<span>TWIST</span><i>ROOFTOP STORIES CLUB</i></button><span className="pt-edition">DORDOR<br/>AFTER HOURS</span></header>}
       {screen==='landing'&&<section className="pt-landing"><div className="pt-kicker"><span/> THE CITY IS YOURS. THE STORY IS OURS.</div><h1>Good friends.<br/>Bad <em>plot twists.</em></h1><p>A rooftop. A sunset. One wildly unpredictable story.<br className="pt-desktop"/> Bring your friends. Leave your logic downstairs.</p><div className="pt-hero-action"><button className="pt-primary" onClick={()=>setScreen('modes')}>LET’S MAKE A SCENE <ArrowRight size={20}/></button><button className="pt-text-button" onClick={()=>{setScreen('connect');setIntent('join');}}>Have a room code? Join the party <ArrowRight size={15}/></button></div><div className="pt-ticket"><span className="pt-ticket-icon"><Users size={24}/></span><span>2–8 FRIENDS<small>No downloads. Just a good story.</small></span><div className="pt-ticket-stamp">YOU’RE<br/>INVITED</div></div><span className="pt-bottom-note">A LITTLE CHAOS LOOKS GOOD ON YOU.</span></section>}
@@ -151,7 +152,7 @@ export default function PlotTwist({onContinue}) {
       {screen==='connect'&&<section className="pt-connect"><div className="pt-kicker">YOUR EVENING STARTS HERE</div><h1>{auth?'Finding your':'Save yourself'}<br/><em>a rooftop seat.</em></h1>{!auth&&<><div className="pt-tabs"><button className={intent==='create'?'selected':''} onClick={()=>chooseIntent('create')}>Create a room</button><button className={intent==='join'?'selected':''} onClick={()=>chooseIntent('join')}>Join a room</button></div><form className="pt-paper pt-form" onSubmit={enter}>
         <div hidden={!intent}><label htmlFor="pt-nickname">WHAT SHOULD WE CALL YOU?</label><input id="pt-nickname" ref={nickRef} value={name} onChange={e=>setName(e.target.value)} autoComplete="nickname" maxLength={24} placeholder="Your nickname" required={!!intent} enterKeyHint={intent==='join'?'next':'go'} onKeyDown={e=>{if(e.key==='Enter'&&intent==='join'){e.preventDefault();codeRef.current?.focus();codeRef.current?.scrollIntoView({block:'nearest'});}}}/></div>
         <div hidden={intent!=='join'}><label htmlFor="pt-room-code">THE ROOM CODE</label><input id="pt-room-code" ref={codeRef} disabled={intent!=='join'} className="pt-code-input" value={joinCode} onChange={e=>setJoinCode(e.target.value.replace(/\D/g,'').slice(0,5))} placeholder="00000" required={intent==='join'} minLength={5} maxLength={5} inputMode="numeric" pattern="[0-9]{5}" autoComplete="off" enterKeyHint="go"/></div>
-        {intent==='create'&&<><label htmlFor="pt-mode">TONIGHT’S VIBE</label><select id="pt-mode" value={mode} onChange={e=>setMode(e.target.value)}><option value="story">Story Time · exactly 5 words</option><option value="trap">Word Trap · exactly 7 words</option></select><div className="pt-rounds"><div><label htmlFor="pt-rounds">HOW MANY ROUNDS?</label><small>Everyone writes once per round.</small></div><select id="pt-rounds" value={rounds} onChange={e=>setRounds(Number(e.target.value))}>{[1,2,3,4,5,6,7,8,9,10].map(n=><option key={n}>{n}</option>)}</select></div><label className="pt-check"><input type="checkbox" checked={dev} onChange={e=>setDev(e.target.checked)}/> Developer room <span>Simulate friends on one device</span></label></>}
+        {intent==='create'&&<><label htmlFor="pt-mode">TONIGHT’S VIBE</label><select id="pt-mode" value={mode} onChange={e=>setMode(e.target.value)}><option value="story">Story Time · exactly 5 words</option><option value="trap">Word Trap · exactly 7 words</option></select><div className="pt-rounds"><div><label htmlFor="pt-rounds">HOW MANY ROUNDS?</label><small>Everyone writes once per round.</small></div><select id="pt-rounds" value={rounds} onChange={e=>setRounds(Number(e.target.value))}>{[1,2,3,4,5,6,7,8,9,10].map(n=><option key={n}>{n}</option>)}</select></div></>}
         {!intent?<p className="pt-invite-note">Start your own story or pull up a chair with friends.</p>:<button className="pt-primary" disabled={busy}>{busy?'Opening the rooftop…':intent==='create'?'CREATE THE ROOM':'JOIN THE PARTY'}<ArrowRight size={19}/></button>}
       </form></>}{auth&&<p className="pt-status">Reconnecting to your saved seat…</p>}</section>}
       {screen==='room'&&game&&<>

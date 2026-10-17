@@ -6,8 +6,9 @@
 // phone must come back near straight before the next move can fire.
 
 export const TILT = Object.freeze({
+  deadDeg: 7, // within this the phone counts as straight; the meter does not move
   triggerDeg: 15, // rotate at least this far to register a move
-  rearmDeg: 8, // come back inside this to arm the next move
+  rearmDeg: 7, // come back inside this to arm the next move
   minPlaneG: 3.5, // m/s^2 of gravity in the screen plane; below this the phone is too flat to read
   smoothing: 0.45, // low-pass weight for each new sample (0..1)
   noSignalMs: 1500, // no sensor data by then = fall back to buttons
@@ -61,6 +62,15 @@ export function createTiltDetector(opts = {}) {
       return null;
     },
   };
+}
+
+// Meter position -1..1 for an angle. Stays at 0 inside the dead zone, then
+// moves so that the trigger angle lands at +/-0.5 (the marks on the track).
+export function meterPos(angle, cfg = TILT) {
+  const over = Math.abs(angle) - cfg.deadDeg;
+  if (over <= 0) return 0;
+  const span = 2 * (cfg.triggerDeg - cfg.deadDeg);
+  return Math.sign(angle) * Math.min(1, over / span);
 }
 
 export const motionSupported = () => typeof window !== "undefined" && "DeviceMotionEvent" in window;

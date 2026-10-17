@@ -3,7 +3,10 @@
 // actions through act("LEFT" | "RIGHT"). Any input source (on-screen buttons,
 // keyboard, phone rotation) only ever calls act().
 //
-// Phone-snatch events: 2 to 6 per game, spread across the run. While a snatch
+// One queue of events, one at a time: after every calm beat the next event is
+// either a tip (LEFT/RIGHT) or a phone snatch. Snatches come 2 to 6 times per
+// game, at random positions in the queue, never two in a row and never first,
+// and never on top of a tip. While a snatch
 // is on, the balance clock is frozen (no tips, no tip timeouts, survival timer
 // paused) and the player taps rapidly via tap() to fill a 30-tap bar before
 // the snatch timer runs out. Success: no life lost. Failure: exactly one life.
@@ -35,27 +38,16 @@ export const CONFIG = Object.freeze({
   snatchMax: 6,
   snatchTaps: 30,
   snatchMs: 5000, // time to land all 30 taps
-  snatchWindowStart: 4000, // game-time window the snatches are spread across
-  snatchWindowEnd: 38000,
-  snatchMinGap: 3000, // minimum game time between two snatches
+  snatchLeadScale: 0.5, // calm beat before a snatch = half a normal one (1 to 2 s)
+  avgEventMs: 5500, // rough game time per queued event, used to spread snatches out
   snatchSaveMs: 700, // relief beat after a successful defence
   snatchFailMs: 900, // reaction beat after losing the phone
 });
 
-// Pick how many snatches (snatchMin..snatchMax) and when (game ms). The window
-// is cut into equal slots, one snatch per slot, kept away from slot edges so
-// two snatches are always at least snatchMinGap apart.
-export function planSnatches(rng = Math.random, config = CONFIG) {
+// How many snatches this game: snatchMin..snatchMax, evenly likely.
+export function pickSnatchCount(rng = Math.random, config = CONFIG) {
   const span = config.snatchMax - config.snatchMin + 1;
-  const n = config.snatchMin + Math.min(span - 1, Math.floor(rng() * span));
-  const slot = (config.snatchWindowEnd - config.snatchWindowStart) / n;
-  const margin = Math.min(slot / 2 - 1, config.snatchMinGap / 2);
-  const times = [];
-  for (let i = 0; i < n; i++) {
-    const from = config.snatchWindowStart + i * slot + margin;
-    times.push(Math.round(from + rng() * (slot - 2 * margin)));
-  }
-  return times;
+  return config.snatchMin + Math.min(span - 1, Math.floor(rng() * span));
 }
 
 const isTipping = s => s === STATES.TIPPING_LEFT || s === STATES.TIPPING_RIGHT;
@@ -75,7 +67,7 @@ export function createClock(now = () => performance.now()) {
   };
 }
 
-export function createEngine({ config = CONFIG, rng = Math.random, snatchRng = Math.random, snatchPlan, now, onEvent } = {}) {
+export function createEngine({ config = CONFIG, rng = Math.random, snatchRng = Math.random, snatchCount, now, onEvent } = {}) {
   const clock = createClock(now); // balance/game clock
   const snatchClock = createClock(now); // runs only during a snatch
   let s;
@@ -94,22 +86,38 @@ export function createEngine({ config = CONFIG, rng = Math.random, snatchRng = M
       nextTipAt: 0,
       endedAt: 0,
       lastFail: null, // "wrong" | "timeout" | "snatch"
-      snatchTimes: [],
+      snatchTotal: 0,
+      nextKind: "tip", // "tip" | "snatch": what the next event in the queue is
+      lastKind: null,
       snatchIndex: 0, // how many snatches have started
       snatchWins: 0,
       snatchTaps: 0,
     };
   }
 
+  // Decide what comes next in the queue. Snatches are spread so all of them
+  // fit in the run: the chance rises as the remaining time shrinks, and it is
+  // forced once the remaining snatches would no longer fit.
+  function pickNextKind(t) {
+    const left = s.snatchTotal - s.snatchIndex;
+    if (left <= 0 || s.lastKind === null || s.lastKind === "snatch") return "tip";
+    const slots = Math.max(1, Math.floor((config.durationMs - t) / config.avgEventMs / 2));
+    if (left >= slots) return "snatch";
+    return snatchRng() < left / slots ? "snatch" : "tip";
+  }
+
   function scheduleNextTip(t) {
     const span = config.neutralMaxMs - config.neutralMinMs;
-    s.nextTipAt = t + config.neutralMinMs + rng() * span;
+    const delay = config.neutralMinMs + rng() * span;
+    s.nextKind = pickNextKind(t);
+    // A snatch gets a shorter calm beat (same random feel, scaled down).
+    s.nextTipAt = t + (s.nextKind === "snatch" ? delay * config.snatchLeadScale : delay);
   }
 
   function start() {
     reset();
     snatchClock.stop();
-    s.snatchTimes = snatchPlan ? [...snatchPlan].sort((a, b) => a - b) : planSnatches(snatchRng, config);
+    s.snatchTotal = snatchCount ?? pickSnatchCount(snatchRng, config);
     clock.start();
     s.state = STATES.NEUTRAL;
     scheduleNextTip(0);
@@ -178,11 +186,13 @@ export function createEngine({ config = CONFIG, rng = Math.random, snatchRng = M
         finish(s.lives > 0 ? STATES.WIN : STATES.GAME_OVER, config.durationMs);
         return;
       }
-      if (s.state === STATES.NEUTRAL && s.snatchIndex < s.snatchTimes.length && t >= s.snatchTimes[s.snatchIndex]) {
+      if (s.state === STATES.NEUTRAL && t >= s.nextTipAt && s.nextKind === "snatch") {
+        s.lastKind = "snatch";
         beginSnatch();
         return;
       }
       if (s.state === STATES.NEUTRAL && t >= s.nextTipAt) {
+        s.lastKind = "tip";
         s.tipDir = rng() < 0.5 ? ACTIONS.LEFT : ACTIONS.RIGHT;
         s.state = s.tipDir === ACTIONS.LEFT ? STATES.TIPPING_LEFT : STATES.TIPPING_RIGHT;
         s.tipStart = s.nextTipAt;
@@ -270,7 +280,7 @@ export function createEngine({ config = CONFIG, rng = Math.random, snatchRng = M
       snatchLeft: snatching ? Math.max(0, Math.min(1, 1 - snatchClock.elapsed() / config.snatchMs)) : 0,
       snatchMsLeft: snatching ? Math.max(0, config.snatchMs - snatchClock.elapsed()) : 0,
       snatchIndex: s.snatchIndex,
-      snatchTotal: s.snatchTimes.length,
+      snatchTotal: s.snatchTotal,
       snatchWins: s.snatchWins,
     };
   }

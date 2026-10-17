@@ -9,7 +9,7 @@ function setup(rolls = []) {
     now: () => t,
     rng: () => (queue.length ? queue.shift() : 0.5),
     onEvent: type => events.push(type),
-    snatchPlan: [], // balance-only: snatch rules are tested separately
+    snatchCount: 0, // balance-only: snatch rules are tested separately
   });
   const at = ms => { t = 1000 + ms; return engine.tick(); };
   return { engine, at, events, jump: ms => { t = 1000 + ms; }, advanceBy: ms => { t += ms; return engine.tick(); } };

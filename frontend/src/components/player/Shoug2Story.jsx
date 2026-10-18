@@ -20,7 +20,7 @@ export default function Shoug2Story({ state, player, code, onState, onChoose, na
   const [pending, setPending] = useState(false);
   const [now, setNow] = useState(Date.now());
   const clockOffset = useRef(0);
-  const lastBackground = useRef("/shoug2/bg/airport.jpg");
+  const lastBackground = useRef("/shoug/backgrounds/airport-cafe.webp");
   const prefersReduced = useReducedMotion();
   const supreme = !!room?.supreme_test_mode;
   const reduced = prefersReduced || supreme;
@@ -53,24 +53,41 @@ export default function Shoug2Story({ state, player, code, onState, onChoose, na
   const type = /airport|gate|flight|heathrow|مطار|بوابة|رحلة/i.test(text) ? "airport" :
     /phone|call|message|whatsapp|اتصال|رسالة/i.test(text) ? "phone" :
     choices.length > 1 ? "decision" : narration ? "narration" : "journey";
+  // Ordered: first match wins. Nodes with no match keep the previous scene's photo.
   const backgrounds = [
-    ["phone-accessories", /phone strap|duty free/i],
-    ["christmas-lights", /christmas lights|accommodation|regent street/i],
-    ["department-store", /selfridges|rhode|beauty counters|cinema|movie|harrods/i],
-    ["hyde-park", /running|\\brun\\b|race/i],
-    ["oxford-street", /oxford street|thief|find my phone|police|directions/i],
-    ["mayfair-cafe", /mayfair|pink drink/i],
-    ["train", /platform|train|carriage/i],
-    ["bicester", /bicester|card is blocked|lunch/i],
-    ["winter-wonderland", /winter wonderland|hot chocolate|shomoukh is suddenly|thorpe park|\\bride\\b|rain/i],
-    ["airport", /kuwait airport|\\bgate\\b|\\bplane\\b|heathrow|immigration|baggage|suitcase|boarding/i],
+    ["hotel-room", /callbacks|bags packed/i],
+    ["regent-street-lights", /private language|hidden london|regent street|final night/i],
+    ["winter-wonderland-cocoa", /winter wonderland|hot chocolate/i],
+    ["harrods", /harrods/i],
+    ["car-window-lights", /christmas lights|car windows|drives? toward heathrow/i],
+    ["hyde-park-gates", /hyde park|running|\brun\b|\brace\b|beats him/i],
+    ["airport-cafe", /five minutes|airport caf|kuwait airport|duty free|coffees|gate changes|seat swap|rearrange the seats|booking|plane|kuwait arrival/i],
+    ["heathrow-baggage", /heathrow|immigration|baggage|carousel|suitcase|boarding passes|bags are weighed/i],
+    ["cinema-selfridges", /cinema|movie|empty seat/i],
+    ["hotel-room", /accommodation|exhausted|falls asleep|wakes to|dessert|mother calls|cousin|cropped/i],
+    ["beauty-hall", /selfridges|department store|rhode|beauty|came to find thunayan/i],
+    ["oxford-street", /oxford street|thief|find my phone|police|signal|furious/i],
+    ["mayfair-pink-matcha", /mayfair|matcha|pink|engagement|families talk/i],
+    ["train-marylebone", /platform|bicester together|prepaid/i],
+    ["bicester-village", /stop for lunch/i],
+    ["train-window-seat", /train|carriage/i],
+    ["bicester-village", /bicester|fitting rooms|card is blocked|the bank|lunch/i],
+    ["thorpe-park-ride", /thorpe park|next ride|one ride|\brain\b|shelter|ultimatum/i],
   ];
-  const matchedBackground = backgrounds.find(([, pattern]) => pattern.test(text));
-  if (matchedBackground) lastBackground.current = `/shoug2/bg/${matchedBackground[0]}.jpg`;
+  const softBackgrounds = ["thorpe-park-ride", "train-window-seat", "heathrow-baggage"];
+  const sceneText = `${node.title || ""} ${text}`;
+  const matchedBackground = backgrounds.find(([, pattern]) => pattern.test(sceneText));
+  if (matchedBackground) lastBackground.current = `/shoug/backgrounds/${matchedBackground[0]}.webp`;
   const background = lastBackground.current;
+  const soft = softBackgrounds.some(name => background.includes(name));
   const fallbackBackground = "/IMG_2640.webp";
   return <main className={`shoug2-root shoug2-${type}`} style={{"--shoug2-image": `url("${background}"), url("${fallbackBackground}")`}}>
-    <div className="shoug2-environment" aria-hidden="true" />
+    <div className="shoug2-backdrop" aria-hidden="true">
+      <AnimatePresence initial={false}>
+        <motion.div key={background} className="shoug2-environment" data-soft={soft ? "true" : undefined} style={{"--shoug2-image": `url("${background}"), url("${fallbackBackground}")`}} initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} transition={{duration:reduced ? 0 : 1.2}} />
+      </AnimatePresence>
+      <div className="shoug2-shine" />
+    </div>
     <header className="shoug2-status"><span>SHOUG 2.0</span><span>ROOM {code}</span><span>{phase === "voting" ? "LIVE VOTE" : phase === "reading" ? "READING" : "STORY"}</span></header>
     <div className="shoug2-stage">
       <div className="shoug2-kicker">{type === "airport" ? "DEPARTURES · UPDATE" : type === "phone" ? "INCOMING" : type === "decision" ? "YOUR MOVE" : "THE STORY CONTINUES"}</div>

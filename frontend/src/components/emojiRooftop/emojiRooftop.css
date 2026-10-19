@@ -98,10 +98,6 @@
     radial-gradient(circle at 75% 75%,#ffffff1f 0 7%,transparent 8%) 0 0/34px 34px,
     radial-gradient(ellipse at 50% 38%,#8d4fc0,#5b2b86 70%);
   border:3px solid var(--ink);box-shadow:0 10px 0 #3c1c5c,0 10px 0 3px var(--ink),0 22px 0 #00000059}
-/* scalloped hem */
-.er-cloth::after{content:'';position:absolute;left:9%;right:9%;bottom:-17px;height:16px;
-  background:radial-gradient(circle at 50% 0,var(--pink) 0 9px,transparent 10px) 0 0/22px 16px repeat-x;
-  filter:drop-shadow(0 2px 0 var(--ink))}
 .er-item{position:absolute;left:6%;top:6%;width:21%;z-index:2;animation:er-pop .55s cubic-bezier(.3,1.6,.5,1) both}
 .er-item svg{width:100%;height:auto;display:block;filter:drop-shadow(3px 3px 0 #0d0820)}
 @keyframes er-pop{from{opacity:0;transform:translateY(-30px) scale(.6) rotate(-14deg)}}

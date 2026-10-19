@@ -3,7 +3,6 @@ import {useNavigate, useParams} from 'react-router-dom';
 import {ArrowLeft, ArrowRight, Copy, Link as LinkIcon, Send, Trophy, X} from 'lucide-react';
 import {BACKEND_URL} from '@/lib/api';
 import Scene from './Scene';
-import {CatTail, TableItem} from './TableItems';
 import './emojiRooftop.css';
 
 const ROOM = /^\d{5}$/;
@@ -293,14 +292,12 @@ export default function EmojiRooftop({onContinue}) {
       {screen === 'room' && game && (game.status === 'active') && <section className="er-stage" onClick={() => scoresOpen && setScoresOpen(false)}>
         <div className="er-table">
           <div className="er-cloth"/>
-          <div className="er-item" key={`item-${game.run}-${game.round}`}><TableItem index={game.item ?? game.round}/></div>
           <div className="er-tablet-slot">
             <div className="er-tablet" key={`tab-${game.run}-${game.round}`}>
               <span className="er-cam"/>
               {tablet()}
             </div>
           </div>
-          <div className="er-cat"><CatTail/></div>
         </div>
       </section>}
 

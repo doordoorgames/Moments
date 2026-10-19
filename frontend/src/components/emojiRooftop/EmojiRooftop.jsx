@@ -2,7 +2,7 @@ import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {useNavigate, useParams} from 'react-router-dom';
 import {ArrowLeft, ArrowRight, Copy, Link as LinkIcon, Send, Trophy, X} from 'lucide-react';
 import {BACKEND_URL} from '@/lib/api';
-import Scene from './Scene';
+import tableArt from './assets/rooftop-table.webp';
 import './emojiRooftop.css';
 
 const ROOM = /^\d{5}$/;
@@ -126,9 +126,14 @@ export default function EmojiRooftop({onContinue}) {
   // Keep the layout above the phone keyboard.
   useEffect(() => {
     const vv = window.visualViewport;
-    const update = () => document.documentElement.style.setProperty('--er-height', `${vv?.height || window.innerHeight}px`);
+    const update = () => {
+      const h = vv?.height || window.innerHeight;
+      document.documentElement.style.setProperty('--er-height', `${h}px`);
+      // Keyboard height: the table art slides up by this much so the tablet stays visible while typing.
+      document.documentElement.style.setProperty('--er-kb', `${Math.max(0, window.innerHeight - h - (vv?.offsetTop || 0))}px`);
+    };
     update(); vv?.addEventListener('resize', update);
-    return () => { vv?.removeEventListener('resize', update); document.documentElement.style.removeProperty('--er-height'); };
+    return () => { vv?.removeEventListener('resize', update); document.documentElement.style.removeProperty('--er-height'); document.documentElement.style.removeProperty('--er-kb'); };
   }, []);
 
   useEffect(() => { setDraft(''); setWon(null); }, [game?.round, game?.run]);
@@ -211,7 +216,7 @@ export default function EmojiRooftop({onContinue}) {
       return <div className="er-screen er-screen-intro"><span className="er-screen-label">Round {game.round + 1} of {game.total}</span><strong key={n} className="er-count">{n}</strong><span className="er-screen-sub">Get ready</span></div>;
     }
     if (view === 'guessing' || view === 'timeup') return <div className="er-screen">
-      <span className="er-screen-label">{game.clue.category}</span>
+      <div className="er-screen-bar"><span>Round {game.round + 1}/{game.total}</span><b>{game.clue.category}</b><span className={secondsLeft <= 5 ? 'is-hurry' : ''}>{spinning ? '' : `${secondsLeft}s`}</span></div>
       <div className={`er-reels er-reels-${Math.min(reels.length, 6)}`}>{reels.map((r, i) => <Reel key={`${game.run}-${game.round}-${i}`} final={r} spinning={spinning}/>)}</div>
       <span className="er-timebar"><i style={{transform: `scaleX(${timeFraction})`}} className={secondsLeft <= 5 ? 'is-hurry' : ''}/></span>
       {view === 'timeup' && <span className="er-stamp">Time</span>}
@@ -219,6 +224,7 @@ export default function EmojiRooftop({onContinue}) {
     if (view === 'reveal') {
       const mine = game.solved_by && game.solved_by === me;
       return <div className={`er-screen er-screen-reveal ${mine ? 'is-mine' : ''}`}>
+        <div className="er-screen-bar"><span>Round {game.round + 1}/{game.total}</span><b>{game.clue.category}</b><span/></div>
         <div className="er-reels er-reels-small">{reels.map((r, i) => <span key={i} className="er-reel is-landed"><span className="er-reel-face">{r}</span></span>)}</div>
         <strong className="er-answer">{game.answer}</strong>
         <span className="er-winner">{game.solved_by ? (mine ? 'You got it  +1' : `${playerName(game.solved_by)} got it  +1`) : 'Nobody got it'}</span>
@@ -231,83 +237,70 @@ export default function EmojiRooftop({onContinue}) {
   const top = ranking[0];
   const winners = ranking.filter(p => p.score === top?.score && top?.score > 0);
 
-  return <main className={`er-app er-view-${view} ${screen === 'room' && game?.status === 'active' ? 'er-playing' : ''}`} data-typography-ignore data-status-bar-color="#120c28">
-    <Scene/>
+  const home = <div className="er-panel er-landing">
+    <span className="er-kicker">Rooftop party game</span>
+    <h1>Emoji <em>Rooftop</em></h1>
+    <div className="er-actions">
+      <button className="er-primary" onClick={() => { setIntent('create'); setScreen('connect'); }}>Create room</button>
+      <button className="er-secondary" onClick={() => { setIntent('join'); setScreen('connect'); }}>Join room</button>
+    </div>
+    <small>Guess from emojis · fastest typer wins · 2 to 12 players</small>
+  </div>;
+
+  const connect = <form className="er-panel er-form" onSubmit={enter}>
+    <div className="er-tabs">
+      <button type="button" className={intent === 'create' ? 'is-on' : ''} onClick={() => { setIntent('create'); setError(''); }}>Create</button>
+      <button type="button" className={intent === 'join' ? 'is-on' : ''} onClick={() => { setIntent('join'); setError(''); }}>Join</button>
+    </div>
+    {auth ? <p className="er-muted">Reconnecting to your seat…</p> : <>
+      <input id="er-name" aria-label="Your nickname" value={name} onChange={e => setName(e.target.value)} maxLength={24} autoComplete="nickname" placeholder="Your nickname" required/>
+      {intent === 'join' && <input id="er-code" aria-label="Room code" className="er-code-input" value={joinCode} onChange={e => setJoinCode(e.target.value.replace(/\D/g, '').slice(0, 5))} inputMode="numeric" placeholder="Room code" required/>}
+      <button className="er-primary" disabled={busy || !intent}>{busy ? 'One moment…' : intent === 'create' ? 'Create the room' : 'Join the party'} <ArrowRight size={15}/></button>
+    </>}
+  </form>;
+
+  const lobby = game && <div className="er-panel er-lobby">
+    <div className="er-lobby-head">
+      <div><span className="er-kicker">Room code</span><strong className="er-big-code">{code}</strong></div>
+      <div className="er-row">
+        <button className="er-link" onClick={async () => { try { await navigator.clipboard.writeText(code); setNotice('Code copied.'); } catch { setNotice(`Code: ${code}`); } }}><Copy size={13}/> Copy</button>
+        <button className="er-link" onClick={share}><LinkIcon size={13}/> Share</button>
+      </div>
+    </div>
+    <ul className="er-guests">{game.players.map(p => <li key={p.id}>{p.name}{p.id === game.host && <small>host</small>}{p.id === me && p.id !== game.host && <small>you</small>}</li>)}<li className="er-guest-count">{game.players.length}/12</li></ul>
+    {host ? <div className="er-lobby-foot">{roundsPicker}
+      <button className="er-primary" disabled={busy || game.players.length < 2} onClick={() => hostAction('start')}>{game.players.length < 2 ? 'Waiting…' : 'Start'} <ArrowRight size={15}/></button>
+    </div> : <p className="er-muted">{playerName(game.host)} will start the game.</p>}
+  </div>;
+
+  const final = game && <div className="er-panel er-final">
+    <h2>{winners.length ? `${winners.map(p => p.name).join(' & ')} ${winners.length > 1 ? 'win' : 'wins'}` : 'Nobody scored'}</h2>
+    <ol className="er-final-list">{ranking.map((p, i) => <li key={p.id} className={p.id === me ? 'is-me' : ''}><span className="er-rank">{i + 1}</span><span>{p.name}</span><b>{p.score}</b></li>)}</ol>
+    {host ? <div className="er-lobby-foot">{roundsPicker}<button className="er-primary" disabled={busy} onClick={() => hostAction('replay')}>Again <ArrowRight size={15}/></button></div>
+      : <p className="er-muted">Waiting for {playerName(game.host)} to play again.</p>}
+  </div>;
+
+  let content = null;
+  if (screen === 'landing') content = home;
+  else if (screen === 'connect') content = connect;
+  else if (screen === 'room' && game?.status === 'lobby') content = lobby;
+  else if (screen === 'room' && game?.status === 'ended') content = final;
+  else if (screen === 'room' && game?.status === 'active') content = <div className="er-play" key={`tab-${game.run}-${game.round}`}>{tablet()}</div>;
+
+  return <main className={`er-app er-view-${view} ${screen === 'room' && game?.status === 'active' ? 'er-playing' : ''}`} data-typography-ignore data-status-bar-color="#2a1640">
+    <div className="er-backdrop" style={{backgroundImage: `url(${tableArt})`}} aria-hidden="true"/>
+    <div className="er-bg">
+      <img src={tableArt} alt="" draggable="false"/>
+      <div className="er-ipad" onClick={() => scoresOpen && setScoresOpen(false)}>{content}</div>
+    </div>
     <div className="er-shell">
       <header className="er-top">
         <button className="er-icon" aria-label="Back to mini games" onClick={exit}><ArrowLeft size={18}/></button>
-        {screen === 'room' && game?.status === 'active'
-          ? <div className="er-status"><b>{view === 'intro' ? 'Starting' : `Round ${game.round + 1} / ${game.total}`}</b>{view === 'guessing' && !spinning && <span className={secondsLeft <= 5 ? 'is-hurry' : ''}>{secondsLeft}s</span>}</div>
-          : <div className="er-brand">Emoji<span>Rooftop</span></div>}
-        {screen === 'room' && game && game.status !== 'lobby'
-          ? <div className="er-score-wrap">
-              <button className={`er-score-tab ${scoresOpen ? 'is-open' : ''}`} aria-expanded={scoresOpen} aria-label="Scores" onClick={() => setScoresOpen(o => !o)}><Trophy size={14}/>{game.players.find(p => p.id === me)?.score ?? 0}</button>
-              {scoresOpen && <ol className="er-scores">{ranking.map(p => <li key={p.id} className={p.id === me ? 'is-me' : ''}><span>{p.name}</span><b>{p.score}</b></li>)}</ol>}
-            </div>
-          : screen === 'room' && code ? <button className="er-code" onClick={share}><LinkIcon size={12}/>{code}</button> : <span className="er-top-spacer"/>}
+        {screen === 'room' && game && game.status !== 'lobby' && <div className="er-score-wrap">
+          <button className={`er-score-tab ${scoresOpen ? 'is-open' : ''}`} aria-expanded={scoresOpen} aria-label="Scores" onClick={() => setScoresOpen(o => !o)}><Trophy size={14}/>{game.players.find(p => p.id === me)?.score ?? 0}</button>
+          {scoresOpen && <ol className="er-scores">{ranking.map(p => <li key={p.id} className={p.id === me ? 'is-me' : ''}><span>{p.name}</span><b>{p.score}</b></li>)}</ol>}
+        </div>}
       </header>
-
-      {screen === 'landing' && <section className="er-card er-landing">
-        <span className="er-kicker">Rooftop party game</span>
-        <h1>Emoji<br/><em>Rooftop</em></h1>
-        <p>The tablet goes around the table. Emojis spin, land, and the fastest typer takes the point. Movies, countries, food and more.</p>
-        <div className="er-actions">
-          <button className="er-primary" onClick={() => { setIntent('create'); setScreen('connect'); }}>Create a room <ArrowRight size={18}/></button>
-          <button className="er-secondary" onClick={() => { setIntent('join'); setScreen('connect'); }}>Join a room</button>
-        </div>
-        <small>2 to 12 players · each on their own phone</small>
-      </section>}
-
-      {screen === 'connect' && <form className="er-card er-form" onSubmit={enter}>
-        <div className="er-tabs">
-          <button type="button" className={intent === 'create' ? 'is-on' : ''} onClick={() => { setIntent('create'); setError(''); }}>Create</button>
-          <button type="button" className={intent === 'join' ? 'is-on' : ''} onClick={() => { setIntent('join'); setError(''); }}>Join</button>
-        </div>
-        {auth ? <p className="er-muted">Reconnecting to your seat…</p> : <>
-          <label htmlFor="er-name">Your nickname</label>
-          <input id="er-name" value={name} onChange={e => setName(e.target.value)} maxLength={24} autoComplete="nickname" placeholder="Nickname" required/>
-          {intent === 'join' && <><label htmlFor="er-code">Room code</label>
-            <input id="er-code" className="er-code-input" value={joinCode} onChange={e => setJoinCode(e.target.value.replace(/\D/g, '').slice(0, 5))} inputMode="numeric" placeholder="00000" required/></>}
-          <button className="er-primary" disabled={busy || !intent}>{busy ? 'One moment…' : intent === 'create' ? 'Create the room' : 'Join the party'} <ArrowRight size={18}/></button>
-        </>}
-      </form>}
-
-      {screen === 'room' && game?.status === 'lobby' && <section className="er-card er-lobby">
-        <span className="er-kicker">Room code</span>
-        <strong className="er-big-code">{code}</strong>
-        <div className="er-row">
-          <button className="er-link" onClick={async () => { try { await navigator.clipboard.writeText(code); setNotice('Code copied.'); } catch { setNotice(`Code: ${code}`); } }}><Copy size={14}/> Copy</button>
-          <button className="er-link" onClick={share}><LinkIcon size={14}/> Share invite</button>
-        </div>
-        <div className="er-guests"><span className="er-kicker">At the table · {game.players.length}/12</span>
-          <ul>{game.players.map(p => <li key={p.id}>{p.name}{p.id === game.host && <small>host</small>}{p.id === me && p.id !== game.host && <small>you</small>}</li>)}</ul>
-        </div>
-        {host ? <>
-          <span className="er-kicker">Rounds</span>{roundsPicker}
-          <button className="er-primary" disabled={busy || game.players.length < 2} onClick={() => hostAction('start')}>Start the game <ArrowRight size={18}/></button>
-          {game.players.length < 2 && <small className="er-muted">Waiting for at least one more player.</small>}
-        </> : <p className="er-muted">{playerName(game.host)} will start the game.</p>}
-      </section>}
-
-      {screen === 'room' && game && (game.status === 'active') && <section className="er-stage" onClick={() => scoresOpen && setScoresOpen(false)}>
-        <div className="er-table">
-          <div className="er-cloth"/>
-          <div className="er-tablet-slot">
-            <div className="er-tablet" key={`tab-${game.run}-${game.round}`}>
-              <span className="er-cam"/>
-              {tablet()}
-            </div>
-          </div>
-        </div>
-      </section>}
-
-      {screen === 'room' && game?.status === 'ended' && <section className="er-card er-final">
-        <span className="er-kicker">Final scores</span>
-        <h2>{winners.length ? `${winners.map(p => p.name).join(' & ')} ${winners.length > 1 ? 'win' : 'wins'}` : 'Nobody scored'}</h2>
-        <ol className="er-final-list">{ranking.map((p, i) => <li key={p.id} className={p.id === me ? 'is-me' : ''}><span className="er-rank">{i + 1}</span><span>{p.name}</span><b>{p.score}</b></li>)}</ol>
-        {host ? <><span className="er-kicker">Rounds</span>{roundsPicker}<button className="er-primary" disabled={busy} onClick={() => hostAction('replay')}>Play again <ArrowRight size={18}/></button></>
-          : <p className="er-muted">Waiting for {playerName(game.host)} to play again.</p>}
-      </section>}
 
       {screen === 'room' && game?.status === 'active' && <form className={`er-guess ${canGuess ? '' : 'is-off'}`} onSubmit={submitGuess}>
         <input key={shake} ref={inputRef} className={shake ? 'er-shake' : ''} value={draft} onChange={e => setDraft(e.target.value)} maxLength={80}

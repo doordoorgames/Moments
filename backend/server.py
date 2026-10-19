@@ -2421,6 +2421,10 @@ app.include_router(api_router)
 from plot_twist_api import router as plot_twist_router
 app.include_router(plot_twist_router(lambda: supa, _q))
 
+# Emoji Rooftop: same isolated room pattern; the clue bank is editable from the admin CMS.
+from emoji_rooftop_api import router as emoji_rooftop_router
+app.include_router(emoji_rooftop_router(lambda: supa, _q, require_admin))
+
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,

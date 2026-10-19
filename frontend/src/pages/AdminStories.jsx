@@ -91,6 +91,10 @@ export default function AdminStories() {
                             <div className="text-xs text-muted-foreground">Admin workbench</div>
                         </div>
                     </div>
+                    <div className="flex items-center gap-2">
+                    <Button variant="secondary" size="sm" onClick={() => nav("/admin/emoji-clues")}>
+                        Emoji clues
+                    </Button>
                     <Button
                         variant="secondary"
                         size="sm"
@@ -102,6 +106,7 @@ export default function AdminStories() {
                     >
                         <LogOut className="mr-1 h-3.5 w-3.5" /> Sign out
                     </Button>
+                    </div>
                 </div>
             </div>
 

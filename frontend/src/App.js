@@ -9,12 +9,14 @@ import PlayJoin from "@/pages/PlayJoin";
 import PlayRoom from "@/pages/PlayRoom";
 import AdminLogin from "@/pages/AdminLogin";
 import AdminStories from "@/pages/AdminStories";
+import AdminEmojiClues from "@/pages/AdminEmojiClues";
 import AdminCanvas from "@/pages/AdminCanvas";
 import ShougVillagePrototype from "@/pages/ShougVillagePrototype";
 
 import SoloMiniGame from "@/components/miniGames/MiniGames";
 
 const PlotTwist = lazy(() => import("@/components/plotTwist/PlotTwist"));
+const EmojiRooftop = lazy(() => import("@/components/emojiRooftop/EmojiRooftop"));
 
 const BaccaratAdventureRoom = lazy(() => import("@/components/baccaratAdventure/BaccaratAdventureRoom"));
 
@@ -32,6 +34,7 @@ function StatusBarTheme() {
         const choose = () => {
             const path = window.location.pathname;
             const palette = path.includes('plot-twist') ? '#352039'
+                : path.includes('emoji-rooftop') ? '#120c28'
                 : path.includes('baccarat') ? '#000000'
                 : path.includes('shoug') ? '#6E1F35'
                 : path.includes('admin') ? '#FBF4E4'
@@ -56,6 +59,7 @@ function App() {
                 <Routes>
                     <Route path="/" element={<Landing />} />
                     <Route path="/mini-games/baccarat-hunt/room/:code" element={<Suspense fallback={null}><BaccaratAdventureRoom /></Suspense>} />
+                    <Route path="/mini-games/emoji-rooftop/room/:code" element={<Suspense fallback={null}><EmojiRooftop /></Suspense>} />
                     <Route path="/mini-games/plot-twist/room/:code" element={<Suspense fallback={null}><PlotTwist /></Suspense>} />
                     <Route path="/mini-games/:gameId" element={<SoloMiniGame />} />
                     <Route path="/visual-test" element={<Navigate to="/" replace />} />
@@ -69,6 +73,14 @@ function App() {
                         element={
                             <AdminGate>
                                 <AdminStories />
+                            </AdminGate>
+                        }
+                    />
+                    <Route
+                        path="/admin/emoji-clues"
+                        element={
+                            <AdminGate>
+                                <AdminEmojiClues />
                             </AdminGate>
                         }
                     />

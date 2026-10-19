@@ -3,6 +3,7 @@ import {useNavigate, useParams} from 'react-router-dom';
 import {ArrowLeft, ArrowRight, Copy, Link as LinkIcon, Send, Trophy, X} from 'lucide-react';
 import {BACKEND_URL} from '@/lib/api';
 import tableArt from './assets/rooftop-table.webp';
+import Ambience from './Ambience';
 import './emojiRooftop.css';
 
 const ROOM = /^\d{5}$/;
@@ -291,6 +292,7 @@ export default function EmojiRooftop({onContinue}) {
     <div className="er-backdrop" style={{backgroundImage: `url(${tableArt})`}} aria-hidden="true"/>
     <div className="er-bg">
       <img src={tableArt} alt="" draggable="false"/>
+      <Ambience/>
       <div className="er-ipad" onClick={() => scoresOpen && setScoresOpen(false)}>{content}</div>
     </div>
     <div className="er-shell">

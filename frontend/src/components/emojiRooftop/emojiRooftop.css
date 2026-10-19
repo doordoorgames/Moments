@@ -156,3 +156,26 @@
 .er-toast button{color:var(--ink)!important;display:inline-flex}
 
 @media (prefers-reduced-motion:reduce){.er-app *{animation-duration:.01ms!important;animation-iteration-count:1!important}}
+
+/* ---------- ambience: leaf shadows + candle / lantern flicker ---------- */
+.er-ambience{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+.er-leaves{position:absolute;color:#12041f;fill:currentColor;mix-blend-mode:multiply;filter:blur(3px)}
+.er-leaves-a{left:38%;top:-4%;width:70%}
+.er-leaves-b{left:46%;top:4%;width:60%;filter:blur(5px)}
+.er-leaves-sway{transform-origin:100% 0;transform-box:fill-box}
+.er-leaves-a .er-leaves-sway{animation:er-sway-a 7s ease-in-out infinite alternate}
+.er-leaves-b .er-leaves-sway{animation:er-sway-b 9.5s ease-in-out infinite alternate}
+.er-leaves-a{animation:er-leaf-breathe 5.5s ease-in-out infinite alternate}
+.er-leaves-b{animation:er-leaf-breathe-b 6.8s ease-in-out infinite alternate}
+@keyframes er-sway-a{0%{transform:rotate(0) translate(0,0)}40%{transform:rotate(2.2deg) translate(-6px,4px)}70%{transform:rotate(-1deg) translate(3px,-2px)}100%{transform:rotate(3deg) translate(-10px,6px)}}
+@keyframes er-sway-b{0%{transform:rotate(0) translate(0,0)}50%{transform:rotate(-2.5deg) translate(8px,-3px)}100%{transform:rotate(1.5deg) translate(-5px,5px)}}
+@keyframes er-leaf-breathe{from{opacity:.5}to{opacity:.72}}
+@keyframes er-leaf-breathe-b{from{opacity:.3}to{opacity:.5}}
+
+.er-glow{position:absolute;border-radius:50%;transform:translate(-50%,-50%);mix-blend-mode:screen;pointer-events:none;
+  background:radial-gradient(circle,#ffd98acc 0,#ffb35c66 30%,#ff9a4a00 70%);animation:er-glow-rest 4s ease-in-out infinite alternate}
+.er-glow-candle{left:47%;top:19.1%;width:16%;aspect-ratio:1}
+.er-glow-lantern{left:96%;top:89%;width:34%;aspect-ratio:1;animation-duration:5.2s}
+.er-glow.is-flicker{animation:er-flicker .7s steps(1,end) 1,er-glow-rest 4s ease-in-out .7s infinite alternate}
+@keyframes er-glow-rest{from{opacity:.55}to{opacity:.75}}
+@keyframes er-flicker{0%{opacity:.75}12%{opacity:.25}22%{opacity:.85}34%{opacity:.4}46%{opacity:.95}60%{opacity:.5}75%{opacity:.8}100%{opacity:.65}}

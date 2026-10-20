@@ -23,17 +23,22 @@ ROOM_CODE_RE = re.compile(r'^\d{5}$')
 class Create(BaseModel):
     nickname: str = Field(min_length=1, max_length=100)
     mode: Literal['story','trap'] = 'story'
-    rounds: int = Field(default=3, ge=1, le=10)
+    rounds: int = Field(default=3, ge=0, le=10)
     dev: bool = False
+    lang: Literal['en','ar'] = 'en'
 class Join(BaseModel):
     nickname: str = Field(min_length=1, max_length=100)
 class Action(BaseModel):
-    action: Literal['start','replay','submit','add_test']
+    action: Literal['start','replay','submit','add_test','end']
     text: str = Field(default='', max_length=350)
     turn: int = 0
     run: str = ''
     request_id: str = Field(default='', max_length=80)
     as_player: str = ''
+
+
+def say(g, en, ar):
+    return ar if engine.lang_of(g) == 'ar' else en
 
 
 def router(db, query):
@@ -55,7 +60,7 @@ def router(db, query):
         result = await query(lambda: db().table('rooms').select('flags,wheel_winner_choice_id').eq('code', code).maybe_single().execute())
         flags = result.data.get('flags') if result and result.data else None
         if not flags or not isinstance(flags[0], str) or not flags[0].startswith(PREFIX):
-            raise HTTPException(404, 'Rooftop not found. Check the room code.')
+            raise HTTPException(404, 'Rooftop not found. Check the room code. · ما لقينا هالغرفة. تأكد من الكود.')
         try: return json.loads(cipher().decrypt(flags[0][len(PREFIX):].encode())), result.data['wheel_winner_choice_id']
         except InvalidToken: raise HTTPException(503, 'Room cannot be decrypted with the current server key.')
 
@@ -66,7 +71,7 @@ def router(db, query):
             if scheme.lower() != 'bearer': raise ValueError()
             return engine.authenticate(g, pid, token)
         except (ValueError, engine.GameError):
-            raise HTTPException(403, 'Your session could not be verified. Rejoin on your original device.')
+            raise HTTPException(403, say(g, 'Your session could not be verified. Rejoin on your original device.', 'ما قدرنا نتأكد منك. ارجع من نفس الجهاز اللي دخلت منه.'))
 
     def viewer(g, p, as_player):
         if not as_player or as_player == p['id']: return p['id']
@@ -79,7 +84,7 @@ def router(db, query):
     async def save(code, g, old):
         flags = pack(g)
         result = await query(lambda: db().table('rooms').update({'flags':flags,'wheel_winner_choice_id':secrets.token_hex(16)}).eq('code',code).eq('wheel_winner_choice_id',old).execute())
-        if not result.data: raise HTTPException(409, 'Room changed. Please try again.')
+        if not result.data: raise HTTPException(409, say(g, 'Room changed. Please try again.', 'الغرفة تغيرت. جرب مرة ثانية.'))
         await asyncio.gather(*(notify(ws) for ws in list(sockets[code])))
 
     async def notify(ws):
@@ -89,8 +94,8 @@ def router(db, query):
     @api.post('/rooms')
     async def create(body: Create, response: Response):
         response.headers['Cache-Control'] = 'no-store'
-        try: g, p = engine.new_game(body.nickname, body.mode, body.rounds, body.dev)
-        except engine.GameError as e: raise HTTPException(400, str(e))
+        try: g, p = engine.new_game(body.nickname, body.mode, body.rounds, body.dev, body.lang)
+        except engine.GameError as e: raise HTTPException(400, e.text(body.lang))
         for _ in range(50):
             code = f'{secrets.randbelow(100000):05d}'
             existing = await query(lambda: db().table('rooms').select('code').eq('code',code).maybe_single().execute())
@@ -111,7 +116,7 @@ def router(db, query):
         async with locks[code]:
             g, old = await load(code)
             try: p = engine.add_player(g, body.nickname)
-            except engine.GameError as e: raise HTTPException(400, str(e))
+            except engine.GameError as e: raise HTTPException(400, e.text(engine.lang_of(g)))
             await save(code,g,old)
             return dict(code=code, player_id=p['id'], token=p['token'], state=engine.view(g,p['id']))
 
@@ -132,17 +137,19 @@ def router(db, query):
             try:
                 if body.action == 'submit': engine.submit(g,pid,body.text,body.turn,body.run,body.request_id)
                 else:
-                    if p['id'] != g['host']: raise HTTPException(403,'Only the host can do that.')
-                    if body.action == 'add_test':
+                    if p['id'] != g['host']: raise HTTPException(403,say(g,'Only the host can do that.','بس المضيف يقدر يسوي هالشي.'))
+                    if body.action == 'end':
+                        engine.end(g)
+                    elif body.action == 'add_test':
                         if not g['dev']: raise HTTPException(403,'This is not a developer room.')
                         engine.add_player(g,f"Guest {len(g['players']) + 1}",True)
                     elif body.action == 'replay':
-                        if g['status'] != 'ended': raise engine.GameError('Finish this story first.')
+                        if g['status'] != 'ended': raise engine.GameError('Finish this story first.','خلصوا السالفة أول.')
                         engine.start(g)
                     else:
-                        if g['status'] != 'lobby': raise engine.GameError('The story has already started.')
+                        if g['status'] != 'lobby': raise engine.GameError('The story has already started.','السالفة بدت خلاص.')
                         engine.start(g)
-            except engine.GameError as e: raise HTTPException(400,str(e))
+            except engine.GameError as e: raise HTTPException(400,e.text(engine.lang_of(g)))
             await save(code,g,old)
             return engine.view(g,pid)
 

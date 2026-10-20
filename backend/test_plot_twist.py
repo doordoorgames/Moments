@@ -27,12 +27,16 @@ def test_rotation_complete_replay(mode,n,rounds):
         expected=g['players'][i%n]['id']
         send(g,'One two three four five' if mode=='story' else 'One two three four five six seven')
         assert g['contributions'][-1]['player']==expected
+    if mode=='trap':
+        # Word Trap never ends on its own; the host ends it.
+        assert g['status']=='active' and g['rounds']==0
+        E.end(g)
     assert g['status']=='ended' and len(g['contributions'])==n*rounds
     run=g['run'];E.start(g)
     assert g['run']!=run and g['turn']==0 and g['contributions']==[]
     assert all(p['score']==0 for p in g['players'])
 
-@pytest.mark.parametrize('mode,text',[('story','one'),('story','one two three four'),('story','one two three four five six'),('trap','one two three four five'),('trap','one two three four five six seven eight'),('story','!!!')])
+@pytest.mark.parametrize('mode,text',[('story','one'),('story','one two three four'),('story','one two three four five six'),('trap','one two three four'),('trap',' '.join(['w']*16)),('story','!!!')])
 def test_invalid_counts(mode,text):
     g=game(mode);before=copy.deepcopy(g)
     with pytest.raises(E.GameError):send(g,text)
@@ -58,16 +62,37 @@ def test_whole_word_self_simultaneous_fresh():
     assert len(g['traps'])==2
     assert g['targets'][a] not in ('pancake','ice','piano') and g['targets'][c]!=g['targets'][a]
 
-def test_pool_max_deals():
-    assert len(E.POOL)>=568
-    g=game('trap',8,10)
-    for _ in range(80):
+@pytest.mark.parametrize('n',[5,9,15])
+def test_trap_range(n):
+    g=game('trap');send(g,' '.join(['word']*n));assert g['turn']==1
+
+@pytest.mark.parametrize('lang',['en','ar'])
+def test_pool_recycles_in_open_story(lang):
+    g,_=E.new_game('Host','trap',1,lang=lang)
+    for i in range(1,8):E.add_player(g,f'Friend {i}')
+    E.start(g);size=len(E.pool(g))
+    for _ in range(size):
         writer=g['players'][g['turn']%8]['id']
-        targets=[w for p,w in g['targets'].items() if p!=writer]
-        assert len(targets)==7
-        send(g,' '.join(targets))
-    assert len(g['used'])==568 and len(g['targets'])==8
-    assert len(g['used'])==len(set(g['used']))
+        targets=[w for p,w in g['targets'].items() if p!=writer][:15]
+        send(g,' '.join(targets+['x']*(5-len(targets))))
+        live=list(g['targets'].values())
+        assert len(g['targets'])==8 and len(set(live))==8
+    assert g['status']=='active'
+
+def test_arabic_matching_and_language():
+    g,_=E.new_game('خالد','trap',1,lang='ar');E.add_player(g,'سعود');E.start(g)
+    a,b=[p['id'] for p in g['players']]
+    assert E.view(g,a)['lang']=='ar' and E.view(g,a)['min_words']==5 and E.view(g,a)['max_words']==15
+    assert all(w in E.AR_POOL for w in g['targets'].values())
+    g['targets'][b]='قطة'
+    send(g,'وفجأة طلعت القطّة من الشباك وركضت')
+    assert g['players'][1]['score']==1
+    g['targets'][a]='مكيف'
+    send(g,'شغلوا المكيفات لأن الجو حر')
+    assert g['players'][0]['score']==0
+    with pytest.raises(E.GameError) as e:send(g,'كلمة')
+    assert e.value.text('ar').startswith('اكتب')
+    with pytest.raises(E.GameError):E.new_game('x','trap',1,lang='fr')
 
 def test_views_capacity():
     g=game('trap',8);pid=g['players'][0]['id'];v=E.view(g,pid);raw=json.dumps(v)
@@ -126,7 +151,9 @@ def test_http_security_reconnect_lifecycle(client):
         r=c.post(url+'/action',headers=headers(a),json={'action':'submit','text':'one two three four five six seven','run':av['run'],'turn':0,'request_id':'first'})
         assert r.status_code==200 and ws.receive_json()=={'type':'refresh'}
     r=c.post(url+'/action',headers=headers(b),json={'action':'submit','text':'one two three four five six seven','run':av['run'],'turn':1,'request_id':'second'})
-    assert r.json()['status']=='ended'
+    assert r.json()['status']=='active'
+    assert c.post(url+'/action',headers=headers(b),json={'action':'end'}).status_code==403
+    assert c.post(url+'/action',headers=headers(a),json={'action':'end'}).json()['status']=='ended'
     assert c.post(url+'/action',headers=headers(a),json={'action':'replay'}).json()['turn']==0
 
 def test_developer_seats_eight_limit(client):
@@ -143,3 +170,9 @@ def test_unauthorized_socket_missing_room(client):
     with c.websocket_connect(url+'/live') as ws:
         ws.send_json({'authorization':'Bearer fake:fake'})
         with pytest.raises(Exception):ws.receive_json()
+
+def test_host_language_wins_for_joiners(client):
+    c,_=client;a=create(c,lang='ar');url='/api/plot-twist/rooms/'+a['code']
+    assert a['state']['lang']=='ar'
+    b=c.post(url+'/join',json={'nickname':'Guest'}).json();assert b['state']['lang']=='ar'
+    r=c.post(url+'/join',json={'nickname':'guest'});assert r.status_code==400 and 'هالاسم' in r.json()['detail']

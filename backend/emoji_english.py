@@ -1,6 +1,6 @@
-"""Starter clue bank for Emoji Rooftop. The live bank can be replaced from the admin CMS."""
+"""Emoji English: starter English clue bank for Emoji Rooftop. The live list can be replaced from the admin CMS."""
 
-SEED_CSV = """category,emojis,answer,aliases
+SEED_CSV_EN = """category,emojis,answer,aliases
 Country,🦃,Turkey,
 Country,🌶️,Chile,
 Country,🍽️😩,Hungary,

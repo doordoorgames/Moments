@@ -1,8 +1,9 @@
-"""Emoji Rooftop engine: guess the title from emojis, first correct answer wins the round.
+"""Emoji Rooftop engine: one shared riddle screen, answers shouted out loud.
 
-The schedule is derived from timestamps, so no background task is needed:
-each round starts, spins for SPIN seconds, accepts guesses until it is solved or
-GUESS seconds pass, then shows the answer for REVEAL seconds before the next one.
+There is no typing and no scoring. The host creates a room in English or Arabic,
+can start alone, and drives every round by hand: the emojis spin in, everyone
+shouts, the host taps Reveal answer, then Next round. Anyone who joins with the
+code gets a mirror of the host's screen, in the host's language.
 """
 import csv
 import io
@@ -11,22 +12,29 @@ import secrets
 import unicodedata
 import uuid
 
-from emoji_clues import SEED_CSV
+from emoji_arabic import SEED_CSV_AR
+from emoji_english import SEED_CSV_EN
 
 SPIN = 1.2
-GUESS = 30.0
-REVEAL = 4.0
 INTRO = 2.0
-MAX_PLAYERS = 12
+MAX_SEATS = 40
 MAX_ROUNDS = 50
 ITEMS = 7  # random table items, drawn by the frontend
+LANGS = ('en', 'ar')
+VERSION = 2  # rooms from the old typing version are not playable
 
 
 class GameError(ValueError):
-    pass
+    """Carries the English and Arabic message; the room's language picks one."""
+    def __init__(self, en, ar=None):
+        super().__init__(en)
+        self.ar = ar or en
+
+    def text(self, lang):
+        return self.ar if lang == 'ar' else str(self)
 
 
-# ------------------------------------------------------------------ clue bank
+# ------------------------------------------------------------------ clue banks
 
 def parse_csv(text):
     """Parse category,emojis,answer[,aliases] rows. Returns (clues, errors)."""
@@ -46,7 +54,8 @@ def parse_csv(text):
     return clues, errors
 
 
-SEED = parse_csv(SEED_CSV)[0]
+SEEDS = {'en': parse_csv(SEED_CSV_EN)[0], 'ar': parse_csv(SEED_CSV_AR)[0]}
+SEED = SEEDS['en']
 
 
 def to_csv(clues):
@@ -58,180 +67,119 @@ def to_csv(clues):
     return out.getvalue()
 
 
-# ------------------------------------------------------------------ matching
-
 def normalize(text):
+    """Loose key for spotting duplicate answers when adding to a bank."""
     text = unicodedata.normalize('NFKD', text or '')
     text = ''.join(ch for ch in text if not unicodedata.combining(ch)).casefold()
-    text = text.replace('&', ' and ')
-    text = re.sub(r'[^\w\s]', ' ', text)
+    text = text.translate(str.maketrans({'أ': 'ا', 'إ': 'ا', 'آ': 'ا', 'ة': 'ه', 'ى': 'ي'}))
+    text = re.sub(r'[^\w\s]', ' ', text.replace('&', ' and '))
     text = ' '.join(text.split())
     if text.startswith('the '):
         text = text[4:]
     return text.replace(' ', '')
 
 
-def distance(a, b):
-    if a == b:
-        return 0
-    prev = list(range(len(b) + 1))
-    for i, ca in enumerate(a, 1):
-        cur = [i]
-        for j, cb in enumerate(b, 1):
-            cur.append(min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (ca != cb)))
-        prev = cur
-    return prev[-1]
+# ------------------------------------------------------------------ seats
+
+def lang_of(g):
+    return g.get('lang', 'en')
 
 
-def allowed(length):
-    # Generous on long titles, strict on short ones so "Up" can't match anything.
-    if length <= 3:
-        return 0
-    if length <= 5:
-        return 1
-    if length <= 8:
-        return 2
-    return 3
-
-
-def matches(guess, clue):
-    g = normalize(guess)
-    if not g:
-        return False
-    for option in [clue['answer'], *(clue.get('aliases') or [])]:
-        a = normalize(option)
-        if a and distance(g, a) <= allowed(len(a)):
-            return True
-    return False
-
-
-# ------------------------------------------------------------------ players
-
-def nickname(value):
-    value = ' '.join((value or '').split())
-    if not 1 <= len(value) <= 24:
-        raise GameError('Use a nickname between 1 and 24 characters.')
-    return value
-
-
-def add_player(g, name):
-    if len(g['players']) >= MAX_PLAYERS:
-        raise GameError('This rooftop is full (12 players).')
-    name = nickname(name)
-    if any(p['name'].casefold() == name.casefold() for p in g['players']):
-        raise GameError('That nickname is taken in this room.')
-    p = dict(id=str(uuid.uuid4()), name=name, token=secrets.token_urlsafe(32))
-    g['players'].append(p)
+def add_seat(g):
+    """A seat is just a phone watching the room: no name, no score."""
+    if len(g['seats']) >= MAX_SEATS:
+        raise GameError(f'This rooftop is full ({MAX_SEATS} phones).', f'السطح فل ({MAX_SEATS} تلفون).')
+    seat = dict(id=str(uuid.uuid4()), token=secrets.token_urlsafe(32))
+    g['seats'].append(seat)
     g['version'] += 1
-    return p
+    return seat
 
 
-def authenticate(g, pid, token):
-    for p in g['players']:
-        if p['id'] == pid and secrets.compare_digest(p['token'], token or ''):
-            return p
-    raise GameError('Your session could not be verified. Use the device where you joined.')
+def authenticate(g, sid, token):
+    for s in g.get('seats', []):
+        if s['id'] == sid and secrets.compare_digest(s['token'], token or ''):
+            return s
+    raise GameError('Your session could not be verified. Use the device where you joined.',
+                    'ما قدرنا نتأكد منك. استخدم نفس الجهاز اللي دخلت منه.')
 
 
-def new_game(name, rounds):
+def check_rounds(rounds):
     if not 1 <= int(rounds) <= MAX_ROUNDS:
-        raise GameError(f'Choose between 1 and {MAX_ROUNDS} rounds.')
-    g = dict(status='lobby', rounds=int(rounds), players=[], clues=[], solves=[], items=[],
-             started_at=None, run=str(uuid.uuid4()), version=0)
-    host = add_player(g, name)
+        raise GameError(f'Choose between 1 and {MAX_ROUNDS} rounds.', f'اختار من 1 إلى {MAX_ROUNDS} جولة.')
+    return int(rounds)
+
+
+def new_game(rounds=10, lang='en'):
+    if lang not in LANGS:
+        raise GameError('Choose English or Arabic.', 'اختار إنجليزي أو عربي.')
+    g = dict(v=VERSION, lang=lang, status='lobby', rounds=check_rounds(rounds), seats=[], clues=[], items=[],
+             round=0, revealed=False, round_at=None, run=str(uuid.uuid4()), version=0)
+    host = add_seat(g)
     g['host'] = host['id']
     return g, host
 
 
-# ------------------------------------------------------------------ schedule
+# ------------------------------------------------------------------ host controls
 
 def start(g, bank, now, rounds=None):
-    if len(g['players']) < 2:
-        raise GameError('Invite at least one friend first.')
+    """The host may start alone; people who join later land in the current round."""
     bank = [c for c in bank if c.get('emojis') and c.get('answer')]
     if not bank:
-        raise GameError('The clue bank is empty.')
+        raise GameError('The clue bank is empty.', 'قائمة الألغاز فاضية.')
     if rounds is not None:
-        if not 1 <= int(rounds) <= MAX_ROUNDS:
-            raise GameError(f'Choose between 1 and {MAX_ROUNDS} rounds.')
-        g['rounds'] = int(rounds)
+        g['rounds'] = check_rounds(rounds)
     count = min(g['rounds'], len(bank))
     picks = secrets.SystemRandom().sample(range(len(bank)), count)
-    g.update(status='active', clues=[dict(bank[i]) for i in picks], solves=[None] * count,
+    g.update(status='active', clues=[dict(bank[i]) for i in picks],
              items=[secrets.randbelow(ITEMS) for _ in range(count)],
-             started_at=now + INTRO, run=str(uuid.uuid4()))
+             round=0, revealed=False, round_at=now + INTRO, run=str(uuid.uuid4()))
     g['version'] += 1
 
 
-def schedule(g):
-    out, t = [], g['started_at']
-    for solve in g['solves']:
-        end = solve['at'] if solve else t + SPIN + GUESS
-        out.append((t, end))
-        t = end + REVEAL
-    return out
-
-
-def position(g, now):
-    """Returns (phase, round_index). Phases: lobby, intro, guessing, reveal, ended."""
-    if g['status'] == 'lobby' or not g['solves']:
-        return 'lobby', -1
-    times = schedule(g)
-    if now >= times[-1][1] + REVEAL:
-        return 'ended', len(times) - 1
-    if now < times[0][0]:
-        return 'intro', 0
-    index = max(i for i, (s, _) in enumerate(times) if s <= now)
-    return ('guessing' if now < times[index][1] else 'reveal'), index
-
-
-def guess(g, pid, text, round_index, run, now):
-    """Returns 'correct', 'wrong', 'taken' or 'closed'."""
-    if run != g['run']:
-        return 'closed'
-    phase, index = position(g, now)
-    if phase != 'guessing' or index != round_index:
-        return 'closed'
-    start_at = schedule(g)[index][0]
-    if now < start_at + SPIN - 0.3:
-        return 'closed'
-    if g['solves'][index]:
-        return 'taken'
-    if len((text or '').strip()) > 120 or not matches(text, g['clues'][index]):
-        return 'wrong'
-    g['solves'][index] = dict(by=pid, at=now, guess=' '.join(text.split())[:80])
+def reveal(g, now):
+    if g['status'] != 'active':
+        raise GameError('No round is running.', 'ما في جولة شغالة.')
+    if now < g['round_at']:
+        raise GameError('The emojis are still coming in.', 'الإيموجي بعدها ما وصلت.')
+    if g['revealed']:
+        return
+    g['revealed'] = True
     g['version'] += 1
-    return 'correct'
 
 
-def scores(g):
-    s = {p['id']: 0 for p in g['players']}
-    for solve in g['solves']:
-        if solve and solve['by'] in s:
-            s[solve['by']] += 1
-    return s
+def next_round(g, now):
+    if g['status'] != 'active':
+        raise GameError('No round is running.', 'ما في جولة شغالة.')
+    if not g['revealed']:
+        raise GameError('Reveal the answer first.', 'اكشف الجواب أول.')
+    if g['round'] + 1 >= len(g['clues']):
+        g['status'] = 'ended'
+    else:
+        g.update(round=g['round'] + 1, revealed=False, round_at=now)
+    g['version'] += 1
 
 
-def view(g, pid, now):
-    phase, index = position(g, now)
-    s = scores(g)
-    v = dict(status='lobby' if phase == 'lobby' else 'ended' if phase == 'ended' else 'active',
-             phase=phase, host=g['host'], me=pid, rounds=g['rounds'], run=g['run'], version=g['version'],
-             now=now, total=len(g['solves']),
-             players=[dict(id=p['id'], name=p['name'], score=s[p['id']]) for p in g['players']])
-    if phase in ('lobby',):
+# ------------------------------------------------------------------ what every phone sees
+
+def phase(g, now):
+    """lobby, intro (countdown before round 1), showing, reveal or ended."""
+    if g['status'] in ('lobby', 'ended'):
+        return g['status']
+    if now < g['round_at']:
+        return 'intro'
+    return 'reveal' if g['revealed'] else 'showing'
+
+
+def view(g, sid, now):
+    p = phase(g, now)
+    v = dict(status=g['status'], phase=p, lang=lang_of(g), host=g['host'], me=sid, rounds=g['rounds'],
+             run=g['run'], version=g['version'], now=now, total=len(g['clues']), viewers=len(g['seats']))
+    if p in ('lobby', 'ended'):
         return v
-    times = schedule(g)
-    if phase == 'intro':
-        v.update(round=0, starts_at=times[0][0])
-        return v
-    start_at, end_at = times[index]
-    clue = g['clues'][index]
-    solve = g['solves'][index]
-    done = phase in ('reveal', 'ended')
-    v.update(round=index, starts_at=start_at, ends_at=end_at, deadline=start_at + SPIN + GUESS,
-             next_at=end_at + REVEAL, spin=SPIN, item=g['items'][index],
-             clue=dict(category=clue['category'], emojis=clue['emojis']),
-             answer=clue['answer'] if done else None,
-             solved_by=solve['by'] if (solve and done) else None)
+    i = g['round']
+    clue = g['clues'][i]
+    v.update(round=i, round_at=g['round_at'], spin=SPIN, item=g['items'][i])
+    if p != 'intro':
+        v.update(clue=dict(category=clue['category'], emojis=clue['emojis']),
+                 answer=clue['answer'] if p == 'reveal' else None)
     return v

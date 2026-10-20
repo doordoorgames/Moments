@@ -1,3 +1,4 @@
+@import url('https://fonts.googleapis.com/css2?family=Baloo+Bhaijaan+2:wght@500;600;700;800&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@600;700;800;900&display=swap');
 
 .er-app{
@@ -178,3 +179,28 @@
 .er-glow.is-flicker{animation:er-flicker .7s steps(1,end) 1,er-glow-rest 4s ease-in-out .7s infinite alternate}
 @keyframes er-glow-rest{from{opacity:.55}to{opacity:.75}}
 @keyframes er-flicker{0%{opacity:.75}12%{opacity:.25}22%{opacity:.85}34%{opacity:.4}46%{opacity:.95}60%{opacity:.5}75%{opacity:.8}100%{opacity:.65}}
+
+/* ---------- shout-it-out play: host drives, everyone else watches ---------- */
+.er-shout{margin-top:1.4cqh;font-size:3.4cqw;font-weight:900;color:var(--gold);letter-spacing:.06em;animation:er-tick .35s ease-out both}
+.er-phones{display:flex;align-items:center;gap:1.4cqw;font-size:3.4cqw;font-weight:800;color:var(--cream);flex:1;align-content:flex-start}
+.er-viewers{display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 11px;border-radius:99px;background:#1a1026b3;border:1.5px solid #fff4e340;font-size:13px;font-weight:900;backdrop-filter:blur(6px)}
+.er-host-bar{margin-top:auto;flex:none;padding:8px 0 4px}
+.er-host-button{width:100%;height:60px;display:inline-flex;align-items:center;justify-content:center;gap:10px;border-radius:18px;background:var(--amber)!important;color:var(--ink)!important;font-family:'Fredoka',system-ui,sans-serif;font-weight:700;font-size:21px;box-shadow:0 5px 0 #b86d14,0 12px 26px #00000066}
+.er-host-button.is-next{background:var(--pink)!important;box-shadow:0 5px 0 #b8487a,0 12px 26px #00000066}
+.er-host-button:active:not(:disabled){transform:translateY(3px)}
+.er-note{position:fixed;inset:0;z-index:60;display:grid;place-items:center;padding:24px;background:#120c28b3;backdrop-filter:blur(6px)}
+.er-note-card{width:min(100%,380px);display:flex;flex-direction:column;gap:14px;text-align:center;background:#2a1640;border:2px solid var(--lilac);border-radius:22px;padding:26px 20px 20px;box-shadow:0 18px 40px #00000080}
+.er-note-card h2{font-size:24px;color:var(--gold)}
+.er-note-card p{font-size:15px;color:#e6d8f7}
+.er-language .er-actions button{min-width:28cqw}
+
+/* ---------- Arabic: right to left, in a thick, bubbly, rounded face ---------- */
+.er-app .er-lang-ar,.er-app.er-rtl,.er-app.er-rtl :is(h1,h2,p,small,span,b,strong,button,input,em){font-family:'Baloo Bhaijaan 2','Fredoka',system-ui,sans-serif;letter-spacing:0!important;text-transform:none}
+.er-app.er-rtl{text-align:right}
+.er-app.er-rtl :is(h1,h2,.er-answer,.er-count,.er-host-button){font-weight:800}
+.er-app.er-rtl .er-answer{line-height:1.25}
+.er-app.er-rtl .er-reel-face{font-family:'Apple Color Emoji','Segoe UI Emoji','Noto Color Emoji',sans-serif}
+.er-app.er-rtl .er-big-code{font-family:'Fredoka',system-ui,sans-serif}
+.er-app.er-rtl .er-lobby-foot .er-primary{margin-left:0;margin-right:auto}
+.er-app.er-rtl .lucide-arrow-right,.er-app.er-rtl .lucide-arrow-left{transform:scaleX(-1)}
+.er-app .er-lang-ar{font-weight:800}

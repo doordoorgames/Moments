@@ -1,11 +1,14 @@
 import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {useNavigate, useParams} from 'react-router-dom';
-import {ArrowLeft, ArrowRight, Copy, Link as LinkIcon, Send, Trophy, X} from 'lucide-react';
+import {ArrowLeft, ArrowRight, Check, Copy, Eye, Link as LinkIcon, Smartphone, X} from 'lucide-react';
 import {BACKEND_URL} from '@/lib/api';
 import tableArt from './assets/rooftop-table.webp';
 import Ambience from './Ambience';
+import {TEXT} from './i18n';
 import './emojiRooftop.css';
 
+// One shared riddle screen. No typing and no scores: everyone shouts the answer,
+// the host taps Reveal answer, then Next round. Joined phones mirror the host.
 const ROOM = /^\d{5}$/;
 const key = code => `emoji-rooftop-session:${code}`;
 const loadSession = code => { try { return JSON.parse(localStorage.getItem(key(code)) || 'null'); } catch { return null; } };
@@ -34,39 +37,40 @@ function Burst() {
 export default function EmojiRooftop({onContinue}) {
   const navigate = useNavigate();
   const {code} = useParams();
-  const [screen, setScreen] = useState(code ? 'connect' : 'landing');
+  // Language comes first; a join link skips straight to joining and takes the room's language.
+  const [screen, setScreen] = useState(code ? 'connect' : 'language');
+  const [lang, setLang] = useState('en');
   const [intent, setIntent] = useState(code ? 'join' : null);
-  const [name, setName] = useState('');
   const [joinCode, setJoinCode] = useState(code || '');
   const [credentials, setCredentials] = useState(() => (code ? loadSession(code) : null));
   const [game, setGame] = useState(null);
   const [offset, setOffset] = useState(0);
   const [now, setNow] = useState(() => Date.now() / 1000);
-  const [draft, setDraft] = useState('');
-  const [shake, setShake] = useState(0);
-  const [won, setWon] = useState(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
-  const [scoresOpen, setScoresOpen] = useState(false);
+  const [langNote, setLangNote] = useState(false);
   const [roundsChoice, setRoundsChoice] = useState(10);
   const [customRounds, setCustomRounds] = useState('');
-  const pending = useRef(false), sequence = useRef(0), current = useRef({}), inputRef = useRef(null);
+  const pending = useRef(false), sequence = useRef(0), current = useRef({});
   const auth = credentials ? `Bearer ${credentials.player_id}:${credentials.token}` : '';
-  current.current = {code, auth};
+  const t = TEXT[game?.lang || lang] || TEXT.en;
+  current.current = {code, auth, lang: game?.lang || lang};
 
   const request = useCallback(async (path, body, authorization) => {
-    if (!BACKEND_URL) throw new Error('The game backend is not configured.');
+    const copy = TEXT[current.current.lang] || TEXT.en;
+    if (!BACKEND_URL) throw new Error(copy.noBackend);
     const response = await fetch(`${BACKEND_URL}/api/emoji-rooftop${path}`, {method: body ? 'POST' : 'GET', cache: 'no-store',
       headers: {'Content-Type': 'application/json', ...(authorization ? {Authorization: authorization} : {})}, ...(body ? {body: JSON.stringify(body)} : {})});
     const result = await response.json().catch(() => ({}));
-    if (!response.ok) throw new Error(typeof result.detail === 'string' ? result.detail : 'Could not reach the rooftop. Please try again.');
+    if (!response.ok) throw new Error(typeof result.detail === 'string' ? result.detail : copy.unreachable);
     return result;
   }, []);
 
   const accept = useCallback(g => {
     setOffset(g.now - Date.now() / 1000);
     setGame(prev => (prev && prev.run === g.run && prev.version > g.version ? prev : g));
+    if (g.lang) setLang(g.lang);
     setScreen('room');
   }, []);
 
@@ -80,7 +84,7 @@ export default function EmojiRooftop({onContinue}) {
     } catch (e) {
       if (mine === sequence.current) {
         setNotice(e.message);
-        if (/verified|not found/i.test(e.message)) { localStorage.removeItem(key(c.code)); setCredentials(null); setScreen('connect'); }
+        if (/verified|not found|older version|تأكد|قديمة/i.test(e.message)) { localStorage.removeItem(key(c.code)); setCredentials(null); setScreen('connect'); }
       }
     }
   }, [accept, request]);
@@ -105,7 +109,7 @@ export default function EmojiRooftop({onContinue}) {
     return () => { stopped = true; clearInterval(poll); clearInterval(heartbeat); clearTimeout(retry); socket?.close(); window.removeEventListener('focus', refresh); };
   }, [code, auth, refresh]);
 
-  // Clock: ticks only while a game is running.
+  // Clock: only needed for the opening countdown and the emoji spin.
   const active = game?.status === 'active';
   useEffect(() => {
     if (!active) return undefined;
@@ -114,61 +118,45 @@ export default function EmojiRooftop({onContinue}) {
   }, [active]);
   const serverNow = now + offset;
 
-  // Fetch fresh state right after each scheduled boundary (spin start, deadline, next round).
+  // When the opening countdown ends, fetch the first riddle straight away.
   useEffect(() => {
-    if (!game || game.status !== 'active') return undefined;
-    const t = Date.now() / 1000 + offset;
-    const marks = [game.starts_at, game.phase === 'guessing' ? game.deadline : null, game.phase === 'reveal' ? game.next_at : null].filter(m => m && m > t);
-    if (!marks.length) return undefined;
-    const id = setTimeout(refresh, (Math.min(...marks) - t) * 1000 + 120);
+    if (!game || game.phase !== 'intro') return undefined;
+    const wait = (game.round_at - (Date.now() / 1000 + offset)) * 1000 + 120;
+    const id = setTimeout(refresh, Math.max(0, wait));
     return () => clearTimeout(id);
   }, [game, offset, refresh]);
 
-  // Keep the layout above the phone keyboard.
   useEffect(() => {
     const vv = window.visualViewport;
-    const update = () => {
-      const h = vv?.height || window.innerHeight;
-      document.documentElement.style.setProperty('--er-height', `${h}px`);
-      // Keyboard height: the table art slides up by this much so the tablet stays visible while typing.
-      document.documentElement.style.setProperty('--er-kb', `${Math.max(0, window.innerHeight - h - (vv?.offsetTop || 0))}px`);
-    };
+    const update = () => document.documentElement.style.setProperty('--er-height', `${vv?.height || window.innerHeight}px`);
     update(); vv?.addEventListener('resize', update);
-    return () => { vv?.removeEventListener('resize', update); document.documentElement.style.removeProperty('--er-height'); document.documentElement.style.removeProperty('--er-kb'); };
+    return () => { vv?.removeEventListener('resize', update); document.documentElement.style.removeProperty('--er-height'); };
   }, []);
 
-  useEffect(() => { setDraft(''); setWon(null); }, [game?.round, game?.run]);
   useEffect(() => { if (!game?.rounds) return; if (ROUND_PRESETS.includes(game.rounds)) setRoundsChoice(game.rounds); else { setRoundsChoice('custom'); setCustomRounds(String(game.rounds)); } }, [game?.rounds]);
 
-  const me = game?.me;
   const host = !!game && credentials?.player_id === game.host;
-  const playerName = id => game?.players.find(p => p.id === id)?.name || 'Someone';
-  const ranking = useMemo(() => [...(game?.players || [])].sort((a, b) => b.score - a.score || a.name.localeCompare(b.name)), [game?.players]);
 
-  // What the table shows right now.
+  // What the tablet shows right now.
   let view = 'lobby';
   if (game?.status === 'ended') view = 'ended';
-  else if (game?.status === 'active') {
-    if (game.phase === 'intro' || serverNow < game.starts_at) view = 'intro';
-    else if (game.phase === 'guessing') view = serverNow >= game.deadline ? 'timeup' : 'guessing';
-    else view = 'reveal';
-  }
-  const spinning = view === 'guessing' && serverNow < game.starts_at + game.spin;
-  const canGuess = view === 'guessing' && !spinning;
-  const secondsLeft = view === 'guessing' ? Math.max(0, Math.ceil(game.deadline - serverNow)) : 0;
-  const timeFraction = view === 'guessing' ? Math.max(0, Math.min(1, (game.deadline - serverNow) / (game.deadline - game.starts_at - game.spin))) : 0;
+  else if (game?.status === 'active') view = (game.phase === 'intro' || serverNow < game.round_at) ? 'intro' : game.phase;
+  const spinning = view === 'showing' && serverNow < game.round_at + game.spin;
   const reels = useMemo(() => splitEmojis(game?.clue?.emojis), [game?.clue?.emojis]);
 
   async function enter(e) {
     e?.preventDefault();
     if (pending.current) return;
-    if (intent === 'join' && !ROOM.test(joinCode)) { setError('Enter the five-digit room code.'); return; }
+    if (intent === 'join' && !ROOM.test(joinCode)) { setError(t.badCode); return; }
     pending.current = true; setBusy(true); setError('');
     try {
-      const result = await request(intent === 'create' ? '/rooms' : `/rooms/${joinCode}/join`, intent === 'create' ? {nickname: name, rounds: 10} : {nickname: name});
+      const result = intent === 'create'
+        ? await request('/rooms', {rounds: 10, lang})
+        : await request(`/rooms/${joinCode}/join`, {});
       const saved = {player_id: result.player_id, token: result.token};
       localStorage.setItem(key(result.code), JSON.stringify(saved));
       setCredentials(saved); accept(result.state);
+      if (intent === 'join') setLangNote(true); // tell joiners which language the host picked
       navigate(`/mini-games/emoji-rooftop/room/${result.code}`, {replace: true});
     } catch (err) { setError(err.message); } finally { pending.current = false; setBusy(false); }
   }
@@ -177,141 +165,139 @@ export default function EmojiRooftop({onContinue}) {
 
   async function hostAction(type) {
     if (pending.current) return;
-    if (roundsChoice === 'custom' && !(parseInt(customRounds, 10) >= 1)) { setError('Type how many rounds (1 to 50).'); return; }
+    const startLike = type === 'start' || type === 'replay';
+    if (startLike && roundsChoice === 'custom' && !(parseInt(customRounds, 10) >= 1)) { setError(t.customRounds); return; }
     pending.current = true; setBusy(true); setError('');
-    try { const r = await request(`/rooms/${code}/action`, {action: type, rounds: chosenRounds}, auth); ++sequence.current; accept(r.state); }
-    catch (err) { setError(err.message); refresh(); } finally { pending.current = false; setBusy(false); }
-  }
-
-  async function submitGuess(e) {
-    e?.preventDefault();
-    const text = draft.trim();
-    if (!text || !canGuess || pending.current) return;
-    pending.current = true;
     try {
-      const r = await request(`/rooms/${code}/action`, {action: 'guess', text, round: game.round, run: game.run}, auth);
+      const r = await request(`/rooms/${code}/action`, {action: type, ...(startLike ? {rounds: chosenRounds} : {})}, auth);
       ++sequence.current; accept(r.state);
-      if (r.result === 'correct') { setWon(game.round); setDraft(''); }
-      else if (r.result === 'wrong') { setShake(s => s + 1); inputRef.current?.select(); }
-    } catch (err) { setNotice(err.message); } finally { pending.current = false; }
+    } catch (err) { setError(err.message); refresh(); } finally { pending.current = false; setBusy(false); }
   }
 
   async function share() {
     const url = `${window.location.origin}/mini-games/emoji-rooftop/room/${code}`;
-    try { if (navigator.share) await navigator.share({title: 'Join my Emoji Rooftop table', url}); else { await navigator.clipboard.writeText(url); setNotice('Invite link copied.'); } }
-    catch (err) { if (err.name !== 'AbortError') setNotice(`Share this link: ${url}`); }
+    try { if (navigator.share) await navigator.share({title: t.shareTitle, url}); else { await navigator.clipboard.writeText(url); setNotice(t.linkCopied); } }
+    catch (err) { if (err.name !== 'AbortError') setNotice(t.shareThis(url)); }
   }
 
   const exit = () => { if (onContinue) onContinue(); else navigate('/#mini-games'); };
+  const pickLang = value => { setLang(value); setScreen('landing'); };
 
-  const roundsPicker = <div className="er-rounds" role="group" aria-label="Number of rounds">
+  const roundsPicker = <div className="er-rounds" role="group" aria-label={t.rounds}>
     {ROUND_PRESETS.map(n => <button type="button" key={n} className={roundsChoice === n ? 'is-on' : ''} onClick={() => setRoundsChoice(n)}>{n}</button>)}
-    <button type="button" className={roundsChoice === 'custom' ? 'is-on' : ''} onClick={() => setRoundsChoice('custom')}>Custom</button>
-    {roundsChoice === 'custom' && <input aria-label="Custom number of rounds" inputMode="numeric" value={customRounds} placeholder="30" maxLength={2}
+    <button type="button" className={roundsChoice === 'custom' ? 'is-on' : ''} onClick={() => setRoundsChoice('custom')}>{t.custom}</button>
+    {roundsChoice === 'custom' && <input aria-label={t.rounds} inputMode="numeric" dir="ltr" value={customRounds} placeholder="30" maxLength={2}
       onChange={e => setCustomRounds(e.target.value.replace(/\D/g, '').slice(0, 2))}/>}
   </div>;
 
   const tablet = () => {
     if (view === 'intro') {
-      const n = Math.max(1, Math.ceil(game.starts_at - serverNow));
-      return <div className="er-screen er-screen-intro"><span className="er-screen-label">Round {game.round + 1} of {game.total}</span><strong key={n} className="er-count">{n}</strong><span className="er-screen-sub">Get ready</span></div>;
+      const n = Math.max(1, Math.ceil(game.round_at - serverNow));
+      return <div className="er-screen er-screen-intro"><span className="er-screen-label">{t.roundOf(game.round + 1, game.total)}</span><strong key={n} className="er-count">{n}</strong><span className="er-screen-sub">{t.getReady}</span></div>;
     }
-    if (view === 'guessing' || view === 'timeup') return <div className="er-screen">
-      <div className="er-screen-bar"><span>Round {game.round + 1}/{game.total}</span><b>{game.clue.category}</b><span className={secondsLeft <= 5 ? 'is-hurry' : ''}>{spinning ? '' : `${secondsLeft}s`}</span></div>
+    if (view === 'showing') return <div className="er-screen">
+      <div className="er-screen-bar"><span>{t.round(game.round + 1, game.total)}</span><b>{game.clue.category}</b><span/></div>
       <div className={`er-reels er-reels-${Math.min(reels.length, 6)}`}>{reels.map((r, i) => <Reel key={`${game.run}-${game.round}-${i}`} final={r} spinning={spinning}/>)}</div>
-      <span className="er-timebar"><i style={{transform: `scaleX(${timeFraction})`}} className={secondsLeft <= 5 ? 'is-hurry' : ''}/></span>
-      {view === 'timeup' && <span className="er-stamp">Time</span>}
+      {!spinning && <span className="er-shout">{t.shout}</span>}
     </div>;
-    if (view === 'reveal') {
-      const mine = game.solved_by && game.solved_by === me;
-      return <div className={`er-screen er-screen-reveal ${mine ? 'is-mine' : ''}`}>
-        <div className="er-screen-bar"><span>Round {game.round + 1}/{game.total}</span><b>{game.clue.category}</b><span/></div>
-        <div className="er-reels er-reels-small">{reels.map((r, i) => <span key={i} className="er-reel is-landed"><span className="er-reel-face">{r}</span></span>)}</div>
-        <strong className="er-answer">{game.answer}</strong>
-        <span className="er-winner">{game.solved_by ? (mine ? 'You got it  +1' : `${playerName(game.solved_by)} got it  +1`) : 'Nobody got it'}</span>
-        {(mine || won === game.round) && <Burst/>}
-      </div>;
-    }
+    if (view === 'reveal') return <div className="er-screen er-screen-reveal">
+      <div className="er-screen-bar"><span>{t.round(game.round + 1, game.total)}</span><b>{game.clue.category}</b><span/></div>
+      <div className="er-reels er-reels-small">{reels.map((r, i) => <span key={i} className="er-reel is-landed"><span className="er-reel-face">{r}</span></span>)}</div>
+      <strong className="er-answer">{game.answer}</strong>
+      <Burst/>
+    </div>;
     return null;
   };
 
-  const top = ranking[0];
-  const winners = ranking.filter(p => p.score === top?.score && top?.score > 0);
+  const languagePanel = <div className="er-panel er-landing er-language">
+    <span className="er-kicker">Language · اللغة</span>
+    <div className="er-actions">
+      <button className="er-primary" dir="ltr" onClick={() => pickLang('en')}>English</button>
+      <button className="er-primary er-lang-ar" dir="rtl" lang="ar" onClick={() => pickLang('ar')}>العربية</button>
+    </div>
+  </div>;
 
   const home = <div className="er-panel er-landing">
-    <span className="er-kicker">Rooftop party game</span>
-    <h1>Emoji <em>Rooftop</em></h1>
+    <span className="er-kicker">{t.kicker}</span>
+    <h1>{t.title}</h1>
     <div className="er-actions">
-      <button className="er-primary" onClick={() => { setIntent('create'); setScreen('connect'); }}>Create room</button>
-      <button className="er-secondary" onClick={() => { setIntent('join'); setScreen('connect'); }}>Join room</button>
+      <button className="er-primary" onClick={() => { setIntent('create'); setScreen('connect'); }}>{t.create}</button>
+      <button className="er-secondary" onClick={() => { setIntent('join'); setScreen('connect'); }}>{t.join}</button>
     </div>
-    <small>Guess from emojis · fastest typer wins · 2 to 12 players</small>
+    <small>{t.tagline}</small>
   </div>;
 
   const connect = <form className="er-panel er-form" onSubmit={enter}>
     <div className="er-tabs">
-      <button type="button" className={intent === 'create' ? 'is-on' : ''} onClick={() => { setIntent('create'); setError(''); }}>Create</button>
-      <button type="button" className={intent === 'join' ? 'is-on' : ''} onClick={() => { setIntent('join'); setError(''); }}>Join</button>
+      <button type="button" className={intent === 'create' ? 'is-on' : ''} onClick={() => { setIntent('create'); setError(''); }}>{t.create}</button>
+      <button type="button" className={intent === 'join' ? 'is-on' : ''} onClick={() => { setIntent('join'); setError(''); }}>{t.join}</button>
     </div>
-    {auth ? <p className="er-muted">Reconnecting to your seat…</p> : <>
-      <input id="er-name" aria-label="Your nickname" value={name} onChange={e => setName(e.target.value)} maxLength={24} autoComplete="nickname" placeholder="Your nickname" required/>
-      {intent === 'join' && <input id="er-code" aria-label="Room code" className="er-code-input" value={joinCode} onChange={e => setJoinCode(e.target.value.replace(/\D/g, '').slice(0, 5))} inputMode="numeric" placeholder="Room code" required/>}
-      <button className="er-primary" disabled={busy || !intent}>{busy ? 'One moment…' : intent === 'create' ? 'Create the room' : 'Join the party'} <ArrowRight size={15}/></button>
+    {auth ? <p className="er-muted">{t.reconnecting}</p> : <>
+      {intent === 'join' && <>
+        <p className="er-muted">{t.joinHint}</p>
+        <input id="er-code" dir="ltr" aria-label={t.codePlaceholder} className="er-code-input" value={joinCode} onChange={e => setJoinCode(e.target.value.replace(/\D/g, '').slice(0, 5))} inputMode="numeric" placeholder={t.codePlaceholder} required autoFocus/>
+      </>}
+      <button className="er-primary" disabled={busy || !intent}>{busy ? t.oneMoment : intent === 'create' ? t.createRoom : t.joinRoom} <ArrowRight size={15}/></button>
     </>}
   </form>;
 
   const lobby = game && <div className="er-panel er-lobby">
     <div className="er-lobby-head">
-      <div><span className="er-kicker">Room code</span><strong className="er-big-code">{code}</strong></div>
+      <div><span className="er-kicker">{t.roomCode}</span><strong className="er-big-code" dir="ltr">{code}</strong></div>
       <div className="er-row">
-        <button className="er-link" onClick={async () => { try { await navigator.clipboard.writeText(code); setNotice('Code copied.'); } catch { setNotice(`Code: ${code}`); } }}><Copy size={13}/> Copy</button>
-        <button className="er-link" onClick={share}><LinkIcon size={13}/> Share</button>
+        <button className="er-link" onClick={async () => { try { await navigator.clipboard.writeText(code); setNotice(t.codeCopied); } catch { setNotice(t.codeIs(code)); } }}><Copy size={13}/> {t.copy}</button>
+        <button className="er-link" onClick={share}><LinkIcon size={13}/> {t.share}</button>
       </div>
     </div>
-    <ul className="er-guests">{game.players.map(p => <li key={p.id}>{p.name}{p.id === game.host && <small>host</small>}{p.id === me && p.id !== game.host && <small>you</small>}</li>)}<li className="er-guest-count">{game.players.length}/12</li></ul>
+    <p className="er-phones"><Smartphone size={14}/> {t.phones(game.viewers)}</p>
     {host ? <div className="er-lobby-foot">{roundsPicker}
-      <button className="er-primary" disabled={busy || game.players.length < 2} onClick={() => hostAction('start')}>{game.players.length < 2 ? 'Waiting…' : 'Start'} <ArrowRight size={15}/></button>
-    </div> : <p className="er-muted">{playerName(game.host)} will start the game.</p>}
+      <button className="er-primary" disabled={busy} onClick={() => hostAction('start')}>{t.start} <ArrowRight size={15}/></button>
+    </div> : <p className="er-muted">{t.hostWillStart}</p>}
   </div>;
 
   const final = game && <div className="er-panel er-final">
-    <h2>{winners.length ? `${winners.map(p => p.name).join(' & ')} ${winners.length > 1 ? 'win' : 'wins'}` : 'Nobody scored'}</h2>
-    <ol className="er-final-list">{ranking.map((p, i) => <li key={p.id} className={p.id === me ? 'is-me' : ''}><span className="er-rank">{i + 1}</span><span>{p.name}</span><b>{p.score}</b></li>)}</ol>
-    {host ? <div className="er-lobby-foot">{roundsPicker}<button className="er-primary" disabled={busy} onClick={() => hostAction('replay')}>Again <ArrowRight size={15}/></button></div>
-      : <p className="er-muted">Waiting for {playerName(game.host)} to play again.</p>}
+    <h2>{t.wrapTitle}</h2>
+    <p className="er-muted">{t.wrapText(game.total)}</p>
+    {host ? <div className="er-lobby-foot">{roundsPicker}<button className="er-primary" disabled={busy} onClick={() => hostAction('replay')}>{t.again} <ArrowRight size={15}/></button></div>
+      : <p className="er-muted">{t.waitAgain}</p>}
   </div>;
 
   let content = null;
-  if (screen === 'landing') content = home;
+  if (screen === 'language') content = languagePanel;
+  else if (screen === 'landing') content = home;
   else if (screen === 'connect') content = connect;
   else if (screen === 'room' && game?.status === 'lobby') content = lobby;
   else if (screen === 'room' && game?.status === 'ended') content = final;
   else if (screen === 'room' && game?.status === 'active') content = <div className="er-play" key={`tab-${game.run}-${game.round}`}>{tablet()}</div>;
 
-  return <main className={`er-app er-view-${view} ${screen === 'room' && game?.status === 'active' ? 'er-playing' : ''}`} data-typography-ignore data-status-bar-color="#2a1640">
+  const playing = screen === 'room' && active;
+  const lastRound = game && game.round + 1 >= game.total;
+
+  return <main dir={t.dir} lang={game?.lang || lang} className={`er-app er-view-${view} ${t.dir === 'rtl' ? 'er-rtl' : ''} ${playing ? 'er-playing' : ''}`} data-typography-ignore data-status-bar-color="#2a1640">
     <div className="er-backdrop" style={{backgroundImage: `url(${tableArt})`}} aria-hidden="true"/>
     <div className="er-bg">
       <img src={tableArt} alt="" draggable="false"/>
       <Ambience/>
-      <div className="er-ipad" onClick={() => scoresOpen && setScoresOpen(false)}>{content}</div>
+      <div className="er-ipad">{content}</div>
     </div>
     <div className="er-shell">
       <header className="er-top">
-        <button className="er-icon" aria-label="Back to mini games" onClick={exit}><ArrowLeft size={18}/></button>
-        {screen === 'room' && game && game.status !== 'lobby' && <div className="er-score-wrap">
-          <button className={`er-score-tab ${scoresOpen ? 'is-open' : ''}`} aria-expanded={scoresOpen} aria-label="Scores" onClick={() => setScoresOpen(o => !o)}><Trophy size={14}/>{game.players.find(p => p.id === me)?.score ?? 0}</button>
-          {scoresOpen && <ol className="er-scores">{ranking.map(p => <li key={p.id} className={p.id === me ? 'is-me' : ''}><span>{p.name}</span><b>{p.score}</b></li>)}</ol>}
-        </div>}
+        <button className="er-icon" aria-label={t.back} onClick={exit}><ArrowLeft size={18}/></button>
+        {screen === 'room' && game && <span className="er-viewers"><Smartphone size={13}/>{game.viewers}</span>}
       </header>
 
-      {screen === 'room' && game?.status === 'active' && <form className={`er-guess ${canGuess ? '' : 'is-off'}`} onSubmit={submitGuess}>
-        <input key={shake} ref={inputRef} className={shake ? 'er-shake' : ''} value={draft} onChange={e => setDraft(e.target.value)} maxLength={80}
-          placeholder={canGuess ? 'Type your answer' : view === 'reveal' ? 'Next one coming…' : spinning ? 'Spinning…' : 'Get ready…'}
-          autoComplete="off" autoCorrect="off" spellCheck={false} enterKeyHint="send" aria-label="Your answer"/>
-        <button aria-label="Send answer" disabled={!canGuess || !draft.trim()} onMouseDown={e => e.preventDefault()}><Send size={18}/></button>
-      </form>}
+      {playing && host && (view === 'showing' || view === 'reveal') && <div className="er-host-bar">
+        {view === 'showing'
+          ? <button className="er-host-button" disabled={busy || spinning} onClick={() => hostAction('reveal')}><Eye size={20}/>{t.reveal}</button>
+          : <button className="er-host-button is-next" disabled={busy} onClick={() => hostAction('next')}>{lastRound ? t.finish : t.next}<ArrowRight size={20}/></button>}
+      </div>}
 
-      {(error || notice) && <div className={`er-toast ${error ? 'is-error' : ''}`} role={error ? 'alert' : 'status'}>{error || notice}<button aria-label="Dismiss" onClick={() => { setError(''); setNotice(''); }}><X size={14}/></button></div>}
+      {(error || notice) && <div className={`er-toast ${error ? 'is-error' : ''}`} role={error ? 'alert' : 'status'}>{error || notice}<button aria-label="×" onClick={() => { setError(''); setNotice(''); }}><X size={14}/></button></div>}
     </div>
+
+    {langNote && game && <div className="er-note" role="dialog" aria-modal="true" aria-labelledby="er-note-title"><div className="er-note-card">
+      <h2 id="er-note-title">{t.noteTitle}</h2><p>{t.noteText}</p>
+      <button className="er-host-button" autoFocus onClick={() => setLangNote(false)}><Check size={18}/>{t.gotIt}</button>
+    </div></div>}
   </main>;
 }

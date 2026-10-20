@@ -119,10 +119,11 @@ export const api = {
         axios.get(apiUrl("/admin/verify"), { headers: adminHeaders() }).then((r) => r.data),
     adminListStories: () =>
         axios.get(apiUrl("/admin/stories"), { headers: adminHeaders() }).then((r) => r.data),
-    adminEmojiClues: () =>
-        axios.get(apiUrl("/emoji-rooftop/clues"), { headers: adminHeaders() }).then((r) => r.data),
-    adminSaveEmojiClues: (csv, mode) =>
-        axios.put(apiUrl("/emoji-rooftop/clues"), { csv, mode }, { headers: adminHeaders() }).then((r) => r.data),
+    // Two clue lists: Emoji English (lang "en") and Emoji Arabic (lang "ar").
+    adminEmojiClues: (lang = "en") =>
+        axios.get(apiUrl("/emoji-rooftop/clues"), { headers: adminHeaders(), params: { lang } }).then((r) => r.data),
+    adminSaveEmojiClues: (csv, mode, lang = "en") =>
+        axios.put(apiUrl("/emoji-rooftop/clues"), { csv, mode }, { headers: adminHeaders(), params: { lang } }).then((r) => r.data),
     adminCreateStory: (payload) =>
         axios.post(apiUrl("/admin/stories"), payload, { headers: adminHeaders() }).then((r) => r.data),
     adminUpdateStory: (id, payload) =>

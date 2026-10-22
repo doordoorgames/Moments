@@ -166,7 +166,9 @@ def test_developer_seats_eight_limit(client):
 
 def test_unauthorized_socket_missing_room(client):
     c,_=client;a=create(c);url='/api/plot-twist/rooms/'+a['code']
-    assert c.get('/api/plot-twist/rooms/NOTREAL',headers=headers(a)).status_code==404
+    assert c.get('/api/plot-twist/rooms/NOTREAL',headers=headers(a)).status_code==400
+    missing='00000' if a['code']!='00000' else '00001'
+    assert c.get('/api/plot-twist/rooms/'+missing,headers=headers(a)).status_code==404
     with c.websocket_connect(url+'/live') as ws:
         ws.send_json({'authorization':'Bearer fake:fake'})
         with pytest.raises(Exception):ws.receive_json()

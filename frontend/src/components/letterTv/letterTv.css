@@ -6,7 +6,7 @@
   padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent}
 .ltv-app *{box-sizing:border-box}
 .ltv-backdrop{position:absolute;inset:-40px;background:center/cover no-repeat;filter:blur(28px) brightness(.7);transform:scale(1.05)}
-.ltv-stage{position:relative;aspect-ratio:var(--ltv-ratio,16 / 9);width:min(100%, calc((100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom)) * 16 / 9));container-type:size}
+.ltv-stage{position:relative;aspect-ratio:var(--ltv-ratio,16 / 9);width:min(100%, calc((100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom)) * var(--ltv-ar,1.7778)));container-type:size}
 .ltv-wallpaper{position:absolute;inset:0;width:100%;height:100%;display:block;pointer-events:none}
 
 /* Letters sit in the exact centre of each screen (coordinates live in screens.js). */

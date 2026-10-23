@@ -12,6 +12,8 @@ import './letterTv.css';
 
 // Two TVs, one letter each. Everyone shouts answers; the game never judges.
 // Local play works instantly. An optional room lets the host's NEXT drive every phone.
+// Both letters share one size, set by the shorter screen.
+const LETTER_CQH = Math.min(...SCREENS.map(s => s.height)) * LETTER_SCALE;
 const key = code => `letter-tv-session:${code}`;
 const loadSession = code => { try { return JSON.parse(localStorage.getItem(key(code)) || 'null'); } catch { return null; } };
 const saveSession = (code, s) => { try { localStorage.setItem(key(code), JSON.stringify(s)); } catch { /* private mode */ } };
@@ -130,10 +132,10 @@ export default function LetterTV({onContinue}) {
 
   return <main className="ltv-app" data-typography-ignore data-status-bar-color="#1d1626">
     <div className="ltv-backdrop" style={missingArt ? undefined : {backgroundImage: `url(${WALLPAPER.src})`}} aria-hidden="true"/>
-    <div className="ltv-stage" style={{'--ltv-ratio': `${WALLPAPER.width} / ${WALLPAPER.height}`}}>
+    <div className="ltv-stage" style={{'--ltv-ratio': `${WALLPAPER.width} / ${WALLPAPER.height}`, '--ltv-ar': WALLPAPER.width / WALLPAPER.height}}>
       {!missingArt && <img className="ltv-wallpaper" src={WALLPAPER.src} alt="" width={WALLPAPER.width} height={WALLPAPER.height} draggable={false} onError={() => setMissingArt(true)}/>}
       {SCREENS.map((s, i) => <div key={s.id} className={`ltv-screen ${missingArt ? 'is-placeholder' : ''}`}
-        style={{left: `${s.left}%`, top: `${s.top}%`, width: `${s.width}%`, height: `${s.height}%`, '--ltv-letter': `${s.height * LETTER_SCALE}cqh`}}>
+        style={{left: `${s.left}%`, top: `${s.top}%`, width: `${s.width}%`, height: `${s.height}%`, '--ltv-letter': `${LETTER_CQH}cqh`}}>
         <span className="ltv-letter" aria-live={i === 0 ? 'polite' : undefined}>{pair?.[i] || ''}</span>
       </div>)}
       <span className="ltv-sr" aria-live="polite">{pair ? `Letters ${pair[0]} and ${pair[1]}` : ''}</span>

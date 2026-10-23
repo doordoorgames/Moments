@@ -168,3 +168,8 @@
 .pt-reroll.is-locked .pt-reroll-count{color:#a69aa4}
 .pt-reveal-card .pt-reroll-error{margin:12px 0 0;font-size:12px;line-height:1.6;color:#ffc2c9}
 @keyframes pt-shimmer{0%,100%{filter:drop-shadow(0 0 2px #ffcf6a80)}50%{filter:drop-shadow(0 0 7px #ffdc8ee6)}}
+
+/* Host's scannable invite in the lobby. */
+.pt-lobby .pt-invite .pt-invite-qr{display:flex;align-items:center;gap:14px;margin:12px 0 4px}
+.pt-qr{width:132px;height:132px;flex-shrink:0;border-radius:8px;background:#fff;box-shadow:0 0 0 4px #fff2d9}
+.pt-lobby .pt-invite .pt-invite-qr span{font-size:12px;line-height:1.55;color:#f8dfde}

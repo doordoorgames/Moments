@@ -103,3 +103,68 @@
 .pt-app .pt-lang-ar{text-align:right}
 .pt-app .pt-lang-ar :is(h2,p,span){font-family:'Cairo',system-ui,sans-serif;letter-spacing:0!important;font-style:normal}
 .pt-app .pt-lang-ar .lucide-arrow-right{transform:scaleX(-1)}
+
+/* Create / Join: two real buttons, then the matching form. No empty paper underneath. */
+.pt-choice{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:24px}
+.pt-app .pt-choice-button{display:flex;align-items:center;gap:12px;min-height:68px;padding:12px 14px;border:2px solid #ffe9bb8c;border-radius:8px;background:#2f1e3bd9;color:#fff2d9;text-align:start;font-size:15px;font-weight:800;line-height:1.2;box-shadow:0 4px 0 #1d122680}
+.pt-choice-button:hover{border-color:#ffe9bb}
+.pt-choice-text{display:flex;flex-direction:column;gap:3px;min-width:0}
+.pt-choice-text small{font-size:11px;font-weight:600;opacity:.78}
+.pt-choice-icon{display:grid;place-items:center;width:36px;height:36px;flex-shrink:0;border-radius:50%;border:1.5px solid currentColor}
+.pt-choice-check{margin-inline-start:auto;flex-shrink:0}
+.pt-app .pt-choice-button.is-selected{background:var(--pt-amber);color:#40263c;border-color:#fff2d9;box-shadow:0 4px 0 #9c676b,0 0 0 3px #ffd79940}
+.pt-choice-note{margin-top:18px!important;font-size:13px!important;color:#f8dfde;text-align:center}
+.pt-connect .pt-form{margin-top:16px;border-radius:8px}
+.pt-connect{min-height:0}
+
+/* Five-box room code: one real input over five boxes, always left to right. */
+.pt-code-boxes{position:relative;display:grid;grid-template-columns:repeat(5,1fr);gap:8px;max-width:330px;direction:ltr}
+.pt-form .pt-code-boxes .pt-code-field{position:absolute;inset:0;z-index:2;width:100%;height:100%;min-height:0;margin:0;padding:0;border:0;background:transparent;color:transparent;-webkit-text-fill-color:transparent;caret-color:transparent;font-size:16px;letter-spacing:0;opacity:1;outline:none;cursor:text}
+.pt-code-field::selection{background:transparent}
+.pt-code-box{display:grid;place-items:center;height:58px;border:2px solid #cbb3b3;border-radius:8px;background:#fffaf2;color:#452d44;font:800 26px/1 'DM Sans',sans-serif!important;font-variant-numeric:tabular-nums;transition:border-color .15s,box-shadow .15s}
+.pt-code-box.is-filled{border-color:#9b7a8e}
+.pt-code-boxes.is-focused .pt-code-box.is-active{border-color:#70416d;box-shadow:0 0 0 3px #ffd799b3}
+.pt-code-boxes.is-invalid .pt-code-box:not(.is-filled){border-color:#a63152}
+.pt-code-hint{display:block;margin-top:8px;color:#846a7c;font-size:12px}
+.pt-code-hint.is-error{color:#a63152;font-weight:700}
+
+/* Lobby: compact title, players and Start first, invitation underneath. */
+.pt-app .pt-lobby{display:flex;flex-direction:column;gap:14px;max-width:560px;margin:0 auto;min-height:0;padding:4px 0 24px}
+.pt-lobby .pt-lobby-head h1{font-size:32px;line-height:1.15;margin:0}
+.pt-lobby .pt-lobby-head p{margin-top:4px;font-size:12px;line-height:1.5;color:#f8dfde}
+.pt-lobby .pt-guestbook{padding:18px}
+.pt-lobby .pt-guestbook .pt-paper-heading{padding-bottom:12px}
+.pt-lobby .pt-guestbook h2{font-size:22px}
+.pt-lobby .pt-guestbook .pt-primary{margin-top:14px}
+.pt-lobby .pt-guestbook .pt-waiting{margin-top:12px!important}
+.pt-lobby .pt-guestbook .pt-hint{margin-top:8px}
+.pt-lobby .pt-guestbook .pt-roster{margin-top:12px}
+.pt-app .pt-lobby .pt-invite{margin:0;max-width:none;padding:16px;border:1px solid #ffe0d24d;border-radius:8px;background:#2f1e3b8c}
+.pt-lobby .pt-invite .pt-invite-title{font:600 17px/1.3 'Playfair Display',Georgia,serif;color:#fff2d9}
+.pt-lobby .pt-invite .pt-invite-code{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:10px 0 12px}
+.pt-lobby .pt-invite .pt-invite-code span{font-size:9px;letter-spacing:2px;color:#e5bbc8;font-weight:800}
+.pt-lobby .pt-invite .pt-invite-code strong{display:block;font-size:30px;letter-spacing:6px;font-weight:700;color:#ffe1ad;line-height:1.2}
+.pt-lobby .pt-invite .pt-invite-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.pt-lobby .pt-invite .pt-ghost{justify-content:center;min-height:44px}
+.pt-app.pt-rtl .pt-lobby .pt-invite .pt-invite-title{font-family:'Cairo',system-ui,sans-serif;font-weight:800}
+@media(max-width:640px){
+  .pt-screen-room .pt-header,.pt-screen-connect .pt-header{height:72px}
+  .pt-screen-room .pt-room-top{padding:8px 0 12px}
+  .pt-lobby .pt-lobby-head h1{font-size:28px}
+  .pt-connect h1{font-size:36px}
+}
+@media(max-width:420px){.pt-choice{gap:10px}.pt-choice-icon{display:none}.pt-app .pt-choice-button{padding:12px}}
+
+/* Word Trap: swap the secret word, three times per word, inside the same purple card. */
+.pt-reveal-word{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:14px;padding:18px 0;border-top:1px solid #a0768b;border-bottom:1px solid #a0768b}
+.pt-reveal-word strong{font-family:'Playfair Display',serif;font-weight:600;font-size:clamp(25px,7vw,45px);letter-spacing:4px;overflow-wrap:anywhere;color:#ffd798;line-height:1.2}
+.pt-app .pt-reroll{display:inline-flex;align-items:center;gap:7px;flex-shrink:0;min-height:44px;min-width:44px;padding:0 13px;border-radius:999px;border:1px solid #ffd7998c;background:#ffd7991f;color:#ffcf6a}
+.pt-reroll svg{animation:pt-shimmer 2.8s ease-in-out infinite}
+.pt-reroll-count{color:#fff0dc;font-size:13px;font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:.5px}
+.pt-app .pt-reroll.is-busy{opacity:.75}
+.pt-reroll.is-busy svg{animation:pt-breathe .5s ease-in-out infinite alternate}
+.pt-app .pt-reroll.is-locked{opacity:1;background:#ffffff0d;border-color:#8a7a88;color:#a69aa4}
+.pt-reroll.is-locked svg{animation:none;filter:none}
+.pt-reroll.is-locked .pt-reroll-count{color:#a69aa4}
+.pt-reveal-card .pt-reroll-error{margin:12px 0 0;font-size:12px;line-height:1.6;color:#ffc2c9}
+@keyframes pt-shimmer{0%,100%{filter:drop-shadow(0 0 2px #ffcf6a80)}50%{filter:drop-shadow(0 0 7px #ffdc8ee6)}}

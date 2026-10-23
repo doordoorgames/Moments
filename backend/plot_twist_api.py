@@ -29,12 +29,15 @@ class Create(BaseModel):
 class Join(BaseModel):
     nickname: str = Field(min_length=1, max_length=100)
 class Action(BaseModel):
-    action: Literal['start','replay','submit','add_test','end']
+    action: Literal['start','replay','submit','add_test','end','reroll']
     text: str = Field(default='', max_length=350)
     turn: int = 0
     run: str = ''
     request_id: str = Field(default='', max_length=80)
     as_player: str = ''
+    # Word Trap rerolls: the assignment and swap count the player is looking at.
+    secret: str = Field(default='', max_length=80)
+    used: int = Field(default=-1, ge=-1, le=engine.REROLLS)
 
 
 def say(g, en, ar):
@@ -136,6 +139,9 @@ def router(db, query):
             pid = viewer(g,p,body.as_player)
             try:
                 if body.action == 'submit': engine.submit(g,pid,body.text,body.turn,body.run,body.request_id)
+                elif body.action == 'reroll':
+                    if body.run != g['run']: raise engine.GameError('The story changed. Your word has been refreshed.','السالفة تغيرت. حدّثنا لك كلمتك.')
+                    engine.reroll(g,pid,body.secret,body.used,body.request_id)
                 else:
                     if p['id'] != g['host']: raise HTTPException(403,say(g,'Only the host can do that.','بس المضيف يقدر يسوي هالشي.'))
                     if body.action == 'end':

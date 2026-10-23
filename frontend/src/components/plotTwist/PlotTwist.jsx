@@ -1,14 +1,15 @@
 import React, {useCallback, useEffect, useRef, useState} from 'react';
 import {useNavigate, useParams, useSearchParams} from 'react-router-dom';
 import {flushSync} from 'react-dom';
-import {ArrowLeft, ArrowRight, BookOpen, Check, Copy, Eye, EyeOff, Link as LinkIcon, Plus, Send, Sparkles, Users, X} from 'lucide-react';
+import {ArrowLeft, ArrowRight, BookOpen, Check, Copy, Eye, Link as LinkIcon, Lock, LogIn, Plus, RefreshCw, Send, Sparkles, X} from 'lucide-react';
 import {BACKEND_URL} from '@/lib/api';
 import Rooftop from './Rooftop';
+import RoomCodeInput from './RoomCodeInput';
+import {normalizeCode, validRoomCode} from './roomCode';
 import './plotTwist.css';
 
 import {wordCount} from './words';
 import {TEXT} from './i18n';
-const validRoomCode = value => /^\d{5}$/.test(value);
 const key = code => `plot-twist-session:${code}`;
 function session(code) { try {return JSON.parse(localStorage.getItem(key(code)) || 'null');} catch {return null;} }
 // Story Time: exactly 5 words a turn, set rounds. Word Trap: 5 to 15 words a turn, no rounds, no clock.
@@ -26,7 +27,8 @@ export default function PlotTwist({onContinue}) {
   const [rounds,setRounds] = useState(3);
   const [dev] = useState(false); // developer rooms are hidden from players
   const [name,setName] = useState('');
-  const [joinCode,setJoinCode] = useState(routeCode || params.get('room') || '');
+  const [joinCode,setJoinCode] = useState(normalizeCode(routeCode || params.get('room') || ''));
+  const [codeError,setCodeError] = useState(false);
   const [intent,setIntent] = useState(routeCode?'join':null);
   const [credentials,setCredentials] = useState(()=>routeCode?session(routeCode):null);
   const [game,setGame] = useState(null);
@@ -34,11 +36,12 @@ export default function PlotTwist({onContinue}) {
   const [busy,setBusy] = useState(false);
   const [error,setError] = useState('');
   const [notice,setNotice] = useState('');
-  const [showTarget,setShowTarget] = useState(false);
   const [reveal,setReveal] = useState(false);
+  const [swapping,setSwapping] = useState(false);
+  const [swapError,setSwapError] = useState('');
   const [trap,setTrap] = useState(null);
   const [asPlayer,setAsPlayer] = useState('');
-  const nickRef = useRef(null), codeRef = useRef(null), inputRef = useRef(null), storyRef = useRef(null), pending = useRef(false);
+  const nickRef = useRef(null), codeRef = useRef(null), inputRef = useRef(null), storyRef = useRef(null), pending = useRef(false), swapPending = useRef(false);
   const current = useRef(null), latestRequest = useRef(0), seenRun = useRef(''), seenTraps = useRef(new Set());
   const code = routeCode;
   const auth = credentials ? `Bearer ${credentials.player_id}:${credentials.token}` : '';
@@ -79,7 +82,7 @@ export default function PlotTwist({onContinue}) {
   },[accept,request]);
   useEffect(()=>{
     setCredentials(routeCode?session(routeCode):null);
-    if(routeCode){setJoinCode(routeCode);setIntent('join');setScreen('connect');}
+    if(routeCode){setJoinCode(normalizeCode(routeCode));setIntent('join');setScreen('connect');}
   },[routeCode]);
   useEffect(()=>{
     if (!code || !auth) return;
@@ -110,7 +113,8 @@ export default function PlotTwist({onContinue}) {
       if(newTraps.length)setTrap(newTraps);
     }
   },[game]);
-  useEffect(()=>{setDraft('');setShowTarget(false);},[game?.turn,game?.run,asPlayer]);
+  useEffect(()=>{setDraft('');},[game?.turn,game?.run,asPlayer]);
+  useEffect(()=>{setSwapError('');},[game?.target,game?.secret_id,reveal]);
   useEffect(()=>{
     const viewport=window.visualViewport;
     const update=()=>{document.documentElement.style.setProperty('--pt-height',`${viewport?.height || window.innerHeight}px`);document.documentElement.style.setProperty('--pt-top',`${viewport?.offsetTop || 0}px`);document.documentElement.style.setProperty('--pt-keyboard-inset',`${Math.max(0,window.innerHeight-(viewport?.height || window.innerHeight)-(viewport?.offsetTop || 0))}px`);};
@@ -121,10 +125,11 @@ export default function PlotTwist({onContinue}) {
   useEffect(()=>{const el=inputRef.current;if(!el)return;el.style.height='auto';el.style.height=`${el.scrollHeight}px`;const st=storyRef.current;if(st)st.scrollTop=st.scrollHeight;},[draft,myTurn]);
   async function enter(e) {
     e?.preventDefault();if(pending.current)return;
-    if(intent==='join'&&!validRoomCode(joinCode)){setError(t.badCode);return;}
+    if(!name.trim()){nickRef.current?.focus();return;}
+    if(intent==='join'&&!validRoomCode(joinCode)){setCodeError(true);codeRef.current?.focus();return;}
     pending.current=true;setBusy(true);setError('');
     try {
-      const path=intent==='create'?'/rooms':`/rooms/${joinCode.trim()}/join`;
+      const path=intent==='create'?'/rooms':`/rooms/${joinCode}/join`;
       const result=await request(path,intent==='create'?{nickname:name,mode,rounds:mode==='trap'?0:rounds,dev,lang}:{nickname:name});
       const saved={player_id:result.player_id,token:result.token};
       localStorage.setItem(key(result.code),JSON.stringify(saved));
@@ -141,6 +146,15 @@ export default function PlotTwist({onContinue}) {
       ++latestRequest.current;accept(result);if(type==='submit')setDraft('');
     }catch(e){setError(e.message);refresh();}finally{pending.current=false;setBusy(false);}
   }
+  // Word Trap: swap the secret word. The server owns the allowance; a failed swap keeps the word and the count.
+  async function swapWord() {
+    if(swapPending.current||!game?.target||game.rerolls_used>=game.rerolls_max)return;
+    swapPending.current=true;setSwapping(true);setSwapError('');
+    try {
+      const result=await request(`/rooms/${code}/action`,{action:'reroll',run:game.run,secret:game.secret_id||'',used:game.rerolls_used,request_id:crypto.randomUUID(),as_player:asPlayer},auth);
+      ++latestRequest.current;accept(result);
+    }catch(e){setSwapError(e.message);refresh();}finally{swapPending.current=false;setSwapping(false);}
+  }
   async function share() {
     const url=`${window.location.origin}/mini-games/plot-twist/room/${code}`;
     try {if(navigator.share)await navigator.share({title:t.shareTitle,url});else{await navigator.clipboard.writeText(url);setNotice(t.linkCopied);}}catch(e){if(e.name!=='AbortError')setNotice(t.shareThis(url));}
@@ -152,31 +166,44 @@ export default function PlotTwist({onContinue}) {
   const typeDraft=value=>setDraft(value.replace(/[\r\n]+/g,' '));
   const send=()=>{if(myTurn&&ready&&!busy)action('submit');};
   const endStory=()=>{if(window.confirm(t.endConfirm))action('end');};
-  const pickLang=value=>{setLang(value);setScreen('landing');};
+  const pickLang=value=>{setLang(value);setScreen('modes');};
   const roundLabel=()=>trapMode?t.openStory:t.round(Math.floor(game.turn/game.players.length)+1,game.rounds);
   const best=game?Math.max(...game.players.map(p=>p.score)):0, winners=game?game.players.filter(p=>p.score===best).map(p=>p.name):[];
-  const chooseIntent=value=>{flushSync(()=>{setIntent(value);setError('');});nickRef.current?.focus();};
+  const chooseIntent=value=>{flushSync(()=>{setIntent(value);setError('');setCodeError(false);});nickRef.current?.focus();};
   const exit=()=>{if(onContinue)onContinue();else navigate('/#mini-games');};
+  // Step back one screen: connect → modes → language → mini games. Language and mode stay picked.
+  const back=()=>{if(screen==='connect'&&!code){setError('');setScreen('modes');}else if(screen==='modes')setScreen('language');else exit();};
+  const stepBack=(screen==='connect'&&!code)||screen==='modes';
   const playerList=<div className="pt-roster">{game?.players.map((p,i)=><div className={`pt-nameplate ${p.id===turnPlayer?.id&&game.status==='active'?'is-active':''}`} key={p.id}><span className={`pt-avatar pt-avatar-${i%4}`}>{p.name.slice(0,1).toUpperCase()}</span><span>{p.name}<small>{p.id===game.host?t.tags.host:p.simulated?t.tags.test:p.id===credentials?.player_id?t.tags.you:t.tags.friend}</small></span>{game.mode==='trap'&&game.status!=='lobby'&&<b>{p.score} <span className="pt-sr">{t.points}</span></b>}</div>)}</div>;
   return <main dir={t.dir} lang={game?.lang || lang} className={`pt-app ${t.dir==='rtl'?'pt-rtl':''} ${screen==='room'?'pt-in-room':''} ${playing?'pt-playing':''} ${trapMood?'pt-trap':''} pt-screen-${screen}`} data-typography-ignore>
     <Rooftop mood={trapMood?'trap':undefined}/>
     <div className="pt-shell">
-      {!playing&&<header className="pt-header"><button className="pt-icon-button" aria-label={t.back} onClick={exit}><ArrowLeft size={19}/></button><button className="pt-brand" dir="ltr" onClick={()=>{if(!code)setScreen(screen==='language'?'language':'landing');}}>PLOT<span>TWIST</span><i>{t.brandSub}</i></button><span className="pt-edition">{t.edition}</span></header>}
+      {!playing&&<header className="pt-header"><button className="pt-icon-button" aria-label={stepBack?t.backStep:t.back} onClick={back}><ArrowLeft size={19}/></button><button className="pt-brand" dir="ltr" onClick={()=>{if(!code)setScreen('language');}}>PLOT<span>TWIST</span><i>{t.brandSub}</i></button><span className="pt-edition">{t.edition}</span></header>}
       {screen==='language'&&<section className="pt-selection pt-language"><div className="pt-kicker">LANGUAGE · اللغة</div><h1 dir="ltr">English<br/><em>or عربي?</em></h1><div className="pt-mode-grid">
         <button className="pt-mode-card pt-mode-story" dir="ltr" onClick={()=>pickLang('en')}><span className="pt-mode-number">EN /</span><h2>English</h2><p>The whole game in English, on every phone in the room.</p><span className="pt-mode-meta">PLAY IN ENGLISH <ArrowRight size={20}/></span></button>
         <button className="pt-mode-card pt-mode-trap pt-lang-ar" dir="rtl" lang="ar" onClick={()=>pickLang('ar')}><span className="pt-mode-number">ع /</span><h2>العربية</h2><p>اللعبة كلها بالعربي، على كل تلفون داخل الغرفة.</p><span className="pt-mode-meta">العب بالعربي <ArrowRight size={20}/></span></button>
       </div></section>}
-      {screen==='landing'&&<section className="pt-landing"><div className="pt-kicker"><span/> {t.landingKicker}</div><h1>{t.landingTitle}</h1><p>{t.landingText}</p><div className="pt-hero-action"><button className="pt-primary" onClick={()=>setScreen('modes')}>{t.makeScene} <ArrowRight size={20}/></button><button className="pt-text-button" onClick={()=>{setScreen('connect');setIntent('join');}}>{t.haveCode} <ArrowRight size={15}/></button></div><div className="pt-ticket"><span className="pt-ticket-icon"><Users size={24}/></span><span>{t.ticket}<small>{t.ticketSmall}</small></span><div className="pt-ticket-stamp">{t.stamp}</div></div><span className="pt-bottom-note">{t.bottomNote}</span></section>}
       {screen==='modes'&&<section className="pt-selection"><div className="pt-kicker">{t.modesKicker}</div><h1>{t.modesTitle}</h1><div className="pt-mode-grid">{Object.entries(modes).map(([id,m])=><button className={`pt-mode-card pt-mode-${id}`} key={id} onClick={()=>{setMode(id);setScreen('connect');setIntent(null);}}><span className="pt-mode-number">0{id==='story'?1:2} /</span><m.icon size={35} strokeWidth={1.3}/><h2>{t.modes[id].name}</h2><p>{t.modes[id].desc}</p><span className="pt-mode-meta">{t.modes[id].meta} <ArrowRight size={20}/></span></button>)}</div><p className="pt-fine">{t.modesFine}</p></section>}
-      {screen==='connect'&&<section className="pt-connect"><div className="pt-kicker">{t.connectKicker}</div><h1>{t.connectTitle(!!auth)}</h1>{!auth&&<><div className="pt-tabs"><button className={intent==='create'?'selected':''} onClick={()=>chooseIntent('create')}>{t.create}</button><button className={intent==='join'?'selected':''} onClick={()=>chooseIntent('join')}>{t.join}</button></div><form className="pt-paper pt-form" onSubmit={enter}>
-        <div hidden={!intent}><label htmlFor="pt-nickname">{t.nickLabel}</label><input id="pt-nickname" ref={nickRef} value={name} onChange={e=>setName(e.target.value)} autoComplete="nickname" maxLength={24} placeholder={t.nickPlaceholder} required={!!intent} enterKeyHint={intent==='join'?'next':'go'} onKeyDown={e=>{if(e.key==='Enter'&&intent==='join'){e.preventDefault();codeRef.current?.focus();codeRef.current?.scrollIntoView({block:'nearest'});}}}/></div>
-        <div hidden={intent!=='join'}><label htmlFor="pt-room-code">{t.codeLabel}</label><input id="pt-room-code" dir="ltr" ref={codeRef} disabled={intent!=='join'} className="pt-code-input" value={joinCode} onChange={e=>setJoinCode(e.target.value.replace(/\D/g,'').slice(0,5))} placeholder="00000" required={intent==='join'} minLength={5} maxLength={5} inputMode="numeric" pattern="[0-9]{5}" autoComplete="off" enterKeyHint="go"/></div>
+      {screen==='connect'&&<section className="pt-connect"><div className="pt-kicker">{t.connectKicker}</div><h1>{t.connectTitle(!!auth)}</h1>{!auth&&<>
+        <div className="pt-choice" role="group" aria-label={t.chooseLabel}>
+          <button type="button" className={`pt-choice-button ${intent==='create'?'is-selected':''}`} aria-pressed={intent==='create'} onClick={()=>chooseIntent('create')}><span className="pt-choice-icon"><Plus size={20}/></span><span className="pt-choice-text">{t.create}<small>{t.createSmall}</small></span>{intent==='create'&&<Check className="pt-choice-check" size={18}/>}</button>
+          <button type="button" className={`pt-choice-button ${intent==='join'?'is-selected':''}`} aria-pressed={intent==='join'} onClick={()=>chooseIntent('join')}><span className="pt-choice-icon"><LogIn size={20}/></span><span className="pt-choice-text">{t.join}<small>{t.joinSmall}</small></span>{intent==='join'&&<Check className="pt-choice-check" size={18}/>}</button>
+        </div>
+        {!intent&&<p className="pt-choice-note">{t.inviteNote}</p>}
+        <form className="pt-paper pt-form" hidden={!intent} onSubmit={enter} noValidate>
+        <div><label htmlFor="pt-nickname">{t.nickLabel}</label><input id="pt-nickname" ref={nickRef} value={name} onChange={e=>setName(e.target.value)} autoComplete="nickname" maxLength={24} placeholder={t.nickPlaceholder} required={!!intent} enterKeyHint={intent==='join'?'next':'go'} onKeyDown={e=>{if(e.key==='Enter'&&intent==='join'){e.preventDefault();codeRef.current?.focus();codeRef.current?.scrollIntoView({block:'nearest'});}}}/></div>
+        {intent==='join'&&<div><label htmlFor="pt-room-code">{t.codeLabel}</label><RoomCodeInput id="pt-room-code" ref={codeRef} value={joinCode} onChange={v=>{setJoinCode(v);if(validRoomCode(v))setCodeError(false);}} invalid={codeError} describedBy="pt-code-hint" onEnter={()=>enter()}/><small id="pt-code-hint" className={`pt-code-hint ${codeError?'is-error':''}`} role={codeError?'alert':undefined}>{codeError?t.codeIncomplete(5-joinCode.length):t.codeHint}</small></div>}
         {intent==='create'&&mode==='story'&&<div className="pt-rounds"><div><label htmlFor="pt-rounds">{t.roundsLabel}</label><small>{t.roundsSmall}</small></div><select id="pt-rounds" value={rounds} onChange={e=>setRounds(Number(e.target.value))}>{[1,2,3,4,5,6,7,8,9,10].map(n=><option key={n}>{n}</option>)}</select></div>}
-        {!intent?<p className="pt-invite-note">{t.inviteNote}</p>:<button className="pt-primary" disabled={busy}>{busy?t.opening:intent==='create'?t.createRoom:t.joinParty}<ArrowRight size={19}/></button>}
+        {intent&&<button className="pt-primary" disabled={busy||!name.trim()}>{busy?t.opening:intent==='create'?t.createRoom:t.joinParty}<ArrowRight size={19}/></button>}
       </form></>}{auth&&<p className="pt-status">{t.reconnecting}</p>}</section>}
       {screen==='room'&&game&&<>
         {!playing&&<div className="pt-room-top"><span>{t.modes[game.mode].name} <i> / {game.status==='lobby'?t.gathering:game.status==='ended'?t.finalPage:roundLabel()}</i></span><button className="pt-code-tag" onClick={share}><LinkIcon size={14}/>{code}</button></div>}
-        {game.status==='lobby'?<section className="pt-lobby"><div><div className="pt-kicker">{t.lobbyKicker}</div><h1>{t.lobbyTitle}</h1><p>{t.lobbyText}<br/>{game.mode==='trap'?t.lobbyTrap:t.lobbyStory(game.rounds)}</p><div className="pt-invite"><span>{t.yourCode}</span><strong dir="ltr">{code}</strong><div><button className="pt-text-button" onClick={async()=>{try{await navigator.clipboard.writeText(code);setNotice(t.codeCopied);}catch{setNotice(t.yourCodeIs(code));}}}><Copy size={15}/> {t.copyCode}</button><button className="pt-text-button" onClick={share}><LinkIcon size={15}/> {t.shareInvite}</button></div></div></div><div className="pt-paper pt-guestbook"><div className="pt-paper-heading"><h2>{t.guestList}</h2><span>{game.players.length}/8</span></div>{playerList}{host&&game.dev&&game.players.length<8&&<button className="pt-add-test" disabled={busy} onClick={()=>action('add_test')}><Plus size={17}/> {t.addTest}</button>}{host?<button className="pt-primary" disabled={game.players.length<2||busy} onClick={()=>action('start')}>{t.start} <ArrowRight size={18}/></button>:<p className="pt-waiting">{t.hostWillStart(playerName(game.host))}</p>}{game.players.length<2&&<small className="pt-hint">{t.needFriend}</small>}</div></section>:<section className="pt-play">
+        {game.status==='lobby'?<section className="pt-lobby">
+          <div className="pt-lobby-head"><h1>{t.lobbyTitle}</h1><p>{game.mode==='trap'?t.lobbyTrap:t.lobbyStory(game.rounds)}</p></div>
+          <div className="pt-paper pt-guestbook"><div className="pt-paper-heading"><h2>{t.guestList}</h2><span>{game.players.length}/8</span></div>{host?<button className="pt-primary" disabled={game.players.length<2||busy} onClick={()=>action('start')}>{t.start} <ArrowRight size={18}/></button>:<p className="pt-waiting">{t.hostWillStart(playerName(game.host))}</p>}{game.players.length<2&&<small className="pt-hint">{t.needFriend}</small>}{playerList}{host&&game.dev&&game.players.length<8&&<button className="pt-add-test" disabled={busy} onClick={()=>action('add_test')}><Plus size={17}/> {t.addTest}</button>}</div>
+          <div className="pt-invite"><p className="pt-invite-title">{t.lobbyText}</p><div className="pt-invite-code"><span>{t.yourCode}</span><strong dir="ltr">{code}</strong></div><div className="pt-invite-actions"><button className="pt-ghost" onClick={async()=>{try{await navigator.clipboard.writeText(code);setNotice(t.codeCopied);}catch{setNotice(t.yourCodeIs(code));}}}><Copy size={15}/> {t.copyCode}</button><button className="pt-ghost" onClick={share}><LinkIcon size={15}/> {t.shareInvite}</button></div></div>
+        </section>
+        :<section className="pt-play">
           <div className="pt-play-bar">
             <button className="pt-icon-button" aria-label={t.back} onClick={exit}><ArrowLeft size={18}/></button>
             <div className="pt-play-status">
@@ -186,8 +213,8 @@ export default function PlotTwist({onContinue}) {
             {host&&game.mode==='trap'&&game.status==='active'&&<button className="pt-end" disabled={busy} onClick={endStory}>{t.endStory}</button>}
             <button className="pt-code-tag" dir="ltr" onClick={share} aria-label={t.shareInvite}><LinkIcon size={13}/>{code}</button>
           </div>
-          {game.mode==='trap'&&game.status==='active'&&<button className="pt-secret-chip" onClick={()=>setShowTarget(!showTarget)} aria-label={showTarget?t.hideSecret:t.showSecret}>
-            {showTarget?<EyeOff size={15}/>:<Eye size={15}/>}<span>{t.secretWord}</span><strong>{showTarget?game.target?.toUpperCase():t.peek}</strong>
+          {game.mode==='trap'&&game.status==='active'&&<button className="pt-secret-chip" onClick={()=>setReveal(true)} aria-label={t.showSecret}>
+            <Eye size={15}/><span>{t.secretWord}</span><strong>{t.peek}</strong>
           </button>}
           <div className={`pt-page ${myTurn?'is-mine':''}`} onClick={()=>{if(myTurn)inputRef.current?.focus();}}>
             <span className="pt-page-label">{t.soFar}</span>
@@ -216,7 +243,12 @@ export default function PlotTwist({onContinue}) {
       {(error||notice)&&<div className={`pt-message ${error?'pt-message-error':''}`} role={error?'alert':'status'}>{error||notice}<button aria-label="×" onClick={()=>{setError('');setNotice('');}}><X size={16}/></button></div>}
       {!playing&&<footer className="pt-site-footer">PLOT TWIST <span>{t.footer[0]}</span><span>{t.footer[1]}</span></footer>}
     </div>
-    {reveal&&game?.target&&<div className="pt-modal" role="dialog" aria-modal="true" aria-labelledby="pt-reveal-title"><div className="pt-reveal-card"><span className="pt-small-label">{t.revealLabel}</span><Sparkles size={38}/><h2 id="pt-reveal-title">{t.revealTitle}</h2><strong>{game.target.toUpperCase()}</strong><p>{t.revealText}</p><button className="pt-primary" autoFocus onClick={()=>{setReveal(false);inputRef.current?.focus();}}>{t.sealed} <Check size={18}/></button></div></div>}
+    {reveal&&game?.target&&<div className="pt-modal" role="dialog" aria-modal="true" aria-labelledby="pt-reveal-title"><div className="pt-reveal-card"><span className="pt-small-label">{t.revealLabel}</span><Sparkles size={38}/><h2 id="pt-reveal-title">{t.revealTitle}</h2>
+      <div className="pt-reveal-word"><strong aria-live="polite">{game.target.toUpperCase()}</strong>
+        {game.status==='active'&&game.mode==='trap'&&(()=>{const used=game.rerolls_used??0,max=game.rerolls_max??3,locked=used>=max;return <button type="button" className={`pt-reroll ${locked?'is-locked':''} ${swapping?'is-busy':''}`} disabled={locked||swapping} aria-busy={swapping||undefined} onClick={swapWord} aria-label={locked?t.rerollLocked(max):t.rerollLabel(used,max)}>{locked?<Lock size={16}/>:<RefreshCw size={17}/>}<span className="pt-reroll-count" dir="ltr">{used}/{max}</span></button>;})()}
+      </div>
+      {swapError&&<p className="pt-reroll-error" role="alert">{swapError}</p>}
+      <p>{t.revealText}</p><button className="pt-primary" autoFocus onClick={()=>{setReveal(false);inputRef.current?.focus();}}>{t.sealed} <Check size={18}/></button></div></div>}
     {trap&&<div className="pt-modal pt-trap-modal" role="dialog" aria-modal="true" aria-labelledby="pt-trap-title"><div className="pt-trap-card"><span className="pt-small-label">{t.trapLabel}</span><h2 id="pt-trap-title">{t.trapTitle}</h2>{trap.map(x=><div key={x.id}><strong>“{x.word.toUpperCase()}”</strong><p>{t.saidWord(playerName(x.writer))}<br/><b>{t.scores(playerName(x.owner))}</b></p></div>)}<p className="pt-fine">{t.freshWords}</p><button className="pt-primary" autoFocus onClick={()=>setTrap(null)}>{t.backToStory} <ArrowRight size={18}/></button></div></div>}
     {langNote&&game&&!reveal&&<div className="pt-modal" role="dialog" aria-modal="true" aria-labelledby="pt-lang-title"><div className="pt-reveal-card"><span className="pt-small-label">{t.langNoteLabel}</span><h2 id="pt-lang-title">{t.langNoteTitle}</h2><p>{t.langNoteText}</p><button className="pt-primary" autoFocus onClick={()=>setLangNote(false)}>{t.gotIt} <Check size={18}/></button></div></div>}
   </main>;

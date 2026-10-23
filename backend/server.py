@@ -2425,6 +2425,10 @@ app.include_router(plot_twist_router(lambda: supa, _q))
 from emoji_rooftop_api import router as emoji_rooftop_router
 app.include_router(emoji_rooftop_router(lambda: supa, _q, require_admin))
 
+# Letter TV: two televisions, one letter each; the host's phone is the remote.
+from letter_tv_api import router as letter_tv_router
+app.include_router(letter_tv_router(lambda: supa, _q))
+
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,

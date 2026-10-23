@@ -8,6 +8,8 @@ const PlotTwist = lazy(() => import("../plotTwist/PlotTwist"));
 
 const EmojiRooftop = lazy(() => import("../emojiRooftop/EmojiRooftop"));
 
+const LetterTV = lazy(() => import("../letterTv/LetterTV"));
+
 const BaccaratAdventureEntry = lazy(() => import("../baccaratAdventure/BaccaratAdventureEntry"));
 
 // Rollback switch: set to false and "The Baccarat Hunt" card opens the classic
@@ -24,5 +26,6 @@ export const miniGames = [
   { id: "shopping-balance", name: "Shopping Balance", description: "Oxford Street, too many bags. When Shoug tips, tap the other way. Survive 45 seconds.", component: ShoppingBalance },
   { id: "emoji-rooftop", name: "Emoji Rooftop", description: "Night rooftop, party table, one tablet going around. Guess the movie, country or food from the emojis and shout it out. English or Arabic. Play alone or mirror it on every phone.", component: EmojiRooftop },
   { id: "plot-twist", name: "PLOT TWIST", description: "Experimental · A sunset rooftop, your friends, and one ridiculous story. Story Time or Word Trap, in English or Arabic. 2–8 players.", component: PlotTwist },
+  { id: "letter-tv", name: "Letter TV", description: "Two retro TVs, two random letters. Shout an answer first. Play on one phone, or open a room so every phone shows the same letters.", component: LetterTV },
   { id: "baccarat-classic", name: "The Baccarat Hunt: Classic", description: "The original one-screen perfume dash.", component: BaccaratHunt, hidden: true },
 ];

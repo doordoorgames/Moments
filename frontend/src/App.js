@@ -17,6 +17,7 @@ import SoloMiniGame from "@/components/miniGames/MiniGames";
 
 const PlotTwist = lazy(() => import("@/components/plotTwist/PlotTwist"));
 const EmojiRooftop = lazy(() => import("@/components/emojiRooftop/EmojiRooftop"));
+const LetterTV = lazy(() => import("@/components/letterTv/LetterTV"));
 
 const BaccaratAdventureRoom = lazy(() => import("@/components/baccaratAdventure/BaccaratAdventureRoom"));
 
@@ -35,6 +36,7 @@ function StatusBarTheme() {
             const path = window.location.pathname;
             const palette = path.includes('plot-twist') ? '#352039'
                 : path.includes('emoji-rooftop') ? '#120c28'
+                : path.includes('letter-tv') ? '#1d1626'
                 : path.includes('baccarat') ? '#000000'
                 : path.includes('shoug') ? '#6E1F35'
                 : path.includes('admin') ? '#FBF4E4'
@@ -60,6 +62,7 @@ function App() {
                     <Route path="/" element={<Landing />} />
                     <Route path="/mini-games/baccarat-hunt/room/:code" element={<Suspense fallback={null}><BaccaratAdventureRoom /></Suspense>} />
                     <Route path="/mini-games/emoji-rooftop/room/:code" element={<Suspense fallback={null}><EmojiRooftop /></Suspense>} />
+                    <Route path="/mini-games/letter-tv/room/:code" element={<Suspense fallback={null}><LetterTV /></Suspense>} />
                     <Route path="/mini-games/plot-twist/room/:code" element={<Suspense fallback={null}><PlotTwist /></Suspense>} />
                     <Route path="/mini-games/:gameId" element={<SoloMiniGame />} />
                     <Route path="/visual-test" element={<Navigate to="/" replace />} />

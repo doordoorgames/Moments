@@ -20,8 +20,8 @@ jobs:
           cache: pip
           cache-dependency-path: backend/requirements.txt
       - run: pip install -r requirements.txt pytest-xdist
-      - run: python -m compileall -q server.py adventure_engine.py adventure_map.py adventure_config.py plot_twist.py plot_twist_api.py emoji_rooftop.py emoji_rooftop_api.py emoji_english.py emoji_arabic.py
-      - run: python -m pytest -q test_supreme_mode.py test_solo_voting.py test_baccarat_adventure.py test_baccarat_server.py test_plot_twist.py test_emoji_rooftop.py -n 0
+      - run: python -m compileall -q server.py adventure_engine.py adventure_map.py adventure_config.py plot_twist.py plot_twist_api.py emoji_rooftop.py emoji_rooftop_api.py emoji_english.py emoji_arabic.py letter_tv.py letter_tv_api.py
+      - run: python -m pytest -q test_supreme_mode.py test_solo_voting.py test_baccarat_adventure.py test_baccarat_server.py test_plot_twist.py test_emoji_rooftop.py test_letter_tv.py -n 0
 
   frontend-build:
     runs-on: ubuntu-latest

@@ -5,6 +5,7 @@ import {ArrowLeft, ArrowRight, BookOpen, Check, Copy, Eye, Link as LinkIcon, Loc
 import {BACKEND_URL} from '@/lib/api';
 import Rooftop from './Rooftop';
 import RoomCodeInput from './RoomCodeInput';
+import RoomQR from './RoomQR';
 import {normalizeCode, validRoomCode} from './roomCode';
 import './plotTwist.css';
 
@@ -21,7 +22,8 @@ export default function PlotTwist({onContinue}) {
   const [params] = useSearchParams();
   // The host chooses English or Arabic before anything else; joiners follow the room.
   const [screen,setScreen] = useState(routeCode?'connect':'language');
-  const [lang,setLang] = useState('en');
+  // A scanned invite carries the room's language so the join screen already reads right.
+  const [lang,setLang] = useState(params.get('lang')==='ar'?'ar':'en');
   const [langNote,setLangNote] = useState(false);
   const [mode,setMode] = useState('story');
   const [rounds,setRounds] = useState(3);
@@ -156,9 +158,12 @@ export default function PlotTwist({onContinue}) {
     }catch(e){setSwapError(e.message);refresh();}finally{swapPending.current=false;setSwapping(false);}
   }
   async function share() {
-    const url=`${window.location.origin}/mini-games/plot-twist/room/${code}`;
+    const url=inviteUrl;
     try {if(navigator.share)await navigator.share({title:t.shareTitle,url});else{await navigator.clipboard.writeText(url);setNotice(t.linkCopied);}}catch(e){if(e.name!=='AbortError')setNotice(t.shareThis(url));}
   }
+  const inviteUrl=`${window.location.origin}/mini-games/plot-twist/room/${code}?lang=${game?.lang || lang}`;
+  // Arrived from a scanned code or shared link: only the nickname is left to fill.
+  const linkJoin=!!routeCode&&!auth;
   const playerName=id=>game?.players.find(p=>p.id===id)?.name || t.aFriend;
   const playing=screen==='room'&&game&&game.status!=='lobby';
   const trapMood=(screen==='room'?game?.mode:screen==='connect'?mode:null)==='trap';
@@ -184,14 +189,14 @@ export default function PlotTwist({onContinue}) {
         <button className="pt-mode-card pt-mode-trap pt-lang-ar" dir="rtl" lang="ar" onClick={()=>pickLang('ar')}><span className="pt-mode-number">ع /</span><h2>العربية</h2><p>اللعبة كلها بالعربي، على كل تلفون داخل الغرفة.</p><span className="pt-mode-meta">العب بالعربي <ArrowRight size={20}/></span></button>
       </div></section>}
       {screen==='modes'&&<section className="pt-selection"><div className="pt-kicker">{t.modesKicker}</div><h1>{t.modesTitle}</h1><div className="pt-mode-grid">{Object.entries(modes).map(([id,m])=><button className={`pt-mode-card pt-mode-${id}`} key={id} onClick={()=>{setMode(id);setScreen('connect');setIntent(null);}}><span className="pt-mode-number">0{id==='story'?1:2} /</span><m.icon size={35} strokeWidth={1.3}/><h2>{t.modes[id].name}</h2><p>{t.modes[id].desc}</p><span className="pt-mode-meta">{t.modes[id].meta} <ArrowRight size={20}/></span></button>)}</div><p className="pt-fine">{t.modesFine}</p></section>}
-      {screen==='connect'&&<section className="pt-connect"><div className="pt-kicker">{t.connectKicker}</div><h1>{t.connectTitle(!!auth)}</h1>{!auth&&<>
-        <div className="pt-choice" role="group" aria-label={t.chooseLabel}>
+      {screen==='connect'&&<section className="pt-connect"><div className="pt-kicker">{linkJoin?t.linkKicker:t.connectKicker}</div><h1>{linkJoin?t.linkTitle:t.connectTitle(!!auth)}</h1>{!auth&&<>
+        {!linkJoin&&<div className="pt-choice" role="group" aria-label={t.chooseLabel}>
           <button type="button" className={`pt-choice-button ${intent==='create'?'is-selected':''}`} aria-pressed={intent==='create'} onClick={()=>chooseIntent('create')}><span className="pt-choice-icon"><Plus size={20}/></span><span className="pt-choice-text">{t.create}<small>{t.createSmall}</small></span>{intent==='create'&&<Check className="pt-choice-check" size={18}/>}</button>
           <button type="button" className={`pt-choice-button ${intent==='join'?'is-selected':''}`} aria-pressed={intent==='join'} onClick={()=>chooseIntent('join')}><span className="pt-choice-icon"><LogIn size={20}/></span><span className="pt-choice-text">{t.join}<small>{t.joinSmall}</small></span>{intent==='join'&&<Check className="pt-choice-check" size={18}/>}</button>
-        </div>
-        {!intent&&<p className="pt-choice-note">{t.inviteNote}</p>}
+        </div>}
+        {!intent&&!linkJoin&&<p className="pt-choice-note">{t.inviteNote}</p>}
         <form className="pt-paper pt-form" hidden={!intent} onSubmit={enter} noValidate>
-        <div><label htmlFor="pt-nickname">{t.nickLabel}</label><input id="pt-nickname" ref={nickRef} value={name} onChange={e=>setName(e.target.value)} autoComplete="nickname" maxLength={24} placeholder={t.nickPlaceholder} required={!!intent} enterKeyHint={intent==='join'?'next':'go'} onKeyDown={e=>{if(e.key==='Enter'&&intent==='join'){e.preventDefault();codeRef.current?.focus();codeRef.current?.scrollIntoView({block:'nearest'});}}}/></div>
+        <div><label htmlFor="pt-nickname">{t.nickLabel}</label><input id="pt-nickname" ref={nickRef} autoFocus={linkJoin} value={name} onChange={e=>setName(e.target.value)} autoComplete="nickname" maxLength={24} placeholder={t.nickPlaceholder} required={!!intent} enterKeyHint={intent==='join'?'next':'go'} onKeyDown={e=>{if(e.key==='Enter'&&intent==='join'){e.preventDefault();codeRef.current?.focus();codeRef.current?.scrollIntoView({block:'nearest'});}}}/></div>
         {intent==='join'&&<div><label htmlFor="pt-room-code">{t.codeLabel}</label><RoomCodeInput id="pt-room-code" ref={codeRef} value={joinCode} onChange={v=>{setJoinCode(v);if(validRoomCode(v))setCodeError(false);}} invalid={codeError} describedBy="pt-code-hint" onEnter={()=>enter()}/><small id="pt-code-hint" className={`pt-code-hint ${codeError?'is-error':''}`} role={codeError?'alert':undefined}>{codeError?t.codeIncomplete(5-joinCode.length):t.codeHint}</small></div>}
         {intent==='create'&&mode==='story'&&<div className="pt-rounds"><div><label htmlFor="pt-rounds">{t.roundsLabel}</label><small>{t.roundsSmall}</small></div><select id="pt-rounds" value={rounds} onChange={e=>setRounds(Number(e.target.value))}>{[1,2,3,4,5,6,7,8,9,10].map(n=><option key={n}>{n}</option>)}</select></div>}
         {intent&&<button className="pt-primary" disabled={busy||!name.trim()}>{busy?t.opening:intent==='create'?t.createRoom:t.joinParty}<ArrowRight size={19}/></button>}
@@ -201,7 +206,7 @@ export default function PlotTwist({onContinue}) {
         {game.status==='lobby'?<section className="pt-lobby">
           <div className="pt-lobby-head"><h1>{t.lobbyTitle}</h1><p>{game.mode==='trap'?t.lobbyTrap:t.lobbyStory(game.rounds)}</p></div>
           <div className="pt-paper pt-guestbook"><div className="pt-paper-heading"><h2>{t.guestList}</h2><span>{game.players.length}/8</span></div>{host?<button className="pt-primary" disabled={game.players.length<2||busy} onClick={()=>action('start')}>{t.start} <ArrowRight size={18}/></button>:<p className="pt-waiting">{t.hostWillStart(playerName(game.host))}</p>}{game.players.length<2&&<small className="pt-hint">{t.needFriend}</small>}{playerList}{host&&game.dev&&game.players.length<8&&<button className="pt-add-test" disabled={busy} onClick={()=>action('add_test')}><Plus size={17}/> {t.addTest}</button>}</div>
-          <div className="pt-invite"><p className="pt-invite-title">{t.lobbyText}</p><div className="pt-invite-code"><span>{t.yourCode}</span><strong dir="ltr">{code}</strong></div><div className="pt-invite-actions"><button className="pt-ghost" onClick={async()=>{try{await navigator.clipboard.writeText(code);setNotice(t.codeCopied);}catch{setNotice(t.yourCodeIs(code));}}}><Copy size={15}/> {t.copyCode}</button><button className="pt-ghost" onClick={share}><LinkIcon size={15}/> {t.shareInvite}</button></div></div>
+          <div className="pt-invite"><p className="pt-invite-title">{t.lobbyText}</p>{host&&<div className="pt-invite-qr"><RoomQR url={inviteUrl} label={t.qrLabel(code)}/><span>{t.qrHint}</span></div>}<div className="pt-invite-code"><span>{t.yourCode}</span><strong dir="ltr">{code}</strong></div><div className="pt-invite-actions"><button className="pt-ghost" onClick={async()=>{try{await navigator.clipboard.writeText(code);setNotice(t.codeCopied);}catch{setNotice(t.yourCodeIs(code));}}}><Copy size={15}/> {t.copyCode}</button><button className="pt-ghost" onClick={share}><LinkIcon size={15}/> {t.shareInvite}</button></div></div>
         </section>
         :<section className="pt-play">
           <div className="pt-play-bar">

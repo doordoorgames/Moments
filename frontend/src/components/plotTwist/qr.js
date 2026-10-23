@@ -31,7 +31,8 @@ function ecc(data, degree) {
 }
 
 function codewords(text) {
-  const bytes = Array.from(new TextEncoder().encode(text));
+  // UTF-8 without TextEncoder (the Jest/jsdom test environment does not provide it).
+  const bytes = Array.from(encodeURIComponent(text).replace(/%([0-9A-F]{2})|./gi, (m, h) => String.fromCharCode(h ? parseInt(h, 16) : m.charCodeAt(0))), ch => ch.charCodeAt(0));
   for (let v = 1; v <= 10; v++) {
     const [ecLen, b1, d1, b2, d2] = M_BLOCKS[v];
     const capacity = b1 * d1 + b2 * d2, countBits = v < 10 ? 8 : 16;

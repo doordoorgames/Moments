@@ -1,0 +1,66 @@
+@import url('https://fonts.googleapis.com/css2?family=Archivo+Black&family=DM+Sans:wght@500;700;800&display=swap');
+
+/* Full-screen, landscape. The stage keeps the wallpaper's exact ratio and fits inside the
+   safe area, so neither TV nor the button is ever cropped; the margins show a soft blur of the art. */
+.ltv-app{position:fixed;inset:0;overflow:hidden;background:#1d1626;color:#141014;font-family:'DM Sans',system-ui,sans-serif;display:grid;place-items:center;
+  padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent}
+.ltv-app *{box-sizing:border-box}
+.ltv-backdrop{position:absolute;inset:-40px;background:center/cover no-repeat;filter:blur(28px) brightness(.7);transform:scale(1.05)}
+.ltv-stage{position:relative;aspect-ratio:var(--ltv-ratio,16 / 9);width:min(100%, calc((100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom)) * var(--ltv-ar,1.7778)));container-type:size}
+.ltv-wallpaper{position:absolute;inset:0;width:100%;height:100%;display:block;pointer-events:none}
+
+/* Letters sit in the exact centre of each screen (coordinates live in screens.js). */
+.ltv-screen{position:absolute;display:grid;place-items:center;pointer-events:none}
+.ltv-screen.is-placeholder{background:#f3ead2;border-radius:6% / 9%;box-shadow:inset 0 0 0 .5cqh #0002}
+.ltv-letter{font:900 var(--ltv-letter,30cqh)/1 'Archivo Black','Arial Black',Impact,system-ui,sans-serif;font-synthesis-weight:none;color:#111;text-transform:uppercase;letter-spacing:0;
+  -webkit-text-stroke:.35cqh #111;transform:translateY(2%)}
+.ltv-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+
+/* One button: coral, thick black outline, cartoon shadow. */
+.ltv-next{position:absolute;transform:translateX(-50%);min-width:120px;min-height:max(56px,10cqh);padding:0 3cqh;border:max(3px,.6cqh) solid #111;border-radius:max(14px,2.4cqh);
+  background:#F4A582;color:#111;font:400 max(22px,5cqh)/1 'Archivo Black','Arial Black',sans-serif;letter-spacing:.06em;box-shadow:0 max(5px,1cqh) 0 #111;cursor:pointer;touch-action:manipulation}
+.ltv-next:active:not(:disabled){transform:translateX(-50%) translateY(max(4px,.8cqh));box-shadow:0 max(1px,.2cqh) 0 #111}
+.ltv-next:disabled{filter:saturate(.7)}
+.ltv-next:focus-visible{outline:3px solid #fff;outline-offset:4px}
+
+/* Small corner controls stay out of the art. */
+.ltv-corner{position:absolute;top:calc(env(safe-area-inset-top) + 10px);z-index:3;display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:44px;min-width:44px;
+  border:2px solid #111;background:#fff6e5e6;color:#111;border-radius:999px;font:800 12px/1 'DM Sans',sans-serif;letter-spacing:.08em;box-shadow:0 3px 0 #111;cursor:pointer}
+.ltv-back{left:calc(env(safe-area-inset-left) + 10px)}
+.ltv-online{right:calc(env(safe-area-inset-right) + 10px);padding:0 16px}
+.ltv-online b{font-variant-numeric:tabular-nums;letter-spacing:.12em}
+
+.ltv-sheet{position:absolute;inset:0;z-index:5;background:#120c1acc;display:grid;place-items:center;padding:16px;overflow:auto}
+.ltv-card{position:relative;width:min(420px,100%);background:#fff6e5;border:3px solid #111;border-radius:18px;box-shadow:0 6px 0 #111;padding:22px 20px 18px;display:grid;gap:12px;text-align:center}
+.ltv-card h2{margin:0;font:400 24px/1.1 'Archivo Black','Arial Black',sans-serif}
+.ltv-card p{margin:0;font-size:14px;line-height:1.45;color:#3a2f36}
+.ltv-close{position:absolute;top:8px;right:8px;width:44px;height:44px;border:0;background:none;color:#111;cursor:pointer}
+.ltv-action{min-height:52px;border:3px solid #111;border-radius:14px;background:#F4A582;color:#111;font:400 16px/1 'Archivo Black','Arial Black',sans-serif;letter-spacing:.05em;box-shadow:0 4px 0 #111;cursor:pointer}
+.ltv-action-light{background:#fff}
+.ltv-action:disabled{opacity:.5;cursor:default}
+.ltv-join{display:grid;gap:10px;justify-items:center;margin-top:4px}
+.ltv-join label{font-size:11px;font-weight:800;letter-spacing:.12em}
+.ltv-join .ltv-action{width:100%}
+.ltv-join .pt-code-boxes{width:100%}
+.ltv-qr{display:grid;place-items:center}
+.ltv-qr .pt-qr{width:min(180px,40vh);height:min(180px,40vh)}
+.ltv-text{border:0;background:none;color:#5b4552;font-size:13px;text-decoration:underline;min-height:44px;cursor:pointer}
+.ltv-message{position:absolute;z-index:6;left:50%;bottom:calc(env(safe-area-inset-bottom) + 12px);transform:translateX(-50%);display:flex;align-items:center;gap:10px;max-width:calc(100% - 32px);
+  background:#fff6e5;border:2px solid #111;border-radius:12px;padding:8px 8px 8px 14px;font-size:13px;font-weight:700;box-shadow:0 3px 0 #111}
+.ltv-message button{border:0;background:none;width:32px;height:32px;cursor:pointer}
+
+/* Five-box code input reuses Plot Twist's component; give it this game's look. */
+.ltv-join .pt-code-boxes{position:relative;display:grid;grid-template-columns:repeat(5,1fr);gap:8px;max-width:300px;direction:ltr}
+.ltv-join .pt-code-field{position:absolute;inset:0;z-index:2;width:100%;height:100%;border:0;background:transparent;color:transparent;-webkit-text-fill-color:transparent;caret-color:transparent;font-size:16px;outline:none}
+.ltv-join .pt-code-box{display:grid;place-items:center;height:52px;border:3px solid #111;border-radius:10px;background:#fff;font:400 24px/1 'Archivo Black',sans-serif}
+.ltv-join .pt-code-boxes.is-focused .pt-code-box.is-active{background:#ffe3d3}
+
+/* Phones held upright. Desktop and TV never see this. */
+.ltv-rotate{display:none}
+@media (orientation:portrait) and (pointer:coarse) and (max-width:820px){
+  .ltv-rotate{position:absolute;inset:0;z-index:9;display:grid;place-items:center;background:#1d1626;color:#fff6e5;text-align:center;cursor:pointer}
+  .ltv-rotate strong{display:block;margin-top:22px;font:400 22px/1.2 'Archivo Black','Arial Black',sans-serif;letter-spacing:.06em}
+  .ltv-rotate-icon{display:block;margin:auto;width:46px;height:78px;border:4px solid #fff6e5;border-radius:10px;animation:ltv-turn 2.2s ease-in-out infinite}
+}
+@keyframes ltv-turn{0%,30%{transform:rotate(0)}60%,100%{transform:rotate(-90deg)}}
+@media (prefers-reduced-motion:reduce){.ltv-rotate-icon{animation:none;transform:rotate(-90deg)}}

@@ -57,7 +57,7 @@ def new_game(name, mode, rounds, dev=False, lang='en'):
     elif mode != 'story' or not 1 <= rounds <= 10:
         raise GameError("Choose a mode and 1–10 rounds.", "اختار نوع اللعبة ومن 1 إلى 10 جولات.")
     g = dict(mode=mode, rounds=rounds, dev=dev, lang=lang, status='lobby', players=[], contributions=[],
-             targets={}, used=[], traps=[], turn=0, version=0, run=str(uuid.uuid4()))
+             targets={}, secrets={}, used=[], traps=[], turn=0, version=0, run=str(uuid.uuid4()))
     host = add_player(g, name)
     g['host'] = host['id']
     return g, host
@@ -83,13 +83,62 @@ def target(g, pid):
     word = secrets.choice(options)
     g['used'].append(word)
     g['targets'][pid] = word
+    # Every freshly dealt word is a new assignment with its own reroll allowance.
+    g.setdefault('secrets', {})[pid] = dict(id=str(uuid.uuid4()), used=0, seen=[word], requests=[])
+
+# Word Trap: each secret-word assignment may be swapped for a new word this many times.
+REROLLS = 3
+
+def secret(g, pid):
+    """The player's current assignment. Rooms saved before rerolls existed get one lazily."""
+    entry = g.setdefault('secrets', {}).get(pid)
+    if entry is None or g['targets'].get(pid) not in entry['seen']:
+        entry = dict(id=str(uuid.uuid4()), used=0, seen=[g['targets'][pid]], requests=[])
+        g['secrets'][pid] = entry
+    return entry
+
+def reroll(g, pid, secret_id, used, request_id):
+    """Swap one player's secret word. Only that player's allowance changes."""
+    if g['mode'] != 'trap' or g['status'] != 'active' or pid not in g['targets']:
+        raise GameError("Word swaps are only available while Word Trap is running.",
+                        "تبديل الكلمة بس وفخ الكلمة شغال.")
+    if not request_id or len(request_id) > 80:
+        raise GameError("A request ID is required.")
+    entry = secret(g, pid)
+    # A retry of a swap that already went through changes nothing.
+    if request_id in entry['requests']:
+        return
+    if secret_id and secret_id != entry['id']:
+        raise GameError("Your secret word just changed. Take a look at the new one.",
+                        "كلمتك السرية تغيرت توها. شوف الجديدة.")
+    if entry['used'] >= REROLLS:
+        raise GameError(f"You have used all {REROLLS} swaps for this word.",
+                        f"خلصت الـ {REROLLS} تبديلات لهالكلمة.")
+    if used != entry['used']:
+        # A second tap sent before the first swap came back: never spend two.
+        raise GameError("Your word was already swapped. Take a look at the new one.",
+                        "كلمتك تبدلت خلاص. شوف الجديدة.")
+    live = {w for owner, w in g['targets'].items() if owner != pid}
+    seen = set(entry['seen'])
+    options = [w for w in pool(g) if w not in g['used'] and w not in live and w not in seen]
+    if not options:
+        options = [w for w in pool(g) if w not in live and w not in seen]
+    if not options:
+        raise GameError("There are no fresh words left to swap in.", "ما بقى كلمات جديدة للتبديل.")
+    word = secrets.choice(options)
+    g['used'].append(word)
+    g['targets'][pid] = word
+    entry['seen'].append(word)
+    entry['requests'].append(request_id)
+    entry['used'] += 1
+    g['version'] += 1
 
 def start(g):
     if len(g['players']) < 2:
         raise GameError("Invite at least one friend, or add a test player.", "اعزم صديق واحد على الأقل.")
     if g['status'] == 'active':
         raise GameError("The story is already underway.", "السالفة شغالة.")
-    g.update(status='active', contributions=[], targets={}, used=[], traps=[], turn=0, run=str(uuid.uuid4()))
+    g.update(status='active', contributions=[], targets={}, secrets={}, used=[], traps=[], turn=0, run=str(uuid.uuid4()))
     for p in g['players']:
         p['score'] = 0
         if g['mode'] == 'trap': target(g, p['id'])
@@ -151,7 +200,16 @@ def view(g, pid):
                 players=[{k:p[k] for k in ('id','name','score','simulated')} for p in g['players']],
                 contributions=[{k:c[k] for k in ('player','text')} for c in g['contributions']],
                 traps=copy.deepcopy(g['traps']), turn=g['turn'], version=g['version'], run=g['run'],
-                me=pid, target=g['targets'].get(pid))
+                me=pid, target=g['targets'].get(pid), **secret_view(g, pid))
+
+def secret_view(g, pid):
+    # Only the viewer's own allowance is ever exposed; the words already seen stay server-side.
+    entry = g.get('secrets', {}).get(pid)
+    if not g['targets'].get(pid):
+        return dict(secret_id=None, rerolls_used=0, rerolls_max=REROLLS)
+    if entry is None or g['targets'][pid] not in entry['seen']:
+        return dict(secret_id='', rerolls_used=0, rerolls_max=REROLLS)
+    return dict(secret_id=entry['id'], rerolls_used=entry['used'], rerolls_max=REROLLS)
 
 POOL = list(dict.fromkeys(POOL + """airplane alarm album alley almond ambulance anchor angel ankle ant apartment aquarium arch arm arrow artist attic aunt autumn axe backpack bacon badge bakery bamboo band bank barber barn basket bat bathroom battery bear bed bedroom bee beetle bell belt bench berry bird birthday biscuit boat book bottle bowl box bracelet brain branch bread breakfast brick bridge broom brother bucket building burger bush butter button cabbage cabin cage calendar camel camp canal candy captain car carrot cashier cave ceiling cereal chair chalk chef cherry chest chimney circle city clam classroom cleaner cliff closet clown club coach coat coin collar comb computer concert cook corn corner couch country cousin cow crab cracker crane creek crocodile cucumber cup curtain dancer dawn day desert desk dessert diary dinner doctor doll donkey dream dress drum eagle ear earth earring earthquake egg evening eyebrow face factory fairy fan farm farmer father fence field fire firefighter fish flag flamingo floor flower flute fly fog forest fork fox freezer fridge friend fruit garage gate gem giant gift girl glass glasses glove goat gold golf gorilla grape grass grasshopper gravy gym hair hairbrush hairdresser hall hammer hand handle harbor hawk head headphones heart helicopter helmet hill hippo home homework hook horn hotel house hug iceberg ink insect internet iron ivory jam jar jelly jewel job juice kangaroo kayak key kid kite kitten kiwi knee knife koala lady lake lamb lamp lantern laundry leaf leg lemonade lens leopard light lion lizard loaf lock log lollipop lunch machine magic maid mailbox makeup man map marble market mask mattress medal melon message metal midnight minivan mint money monkey morning mosquito moth motor motorcycle mouse mouth movie mug music nail napkin neck needle net news newspaper night noise noodles nose nut onion opera oven owl oyster paint palace panda paper park parrot pasta path peach peanut pear pen pepper person pet photographer picnic pie pig pigeon planet plate plum police pond pool potato pot present prince printer puddle puppet puzzle quail rabbit raccoon radio rain rat raven recipe record restaurant rice river road rock roof room rope rose rug ruler salad salt sauce sausage scissors sea seal seed sheep shelf shell shirt shoe shop shoulder shower shrimp sidewalk sign sink sister skate skeleton skirt sky sled sleep slide smoke snail snake snowball soda sofa song soup sparrow spoon spring square squid stairs station steak steam stick stone stop storm stove street sugar summer sun sushi swan sweater swing sword table taco tail tape teacher television tent ticket tie toast tomato tooth tower town toy tractor tray tree triangle truck tunnel turkey turnip twins vacuum valley van vase vegetable village visitor voice waiter wall water wave web wheel wind wing winter wire wolf woman wood worm yard year yolk zoo zipper zombie acorn actor actress address adventure afternoon air audience bag bandage barbecue bean beaver bill blossom board bone boots border boss bow breadstick brush bubble buffalo bun bunny cable café cafe canoe cap carnival cauliflower cellar centipede ceremony chain chalkboard cheesecake cheetah chess chestnut chin chipmunk chips chopsticks clothes clover comedy compass conductor coral cornfield crayon cricket cub daisy delivery dough doorknob doughnut drawer driveway dust envelope exit flashlight florist flu footprint fortune fossil fryingpan furniture gallery garbage garlic goose gooseberry gown guest guide hairpin hallway harp harvest hazelnut hedge highway hiker holiday horn hose hotdog hour hyena igloo invitation ivy jackal jazz jeep jellybean judge juggler ketchup land laptop lasagna lava lawyer lettuce librarian license lifeguard lightbulb lime locket lumber lunchbox lynx magazine magician manager marshmallow mechanic meat medicine memory menu mitten model mole mop motel muffin musician mustard nightingale nightstand ninja nurse office olive otter overalls owner painter pajamas pan panther parachute parking parsnip passenger patch pathway peacock pebbles pelican pencil pepperoni petal photocopier picture pilot pin platypus playground plumber poet polar portrait powder prawn president prize professor prune pudding puma purse pyramid quilt radish raft raisin raspberry receipt recorder referee rehearsal reindeer rhino risotto robber robin roller ruby sailor salmon sand sandbox sardine satin scale scarecrow science scientist scoreboard screen screwdriver sculpture secretary shadow shamrock sheet shepherd shovel sibling skateboard ski skull skunk slipper sloth smartphone smoothie snowshoe socket soldier speaker spinach sponge sports stadium stapler sticker stork straw student submarine suit sunglasses sunrise surfboard surgeon tailor tambourine tangerine tank tart temple tennis theater theatre thread thumb timber tissue toddler toolbox toothpaste torch tortoise translator trumpet tulip tuna typewriter uncle uniform vacation valet vanilla vest vet video walrus warehouse washingmachine wasp watch weather weasel weekday weekend wheat wheelchair wish wok woodpecker wool workshop wrist xylophone yak yam yarn zucchini accountant alligator applesauce badminton ballroom barista basement bedbug beehive binoculars blackboard blindfold blueberry bookmark bouncer bowtie boyfriend bride bridesmaid briefcase bubblegum butler campsite cardboard cardigan catfish chandelier charades chocolate clipboard clubhouse coaster coconut coleslaw cork corkscrew countertop courtyard cranberry crepe croissant cruise cucumber dandelion dishwasher doormat dragonfruit dumpling earplug earmuff eggplant elf escalator espresso eyelash family firefly fishbowl fishcake flatbread flowerpot fondue frost frosting garlicbread girlfriend glacier goldfish grandfather grandmother guacamole haircut handkerchief harmonica haystack headband headlight hibiscus honeydew honeymoon horseshoe houseboat hummingbird icicle jellyroll jewelry jigsaw joystick kneecap ladle landmark lavender leotard lifeboat limousine litter locksmith lookout lumberjack macaw manatee mandarin mansion marker marmalade mascara meadow meatball milkshake minibus moccasin mooncake motorboat mountainbike mulberry nachos newsstand oatmeal omelette origami ostrich overcoat parsley paw peppermint persimmon pigtail pomegranate poncho ponytail porcupine pretzel projector pufferfish pumpkinseed pushchair quiche racetrack raincoat ravioli redwood rhubarb riverbank rowboat sailboat sandal sandcastle satellite saxophone scallop seahorse seashell sesame shoebox sidecar snowdrop snowplow sorbet spatula speedboat spoonbill sprinkler starfruit stepladder stopwatch stovetop sundae sunhat suspenders swordfish tablecloth tadpole tapir tarantula teddybear thermometer thimble thunderstorm tiara tinsel toucan tracksuit tricycle truffle turntable tweezers ukulele violets waffle warthog waterslide windmill windshield woodchuck wristwatch yoyo""".split()))
 

@@ -56,4 +56,5 @@ export function letterSize(slots, scale = LETTER_SCALE) {
 export const LETTER_SCALE = 0.7;
 
 // NEXT button, on the seam between the central TVs, below every screen (reference units).
-export const BUTTON = {bottom: 24, width: 280, height: 100};
+// Same footprint as before; height follows the panel art's own shape (900 x 371).
+export const BUTTON = {bottom: 24, width: 280, height: Math.round(280 * 371 / 900)};

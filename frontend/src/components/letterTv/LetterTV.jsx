@@ -1,6 +1,8 @@
 import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {useLocation, useNavigate, useParams} from 'react-router-dom';
-import {ArrowLeft, X} from 'lucide-react';
+import {X} from 'lucide-react';
+import arrowArt from './assets/ui/arrow.webp';
+import panelArt from './assets/ui/panel.webp';
 import {BACKEND_URL} from '@/lib/api';
 import RoomQR from '../plotTwist/RoomQR';
 import RoomCodeInput from '../plotTwist/RoomCodeInput';
@@ -158,12 +160,12 @@ export default function LetterTV({onContinue}) {
           </div>;
         })}
         {isHost && ready && slots.length > 0 && <button type="button" className="ltv-next" disabled={busy}
-          style={{'--x': centreSeam(slots), '--b': BUTTON.bottom, '--w': BUTTON.width, '--h': BUTTON.height}} onClick={next}>NEXT</button>}
+          style={{'--x': centreSeam(slots), '--b': BUTTON.bottom, '--w': BUTTON.width, '--h': BUTTON.height, backgroundImage: `url(${panelArt})`}} onClick={next}><span>NEXT</span></button>}
       </div>
       <span className="ltv-sr" aria-live="polite">{pair ? `Letters ${pair[0]} and ${pair[1]}` : ''}</span>
     </div>
 
-    <button type="button" className="ltv-corner ltv-back" aria-label="Back to mini games" onClick={exit}><ArrowLeft size={20}/></button>
+    <button type="button" className="ltv-back" aria-label="Back to mini games" onClick={exit}><img src={arrowArt} alt="" draggable={false}/></button>
     <button type="button" className="ltv-corner ltv-online" onClick={() => setPanel(code ? 'room' : 'menu')}>{code ? <>ROOM <b dir="ltr">{code}</b></> : 'PLAY ONLINE'}</button>
 
     {panel && <div className="ltv-sheet" role="dialog" aria-modal="true" aria-label="Online room" onClick={e => { if (e.target === e.currentTarget) setPanel(null); }}>

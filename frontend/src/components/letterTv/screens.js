@@ -9,7 +9,7 @@ import teal from './assets/tvs/tv-teal.webp';
 // of that image. Measured from the art; tune these numbers if a letter ever looks off-centre.
 export const TVS = {
   purple: {src: purple, width: 1236, height: 1236, screen: {left: 31.72, top: 31.15, width: 47.65, height: 43.2}},
-  beige: {src: beige, width: 1216, height: 1247, screen: {left: 13.65, top: 15.56, width: 50.0, height: 45.63}},
+  beige: {src: beige, width: 1205, height: 1247, screen: {left: 13.78, top: 15.56, width: 50.46, height: 45.63}},
   blue: {src: blue, width: 1230, height: 1215, screen: {left: 26.02, top: 32.51, width: 51.22, height: 44.53}},
   yellow: {src: yellow, width: 1247, height: 1237, screen: {left: 17.08, top: 16.01, width: 51.64, height: 43.73}},
   orange: {src: orange, width: 1252, height: 1241, screen: {left: 34.58, top: 28.04, width: 51.76, height: 44.24}},

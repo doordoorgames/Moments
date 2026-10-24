@@ -10,7 +10,7 @@ import re
 import secrets
 from collections import defaultdict
 from datetime import datetime, timezone
-from typing import Literal
+from typing import List, Literal, Optional
 
 from cryptography.fernet import Fernet, InvalidToken
 from fastapi import APIRouter, Header, HTTPException, Response, WebSocket, WebSocketDisconnect
@@ -24,6 +24,7 @@ ROOM_CODE_RE = re.compile(r'^\d{5}$')
 
 class Create(BaseModel):
     lang: Literal['en'] = 'en'
+    avoid: Optional[List[str]] = None   # the arrangement this phone just showed; never repeat it
 
 
 class Next(BaseModel):
@@ -83,7 +84,7 @@ def router(db, query):
     @api.post('/rooms')
     async def create(body: Create, response: Response):
         response.headers['Cache-Control'] = 'no-store'
-        g, host = engine.new_room(body.lang)
+        g, host = engine.new_room(body.lang, body.avoid)
         for _ in range(50):
             code = f'{secrets.randbelow(100000):05d}'
             existing = await query(lambda: db().table('rooms').select('code').eq('code', code).maybe_single().execute())

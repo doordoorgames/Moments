@@ -1,9 +1,11 @@
 """Letter TV: two retro televisions, one random letter each. The game never judges answers.
 
-The room only holds the current pair. The host's phone is the remote; every other phone
+The room holds the current pair and the TV arrangement (which of the six TV pictures sits
+where), picked once at creation so every phone in the room draws the same row of TVs. The host's phone is the remote; every other phone
 just watches. A press must name the pair it is replacing (seq), so a double tap or a
 stale screen can never skip a pair.
 """
+import random
 import secrets
 import uuid
 
@@ -12,6 +14,10 @@ VERSION = 1
 ALPHABETS = {'en': [chr(c) for c in range(ord('A'), ord('Z') + 1)]}
 LANGS = tuple(ALPHABETS)
 MAX_SEATS = 24
+# Must match TV_IDS in frontend/src/components/letterTv/screens.js.
+# Arrangement order: [far-left, near-left, centre-left, centre-right, near-right, far-right].
+TV_IDS = ('purple', 'beige', 'blue', 'yellow', 'orange', 'teal')
+_last_tvs = None
 
 
 class GameError(ValueError):
@@ -26,11 +32,37 @@ def new_pair(lang='en', previous=None, rng=secrets.choice):
             return pair
 
 
-def new_room(lang='en'):
+def valid_tvs(tvs):
+    return isinstance(tvs, list) and sorted(tvs) == sorted(TV_IDS)
+
+
+def new_arrangement(avoid=None, rng=secrets.SystemRandom()):
+    """A fresh random order of the six TVs, never the same as `avoid` or the last room's."""
+    global _last_tvs
+    blocked = [a for a in (avoid, _last_tvs) if valid_tvs(a)]
+    for _ in range(20):
+        tvs = list(TV_IDS)
+        rng.shuffle(tvs)
+        if tvs not in blocked:
+            break
+    _last_tvs = tvs
+    return tvs
+
+
+def arrangement(g):
+    """The room's locked arrangement. Rooms created before arrangements existed get a stable one."""
+    if valid_tvs(g.get('tvs')):
+        return g['tvs']
+    tvs = list(TV_IDS)
+    random.Random(g['host']['id']).shuffle(tvs)
+    return tvs
+
+
+def new_room(lang='en', avoid=None):
     if lang not in LANGS:
         raise GameError('Only English letters are available right now.')
     host = dict(id=str(uuid.uuid4()), token=secrets.token_urlsafe(32))
-    return dict(v=VERSION, lang=lang, host=host, seats=[], pair=None, seq=0), host
+    return dict(v=VERSION, lang=lang, host=host, seats=[], pair=None, seq=0, tvs=new_arrangement(avoid)), host
 
 
 def add_seat(g):
@@ -58,4 +90,4 @@ def press(g, seq):
 
 
 def view(g, sid):
-    return dict(lang=g['lang'], pair=g['pair'], seq=g['seq'], host=sid == g['host']['id'])
+    return dict(lang=g['lang'], pair=g['pair'], seq=g['seq'], host=sid == g['host']['id'], tvs=arrangement(g))

@@ -8,15 +8,19 @@ import teal from './assets/tvs/tv-teal.webp';
 // The six TV cut-outs. `screen` is where the cream screen sits inside each image, in percent
 // of that image. Measured from the art; tune these numbers if a letter ever looks off-centre.
 export const TVS = {
-  purple: {src: purple, width: 573, height: 607, screen: {left: 32.63, top: 32.62, width: 45.73, height: 42.67}},
-  beige: {src: beige, width: 501, height: 538, screen: {left: 13.37, top: 14.5, width: 49.7, height: 47.21}},
-  blue: {src: blue, width: 502, height: 533, screen: {left: 26.3, top: 36.21, width: 49.8, height: 44.09}},
-  yellow: {src: yellow, width: 561, height: 569, screen: {left: 19.43, top: 15.99, width: 47.95, height: 40.78}},
-  orange: {src: orange, width: 552, height: 572, screen: {left: 35.69, top: 28.15, width: 50.36, height: 44.76}},
-  teal: {src: teal, width: 520, height: 509, screen: {left: 12.89, top: 14.34, width: 51.93, height: 48.33}},
+  purple: {src: purple, width: 1236, height: 1236, screen: {left: 31.72, top: 31.15, width: 47.65, height: 43.2}},
+  beige: {src: beige, width: 1216, height: 1247, screen: {left: 13.65, top: 15.56, width: 50.0, height: 45.63}},
+  blue: {src: blue, width: 1230, height: 1215, screen: {left: 26.02, top: 32.51, width: 51.22, height: 44.53}},
+  yellow: {src: yellow, width: 1247, height: 1237, screen: {left: 17.08, top: 16.01, width: 51.64, height: 43.73}},
+  orange: {src: orange, width: 1252, height: 1241, screen: {left: 34.58, top: 28.04, width: 51.76, height: 44.24}},
+  teal: {src: teal, width: 1221, height: 1239, screen: {left: 14.25, top: 17.35, width: 53.15, height: 46.49}},
 };
 // Must match TV_IDS in backend/letter_tv.py.
 export const TV_IDS = ['purple', 'beige', 'blue', 'yellow', 'orange', 'teal'];
+// The art faces a direction, so each TV has a side. Facing right -> always on the LEFT half
+// (far-left, near-left, centre-left). Facing left -> always on the RIGHT half. The row mirrors.
+export const LEFT_TVS = ['purple', 'blue', 'orange'];
+export const RIGHT_TVS = ['teal', 'yellow', 'beige'];
 
 // Reference composition: 1080 units tall, x measured from the centre line of the screen.
 // Every TV is the full height and they touch edge to edge. One unit = available height / 1080,

@@ -131,3 +131,10 @@ def test_old_rooms_without_an_arrangement_get_a_stable_one():
     assert E.view(g, 'someone-else')['tvs'] == a
     E.press(g, 0)
     assert E.view(g, g['host']['id'])['tvs'] == a
+
+
+def test_tvs_stay_on_their_side():
+    for _ in range(300):
+        tvs = E.new_arrangement()
+        assert set(tvs[:3]) == set(E.LEFT_TVS) and set(tvs[3:]) == set(E.RIGHT_TVS)
+    assert not E.valid_tvs(['teal', 'blue', 'orange', 'purple', 'yellow', 'beige'])

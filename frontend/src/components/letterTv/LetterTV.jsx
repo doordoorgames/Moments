@@ -147,7 +147,7 @@ export default function LetterTV({onContinue}) {
   const inviteUrl = code ? `${window.location.origin}/mini-games/letter-tv/room/${code}` : '';
   const ready = !code || room;
 
-  return <main className="ltv-app" data-typography-ignore data-status-bar-color="#ffffff"
+  return <main className="ltv-app" data-typography-ignore data-status-bar-color="#1c1619"
     style={slots.length ? {'--centre-w': centreHalfWidth(slots) * 2} : undefined}>
     <div className="ltv-stage">
       <div className="ltv-world">

@@ -3,6 +3,8 @@ import {useLocation, useNavigate, useParams} from 'react-router-dom';
 import {X} from 'lucide-react';
 import arrowArt from './assets/ui/arrow.webp';
 import panelArt from './assets/ui/panel.webp';
+import pillArt from './assets/ui/pill.webp';
+import cardArt from './assets/ui/card.webp';
 import {BACKEND_URL} from '@/lib/api';
 import RoomQR from '../plotTwist/RoomQR';
 import RoomCodeInput from '../plotTwist/RoomCodeInput';
@@ -166,10 +168,10 @@ export default function LetterTV({onContinue}) {
     </div>
 
     <button type="button" className="ltv-back" aria-label="Back to mini games" onClick={exit}><img src={arrowArt} alt="" draggable={false}/></button>
-    <button type="button" className="ltv-corner ltv-online" onClick={() => setPanel(code ? 'room' : 'menu')}>{code ? <>ROOM <b dir="ltr">{code}</b></> : 'PLAY ONLINE'}</button>
+    <button type="button" className="ltv-online" style={{backgroundImage: `url(${pillArt})`}} onClick={() => setPanel(code ? 'room' : 'menu')}>{code ? <>ROOM <b dir="ltr">{code}</b></> : 'PLAY ONLINE'}</button>
 
     {panel && <div className="ltv-sheet" role="dialog" aria-modal="true" aria-label="Online room" onClick={e => { if (e.target === e.currentTarget) setPanel(null); }}>
-      <div className="ltv-card">
+      <div className="ltv-card" style={{backgroundImage: `url(${cardArt})`}}><div className="ltv-card-body">
         <button type="button" className="ltv-close" aria-label="Close" onClick={() => setPanel(null)}><X size={20}/></button>
         {panel === 'menu' && <>
           <h2>Play on every phone</h2>
@@ -193,7 +195,7 @@ export default function LetterTV({onContinue}) {
           </> : <p>You're watching. The host changes the letters.</p>}
           <button type="button" className="ltv-text" onClick={leaveRoom}>Leave room and play locally</button>
         </>}
-      </div>
+      </div></div>
     </div>}
 
     {message && <div className="ltv-message" role="status">{message}<button type="button" aria-label="Dismiss" onClick={() => setMessage('')}><X size={16}/></button></div>}

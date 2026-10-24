@@ -1,12 +1,12 @@
 @import url('https://fonts.googleapis.com/css2?family=Archivo+Black&family=DM+Sans:wght@500;700;800&display=swap');
 
-/* Full-screen, landscape. Six TVs on a 1080-unit-tall strip. One unit (--u) follows the
-   available height; it only shrinks further if the two central TVs would not fit the width.
-   The strip is centred, so the middle pair always stays whole and the outer TVs crop at the edges. */
-.ltv-app{position:fixed;inset:0;overflow:hidden;background:#e6e0ce;color:#141014;font-family:'DM Sans',system-ui,sans-serif;
+/* Full-screen, landscape. Six full-height TVs touching edge to edge on a 1080-unit strip. One unit
+   (--u) follows the available height; it only shrinks if the two central TVs would not fit the width
+   (--centre-w, set per arrangement). The strip is centred: the middle pair stays whole, the outer TVs crop. */
+.ltv-app{position:fixed;inset:0;overflow:hidden;background:#000;color:#141014;font-family:'DM Sans',system-ui,sans-serif;
   --safe-h:calc(100vh - env(safe-area-inset-top) - env(safe-area-inset-bottom));
   --safe-w:calc(100vw - env(safe-area-inset-left) - env(safe-area-inset-right));
-  --u:min(calc(var(--safe-h) / 1080), calc(var(--safe-w) / 1440));
+  --u:min(calc(var(--safe-h) / 1080), calc(var(--safe-w) / var(--centre-w, 2200)));
   user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent;overscroll-behavior:none;touch-action:manipulation}
 @supports (height:100dvh){.ltv-app{--safe-h:calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom))}}
 .ltv-app *{box-sizing:border-box}
@@ -22,12 +22,12 @@
 .ltv-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
 
 /* One button: coral, thick black outline, cartoon shadow. Centred below the middle pair. */
-.ltv-next{position:absolute;left:50%;top:calc(var(--u) * var(--y));transform:translateX(-50%);width:calc(var(--u) * var(--w));min-width:120px;height:calc(var(--u) * var(--h));min-height:52px;padding:0;
+.ltv-next{position:absolute;left:calc(50% + var(--u) * var(--x, 0));bottom:calc(var(--u) * var(--b));transform:translateX(-50%);width:calc(var(--u) * var(--w));min-width:120px;height:calc(var(--u) * var(--h));min-height:52px;padding:0;
   border:max(3px,calc(var(--u) * 6)) solid #111;border-radius:max(14px,calc(var(--u) * 26));background:#F4A582;color:#111;font:400 max(22px,calc(var(--u) * 54))/1 'Archivo Black','Arial Black',sans-serif;letter-spacing:.06em;
   box-shadow:0 max(5px,calc(var(--u) * 11)) 0 #111;cursor:pointer;touch-action:manipulation}
 .ltv-next:active:not(:disabled){transform:translateX(-50%) translateY(max(4px,calc(var(--u) * 9)));box-shadow:0 max(1px,calc(var(--u) * 2)) 0 #111}
 .ltv-next:disabled{filter:saturate(.7)}
-.ltv-next:focus-visible{outline:3px solid #111;outline-offset:4px}
+.ltv-next:focus-visible{outline:3px solid #fff;outline-offset:4px}
 
 /* Small corner controls stay out of the art. */
 .ltv-corner{position:absolute;top:calc(env(safe-area-inset-top) + 10px);z-index:3;display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:44px;min-width:44px;

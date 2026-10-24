@@ -8,46 +8,39 @@ import teal from './assets/tvs/tv-teal.webp';
 // The six TV cut-outs. `screen` is where the cream screen sits inside each image, in percent
 // of that image. Measured from the art; tune these numbers if a letter ever looks off-centre.
 export const TVS = {
-  purple: {src: purple, width: 578, height: 617, screen: {left: 32.35, top: 32.9, width: 45.33, height: 41.98}},
-  beige: {src: beige, width: 505, height: 546, screen: {left: 14.06, top: 15.02, width: 49.31, height: 46.52}},
-  blue: {src: blue, width: 510, height: 541, screen: {left: 26.67, top: 36.41, width: 49.02, height: 43.44}},
-  yellow: {src: yellow, width: 565, height: 577, screen: {left: 20.0, top: 16.46, width: 47.61, height: 40.21}},
-  orange: {src: orange, width: 557, height: 580, screen: {left: 35.37, top: 28.45, width: 49.91, height: 44.14}},
-  teal: {src: teal, width: 524, height: 517, screen: {left: 13.55, top: 14.89, width: 51.53, height: 47.58}},
+  purple: {src: purple, width: 573, height: 607, screen: {left: 32.63, top: 32.62, width: 45.73, height: 42.67}},
+  beige: {src: beige, width: 501, height: 538, screen: {left: 13.37, top: 14.5, width: 49.7, height: 47.21}},
+  blue: {src: blue, width: 502, height: 533, screen: {left: 26.3, top: 36.21, width: 49.8, height: 44.09}},
+  yellow: {src: yellow, width: 561, height: 569, screen: {left: 19.43, top: 15.99, width: 47.95, height: 40.78}},
+  orange: {src: orange, width: 552, height: 572, screen: {left: 35.69, top: 28.15, width: 50.36, height: 44.76}},
+  teal: {src: teal, width: 520, height: 509, screen: {left: 12.89, top: 14.34, width: 51.93, height: 48.33}},
 };
 // Must match TV_IDS in backend/letter_tv.py.
 export const TV_IDS = ['purple', 'beige', 'blue', 'yellow', 'orange', 'teal'];
 
 // Reference composition: 1080 units tall, x measured from the centre line of the screen.
-// One unit = available height / 1080, unless the screen is too narrow to show both central
-// TVs whole (old tablets), then it shrinks just enough. Outer TVs simply run off the edges.
+// Every TV is the full height and they touch edge to edge. One unit = available height / 1080,
+// unless the screen is too narrow for the two central TVs, then it shrinks just enough to show
+// them whole. Outer TVs simply run off the edges.
 export const REF_HEIGHT = 1080;
-export const MIN_VISIBLE_WIDTH = 1440;
-
-const GAP = 36;            // between the two central TVs
-const OUTER_GAP = 30;      // between neighbouring TVs further out
-const SLOTS = {
-  centre: {height: 640, top: 110},
-  near: {height: 540, top: 300},
-  far: {height: 600, top: 80},
-};
 
 // Arrangement order: [far-left, near-left, centre-left, centre-right, near-right, far-right].
 // Returns every TV's box in reference units (x = left edge relative to the centre line).
 export function layoutSlots(arrangement) {
-  const box = (id, slot) => {
-    const tv = TVS[id], {height, top} = SLOTS[slot];
-    return {id, role: slot, top, height, width: Math.round(height * tv.width / tv.height)};
-  };
-  const [fl, nl, cl, cr, nr, fr] = arrangement;
-  const cL = box(cl, 'centre'), cR = box(cr, 'centre');
-  cL.x = -GAP / 2 - cL.width; cR.x = GAP / 2;
-  const nL = box(nl, 'near'), nR = box(nr, 'near');
-  nL.x = cL.x - OUTER_GAP - nL.width; nR.x = cR.x + cR.width + OUTER_GAP;
-  const fL = box(fl, 'far'), fR = box(fr, 'far');
-  fL.x = nL.x - OUTER_GAP - fL.width; fR.x = nR.x + nR.width + OUTER_GAP;
-  return [fL, nL, cL, cR, nR, fR];
+  const boxes = arrangement.map((id, i) => {
+    const tv = TVS[id];
+    return {id, role: i === 2 || i === 3 ? 'centre' : 'outer', top: 0, height: REF_HEIGHT, width: Math.round(REF_HEIGHT * tv.width / tv.height)};
+  });
+  boxes[2].x = -Math.round((boxes[2].width + boxes[3].width) / 2); boxes[3].x = boxes[2].x + boxes[2].width;
+  for (let i = 1; i >= 0; i--) boxes[i].x = boxes[i + 1].x - boxes[i].width;
+  for (let i = 4; i < 6; i++) boxes[i].x = boxes[i - 1].x + boxes[i - 1].width;
+  return boxes;
 }
+
+// Half-width (units) that must stay visible so both central TVs are whole.
+export const centreHalfWidth = slots => Math.max(-slots[2].x, slots[3].x + slots[3].width);
+// Where the two central TVs meet (units from the centre line); NEXT sits on this seam.
+export const centreSeam = slots => slots[3].x;
 
 // Both letters share one size, set by the shorter central screen (reference units).
 export function letterSize(slots, scale = LETTER_SCALE) {
@@ -58,5 +51,5 @@ export function letterSize(slots, scale = LETTER_SCALE) {
 // Letter height as a share of its screen's height.
 export const LETTER_SCALE = 0.7;
 
-// NEXT button, centred between the central TVs below their screens (reference units).
-export const BUTTON = {top: 820, width: 280, height: 100};
+// NEXT button, on the seam between the central TVs, below every screen (reference units).
+export const BUTTON = {bottom: 24, width: 280, height: 100};

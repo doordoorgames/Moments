@@ -5,13 +5,13 @@ import {BACKEND_URL} from '@/lib/api';
 import RoomQR from '../plotTwist/RoomQR';
 import RoomCodeInput from '../plotTwist/RoomCodeInput';
 import {validRoomCode} from '../plotTwist/roomCode';
-import {BUTTON, TVS, layoutSlots, letterSize} from './screens';
+import {BUTTON, TVS, centreHalfWidth, centreSeam, layoutSlots, letterSize} from './screens';
 import {localArrangement, rememberArrangement, seededArrangement, validArrangement} from './arrangement';
 import {nextPair} from './letters';
 import {playClick} from './click';
 import './letterTv.css';
 
-// Six TVs in a row; the two in the middle show one letter each. Everyone shouts answers;
+// Six full-height TVs side by side; the two in the middle show one letter each. Everyone shouts answers;
 // the game never judges. Local play works instantly. An optional room lets the host's NEXT
 // drive every phone. Which TV sits where is picked once per session/room and then locked.
 const key = code => `letter-tv-session:${code}`;
@@ -143,7 +143,8 @@ export default function LetterTV({onContinue}) {
   const inviteUrl = code ? `${window.location.origin}/mini-games/letter-tv/room/${code}` : '';
   const ready = !code || room;
 
-  return <main className="ltv-app" data-typography-ignore data-status-bar-color="#e6e0ce">
+  return <main className="ltv-app" data-typography-ignore data-status-bar-color="#000000"
+    style={slots.length ? {'--centre-w': centreHalfWidth(slots) * 2} : undefined}>
     <div className="ltv-stage">
       <div className="ltv-world">
         {slots.map(slot => {
@@ -157,7 +158,7 @@ export default function LetterTV({onContinue}) {
           </div>;
         })}
         {isHost && ready && slots.length > 0 && <button type="button" className="ltv-next" disabled={busy}
-          style={{'--y': BUTTON.top, '--w': BUTTON.width, '--h': BUTTON.height}} onClick={next}>NEXT</button>}
+          style={{'--x': centreSeam(slots), '--b': BUTTON.bottom, '--w': BUTTON.width, '--h': BUTTON.height}} onClick={next}>NEXT</button>}
       </div>
       <span className="ltv-sr" aria-live="polite">{pair ? `Letters ${pair[0]} and ${pair[1]}` : ''}</span>
     </div>

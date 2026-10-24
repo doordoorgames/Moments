@@ -1,23 +1,30 @@
-import {TV_IDS} from './screens';
+import {LEFT_TVS, RIGHT_TVS, TV_IDS} from './screens';
 
 // Which TV sits where. Picked once when a session or room starts, then locked:
 // NEXT only ever changes the letters.
 
+// Left half holds only the right-facing TVs, right half only the left-facing ones.
 export const validArrangement = a => Array.isArray(a) && a.length === TV_IDS.length
-  && TV_IDS.every(id => a.includes(id));
+  && TV_IDS.every(id => a.includes(id))
+  && a.slice(0, 3).every(id => LEFT_TVS.includes(id)) && a.slice(3).every(id => RIGHT_TVS.includes(id));
+
+const shuffled = (list, random) => {
+  const a = [...list];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+};
 
 const same = (a, b) => validArrangement(b) && a.every((id, i) => id === b[i]);
 
 export function shuffleArrangement(previous = null, random = Math.random) {
   for (let tries = 0; tries < 20; tries++) {
-    const a = [...TV_IDS];
-    for (let i = a.length - 1; i > 0; i--) {
-      const j = Math.floor(random() * (i + 1));
-      [a[i], a[j]] = [a[j], a[i]];
-    }
+    const a = [...shuffled(LEFT_TVS, random), ...shuffled(RIGHT_TVS, random)];
     if (!same(a, previous)) return a;
   }
-  return [...TV_IDS];
+  return [...LEFT_TVS, ...RIGHT_TVS];
 }
 
 // Stable arrangement for a room whose server predates arrangements: every phone in the room

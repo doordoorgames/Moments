@@ -1,5 +1,5 @@
 import {localArrangement, seededArrangement, shuffleArrangement, validArrangement} from './arrangement';
-import {BUTTON, REF_HEIGHT, TV_IDS, TVS, centreHalfWidth, layoutSlots, letterSize} from './screens';
+import {BUTTON, LEFT_TVS, REF_HEIGHT, RIGHT_TVS, TV_IDS, TVS, centreHalfWidth, layoutSlots, letterSize} from './screens';
 
 test('a shuffle uses each of the six TVs exactly once', () => {
   for (let i = 0; i < 200; i++) expect(validArrangement(shuffleArrangement())).toBe(true);
@@ -46,4 +46,15 @@ test('all six TVs are full height and touch edge to edge, the middle pair on the
     expect(letterSize(slots)).toBeGreaterThan(250);
   }
   expect(TV_IDS).toHaveLength(6);
+});
+
+test('right-facing TVs always sit on the left half, left-facing on the right half', () => {
+  for (let i = 0; i < 300; i++) {
+    const a = shuffleArrangement();
+    a.slice(0, 3).forEach(id => expect(LEFT_TVS).toContain(id));
+    a.slice(3).forEach(id => expect(RIGHT_TVS).toContain(id));
+  }
+  expect(validArrangement(['teal', 'blue', 'orange', 'purple', 'yellow', 'beige'])).toBe(false);
+  const s = seededArrangement('54321');
+  s.slice(0, 3).forEach(id => expect(LEFT_TVS).toContain(id));
 });

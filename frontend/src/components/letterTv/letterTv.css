@@ -35,8 +35,9 @@
 .ltv-back img{display:block;width:100%;height:100%;transform:scaleX(-1);pointer-events:none}
 .ltv-back:active img{transform:scaleX(-1) translateX(2px);filter:brightness(1.15)}
 .ltv-back:focus-visible{outline:3px solid #7dffb4;outline-offset:2px;border-radius:10px}
-.ltv-online{position:absolute;z-index:3;top:calc(env(safe-area-inset-top) + 8px);right:calc(env(safe-area-inset-right) + 8px);height:52px;aspect-ratio:600 / 190;padding:0 4% 0 12%;border:0;
-  background:center/100% 100% no-repeat transparent;color:#1c1030;font:800 12px/1 'DM Sans',sans-serif;letter-spacing:.1em;display:grid;place-items:center;white-space:nowrap;cursor:pointer;touch-action:manipulation}
+.ltv-online{position:absolute;z-index:3;top:calc(env(safe-area-inset-top) + 8px);right:calc(env(safe-area-inset-right) + 8px);height:44px;width:139px;padding:0;border:0;
+  background:center/100% 100% no-repeat transparent;color:#1c1030;font:800 11px/1 'DM Sans',sans-serif;letter-spacing:.1em;white-space:nowrap;cursor:pointer;touch-action:manipulation}
+.ltv-online span{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%)}
 .ltv-online:active{transform:translateY(2px);filter:brightness(1.1)}
 .ltv-online:focus-visible{outline:3px solid #e7b6ff;outline-offset:2px}
 .ltv-online b{font-variant-numeric:tabular-nums;letter-spacing:.12em;margin-left:4px}

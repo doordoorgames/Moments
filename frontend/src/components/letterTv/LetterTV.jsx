@@ -168,7 +168,7 @@ export default function LetterTV({onContinue}) {
     </div>
 
     <button type="button" className="ltv-back" aria-label="Back to mini games" onClick={exit}><img src={arrowArt} alt="" draggable={false}/></button>
-    <button type="button" className="ltv-online" style={{backgroundImage: `url(${pillArt})`}} onClick={() => setPanel(code ? 'room' : 'menu')}>{code ? <>ROOM <b dir="ltr">{code}</b></> : 'PLAY ONLINE'}</button>
+    <button type="button" className="ltv-online" style={{backgroundImage: `url(${pillArt})`}} onClick={() => setPanel(code ? 'room' : 'menu')}><span>{code ? <>ROOM <b dir="ltr">{code}</b></> : 'PLAY ONLINE'}</span></button>
 
     {panel && <div className="ltv-sheet" role="dialog" aria-modal="true" aria-label="Online room" onClick={e => { if (e.target === e.currentTarget) setPanel(null); }}>
       <div className="ltv-card" style={{backgroundImage: `url(${cardArt})`}}><div className="ltv-card-body">

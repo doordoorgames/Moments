@@ -13,6 +13,7 @@ import {BUTTON, TVS, centreHalfWidth, centreSeam, layoutSlots, letterSize} from 
 import {localArrangement, rememberArrangement, seededArrangement, validArrangement} from './arrangement';
 import {nextPair} from './letters';
 import {playClick} from './click';
+import CircuitBackdrop, {pickAccent} from './CircuitBackdrop';
 import './letterTv.css';
 
 // Six full-height TVs side by side; the two in the middle show one letter each. Everyone shouts answers;
@@ -147,8 +148,9 @@ export default function LetterTV({onContinue}) {
   const inviteUrl = code ? `${window.location.origin}/mini-games/letter-tv/room/${code}` : '';
   const ready = !code || room;
 
-  return <main className="ltv-app" data-typography-ignore data-status-bar-color="#1c1619"
+  return <main className="ltv-app" data-typography-ignore data-status-bar-color="#101014"
     style={slots.length ? {'--centre-w': centreHalfWidth(slots) * 2} : undefined}>
+    <CircuitBackdrop accent={pickAccent(tvs)}/>
     <div className="ltv-stage">
       <div className="ltv-world">
         {slots.map(slot => {

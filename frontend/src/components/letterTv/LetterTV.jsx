@@ -1,19 +1,19 @@
-import React, {useCallback, useEffect, useRef, useState} from 'react';
+import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {useLocation, useNavigate, useParams} from 'react-router-dom';
 import {ArrowLeft, X} from 'lucide-react';
 import {BACKEND_URL} from '@/lib/api';
 import RoomQR from '../plotTwist/RoomQR';
 import RoomCodeInput from '../plotTwist/RoomCodeInput';
 import {validRoomCode} from '../plotTwist/roomCode';
-import {BUTTON, LETTER_SCALE, SCREENS, WALLPAPER} from './screens';
+import {BUTTON, TVS, layoutSlots, letterSize} from './screens';
+import {localArrangement, rememberArrangement, seededArrangement, validArrangement} from './arrangement';
 import {nextPair} from './letters';
 import {playClick} from './click';
 import './letterTv.css';
 
-// Two TVs, one letter each. Everyone shouts answers; the game never judges.
-// Local play works instantly. An optional room lets the host's NEXT drive every phone.
-// Both letters share one size, set by the shorter screen.
-const LETTER_CQH = Math.min(...SCREENS.map(s => s.height)) * LETTER_SCALE;
+// Six TVs in a row; the two in the middle show one letter each. Everyone shouts answers;
+// the game never judges. Local play works instantly. An optional room lets the host's NEXT
+// drive every phone. Which TV sits where is picked once per session/room and then locked.
 const key = code => `letter-tv-session:${code}`;
 const loadSession = code => { try { return JSON.parse(localStorage.getItem(key(code)) || 'null'); } catch { return null; } };
 const saveSession = (code, s) => { try { localStorage.setItem(key(code), JSON.stringify(s)); } catch { /* private mode */ } };
@@ -29,7 +29,7 @@ export default function LetterTV({onContinue}) {
   const [joinCode, setJoinCode] = useState('');
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
-  const [missingArt, setMissingArt] = useState(false);
+  const [localTvs, setLocalTvs] = useState(() => localArrangement());
   const pending = useRef(false), latest = useRef(0), live = useRef({});
   const auth = session ? `Bearer ${session.id}:${session.token}` : '';
   live.current = {code, auth};
@@ -94,6 +94,19 @@ export default function LetterTV({onContinue}) {
   const lastShown = useRef(shown);
   useEffect(() => { if (shown && shown !== lastShown.current) playClick(); lastShown.current = shown; }, [shown]);
 
+  // Locked TV arrangement: the room's (shared by every phone), else this tab's local one.
+  const tvs = code
+    ? (validArrangement(room?.tvs) ? room.tvs : validArrangement(session?.tvs) ? session.tvs : room ? seededArrangement(code) : null)
+    : localTvs;
+  const tvKey = tvs ? tvs.join(',') : '';
+  const slots = useMemo(() => (tvKey ? layoutSlots(tvKey.split(',')) : []), [tvKey]);
+  const letterUnits = slots.length ? letterSize(slots) : 0;
+  // Keep the room's arrangement with the saved seat, so a refresh draws it before the network answers.
+  useEffect(() => {
+    if (!code || !session || !validArrangement(room?.tvs) || (session.tvs || []).join(',') === room.tvs.join(',')) return;
+    const s = {...session, tvs: room.tvs}; saveSession(code, s); setSession(s); rememberArrangement(room.tvs);
+  }, [code, session, room?.tvs]);
+
   const isHost = !code || room?.host;
   async function next() {
     if (!code) { setPair(p => nextPair(p)); return; }
@@ -108,8 +121,8 @@ export default function LetterTV({onContinue}) {
     if (busy) return;
     setBusy(true); setMessage('');
     try {
-      const r = await request('/rooms', {lang: 'en'});
-      const s = {id: r.id, token: r.token}; saveSession(r.code, s); setSession(s);
+      const r = await request('/rooms', {lang: 'en', avoid: tvs || undefined});
+      const s = {id: r.id, token: r.token, tvs: r.state?.tvs}; saveSession(r.code, s); setSession(s);
       setRoom(r.state); setPair(null); setPanel('room');
       navigate(`/mini-games/letter-tv/room/${r.code}`, {replace: true, state: {showRoom: true}});
     } catch (e) { setMessage(e.message); } finally { setBusy(false); }
@@ -119,7 +132,7 @@ export default function LetterTV({onContinue}) {
     if (!validRoomCode(joinCode)) { setMessage('Enter the five-digit room code.'); return; }
     setPanel(null); setMessage(''); navigate(`/mini-games/letter-tv/room/${joinCode}`);
   }
-  function leaveRoom() { setPanel(null); setRoom(null); setSession(null); setPair(null); navigate('/mini-games/letter-tv', {replace: true}); }
+  function leaveRoom() { setLocalTvs(localArrangement()); setPanel(null); setRoom(null); setSession(null); setPair(null); navigate('/mini-games/letter-tv', {replace: true}); }
   const exit = () => { if (onContinue) onContinue(); else navigate('/#mini-games'); };
 
   // Phones held upright: try to lock landscape (works after a tap on Android), else ask to rotate.
@@ -130,17 +143,23 @@ export default function LetterTV({onContinue}) {
   const inviteUrl = code ? `${window.location.origin}/mini-games/letter-tv/room/${code}` : '';
   const ready = !code || room;
 
-  return <main className="ltv-app" data-typography-ignore data-status-bar-color="#1d1626">
-    <div className="ltv-backdrop" style={missingArt ? undefined : {backgroundImage: `url(${WALLPAPER.src})`}} aria-hidden="true"/>
-    <div className="ltv-stage" style={{'--ltv-ratio': `${WALLPAPER.width} / ${WALLPAPER.height}`, '--ltv-ar': WALLPAPER.width / WALLPAPER.height}}>
-      {!missingArt && <img className="ltv-wallpaper" src={WALLPAPER.src} alt="" width={WALLPAPER.width} height={WALLPAPER.height} draggable={false} onError={() => setMissingArt(true)}/>}
-      {SCREENS.map((s, i) => <div key={s.id} className={`ltv-screen ${missingArt ? 'is-placeholder' : ''}`}
-        style={{left: `${s.left}%`, top: `${s.top}%`, width: `${s.width}%`, height: `${s.height}%`, '--ltv-letter': `${LETTER_CQH}cqh`}}>
-        <span className="ltv-letter" aria-live={i === 0 ? 'polite' : undefined}>{pair?.[i] || ''}</span>
-      </div>)}
+  return <main className="ltv-app" data-typography-ignore data-status-bar-color="#e6e0ce">
+    <div className="ltv-stage">
+      <div className="ltv-world">
+        {slots.map(slot => {
+          const tv = TVS[slot.id], centre = slot.role === 'centre', i = slot.x < 0 ? 0 : 1;
+          return <div key={slot.id} className={`ltv-tv ltv-tv-${slot.role}`}
+            style={{'--x': slot.x, '--y': slot.top, '--w': slot.width, '--h': slot.height}}>
+            <img src={tv.src} alt="" width={tv.width} height={tv.height} draggable={false}/>
+            {centre && <div className="ltv-screen" style={{left: `${tv.screen.left}%`, top: `${tv.screen.top}%`, width: `${tv.screen.width}%`, height: `${tv.screen.height}%`, '--ltv-letter': letterUnits}}>
+              <span className="ltv-letter">{pair?.[i] || ''}</span>
+            </div>}
+          </div>;
+        })}
+        {isHost && ready && slots.length > 0 && <button type="button" className="ltv-next" disabled={busy}
+          style={{'--y': BUTTON.top, '--w': BUTTON.width, '--h': BUTTON.height}} onClick={next}>NEXT</button>}
+      </div>
       <span className="ltv-sr" aria-live="polite">{pair ? `Letters ${pair[0]} and ${pair[1]}` : ''}</span>
-      {isHost && ready && <button type="button" className="ltv-next" disabled={busy}
-        style={{left: `${BUTTON.centerX}%`, bottom: `${BUTTON.bottom}%`, width: `${BUTTON.width}%`}} onClick={next}>NEXT</button>}
     </div>
 
     <button type="button" className="ltv-corner ltv-back" aria-label="Back to mini games" onClick={exit}><ArrowLeft size={20}/></button>

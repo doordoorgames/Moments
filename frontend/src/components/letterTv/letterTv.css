@@ -1,27 +1,33 @@
 @import url('https://fonts.googleapis.com/css2?family=Archivo+Black&family=DM+Sans:wght@500;700;800&display=swap');
 
-/* Full-screen, landscape. The stage keeps the wallpaper's exact ratio and fits inside the
-   safe area, so neither TV nor the button is ever cropped; the margins show a soft blur of the art. */
-.ltv-app{position:fixed;inset:0;overflow:hidden;background:#1d1626;color:#141014;font-family:'DM Sans',system-ui,sans-serif;display:grid;place-items:center;
-  padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent}
+/* Full-screen, landscape. Six TVs on a 1080-unit-tall strip. One unit (--u) follows the
+   available height; it only shrinks further if the two central TVs would not fit the width.
+   The strip is centred, so the middle pair always stays whole and the outer TVs crop at the edges. */
+.ltv-app{position:fixed;inset:0;overflow:hidden;background:#e6e0ce;color:#141014;font-family:'DM Sans',system-ui,sans-serif;
+  --safe-h:calc(100vh - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+  --safe-w:calc(100vw - env(safe-area-inset-left) - env(safe-area-inset-right));
+  --u:min(calc(var(--safe-h) / 1080), calc(var(--safe-w) / 1440));
+  user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent;overscroll-behavior:none;touch-action:manipulation}
+@supports (height:100dvh){.ltv-app{--safe-h:calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom))}}
 .ltv-app *{box-sizing:border-box}
-.ltv-backdrop{position:absolute;inset:-40px;background:center/cover no-repeat;filter:blur(28px) brightness(.7);transform:scale(1.05)}
-.ltv-stage{position:relative;aspect-ratio:var(--ltv-ratio,16 / 9);width:min(100%, calc((100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom)) * var(--ltv-ar,1.7778)));container-type:size}
-.ltv-wallpaper{position:absolute;inset:0;width:100%;height:100%;display:block;pointer-events:none}
+.ltv-stage{position:absolute;top:env(safe-area-inset-top);bottom:env(safe-area-inset-bottom);left:0;right:0;overflow:hidden}
+.ltv-world{position:absolute;left:0;right:0;top:50%;height:calc(var(--u) * 1080);transform:translateY(-50%)}
+.ltv-tv{position:absolute;left:calc(50% + var(--u) * var(--x));top:calc(var(--u) * var(--y));width:calc(var(--u) * var(--w));height:calc(var(--u) * var(--h));pointer-events:none}
+.ltv-tv img{display:block;width:100%;height:100%;object-fit:contain}
 
-/* Letters sit in the exact centre of each screen (coordinates live in screens.js). */
-.ltv-screen{position:absolute;display:grid;place-items:center;pointer-events:none}
-.ltv-screen.is-placeholder{background:#f3ead2;border-radius:6% / 9%;box-shadow:inset 0 0 0 .5cqh #0002}
-.ltv-letter{font:900 var(--ltv-letter,30cqh)/1 'Archivo Black','Arial Black',Impact,system-ui,sans-serif;font-synthesis-weight:none;color:#111;text-transform:uppercase;letter-spacing:0;
-  -webkit-text-stroke:.35cqh #111;transform:translateY(2%)}
+/* Letters sit in the exact centre of each central screen (coordinates live in screens.js). */
+.ltv-screen{position:absolute;display:grid;place-items:center}
+.ltv-letter{font:900 calc(var(--u) * var(--ltv-letter, 200))/1 'Archivo Black','Arial Black',Impact,system-ui,sans-serif;font-synthesis-weight:none;color:#111;text-transform:uppercase;letter-spacing:0;
+  -webkit-text-stroke:calc(var(--u) * 3.8) #111;transform:translateY(2%)}
 .ltv-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
 
-/* One button: coral, thick black outline, cartoon shadow. */
-.ltv-next{position:absolute;transform:translateX(-50%);min-width:120px;min-height:max(56px,10cqh);padding:0 3cqh;border:max(3px,.6cqh) solid #111;border-radius:max(14px,2.4cqh);
-  background:#F4A582;color:#111;font:400 max(22px,5cqh)/1 'Archivo Black','Arial Black',sans-serif;letter-spacing:.06em;box-shadow:0 max(5px,1cqh) 0 #111;cursor:pointer;touch-action:manipulation}
-.ltv-next:active:not(:disabled){transform:translateX(-50%) translateY(max(4px,.8cqh));box-shadow:0 max(1px,.2cqh) 0 #111}
+/* One button: coral, thick black outline, cartoon shadow. Centred below the middle pair. */
+.ltv-next{position:absolute;left:50%;top:calc(var(--u) * var(--y));transform:translateX(-50%);width:calc(var(--u) * var(--w));min-width:120px;height:calc(var(--u) * var(--h));min-height:52px;padding:0;
+  border:max(3px,calc(var(--u) * 6)) solid #111;border-radius:max(14px,calc(var(--u) * 26));background:#F4A582;color:#111;font:400 max(22px,calc(var(--u) * 54))/1 'Archivo Black','Arial Black',sans-serif;letter-spacing:.06em;
+  box-shadow:0 max(5px,calc(var(--u) * 11)) 0 #111;cursor:pointer;touch-action:manipulation}
+.ltv-next:active:not(:disabled){transform:translateX(-50%) translateY(max(4px,calc(var(--u) * 9)));box-shadow:0 max(1px,calc(var(--u) * 2)) 0 #111}
 .ltv-next:disabled{filter:saturate(.7)}
-.ltv-next:focus-visible{outline:3px solid #fff;outline-offset:4px}
+.ltv-next:focus-visible{outline:3px solid #111;outline-offset:4px}
 
 /* Small corner controls stay out of the art. */
 .ltv-corner{position:absolute;top:calc(env(safe-area-inset-top) + 10px);z-index:3;display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:44px;min-width:44px;

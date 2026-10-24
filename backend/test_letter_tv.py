@@ -73,7 +73,9 @@ def test_room_host_drives_everyone_sees_same_pair(client):
     c, db = client
     host = c.post('/api/letter-tv/rooms', json={}).json()
     url = '/api/letter-tv/rooms/' + host['code']
+    tvs = host['state'].pop('tvs')
     assert host['state'] == {'lang': 'en', 'pair': None, 'seq': 0, 'host': True}
+    assert sorted(tvs) == sorted(E.TV_IDS)
     guest = c.post(url + '/join').json()
     assert guest['state']['host'] is False and guest['state']['pair'] is None
     # Guests cannot press, and nobody without a session can read the room.
@@ -91,6 +93,11 @@ def test_room_host_drives_everyone_sees_same_pair(client):
     # A late joiner gets the current pair straight away.
     late = c.post(url + '/join').json()
     assert late['state']['pair'] == r['pair'] and late['state']['seq'] == 1
+    # Every phone in the room sees the same TV arrangement, and NEXT never reshuffles it.
+    assert guest['state']['tvs'] == tvs and late['state']['tvs'] == tvs
+    for n in range(1, 6):
+        assert c.post(url + '/next', json={'seq': n}, headers=h(host)).json()['tvs'] == tvs
+    assert c.get(url, headers=h(guest)).json()['tvs'] == tvs
     # Host token never stored in the clear.
     assert host['token'] not in json.dumps(db.rows)
 
@@ -99,3 +106,28 @@ def test_bad_codes(client):
     c, _ = client
     assert c.post('/api/letter-tv/rooms/ABCDE/join').status_code == 400
     assert c.post('/api/letter-tv/rooms/00000/join').status_code in (400, 404)
+
+
+def test_new_rooms_get_a_fresh_arrangement_that_never_repeats_the_last(client):
+    c, _ = client
+    seen = []
+    for _ in range(30):
+        tvs = c.post('/api/letter-tv/rooms', json={}).json()['state']['tvs']
+        assert sorted(tvs) == sorted(E.TV_IDS)
+        assert not seen or tvs != seen[-1]
+        seen.append(tvs)
+    assert len({tuple(t) for t in seen}) > 10
+    # The phone can name the arrangement it just showed; the new room avoids it.
+    avoid = seen[-1]
+    for _ in range(20):
+        assert c.post('/api/letter-tv/rooms', json={'avoid': avoid}).json()['state']['tvs'] != avoid
+
+
+def test_old_rooms_without_an_arrangement_get_a_stable_one():
+    g, _ = E.new_room()
+    del g['tvs']
+    a = E.view(g, g['host']['id'])['tvs']
+    assert sorted(a) == sorted(E.TV_IDS)
+    assert E.view(g, 'someone-else')['tvs'] == a
+    E.press(g, 0)
+    assert E.view(g, g['host']['id'])['tvs'] == a

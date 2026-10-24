@@ -21,18 +21,22 @@
   -webkit-text-stroke:calc(var(--u) * 3.8) #111;transform:translateY(2%)}
 .ltv-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
 
-/* One button: coral, thick black outline, cartoon shadow. Centred below the middle pair. */
-.ltv-next{position:absolute;left:calc(50% + var(--u) * var(--x, 0));bottom:calc(var(--u) * var(--b));transform:translateX(-50%);width:calc(var(--u) * var(--w));min-width:120px;height:calc(var(--u) * var(--h));min-height:52px;padding:0;
-  border:max(3px,calc(var(--u) * 6)) solid #111;border-radius:max(14px,calc(var(--u) * 26));background:#F4A582;color:#111;font:400 max(22px,calc(var(--u) * 54))/1 'Archivo Black','Arial Black',sans-serif;letter-spacing:.06em;
-  box-shadow:0 max(5px,calc(var(--u) * 11)) 0 #111;cursor:pointer;touch-action:manipulation}
-.ltv-next:active:not(:disabled){transform:translateX(-50%) translateY(max(4px,calc(var(--u) * 9)));box-shadow:0 max(1px,calc(var(--u) * 2)) 0 #111}
+/* NEXT: the green glass panel art, same footprint as before, on the seam below the middle pair. */
+.ltv-next{position:absolute;left:calc(50% + var(--u) * var(--x, 0));bottom:calc(var(--u) * var(--b));transform:translateX(-50%);width:max(128px,calc(var(--u) * var(--w)));aspect-ratio:900 / 371;height:auto;padding:0;border:0;
+  background:center/100% 100% no-repeat transparent;color:#0f2a1c;font:400 max(17px,calc(var(--u) * 40))/1 'Archivo Black','Arial Black',sans-serif;letter-spacing:.08em;cursor:pointer;touch-action:manipulation;
+  display:grid;place-items:center;filter:drop-shadow(0 max(2px,calc(var(--u) * 4)) 0 #000a)}
+.ltv-next span{transform:translateY(-6%)}
+.ltv-next:active:not(:disabled){transform:translateX(-50%) translateY(max(2px,calc(var(--u) * 4)));filter:brightness(1.12)}
 .ltv-next:disabled{filter:saturate(.7)}
-.ltv-next:focus-visible{outline:3px solid #111;outline-offset:4px}
+.ltv-next:focus-visible{outline:3px solid #7dffb4;outline-offset:2px;border-radius:12px}
 
 /* Small corner controls stay out of the art. */
 .ltv-corner{position:absolute;top:calc(env(safe-area-inset-top) + 10px);z-index:3;display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:44px;min-width:44px;
   border:2px solid #111;background:#fff6e5e6;color:#111;border-radius:999px;font:800 12px/1 'DM Sans',sans-serif;letter-spacing:.08em;box-shadow:0 3px 0 #111;cursor:pointer}
-.ltv-back{left:calc(env(safe-area-inset-left) + 10px)}
+.ltv-back{position:absolute;z-index:3;top:calc(env(safe-area-inset-top) + 8px);left:calc(env(safe-area-inset-left) + 8px);width:64px;height:47px;padding:0;border:0;background:none;cursor:pointer;touch-action:manipulation}
+.ltv-back img{display:block;width:100%;height:100%;transform:scaleX(-1);pointer-events:none}
+.ltv-back:active img{transform:scaleX(-1) translateX(2px);filter:brightness(1.15)}
+.ltv-back:focus-visible{outline:3px solid #7dffb4;outline-offset:2px;border-radius:10px}
 .ltv-online{right:calc(env(safe-area-inset-right) + 10px);padding:0 16px}
 .ltv-online b{font-variant-numeric:tabular-nums;letter-spacing:.12em}
 

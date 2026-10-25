@@ -74,3 +74,14 @@ export function newLetter(previous, random = Math.random) {
   const pool = LETTERS.filter(l => l !== previous);
   return pool[Math.floor(random() * pool.length)];
 }
+
+// Same helpers for any language's bank.
+export function roundFrom(challenges, letter, random = Math.random) {
+  const list = challenges.filter(c => !c.skip.includes(letter));
+  for (let i = list.length - 1; i > 0; i--) { const j = Math.floor(random() * (i + 1)); [list[i], list[j]] = [list[j], list[i]]; }
+  return list;
+}
+export function letterFrom(letters, previous, random = Math.random) {
+  const pool = letters.filter(l => l !== previous);
+  return pool[Math.floor(random() * pool.length)];
+}

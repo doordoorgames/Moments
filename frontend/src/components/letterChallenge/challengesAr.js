@@ -56,3 +56,7 @@ export const CHALLENGES = [
   {id: 'carry', lines: ['شيء تقدر تشيله', 'يبدي بحرف:'], skip: 'رني',
     example: 'ايباد بطيخ تلفون جوال حقيبة خبز دفتر - سلة شنطة صحن علبة فنجان قلم كوب لابتوب مفتاح - هدية ورد -'},
 ];
+
+// The pixel font draws each letter at a different height in its box. Vertical nudge (% of the letter's
+// line box) that puts each letter's ink in the middle of the screen. Measured from the Unifont bitmaps.
+export const LETTER_LIFT = {'أ': 15.6, 'ب': -15.6, 'ت': 3.1, 'ج': -25.0, 'ح': -25.0, 'خ': -15.6, 'د': -3.1, 'ر': -21.9, 'س': -15.6, 'ش': -6.2, 'ص': -18.8, 'ع': -21.9, 'ف': 6.2, 'ق': -6.2, 'ك': 6.2, 'ل': -3.1, 'م': -25.0, 'ن': -9.4, 'ه': -3.1, 'و': -18.8};

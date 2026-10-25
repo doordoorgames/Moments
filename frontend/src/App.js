@@ -37,6 +37,7 @@ function StatusBarTheme() {
             const palette = path.includes('plot-twist') ? '#352039'
                 : path.includes('emoji-rooftop') ? '#120c28'
                 : path.includes('letter-tv') ? '#000000'
+                : path.includes('letter-challenge') ? '#0d0b10'
                 : path.includes('baccarat') ? '#000000'
                 : path.includes('shoug') ? '#6E1F35'
                 : path.includes('admin') ? '#FBF4E4'

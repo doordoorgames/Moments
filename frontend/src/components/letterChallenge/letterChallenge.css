@@ -5,20 +5,28 @@
   user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent;overscroll-behavior:none;touch-action:manipulation}
 .lch-app *{box-sizing:border-box}
 
-/* Background: plain checkerboard, purple squares and black squares only. One oversized layer that
-   slowly turns and drifts (a single GPU transform; no images). */
-.lch-checks{position:absolute;inset:0;z-index:0;overflow:hidden;pointer-events:none}
-.lch-checks-spin{position:absolute;left:50%;top:50%;width:260vmax;height:260vmax;margin:-130vmax 0 0 -130vmax;
-  --c:max(56px,9vmin);
-  background:conic-gradient(#6a3f9e 25%,#000 0 50%,#6a3f9e 0 75%,#000 0) 0 0/calc(var(--c) * 2) calc(var(--c) * 2);
-  will-change:transform;animation:lch-spin 120s linear infinite}
-@keyframes lch-spin{
-  0%{transform:rotate(0deg) translate3d(0,0,0)}
-  50%{transform:rotate(180deg) translate3d(4vmax,-3vmax,0)}
-  100%{transform:rotate(360deg) translate3d(0,0,0)}}
-@media (prefers-reduced-motion:reduce){.lch-checks-spin{animation:none}}
-/* Fade over the checks: clear at the top, fully black along the bottom strip. Sits under the monitor. */
-.lch-checks::after{content:"";position:absolute;inset:0;background:linear-gradient(to bottom,transparent 0%,#0000 8%,#000000b3 62%,#000 90%,#000 100%)}
+/* Background: dark, stationary 90s-anime circuit board. Four corner pieces (CircuitCorners.jsx) keep
+   the centre quiet; traces are low-contrast purple, pads pick up a little violet, and now and then a
+   slow mint pulse fades in, travels one trace and fades out. Nothing else moves. */
+.lch-circuit{position:absolute;inset:0;z-index:0;overflow:hidden;pointer-events:none;
+  background:radial-gradient(70% 60% at 50% 50%,#08070b 0%,#0d0c12 55%,#121019 100%)}
+.lch-corner{position:absolute;height:50%;aspect-ratio:4 / 3;max-width:50%;overflow:visible}
+.lch-corner.is-tl{left:0;top:0}
+.lch-corner.is-tr{right:0;top:0;transform:scaleX(-1)}
+.lch-corner.is-bl{left:0;bottom:0;transform:scaleY(-1)}
+.lch-corner.is-br{right:0;bottom:0;transform:rotate(180deg)}
+.lch-trace{fill:none;stroke:#32204a;stroke-width:5;stroke-linecap:square;stroke-linejoin:miter}
+.lch-bus{stroke:#3b2658;stroke-width:4}
+.lch-pad{fill:#0d0c12;stroke:#45296a;stroke-width:4}
+.lch-pad-hi{fill:#5a3a86;stroke:#6f4aa3}
+.lch-chip{fill:#141119;stroke:#3f2860;stroke-width:5}
+.lch-pulse,.lch-pulse-glow{fill:none;stroke-linecap:round;stroke-dasharray:26 2000;stroke-dashoffset:26;opacity:0;
+  animation:lch-pulse var(--t,28s) linear var(--d,0s) infinite}
+.lch-pulse{stroke:#8af5c8;stroke-width:5}
+.lch-pulse-glow{stroke:#8af5c8;stroke-width:16;stroke-dasharray:40 2000;stroke-dashoffset:40;animation-name:lch-pulse-glow}
+@keyframes lch-pulse{0%{stroke-dashoffset:26;opacity:0}3%{opacity:.85}24%{opacity:.85}28%{stroke-dashoffset:-1000;opacity:0}100%{stroke-dashoffset:-1000;opacity:0}}
+@keyframes lch-pulse-glow{0%{stroke-dashoffset:40;opacity:0}3%{opacity:.14}24%{opacity:.14}28%{stroke-dashoffset:-1000;opacity:0}100%{stroke-dashoffset:-1000;opacity:0}}
+@media (prefers-reduced-motion:reduce){.lch-pulse,.lch-pulse-glow{animation:none;opacity:0}}
 
 /* Monitor centred, as large as fits. Art is 2137 x 627. */
 /* Centred on the whole screen: side padding is the same on both sides (the larger safe-area inset), so a notch never pushes it off-centre. */
@@ -45,7 +53,7 @@
 .lch-app.is-ar .lch-screen{font-family:'Reem Kufi','Noto Kufi Arabic',sans-serif;font-weight:700;-webkit-font-smoothing:antialiased}
 .lch-app.is-ar .lch-prompt{text-transform:none;font-size:min(calc(100cqw / 8.2), calc(100cqh / 3.3));line-height:1.3}
 .lch-app.is-ar .lch-cursor{width:.5em;height:.9em;vertical-align:-.12em}
-.lch-app.is-ar .lch-letter{font-size:min(100cqh, 95cqw);line-height:1;transform:translateY(-4%)}
+.lch-app.is-ar .lch-letter{font-size:min(100cqh, 95cqw);line-height:1;transform:translateY(-14%)}
 .lch-app.is-ar .lch-next,.lch-app.is-ar .lch-new{font-family:'Reem Kufi','Noto Kufi Arabic',sans-serif;font-weight:700;letter-spacing:0}
 .lch-app.is-ar .lch-next{font-size:clamp(15px,1.75vw,28px)}
 .lch-app.is-ar .lch-new{font-size:17px}

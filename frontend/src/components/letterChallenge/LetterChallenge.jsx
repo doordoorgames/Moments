@@ -6,6 +6,7 @@ import pillArt from '../letterTv/assets/ui/pill.webp';
 import * as EN from './challenges';
 import * as AR from './challengesAr';
 import {letterFrom, roundFrom} from './challenges';
+import CircuitCorners from './CircuitCorners';
 import './letterChallenge.css';
 
 // Letter Challenge (local prototype). First screen: pick English or العربية on the monitor.
@@ -109,7 +110,7 @@ export default function LetterChallenge({onContinue}) {
   const label = LABELS[lang || 'en'];
 
   return <main className={`lch-app${ar ? ' is-ar' : ''}`} data-typography-ignore data-status-bar-color="#000000">
-    <div className="lch-checks" aria-hidden="true"><div className="lch-checks-spin"/></div>
+    <CircuitCorners/>
 
     <div className="lch-stage">
       <div className="lch-monitor">

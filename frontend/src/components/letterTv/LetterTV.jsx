@@ -22,6 +22,16 @@ import './letterTv.css';
 const key = code => `letter-tv-session:${code}`;
 const loadSession = code => { try { return JSON.parse(localStorage.getItem(key(code)) || 'null'); } catch { return null; } };
 const saveSession = (code, s) => { try { localStorage.setItem(key(code), JSON.stringify(s)); } catch { /* private mode */ } };
+// Warm every piece of UI art the moment the game opens, so PLAY ONLINE's panel appears instantly.
+// Kept in a module-level list so the decoded images stay in memory for the whole visit.
+const warmed = [];
+function warmArt() {
+  if (warmed.length) return;
+  [cardArt, panelArt, pillArt, arrowArt].forEach(src => {
+    const img = new Image(); img.decoding = 'async'; img.src = src; warmed.push(img);
+    img.decode?.().catch(() => {});
+  });
+}
 
 export default function LetterTV({onContinue}) {
   const navigate = useNavigate();
@@ -36,6 +46,7 @@ export default function LetterTV({onContinue}) {
   const [message, setMessage] = useState('');
   const [localTvs, setLocalTvs] = useState(() => localArrangement());
   const pending = useRef(false), latest = useRef(0), live = useRef({});
+  useEffect(() => { warmArt(); }, []);
   const auth = session ? `Bearer ${session.id}:${session.token}` : '';
   live.current = {code, auth};
 
@@ -174,7 +185,7 @@ export default function LetterTV({onContinue}) {
 
     {panel && <div className="ltv-sheet" role="dialog" aria-modal="true" aria-label="Online room" onClick={e => { if (e.target === e.currentTarget) setPanel(null); }}>
       <div className="ltv-card" style={{backgroundImage: `url(${cardArt})`}}><div className="ltv-card-body">
-        <button type="button" className="ltv-close" aria-label="Close" onClick={() => setPanel(null)}><X size={20}/></button>
+        <button type="button" className="ltv-close" aria-label="Close" onClick={() => setPanel(null)}><X size={26} strokeWidth={3.5}/></button>
         {panel === 'menu' && <>
           <h2>Play on every phone</h2>
           <p>Optional. The host presses NEXT; everyone else sees the same letters.</p>

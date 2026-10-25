@@ -51,7 +51,8 @@
 .ltv-card-body{position:absolute;left:14.5%;right:11%;top:12.5%;bottom:13%;overflow:auto;display:flex;flex-direction:column;justify-content:safe center;gap:8px;padding:6px 8px}
 .ltv-card h2{margin:0;font:400 clamp(17px,4.6vmin,24px)/1.1 'Archivo Black','Arial Black',sans-serif}
 .ltv-card p{margin:0;font-size:13px;line-height:1.35;color:#2c1d45}
-.ltv-close{position:absolute;top:0;right:0;width:40px;height:40px;border:0;background:none;color:#1c1030;cursor:pointer}
+.ltv-close{position:absolute;z-index:2;top:0;right:0;width:44px;height:44px;display:grid;place-items:center;padding:0;border:0;background:none;color:#fff;cursor:pointer;filter:drop-shadow(0 2px 0 #000) drop-shadow(0 0 2px #000)}
+.ltv-close:active{transform:translateY(1px)}
 .ltv-action{min-height:42px;border:2px solid #1c1030;border-radius:0;background:#fff;color:#1c1030;font:400 14px/1 'Archivo Black','Arial Black',sans-serif;letter-spacing:.06em;box-shadow:none;cursor:pointer}
 .ltv-action:active:not(:disabled){background:#efe6ff}
 .ltv-action:disabled{opacity:.5;cursor:default}

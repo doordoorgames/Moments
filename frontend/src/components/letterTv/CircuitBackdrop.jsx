@@ -34,12 +34,12 @@ const DIRS = [[1, 0], [1, 1], [0, 1], [-1, 1], [-1, 0], [-1, -1], [0, -1], [1, -
 
 function buildBoard(w, h, seed) {
   const r = rng(seed);
-  const g = Math.max(26, Math.round(Math.min(w, h) / 20));
+  const g = Math.max(20, Math.round(Math.min(w, h) / 27));
   const cols = Math.ceil(w / g) + 1, rows = Math.ceil(h / g) + 1;
   const used = new Set();
   const paths = [];
-  const target = Math.round((cols * rows) / 9);
-  for (let n = 0; n < target * 3 && paths.length < target; n++) {
+  const target = Math.round((cols * rows) / 4.5);
+  for (let n = 0; n < target * 12 && paths.length < target; n++) {
     let x = Math.floor(r() * cols), y = Math.floor(r() * rows);
     if (used.has(x + ',' + y)) continue;
     let d = Math.floor(r() * 4) * 2;           // start straight
@@ -68,7 +68,7 @@ function buildBoard(w, h, seed) {
   paths.forEach(P => { nodes.push(P.p[0], P.p[P.p.length - 1]); });
   // faint abstract graph lines: a few horizontal bands of slow waveforms
   const graphs = [];
-  const gCount = 3 + Math.floor(r() * 2);
+  const gCount = 6 + Math.floor(r() * 3);
   for (let i = 0; i < gCount; i++) {
     graphs.push({y: (0.12 + r() * 0.76) * h, x0: r() * w * 0.5, span: w * (0.25 + r() * 0.35), amp: g * (0.25 + r() * 0.35),
       f1: 0.006 + r() * 0.01, f2: 0.017 + r() * 0.02, speed: 0.08 + r() * 0.12, ph: r() * 6.28});
@@ -93,7 +93,7 @@ function drawBoard(ctx, w, h, board, [ar, ag, ab]) {
   // traces
   ctx.lineJoin = 'round'; ctx.lineCap = 'round';
   paths.forEach(P => {
-    ctx.strokeStyle = acc(P.bus ? 0.2 : 0.13);
+    ctx.strokeStyle = acc(P.bus ? 0.26 : 0.18);
     ctx.lineWidth = P.bus ? 1.6 : 1.1;
     ctx.beginPath(); ctx.moveTo(P.p[0][0], P.p[0][1]);
     for (let i = 1; i < P.p.length; i++) ctx.lineTo(P.p[i][0], P.p[i][1]);
@@ -151,7 +151,7 @@ export default function CircuitBackdrop({accent}) {
       board = buildBoard(w, h, 0x5eed + Math.round(w) * 7 + Math.round(h));
       lctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       drawBoard(lctx, w, h, board, [ar, ag, ab]);
-      const count = Math.min(22, Math.max(8, Math.round(board.paths.length / 4)));
+      const count = Math.min(44, Math.max(16, Math.round(board.paths.length / 4)));
       pulses = Array.from({length: count}, spawn);
       glows = [];
       frame(performance.now(), true);
@@ -174,7 +174,7 @@ export default function CircuitBackdrop({accent}) {
       // faint graph lines, slowly shifting phase
       ctx.lineWidth = 1;
       board.graphs.forEach(G => {
-        ctx.strokeStyle = acc(0.09);
+        ctx.strokeStyle = acc(0.13);
         ctx.beginPath();
         const ph = G.ph + (still ? 0 : t * G.speed);
         for (let x = 0; x <= G.span; x += 6) {
@@ -188,7 +188,7 @@ export default function CircuitBackdrop({accent}) {
       if (!still && now > nextGlow) {
         const n = board.nodes[Math.floor(r() * board.nodes.length)];
         if (n) glows.push({x: n[0], y: n[1], t0: t, dur: 3.5 + r() * 2});
-        nextGlow = now + 1800 + r() * 2600;
+        nextGlow = now + 900 + r() * 1300;
       }
       glows = glows.filter(G => t - G.t0 < G.dur);
       glows.forEach(G => {
@@ -209,7 +209,7 @@ export default function CircuitBackdrop({accent}) {
             const dd = p.d - (p.tail * s) / steps;
             if (dd < 0 || dd > p.P.total) continue;
             const [x, y] = pointAt(p.P, dd);
-            const a = 0.5 * (1 - s / (steps + 1));
+            const a = 0.65 * (1 - s / (steps + 1));
             ctx.fillStyle = acc(a.toFixed(3));
             ctx.beginPath(); ctx.arc(x, y, s === 0 ? 1.9 : 1.3, 0, 6.283); ctx.fill();
           }

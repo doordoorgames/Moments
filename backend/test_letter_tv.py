@@ -18,6 +18,20 @@ def test_pairs_are_uppercase_and_never_repeat_the_previous_pair():
         prev = list(g['pair'])
 
 
+def test_english_pools_drop_x_z_and_keep_q_first_only():
+    assert 'X' not in E.START_LETTERS['en'] and 'Z' not in E.START_LETTERS['en']
+    assert {'X', 'Z', 'Q'}.isdisjoint(E.END_LETTERS['en'])
+    assert 'Q' in E.START_LETTERS['en']
+    seen_first = set()
+    g, _ = E.new_room()
+    for n in range(4000):
+        assert E.press(g, n)
+        a, b = g['pair']
+        assert a not in 'XZ' and b not in 'XZQ'
+        seen_first.add(a)
+    assert 'Q' in seen_first
+
+
 def test_forced_repeat_is_rerolled():
     seq = iter('ABABCD')
     assert E.new_pair('en', ['A', 'B'], rng=lambda _: next(seq)) == ['C', 'D']

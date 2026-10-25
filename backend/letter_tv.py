@@ -12,6 +12,10 @@ import uuid
 VERSION = 1
 # Letter sets by language. Arabic can be added here later; only English ships for now.
 ALPHABETS = {'en': [chr(c) for c in range(ord('A'), ord('Z') + 1)]}
+# Per-position pools. English: X and Z never appear; Q may start a pair but never end one.
+# Must match START_LETTERS / END_LETTERS in frontend/src/components/letterTv/letters.js.
+START_LETTERS = {'en': [c for c in ALPHABETS['en'] if c not in 'XZ']}
+END_LETTERS = {'en': [c for c in ALPHABETS['en'] if c not in 'XZQ']}
 LANGS = tuple(ALPHABETS)
 MAX_SEATS = 24
 # Must match TV_IDS in frontend/src/components/letterTv/screens.js.
@@ -28,9 +32,9 @@ class GameError(ValueError):
 
 
 def new_pair(lang='en', previous=None, rng=secrets.choice):
-    letters = ALPHABETS[lang]
+    first, last = START_LETTERS.get(lang, ALPHABETS[lang]), END_LETTERS.get(lang, ALPHABETS[lang])
     while True:
-        pair = [rng(letters), rng(letters)]
+        pair = [rng(first), rng(last)]
         if pair != previous:
             return pair
 

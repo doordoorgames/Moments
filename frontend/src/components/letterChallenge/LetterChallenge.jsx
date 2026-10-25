@@ -34,6 +34,30 @@ const reducedMotion = () => window.matchMedia?.('(prefers-reduced-motion: reduce
 // Split into characters by code point so typing never cuts a character in half.
 const chars = s => Array.from(s);
 
+
+// Arabic letters sit at very different heights (أ tall, ع deep). Measure the real ink of the letter
+// in the real font and size/place it so it always fits the screen with a margin above and below.
+const AR_FONT = "'IBM Plex Sans Arabic','Segoe UI','Geeza Pro',Tahoma,sans-serif";
+const FIT_H = 0.74, FIT_W = 0.84;   // share of the letter area the ink may use
+let measureCtx = null;
+function fitLetter(letter, w, h) {
+  try {
+    measureCtx = measureCtx || document.createElement('canvas').getContext('2d');
+    measureCtx.font = `700 100px ${AR_FONT}`;
+    const m = measureCtx.measureText(letter);
+    const asc = m.actualBoundingBoxAscent, desc = m.actualBoundingBoxDescent;
+    const left = m.actualBoundingBoxLeft, right = m.actualBoundingBoxRight;
+    const fA = m.fontBoundingBoxAscent ?? asc, fD = m.fontBoundingBoxDescent ?? desc;
+    if (!(asc + desc > 0) || !(left + right > 0)) return null;
+    const size = Math.min(h * FIT_H / (asc + desc), w * FIT_W / (left + right)) * 100;
+    const k = size / 100;
+    const baseline = (size - (fA + fD) * k) / 2 + fA * k;          // baseline inside a line-height:1 box
+    const top = h / 2 - baseline - ((desc - asc) * k) / 2;          // ink centred vertically
+    const x = w / 2 - ((right - left) * k) / 2;                     // ink centred horizontally
+    return {fontSize: `${size}px`, top: `${top}px`, left: `${x}px`, '--stroke': `${Math.max(2, Math.min(5, size * 0.03))}px`};
+  } catch { return null; }
+}
+
 export default function LetterChallenge({onContinue}) {
   const navigate = useNavigate();
   const [lang, setLang] = useState(null);         // null = language screen
@@ -47,6 +71,21 @@ export default function LetterChallenge({onContinue}) {
   textRef.current = text;
 
   useEffect(() => { warmArt(); }, []);
+
+  // Arabic letter fit: re-measure when the letter, the font or the screen size changes.
+  const rightRef = useRef(null);
+  const [fit, setFit] = useState(null);
+  useEffect(() => {
+    if (lang !== 'ar' || !letter || !rightRef.current) { setFit(null); return undefined; }
+    const el = rightRef.current;
+    let alive = true;
+    const apply = () => { if (alive) setFit(fitLetter(letter, el.clientWidth, el.clientHeight)); };
+    apply();
+    document.fonts?.load?.(`700 100px ${AR_FONT}`, letter).then(apply).catch(() => {});
+    document.fonts?.ready?.then(apply).catch(() => {});
+    const ro = new ResizeObserver(apply); ro.observe(el);
+    return () => { alive = false; ro.disconnect(); };
+  }, [lang, letter]);
 
   const swap = useCallback(async (from, target, id) => {
     const wait = ms => new Promise(r => setTimeout(r, ms));
@@ -123,7 +162,7 @@ export default function LetterChallenge({onContinue}) {
           <div className="lch-left">
             <p className="lch-prompt" aria-hidden="true">{text}{typing && <span className="lch-cursor"/>}</p>
           </div>
-          <div className="lch-right"><span className="lch-letter">{letter}</span></div>
+          <div className="lch-right" ref={rightRef}><span className={`lch-letter${ar && fit ? ' is-fit' : ''}`} dir={ar ? 'ltr' : undefined} style={ar && fit ? fit : undefined}>{letter}</span></div>
           <span className="lch-sr" aria-live="polite">{busy ? '' : `${text.replace(/\n/g, ' ')} ${done ? '' : letter}`}</span>
         </div>}
         {lang && <button type="button" className="lch-next" aria-disabled={busy || done} onClick={next}

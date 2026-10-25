@@ -123,7 +123,7 @@ export default function LetterChallenge({onContinue}) {
           <div className="lch-left">
             <p className="lch-prompt" aria-hidden="true">{text}{typing && <span className="lch-cursor"/>}</p>
           </div>
-          <div className="lch-right"><span className="lch-letter" style={ar ? {'--lift': `${AR.LETTER_LIFT[letter] || 0}%`} : undefined}>{letter}</span></div>
+          <div className="lch-right"><span className="lch-letter">{letter}</span></div>
           <span className="lch-sr" aria-live="polite">{busy ? '' : `${text.replace(/\n/g, ' ')} ${done ? '' : letter}`}</span>
         </div>}
         {lang && <button type="button" className="lch-next" aria-disabled={busy || done} onClick={next}

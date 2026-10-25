@@ -15,11 +15,11 @@
 .lch-corner.is-tr{right:0;top:0;transform:scaleX(-1)}
 .lch-corner.is-bl{left:0;bottom:0;transform:scaleY(-1)}
 .lch-corner.is-br{right:0;bottom:0;transform:rotate(180deg)}
-.lch-trace{fill:none;stroke:#32204a;stroke-width:5;stroke-linecap:square;stroke-linejoin:miter}
-.lch-bus{stroke:#3b2658;stroke-width:4}
-.lch-pad{fill:#0d0c12;stroke:#45296a;stroke-width:4}
-.lch-pad-hi{fill:#5a3a86;stroke:#6f4aa3}
-.lch-chip{fill:#141119;stroke:#3f2860;stroke-width:5}
+.lch-trace{fill:none;stroke:#3c2858;stroke-width:5;stroke-linecap:square;stroke-linejoin:miter}
+.lch-bus{stroke:#47306a;stroke-width:4}
+.lch-pad{fill:#0d0c12;stroke:#563681;stroke-width:4}
+.lch-pad-hi{fill:#6a45a0;stroke:#8159bd}
+.lch-chip{fill:#16121d;stroke:#4d3274;stroke-width:5}
 .lch-pulse,.lch-pulse-glow{fill:none;stroke-linecap:round;stroke-dasharray:26 2000;stroke-dashoffset:26;opacity:0;
   animation:lch-pulse var(--t,28s) linear var(--d,0s) infinite}
 .lch-pulse{stroke:#8af5c8;stroke-width:5}
@@ -57,6 +57,9 @@
 .lch-app.is-ar .lch-cursor{width:.45em;height:.85em;vertical-align:-.1em}
 .lch-app.is-ar .lch-right{position:relative}
 .lch-app.is-ar .lch-letter{position:absolute;left:50%;top:50%;font-size:min(100cqh, 92cqw);line-height:1;transform:translate(-50%,-56%);--stroke:clamp(2px,.035em,5px)}
+/* Measured fit (see fitLetter): exact size and position from the letter's real ink, always inside the screen. */
+.lch-app.is-ar .lch-letter.is-fit{transform:none;white-space:nowrap}
+.lch-app.is-ar .lch-right{overflow:hidden}
 .lch-app.is-ar .lch-next,.lch-app.is-ar .lch-new{font-family:'IBM Plex Sans Arabic','Segoe UI',Tahoma,sans-serif;font-weight:700;letter-spacing:0}
 .lch-app.is-ar .lch-next{font-size:clamp(15px,1.75vw,28px)}
 .lch-app.is-ar .lch-new{font-size:17px}

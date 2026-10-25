@@ -29,6 +29,6 @@ export const miniGames = [
   { id: "emoji-rooftop", name: "Emoji Rooftop", description: "Night rooftop, party table, one tablet going around. Guess the movie, country or food from the emojis and shout it out. English or Arabic. Play alone or mirror it on every phone.", component: EmojiRooftop },
   { id: "plot-twist", name: "PLOT TWIST", description: "Experimental · A sunset rooftop, your friends, and one ridiculous story. Story Time or Word Trap, in English or Arabic. 2–8 players.", component: PlotTwist },
   { id: "letter-tv", name: "Letter TV", description: "Two retro TVs, two random letters. Shout an answer first. Play on one phone, or open a room so every phone shows the same letters.", component: LetterTV },
-  { id: "letter-challenge", name: "Letter Challenge", description: "One wide retro monitor, a new letter challenge. Rules coming soon.", component: LetterChallenge },
+  { id: "letter-challenge", name: "Letter Challenge", description: "One letter, a run of categories. Shout an answer that starts with the letter; the host taps NEXT for the next one.", component: LetterChallenge },
   { id: "baccarat-classic", name: "The Baccarat Hunt: Classic", description: "The original one-screen perfume dash.", component: BaccaratHunt, hidden: true },
 ];

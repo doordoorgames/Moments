@@ -136,6 +136,28 @@
 /* CRT warming up (once, when the cabinet appears) */
 @keyframes arc-warm{0%{clip-path:inset(49% 0 49% 0);filter:brightness(1.6)}55%{clip-path:inset(0 0 0 0);filter:brightness(1.15)}100%{clip-path:inset(0);filter:none}}
 .cr-arcade .cr-play{padding-bottom:1vh;position:relative;z-index:1}
+/* Never clip a question: if it is taller than the screen (phone keyboard open, very short phones) the
+   screen scrolls, and centring only applies while everything fits (auto margins = "safe" centring). */
+.cr-cab-screen{overflow-y:auto;overscroll-behavior:contain;scrollbar-width:none}
+.cr-cab-screen::-webkit-scrollbar{display:none}
+.cr-arcade .cr-play{justify-content:flex-start}
+.cr-arcade .cr-play>:first-child{margin-top:auto}
+.cr-arcade .cr-play>:last-child{margin-bottom:auto}
+
+/* Word Rush brings up the keyboard, which takes half the phone. The cabinet goes compact: no control
+   panel, slim shell and marquee, smaller letter tiles, so the question, the letters, the box and the
+   button all fit above the keyboard. */
+.cr-arcade .cr-stage-word .cr-cab-panel{height:12px;padding:0;margin-top:-6px}
+.cr-arcade .cr-stage-word .cr-cab-panel>*{display:none}
+.cr-arcade .cr-stage-word .cr-cab-marquee{padding:4px 10px 8px}
+.cr-arcade .cr-stage-word .cr-cab-marquee:before{display:none}
+.cr-arcade .cr-stage-word .cr-cab-shell{border-width:14px;border-image-width:14px}
+.cr-arcade .cr-stage-word .cr-cab-screen{padding:8px 10px}
+.cr-arcade .cr-stage-word .cr-word{gap:10px}
+.cr-arcade .cr-stage-word .cr-word-prompt{font-size:clamp(20px,5.6vw,26px);gap:4px 8px}
+.cr-arcade .cr-stage-word .cr-word-prompt b{min-width:44px;height:44px;font-size:26px}
+.cr-arcade .cr-stage-word .cr-word-input,.cr-arcade .cr-stage-word .cr-word-go{min-height:54px}
+.cr-arcade .cr-stage-word .cr-word-note{font-size:13px}
 .cr-arcade .cr-task-body{animation:arc-swap .18s ease-out}
 @keyframes arc-swap{from{opacity:0}}
 

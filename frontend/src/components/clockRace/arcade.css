@@ -1,0 +1,262 @@
+/* Clock Race · arcade theme. "An afternoon inside a Japanese game center, circa 1992."
+   Everything here is scoped to .cr-arcade (see theme.js); the classic look is untouched.
+
+   Layers (all replaceable files in public/clock-race/arcade/, see README.md there). Their URLs come in as
+   CSS variables from theme.js (--arc-room etc.), so the build never tries to bundle them:
+     A  a-room.jpg            the painted room behind everything
+     B  b-cabinet-shell.png   9-slice cabinet shell around the CRT
+     C  c-crt-glass.png       transparent glass over the screen (vignette + one soft reflection)
+     D  d-ink-frame.png       9-slice hand-inked outline for buttons and panels
+        d-paint-texture.png   tileable gouache density, multiplied into painted surfaces
+     E  the timer dials       drawn in code (Dials.jsx), they show live progress
+     F  f-foreground-*.png    details over the room, under the game
+
+   Analog character comes from the art itself (paint density, ink wobble, the paint sitting a hair off its
+   outline, grain baked into the room), not from full-screen filters. Text and answers stay crisp. */
+
+.cr-app.cr-arcade{
+  --ink:#3A3446;--paper:#FBF5E8;--cream:#F1E6CF;
+  --turq:#7EC4BE;--turq-d:#5CA09E;--pink:#E8A8B6;--pink-d:#C8849A;--blue:#ACCAE2;--blue-d:#84A6C8;
+  --ivory:#F6ECD6;--ivory-d:#E2D2B6;--lav:#C4B8E0;--lav-d:#A092C4;
+  --coral:#E8927C;--coral-d:#C8735E;--yellow:#F4DE96;--yellow-d:#D8BE6E;--pist:#B6D296;--pist-d:#8FB070;--navy:#465474;
+  --tomato:var(--coral);--yolk:var(--yellow);--mint:#7DBF9E;--cobalt:#6F98C9;
+  --shadow:0 4px 0 rgba(58,52,70,.22);--shadow-lg:0 6px 0 rgba(58,52,70,.2);
+  --paint:var(--arc-paint);
+  --chrome-top:0px;
+  background:var(--blue);color:var(--ink);
+}
+
+/* ---------------------------------------------------------------- A + F: the room */
+.cr-arcade .cr-backdrop.is-arcade{background:var(--blue);overflow:hidden}
+.cr-arcade .cr-room{position:absolute;inset:0;background:var(--arc-room) center 22%/cover no-repeat,var(--blue)}
+/* the fluorescent tubes breathe a little, very slowly (one opacity layer, cheap) */
+.cr-arcade .cr-room-light{position:absolute;inset:0;background:radial-gradient(70% 34% at 50% 8%,#fff6e2 0,transparent 70%);opacity:.16;animation:arc-tubes 11s ease-in-out infinite alternate}
+.cr-arcade .cr-fg{position:absolute;left:0;right:0;height:22vw;max-height:240px;background:center/100% 100% no-repeat}
+.cr-arcade .cr-fg.is-top{top:0;background-image:var(--arc-fg-top)}
+.cr-arcade .cr-fg.is-bottom{bottom:0;background-image:var(--arc-fg-bottom)}
+@keyframes arc-tubes{from{opacity:.1}to{opacity:.22}}
+
+/* ---------------------------------------------------------------- D: the hand-inked outline, used everywhere
+   The paint is the element's own background; the ink is a 9-slice drawn line one pixel off, like a cel
+   whose paint and line never quite registered. */
+.cr-arcade :is(.cr-choice,.cr-stroop-card,.cr-geo-card,.cr-sock-cell,.cr-primary,.cr-intent,.cr-card,.cr-ghost:not(.cr-link),.cr-square-btn,.cr-rules li,
+  .cr-guests li,.cr-word-go,.cr-word-prompt b,.cr-count,.cr-task-name,.cr-lang,.cr-app .pt-code-box,.cr-results li,
+  .cr-waiting,.cr-spectate,.cr-error,.cr-notice,.cr-toast,.cr-memory-grid,.cr-cab-panel,.cr-cab-marquee,.cr-sad-face,.cr-countdown span,.cr-finish-card,.cr-qr,.cr-dev-toggle){
+  position:relative;border:0!important;border-radius:6px;box-shadow:var(--edge,0 4px 0 rgba(58,52,70,.2))}
+.cr-arcade :is(.cr-choice,.cr-stroop-card,.cr-geo-card,.cr-sock-cell,.cr-primary,.cr-intent,.cr-card,.cr-ghost:not(.cr-link),.cr-square-btn,.cr-rules li,
+  .cr-guests li,.cr-word-go,.cr-word-prompt b,.cr-count,.cr-task-name,.cr-lang,.cr-app .pt-code-box,.cr-results li,
+  .cr-waiting,.cr-spectate,.cr-error,.cr-notice,.cr-toast,.cr-memory-grid,.cr-cab-panel,.cr-cab-marquee,.cr-sad-face,.cr-countdown span,.cr-finish-card,.cr-qr,.cr-dev-toggle)::after{
+  content:'';position:absolute;inset:-6px -5px -5px -6px;border:12px solid transparent;border-image:var(--arc-ink) 12 round;pointer-events:none;z-index:2}
+/* inputs cannot carry the drawn outline (no ::after), so they get a painted inset line instead */
+.cr-arcade :is(.cr-word-input,.cr-form>input){border:0!important;border-radius:8px;box-shadow:inset 0 0 0 2.5px var(--ink),inset 0 4px 0 rgba(58,52,70,.08)!important}
+/* paint density: a light gouache texture multiplied into flat fills */
+.cr-arcade :is(.cr-choice,.cr-stroop-card,.cr-primary,.cr-intent,.cr-card,.cr-word-go,.cr-word-prompt b,.cr-cab-panel,.cr-cab-marquee,.cr-finish-card,.cr-rules li,.cr-guests li,.cr-results li,.cr-geo-card,.cr-sock-cell){
+  background-image:var(--paint);background-blend-mode:multiply;background-size:256px}
+
+/* mechanical buttons: a darker painted edge under the cap; pressing sinks the cap onto it */
+.cr-arcade :is(.cr-choice,.cr-stroop-card,.cr-geo-card,.cr-primary,.cr-intent,.cr-word-go,.cr-ghost:not(.cr-link),.cr-square-btn,.cr-lang button){transition:transform .06s ease-out,box-shadow .06s ease-out}
+.cr-arcade :is(.cr-choice,.cr-stroop-card,.cr-geo-card,.cr-primary,.cr-intent,.cr-word-go,.cr-ghost:not(.cr-link),.cr-square-btn):active:not(:disabled){transform:translateY(3px)!important;box-shadow:0 1px 0 var(--btn-edge,rgba(58,52,70,.3))!important}
+
+/* ---------------------------------------------------------------- type */
+.cr-arcade{font-family:'Cairo','Segoe UI',Tahoma,sans-serif}
+.cr-arcade .cr-prompt,.cr-arcade .cr-memory-q{color:var(--ink);letter-spacing:0}
+.cr-arcade :focus-visible{outline:3px solid var(--blue-d);outline-offset:4px}
+
+/* ---------------------------------------------------------------- shared pieces */
+.cr-arcade .cr-bar{position:relative}
+.cr-arcade .cr-wordmark{padding:2px 12px 4px;background:var(--ivory);border-radius:6px;box-shadow:0 3px 0 rgba(58,52,70,.18)}
+.cr-arcade .cr-square-btn{background:var(--ivory);--edge:0 3px 0 var(--ivory-d);--btn-edge:var(--ivory-d)}
+.cr-arcade .cr-primary{background-color:var(--coral);color:#fff!important;--edge:0 5px 0 var(--coral-d);--btn-edge:var(--coral-d);text-shadow:0 1px 0 #00000022}
+.cr-arcade .cr-ghost{background-color:var(--ivory);--edge:0 3px 0 var(--ivory-d)}
+.cr-arcade .cr-card{background-color:var(--paper);--edge:0 6px 0 rgba(58,52,70,.16)}
+.cr-arcade .cr-waiting{background:var(--paper);--edge:none}
+.cr-arcade .cr-error{background:#F7D9D0}
+.cr-arcade .cr-notice{background:var(--yellow);--edge:0 3px 0 var(--yellow-d)}
+.cr-arcade .cr-fine{opacity:.75;background:#fbf5e8cc;padding:4px 10px;border-radius:6px;margin-inline:auto!important;width:fit-content}
+
+/* ---------------------------------------------------------------- entry + lobby: ivory panels in the room */
+.cr-arcade.cr-page{background:transparent}
+.cr-arcade .cr-hero{padding:4px 0 14px}
+.cr-arcade .cr-hero-clock.is-arcade{display:block;width:150px;height:150px;margin:0 auto 4px}
+.cr-arcade .cr-hero h1{display:inline-block;padding:2px 22px 8px;background:var(--ivory) var(--paint);background-blend-mode:multiply;border-radius:10px;
+  text-shadow:2px 2px 0 var(--pink);box-shadow:0 5px 0 var(--ivory-d)}
+.cr-arcade .cr-hero p{display:inline-block;margin-top:10px!important;padding:3px 12px;background:#fbf5e8d9;border-radius:6px;opacity:1}
+.cr-arcade .cr-intent{background-color:var(--yellow);--edge:0 5px 0 var(--yellow-d);--btn-edge:var(--yellow-d)}
+.cr-arcade .cr-intent.is-join{background-color:var(--blue);--edge:0 5px 0 var(--blue-d);--btn-edge:var(--blue-d)}
+.cr-arcade .cr-intent.is-on{transform:translateY(3px);box-shadow:0 2px 0 var(--btn-edge);outline:3px solid var(--ink);outline-offset:4px}
+.cr-arcade .cr-rules li{background-color:var(--paper);--edge:0 3px 0 rgba(58,52,70,.14)}
+.cr-arcade .cr-rules li:before{border-color:var(--ink);background:conic-gradient(var(--coral) 0 30%,var(--paper) 0)}
+.cr-arcade .cr-rules li:nth-child(2):before{background:conic-gradient(var(--coral) 0 60%,var(--paper) 0)}
+.cr-arcade .cr-rules li:nth-child(3):before{background:var(--coral)}
+.cr-arcade .cr-form>input{background:#fffdf8}
+.cr-arcade .pt-code-box{background:#fffdf8;--edge:inset 0 3px 0 rgba(58,52,70,.08)}
+.cr-arcade .pt-code-box.is-active{background:#FFF5CF}
+.cr-arcade .cr-lang{overflow:visible;background:var(--paper);--edge:0 3px 0 rgba(58,52,70,.16)}
+.cr-arcade .cr-lang button{background:transparent;border-radius:6px}
+.cr-arcade .cr-lang button+button{border-inline-start:0}
+.cr-arcade .cr-lang button.is-on{background:var(--navy);color:var(--yellow)}
+.cr-arcade .cr-lobby-body h1{display:inline-block;align-self:flex-start;padding:0 16px 6px;background:var(--ivory);border-radius:8px;box-shadow:0 4px 0 var(--ivory-d)}
+.cr-arcade .cr-code-card{background-color:var(--yellow)}
+.cr-arcade .cr-guests li{background-color:#fffdf8}
+.cr-arcade .cr-guests li i,.cr-arcade .cr-results li i{border-radius:50%;border-color:var(--ink)}
+.cr-arcade .cr-guests li small{background:var(--navy);color:var(--paper);border-radius:4px}
+.cr-arcade .cr-guests li small.is-me{background:var(--yellow);color:var(--ink)}
+.cr-arcade .cr-qr{background:#fff}
+
+/* ---------------------------------------------------------------- race: timer strip over the ceiling */
+.cr-arcade.cr-race{--cr-chrome:150px}
+.cr-arcade .cr-top{background:transparent;border-bottom:0;padding-bottom:4px}
+.cr-arcade .cr-dial-name{background:#fbf5e8e6;border-radius:4px;margin-top:1px}
+.cr-arcade .cr-dial-seat.is-me .cr-dial-name{background:var(--yellow);border:0;box-shadow:0 0 0 1.5px var(--ink)}
+.cr-arcade .cr-dial-seat.is-winner .cr-dial-name{background:var(--navy);color:var(--yellow)}
+.cr-arcade .cr-dial-pop{border-radius:50%}
+.cr-arcade .cr-dial.is-arcade{filter:drop-shadow(0 2px 0 rgba(58,52,70,.22))}
+
+/* ---------------------------------------------------------------- B + C: the cabinet */
+.cr-arcade .cr-cab-stage{padding:2px 12px calc(8px + env(safe-area-inset-bottom));max-width:540px}
+.cr-cab{flex:1;min-height:0;display:flex;flex-direction:column}
+.cr-cab-marquee{flex:none;z-index:1;margin:0 10px -6px;padding:7px 12px 12px;background-color:var(--yellow);--edge:0 3px 0 var(--yellow-d)}
+/* small cabinet lamps along the marquee edge: lit, with a slow gentle glow */
+.cr-cab-marquee:before{content:'';position:absolute;left:10px;right:10px;bottom:4px;height:5px;border-radius:3px;
+  background:radial-gradient(circle,var(--coral) 0 2px,transparent 2.6px) 0 50%/16px 5px repeat-x;opacity:.75;animation:arc-lamps 4.5s ease-in-out infinite alternate}
+@keyframes arc-lamps{from{opacity:.55}to{opacity:.9}}
+.cr-arcade .cr-cab-marquee .cr-task-head{min-height:30px}
+.cr-arcade .cr-count{background:var(--paper);--edge:0 2px 0 var(--yellow-d);font-size:13px;padding:2px 9px}
+.cr-arcade .cr-task-name{background:var(--navy);color:var(--yellow);--edge:none;font-size:13px;padding:3px 11px}
+.cr-arcade .cr-task-name::after,.cr-arcade .cr-count::after{display:none}
+
+/* the shell (B) is a 9-slice painting; the screen sits in its window */
+.cr-cab-shell{flex:1;min-height:0;display:flex;border:26px solid transparent;border-image:var(--arc-shell) 72 / 26px round;
+  background:var(--pink) var(--paint);background-blend-mode:multiply;background-clip:padding-box;border-radius:20px}
+.cr-cab-screen{position:relative;flex:1;min-height:0;display:flex;flex-direction:column;overflow:hidden;border-radius:18px / 22px;
+  background:#F7F1E3 linear-gradient(#ffffff18 50%,#46547408 50%) 0 0/100% 4px;   /* phosphor ivory, the faintest static scanlines */
+  box-shadow:inset 0 0 0 2px var(--ink),inset 0 2px 8px rgba(70,84,116,.14);
+  padding:10px 12px 12px;animation:arc-warm .55s ease-out both}
+.cr-cab-glass{position:absolute;inset:0;z-index:3;pointer-events:none;border-radius:inherit;background:var(--arc-glass) center/100% 100% no-repeat}
+/* CRT warming up (once, when the cabinet appears) */
+@keyframes arc-warm{0%{clip-path:inset(49% 0 49% 0);filter:brightness(1.6)}55%{clip-path:inset(0 0 0 0);filter:brightness(1.15)}100%{clip-path:inset(0);filter:none}}
+.cr-arcade .cr-play{padding-bottom:1vh;position:relative;z-index:1}
+.cr-arcade .cr-task-body{animation:arc-swap .18s ease-out}
+@keyframes arc-swap{from{opacity:0}}
+
+/* control panel (D): joystick, two buttons, a coin slot. Pure decoration, hidden on short screens. */
+.cr-cab-panel{flex:none;height:46px;margin:-8px 4px 0;display:flex;align-items:center;justify-content:center;gap:16px;background-color:var(--ivory);--edge:0 4px 0 var(--ivory-d);z-index:0;padding-top:6px}
+.cr-cab-panel::after{inset:-6px -5px -5px -6px}
+.cr-cab-stick{width:18px;height:18px;border-radius:50%;background:var(--coral);box-shadow:inset -3px -3px 0 var(--coral-d),0 0 0 2px var(--ink),0 9px 0 -6px var(--ink);margin-inline-end:12px}
+.cr-cab-btn{width:20px;height:20px;border-radius:50%;background:var(--blue);box-shadow:inset -3px -3px 0 var(--blue-d),0 0 0 2px var(--ink)}
+.cr-cab-btn.is-b{background:var(--yellow);box-shadow:inset -3px -3px 0 var(--yellow-d),0 0 0 2px var(--ink)}
+.cr-cab-coin{width:8px;height:18px;border-radius:3px;background:var(--navy);margin-inline-start:14px;box-shadow:0 0 0 2px var(--ivory-d)}
+@media (max-height:700px){
+  .cr-arcade.cr-race{--cr-chrome:110px}
+  .cr-cab-panel{height:16px;padding:0}
+  .cr-cab-panel>*{display:none}
+  .cr-cab-marquee{padding:5px 10px 10px}
+  .cr-cab-shell{border-width:18px;border-image-width:18px}
+}
+
+/* ---------------------------------------------------------------- question types on the screen */
+.cr-arcade .cr-prompt{font-size:clamp(23px,6.6vw,31px);margin:4px 0 10px!important}
+/* faces: a clean grid on the screen, nothing decorative inside the puzzle */
+.cr-arcade .cr-face-cell{border-radius:8px}
+.cr-arcade .cr-face-cell:active{background:#46547414}
+
+/* answer keys (missing letter / memory): pastel arcade buttons */
+.cr-arcade .cr-choice{background-color:var(--yellow);--edge:0 5px 0 var(--yellow-d);--btn-edge:var(--yellow-d);color:var(--ink);border-radius:10px}
+.cr-arcade .cr-choices{gap:12px}
+
+/* Stroop: big tactile cream keys so every ink colour reads; the word colours are the puzzle */
+.cr-arcade .cr-stroop{gap:14px}
+.cr-arcade .cr-stroop-card{background-color:#FFFCF4;--edge:0 6px 0 var(--ivory-d);--btn-edge:var(--ivory-d);border-radius:12px;min-height:92px}
+.cr-arcade .cr-prompt .cr-stroop-key{background:var(--navy);color:var(--yellow);border-radius:4px}
+
+/* geography: illustrated selection panels, map on top, label plate below */
+.cr-arcade .cr-geo{gap:12px}
+.cr-arcade .cr-geo-card{background-color:#FFFCF4;--edge:0 5px 0 var(--ivory-d);--btn-edge:var(--ivory-d);border-radius:10px;padding:8px 8px 6px}
+.cr-arcade .cr-geo-art path:first-child{fill:#3A3446;opacity:.85}
+.cr-arcade .cr-geo-art path:last-child{fill:#6FB3A5}
+.cr-arcade .cr-geo-name{border-top:0;margin:4px -2px 0;padding:3px 4px 4px;background:var(--blue);border-radius:5px;color:var(--ink)}
+
+/* lonely sock: same socks, now on a little cabinet-tile grid */
+.cr-arcade .cr-socks{gap:9px}
+.cr-arcade .cr-sock-cell{background-color:#FFFCF4;--edge:0 4px 0 var(--ivory-d);border-radius:10px}
+.cr-arcade .cr-sock-cell:nth-child(odd){background-color:#FBF0F2}
+
+/* memory: the letters on the CRT itself, extremely readable */
+.cr-arcade .cr-memory-grid{background:var(--ink);gap:3px;border-radius:8px;overflow:visible;--edge:0 5px 0 rgba(58,52,70,.18);--lilac:#E6DBFA;--powder:#FBF0C4;--blend:#F7F1E8}
+.cr-arcade .cr-memory-grid span{background:#fff;border-radius:0}
+.cr-arcade .cr-memory-grid span:first-child{border-top-left-radius:7px}.cr-arcade .cr-memory-grid span:nth-child(3){border-top-right-radius:7px}
+.cr-arcade .cr-memory-grid span:nth-child(7){border-bottom-left-radius:7px}.cr-arcade .cr-memory-grid span:nth-child(9){border-bottom-right-radius:7px}
+.cr-arcade .cr-memory-grid[dir=rtl] span:first-child{border-radius:0 7px 0 0}.cr-arcade .cr-memory-grid[dir=rtl] span:nth-child(3){border-radius:7px 0 0 0}
+.cr-arcade .cr-memory-grid[dir=rtl] span:nth-child(7){border-radius:0 0 7px 0}.cr-arcade .cr-memory-grid[dir=rtl] span:nth-child(9){border-radius:0 0 0 7px}
+.cr-arcade .cr-memory-grid b{color:#2E2A38}
+.cr-arcade .cr-memory-bar{background:var(--coral);border-radius:3px}
+
+/* word rush: the input is part of the screen; Arabic stays RTL with the native keyboard */
+.cr-arcade .cr-word-prompt b{background-color:var(--yellow);--edge:0 4px 0 var(--yellow-d);border-radius:8px}
+.cr-arcade .cr-word-input{background:#fffdf8;color:var(--ink)}
+.cr-arcade .cr-word-go{background-color:var(--pist);color:var(--ink);--edge:0 5px 0 var(--pist-d);--btn-edge:var(--pist-d);border-radius:8px}
+
+/* friend question: name tags keep their colours, softer drop */
+.cr-arcade .cr-tag{filter:drop-shadow(0 4px 0 rgba(58,52,70,.25))}
+.cr-arcade .cr-tag-body{background:var(--ink)}
+.cr-arcade .cr-tag-hole{background:var(--paper)}
+.cr-arcade.cr-race.is-vote .cr-backdrop{background:var(--blue)}
+.cr-arcade .cr-stage-vote .cr-cab-marquee{background-color:var(--pink);--edge:0 3px 0 var(--pink-d)}
+.cr-arcade .cr-stage-vote .cr-task-name{background:var(--navy);color:var(--pink)}
+
+/* final boss: the room dims to evening lavender (never black); the screen keeps its light */
+.cr-arcade.cr-race.is-boss .cr-backdrop{background:var(--lav)}
+.cr-arcade.cr-race.is-boss .cr-room{filter:none;opacity:.55}
+.cr-arcade.cr-race.is-boss .cr-room-light{background:#7d6fa8;opacity:.35;animation:none}
+.cr-arcade.cr-race.is-boss .cr-stage{color:var(--ink)}
+.cr-arcade.cr-race.is-boss .cr-prompt{color:var(--ink);text-shadow:2px 2px 0 var(--pink)}
+.cr-arcade.cr-race.is-boss .cr-count{background:var(--paper)}
+.cr-arcade .cr-stage-boss .cr-cab-marquee{background-color:var(--coral);--edge:0 3px 0 var(--coral-d)}
+.cr-arcade .cr-boss-stamp{background:var(--navy);color:var(--yellow);border:0;border-radius:4px;transform:none}
+.cr-arcade .cr-face-grid.is-boss{background:transparent;border:0;box-shadow:none;padding:0}
+
+/* ---------------------------------------------------------------- overlays */
+/* countdown: the room, and one small monitor with the number (opaque, so the first task stays hidden) */
+.cr-arcade .cr-countdown{background:var(--blue) var(--arc-room) center 22%/cover no-repeat}
+.cr-arcade .cr-countdown span{width:160px;height:150px;border-radius:26px/30px;background:#F7F1E3;color:var(--ink);font-size:92px;
+  --edge:0 0 0 14px var(--pink),0 0 0 16px var(--ink),0 18px 0 14px var(--pink-d);animation:arc-count .9s ease-out both}
+.cr-arcade .cr-countdown.is-go span{background:var(--pist);color:var(--ink);-webkit-text-stroke:0;font-size:58px;width:auto;padding:0 30px;animation:cr-go .7s ease-out forwards}
+@keyframes arc-count{0%{opacity:0;filter:brightness(1.7)}20%{opacity:1;filter:none}85%{opacity:1}100%{opacity:.25}}
+
+.cr-arcade .cr-toast{background:var(--yellow);--edge:0 4px 0 var(--yellow-d);border-radius:8px;color:var(--ink)}
+.cr-arcade .cr-toast.is-word{background:var(--pist);color:var(--ink);-webkit-text-stroke:0;--edge:0 4px 0 var(--pist-d)}
+.cr-arcade .cr-sad{background:rgba(70,84,116,.35)}
+.cr-arcade .cr-sad-face{background:#F7F1E3;border-radius:22px/26px;--edge:0 0 0 12px var(--pink),0 0 0 14px var(--ink),0 14px 0 12px var(--pink-d)}
+
+/* ---------------------------------------------------------------- results: a vintage arcade victory screen */
+.cr-arcade .cr-finish{background:rgba(70,84,116,.42)}
+.cr-arcade .cr-finish-card{background-color:#F7F1E3;border-radius:20px;padding:0 16px 14px;gap:10px;overflow:visible;
+  --edge:0 0 0 12px var(--pink),0 0 0 14px var(--ink),0 16px 0 12px var(--pink-d);animation:arc-finish .5s cubic-bezier(.2,.9,.3,1.15) both;margin:14px 0}
+.cr-arcade .cr-finish-card::after{inset:-6px}
+/* the marquee: a yellow sign with lamps that light up one after another, then stay lit */
+.cr-arcade .cr-finish-kicker{align-self:stretch;margin:0 -16px 2px;padding:9px 12px 16px;border-radius:18px 18px 0 0;background:var(--yellow) var(--paint);background-blend-mode:multiply;
+  color:var(--ink);font-family:'Baloo Bhaijaan 2',sans-serif;font-weight:800;font-size:22px;position:relative;box-shadow:inset 0 -2px 0 var(--yellow-d)}
+.cr-arcade .cr-finish-kicker:before{content:'';position:absolute;left:14px;right:14px;bottom:5px;height:6px;
+  background:radial-gradient(circle,var(--coral) 0 2.4px,transparent 3px) 0 50%/16px 6px repeat-x;animation:arc-marquee 1.4s steps(8) .2s both}
+@keyframes arc-marquee{from{clip-path:inset(0 100% 0 0)}to{clip-path:inset(0)}}
+.cr-arcade .cr-finish-card h2{color:var(--ink);text-shadow:2px 2px 0 var(--pink)}
+.cr-arcade .cr-results{counter-reset:rank;gap:7px}
+.cr-arcade .cr-results li{counter-increment:rank;background-color:#fffdf8;border-radius:8px;--edge:0 3px 0 rgba(58,52,70,.14);animation:arc-row .35s ease-out both}
+.cr-arcade .cr-results li:before{content:counter(rank);flex:none;width:24px;height:24px;display:grid;place-items:center;border-radius:50%;background:var(--navy);color:var(--yellow);
+  font-family:'Archivo Black',sans-serif;font-size:12px}
+.cr-arcade .cr-results li:first-child{background-color:var(--yellow);animation:arc-row .35s ease-out both,arc-win 1s ease-in-out 1.2s 2}
+.cr-arcade .cr-results li:first-child:before{background:var(--coral);color:#fff}
+.cr-arcade .cr-results li.is-me{outline:2px solid var(--ink);outline-offset:2px}
+.cr-arcade .cr-results li:nth-child(2){animation-delay:.12s}.cr-arcade .cr-results li:nth-child(3){animation-delay:.24s}
+.cr-arcade .cr-results li:nth-child(4){animation-delay:.36s}.cr-arcade .cr-results li:nth-child(n+5){animation-delay:.48s}
+@keyframes arc-finish{0%{transform:translateY(24px);opacity:0}100%{transform:none;opacity:1}}
+@keyframes arc-row{from{opacity:0;transform:translateY(6px)}}
+@keyframes arc-win{50%{background-color:#FBEBB4}}
+
+/* TEST99 chip */
+.cr-arcade .cr-dev-toggle{background:var(--pist);border-radius:4px}
+
+@media (prefers-reduced-motion:reduce){
+  .cr-arcade .cr-room-light,.cr-cab-marquee:before{animation:none}
+  .cr-cab-screen{animation:none}
+}

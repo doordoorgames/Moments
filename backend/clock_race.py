@@ -16,6 +16,7 @@ import time
 import unicodedata
 import uuid
 
+import clock_race_ar as AR
 import clock_race_data as D
 
 VERSION = 3
@@ -34,8 +35,8 @@ TYPO_MIN_LENGTH = 5  # one-typo forgiveness only for words this long or longer
 TEST_BOT = 'Test Bot'
 BOT_NAMES = ['نورة', 'سارة', 'فهد', 'دانة', 'عبدالله', 'شوق', 'يوسف', 'مريم', 'Noor', 'Hamad', 'لولوة', 'بدر']
 # Simulated players: typical seconds per task type (measured feel: taps ~2-3s, typing ~7s,
-# memory = 4s of grid + the answer). Each task varies 0.7x-1.35x and ~12% are "wrong" (+1s).
-BOT_SECONDS = {'odd': 2.4, 'stroop': 2.2, 'geo': 2.6, 'sock': 3.4, 'memory': 6.3,
+# memory = 12s of grid + the answer). Each task varies 0.7x-1.35x and ~12% are "wrong" (+1s).
+BOT_SECONDS = {'odd': 2.4, 'stroop': 2.2, 'geo': 2.6, 'sock': 3.4, 'memory': 14.3,
                'word': 7.5, 'vote': 2.0, 'boss': 5.5}
 BOT_WRONG = 0.12
 
@@ -84,6 +85,8 @@ FRUIT_TABLE = _table(D.FRUITS)
 
 def word_candidates(task):
     """Every accepted answer for a Word Rush task: {compact: display}."""
+    if task.get('lang') == 'ar':
+        return AR.candidates(task)
     if task['variant'] == 'pair':
         first, last = task['first'].lower(), task['last'].lower()
         return {w: w.upper() for w in D.WORDS if w[0] == first and w[-1] == last}
@@ -95,6 +98,8 @@ def word_candidates(task):
 def check_word(task, text):
     """(accepted, display answer or None). The typed text itself must meet the letter rule,
     so typo forgiveness can never change the first or last letter."""
+    if task.get('lang') == 'ar':
+        return AR.check(task, text)
     typed = compact(text)
     if len(typed) < 2:
         return False, None
@@ -198,6 +203,12 @@ def gen_memory(rng, lang):
 
 
 def gen_word(rng, lang, variant):
+    if lang == 'ar':  # Arabic rooms: Arabic letters, Arabic answers (clock_race_ar)
+        if variant == 'pair':
+            first, last = rng.choice(AR.PAIR_LIST)
+            return dict(type='word', variant='pair', lang='ar', first=first, last=last)
+        letters = AR.COUNTRY_LETTERS if variant == 'country' else AR.FRUIT_LETTERS
+        return dict(type='word', variant=variant, lang='ar', letter=rng.choice(letters))
     if variant == 'pair':
         pair = rng.choice(D.LETTER_PAIRS)
         return dict(type='word', variant='pair', first=pair[0], last=pair[1])

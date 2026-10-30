@@ -160,11 +160,14 @@
 .cr-word{display:flex;flex-direction:column;gap:14px;justify-content:center}
 .cr-word-prompt{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:6px 9px;text-align:center;font-family:'Baloo Bhaijaan 2',sans-serif;font-weight:800;font-size:clamp(24px,6.8vw,31px);line-height:1.2}
 .cr-word-prompt b{display:inline-grid;place-items:center;min-width:52px;height:52px;padding:0 8px;border:3px solid var(--ink);border-radius:0;background:var(--yolk);
-  font-family:'Archivo Black',sans-serif;font-size:30px;box-shadow:3px 3px 0 var(--ink)}
+  font-family:'Archivo Black','Baloo Bhaijaan 2',sans-serif;font-size:30px;box-shadow:3px 3px 0 var(--ink)}
 .cr-word-row{display:flex;gap:8px;direction:ltr}
 .cr-word-input{flex:1;min-width:0;min-height:62px;padding:8px 14px;border:3px solid var(--ink);border-radius:0;background:#fff;
   font-family:'Archivo Black',sans-serif!important;font-size:24px!important;letter-spacing:2px;text-transform:uppercase;box-shadow:inset 0 4px 0 #0b0b0b14}
 .cr-word-input::placeholder{color:#0b0b0b40;letter-spacing:1px}
+/* Arabic answers: joined letters need no letter-spacing and no uppercase */
+.cr-word-input.is-ar{font-family:'Baloo Bhaijaan 2',sans-serif!important;font-weight:800;font-size:27px!important;letter-spacing:0;text-transform:none;padding-bottom:12px}
+.cr-word-input.is-ar::placeholder{letter-spacing:0}
 .cr-word-go{flex:none;min-width:76px;border:3px solid var(--ink);border-radius:0;background:var(--mint);color:#fff;font-family:'Baloo Bhaijaan 2',sans-serif!important;font-weight:800;font-size:22px;box-shadow:var(--shadow)}
 .cr-word-go:active{transform:translate(3px,3px);box-shadow:1px 1px 0 var(--ink)}
 .cr-word-note{text-align:center;font-weight:800;font-size:14px;opacity:.6}
@@ -256,17 +259,18 @@
 
 /* ---------------------------------------------------------------- three-grid memory */
 .cr-memory{display:flex;flex-direction:column;align-items:center;gap:12px}
-/* Remember this: white grid, big black letters, four soft blinks that alternate lilac and powder yellow
-   (neighbouring cells start on opposite colours). Background and a small lift only: cheap on phones. */
-.cr-memory-grid{--lilac:#D9C9FF;--powder:#FFF1A8;display:grid;grid-template-columns:repeat(3,1fr);width:min(100%,312px);border:3px solid var(--ink);background:var(--ink);gap:3px;box-shadow:var(--shadow-lg);animation:cr-swap .16s ease-out}
-.cr-memory-grid span{--c1:var(--lilac);--c2:var(--powder);aspect-ratio:1;display:grid;place-items:center;background:#fff;animation:cr-mem-blink 2s ease-in-out .15s 2 both}
+/* Remember this: white grid, big black letters, 12 seconds. Slow, soft tint waves (one every 2s) that glide
+   white -> lilac -> pale blend -> powder yellow -> white; neighbouring cells start on opposite colours.
+   Background colour and a tiny lift only: cheap on phones, letters stay black and sharp throughout. */
+.cr-memory-grid{--lilac:#E3D6FF;--powder:#FFF3BC;--blend:#F6F0EC;display:grid;grid-template-columns:repeat(3,1fr);width:min(100%,312px);border:3px solid var(--ink);background:var(--ink);gap:3px;box-shadow:var(--shadow-lg);animation:cr-swap .16s ease-out}
+.cr-memory-grid span{--c1:var(--lilac);--c2:var(--powder);aspect-ratio:1;display:grid;place-items:center;background:#fff;animation:cr-mem-blink 4s cubic-bezier(.45,0,.55,1) .2s 3 both}
 .cr-memory-grid span.is-b{--c1:var(--powder);--c2:var(--lilac)}
-.cr-memory-grid b{display:block;color:#0B0B0B;font-family:'Archivo Black','Baloo Bhaijaan 2',sans-serif;font-weight:900;font-size:clamp(40px,13vw,60px);line-height:1;padding-bottom:4px;animation:cr-mem-lift 1s ease-in-out .15s 4 both}
+.cr-memory-grid b{display:block;color:#0B0B0B;font-family:'Archivo Black','Baloo Bhaijaan 2',sans-serif;font-weight:900;font-size:clamp(40px,13vw,60px);line-height:1;padding-bottom:4px;animation:cr-mem-lift 2s cubic-bezier(.45,0,.55,1) .2s 6 both}
 .cr-memory-grid[lang=ar] b{font-family:'Baloo Bhaijaan 2',sans-serif;font-weight:800;font-size:clamp(44px,14vw,64px);padding-bottom:8px}
-@keyframes cr-mem-blink{0%,34%,50%,84%,100%{background:#fff}16%{background:var(--c1)}66%{background:var(--c2)}}
-@keyframes cr-mem-lift{0%,68%,100%{transform:none}32%{transform:scale(1.07)}}
+@keyframes cr-mem-blink{0%,100%{background:#fff}25%{background:var(--c1)}50%{background:var(--blend)}75%{background:var(--c2)}}
+@keyframes cr-mem-lift{0%,100%{transform:none}50%{transform:scale(1.035)}}
 @media (prefers-reduced-motion:reduce){.cr-memory-grid span,.cr-memory-grid b{animation:none}}
-.cr-memory-bar{width:min(100%,312px);height:6px;background:var(--ink);transform-origin:left;animation:cr-drain 4s linear forwards}
+.cr-memory-bar{width:min(100%,312px);height:6px;background:var(--ink);transform-origin:left;animation:cr-drain 12s linear forwards}
 [dir=rtl] .cr-memory-bar{transform-origin:right}
 .cr-memory-q{font-family:'Baloo Bhaijaan 2',sans-serif;font-weight:800;font-size:clamp(22px,6.4vw,28px);text-align:center;line-height:1.25}
 .cr-memory.is-ask .cr-choices{width:100%}

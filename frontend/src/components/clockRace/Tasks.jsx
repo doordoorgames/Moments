@@ -62,8 +62,8 @@ export function LonelySock({task, onPick}) {
   </div>;
 }
 
-// ------------------------------------------------------------------ الذاكرة: one 3x3 grid of letters, four soft blinks, then the question
-export const MEMORY_MS = 4000; // matches MEMORY_SHOW on the server
+// ------------------------------------------------------------------ الذاكرة: one 3x3 grid of letters for 12s (slow soft blinks), then the question
+export const MEMORY_MS = 12000; // matches MEMORY_SHOW on the server
 export function Memory({task, t, onPick, lang}) {
   const [asking, setAsking] = useState(false);
   useEffect(() => {
@@ -112,16 +112,17 @@ export function WordRush({task, t, onWord, inputRef}) {
     try { await onWord(text); } finally { setSending(false); }
   };
   const letters = task.variant === 'pair' ? [task.first, task.last] : [task.letter];
+  const ar = task.lang === 'ar'; // Arabic rooms type Arabic; English rooms keep the English keyboard
   return <form className="cr-word" onSubmit={submit} noValidate>
     <div className="cr-word-prompt">
       {task.variant === 'pair'
-        ? <><span>{t.wordPair[0]}</span><b dir="ltr">{letters[0]}</b><span>{t.wordPair[1]}</span><b dir="ltr">{letters[1]}</b></>
-        : <><span>{task.variant === 'country' ? t.wordCountry : t.wordFruit}</span><b dir="ltr">{letters[0]}</b></>}
+        ? <><span>{t.wordPair[0]}</span><b dir="auto">{letters[0]}</b><span>{t.wordPair[1]}</span><b dir="auto">{letters[1]}</b></>
+        : <><span>{task.variant === 'country' ? t.wordCountry : t.wordFruit}</span><b dir="auto">{letters[0]}</b></>}
     </div>
     <div className="cr-word-row">
-      <input ref={inputRef} className="cr-word-input" dir="ltr" lang="en" type="text" inputMode="text" value={text}
+      <input ref={inputRef} className={`cr-word-input ${ar ? 'is-ar' : ''}`} dir={ar ? 'rtl' : 'ltr'} lang={ar ? 'ar' : 'en'} type="text" inputMode="text" value={text}
         onChange={e => setText(e.target.value)} placeholder={t.wordPlaceholder} autoComplete="off" autoCorrect="off"
-        autoCapitalize="characters" spellCheck={false} enterKeyHint="done" maxLength={40} aria-label={t.wordHint} readOnly={sending}/>
+        autoCapitalize={ar ? 'off' : 'characters'} spellCheck={false} enterKeyHint="done" maxLength={40} aria-label={t.wordHint} readOnly={sending}/>
       <button type="submit" className="cr-word-go" disabled={sending}>{t.wordSubmit}</button>
     </div>
     <p className="cr-word-note">{t.wordHint}</p>

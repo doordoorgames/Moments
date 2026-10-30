@@ -2429,6 +2429,10 @@ app.include_router(emoji_rooftop_router(lambda: supa, _q, require_admin))
 from letter_tv_api import router as letter_tv_router
 app.include_router(letter_tv_router(lambda: supa, _q))
 
+# Clock Race (سباق الساعة): 1-12 players race through the same 20 quick tasks.
+from clock_race_api import router as clock_race_router
+app.include_router(clock_race_router(lambda: supa, _q))
+
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,

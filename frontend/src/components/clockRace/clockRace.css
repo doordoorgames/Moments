@@ -1,0 +1,239 @@
+@import url('https://fonts.googleapis.com/css2?family=Baloo+Bhaijaan+2:wght@600;700;800&family=Cairo:wght@600;700;800;900&family=Archivo+Black&display=swap');
+
+/* Clock Race · سباق الساعة. Powdery cream, jet-black ink, thick hard shadows, candy accents. */
+.cr-app{
+  --ink:#0B0B0B;--cream:#F6EEDF;--paper:#FFFDF7;--tomato:#FF5B36;--yolk:#FFC93C;--cobalt:#2E4BFF;--mint:#13B07A;--pink:#FF8DB3;
+  --shadow:4px 4px 0 var(--ink);--shadow-lg:6px 7px 0 var(--ink);
+  position:fixed;inset:0;height:var(--cr-h,100dvh);overflow:hidden;color:var(--ink);background:var(--cream);
+  font-family:'Cairo','Segoe UI',Tahoma,sans-serif;font-size:16px;line-height:1.45;text-align:right;
+  -webkit-tap-highlight-color:transparent;touch-action:manipulation;color-scheme:light;
+}
+.cr-app *{box-sizing:border-box}
+:where(.cr-app) button,:where(.cr-app) input{font:inherit;color:inherit}
+.cr-app button{cursor:pointer;-webkit-user-select:none;user-select:none}
+.cr-app button:disabled{opacity:.5;cursor:default}
+.cr-app h1,.cr-app h2,.cr-app p{margin:0}
+.cr-app :focus-visible{outline:3px solid var(--cobalt);outline-offset:3px}
+.cr-entry,.cr-lobby{overflow-y:auto;-webkit-overflow-scrolling:touch}
+
+/* soft dotted clock-paper behind everything */
+.cr-backdrop{position:fixed;inset:0;z-index:-1;pointer-events:none;
+  background:
+    radial-gradient(circle at 50% -10%,#fff8e8 0,transparent 55%),
+    radial-gradient(#0b0b0b14 1.4px,transparent 1.6px) 0 0/18px 18px,
+    var(--cream)}
+
+/* ---------------------------------------------------------------- shared pieces */
+.cr-bar{display:flex;align-items:center;gap:12px;padding:16px 16px 0;max-width:520px;margin:0 auto}
+.cr-wordmark{font-family:'Baloo Bhaijaan 2',sans-serif;font-weight:800;font-size:20px}
+.cr-round-btn{width:42px;height:42px;flex:none;display:grid;place-items:center;border-radius:50%;border:3px solid var(--ink);background:var(--paper);box-shadow:3px 3px 0 var(--ink);padding:0}
+.cr-round-btn:active{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--ink)}
+.cr-round-btn.is-small{width:34px;height:34px;border-width:2.5px;box-shadow:2px 2px 0 var(--ink)}
+.cr-card{background:var(--paper);border:3px solid var(--ink);border-radius:18px;box-shadow:var(--shadow-lg)}
+.cr-primary{display:block;width:100%;min-height:58px;border:3px solid var(--ink);border-radius:16px;background:var(--tomato);color:#fff!important;
+  font-family:'Baloo Bhaijaan 2',sans-serif!important;font-weight:800;font-size:22px;box-shadow:var(--shadow);transition:transform .08s,box-shadow .08s}
+.cr-primary:active:not(:disabled){transform:translate(3px,3px);box-shadow:1px 1px 0 var(--ink)}
+.cr-ghost{border:2.5px solid var(--ink);border-radius:12px;background:var(--paper);padding:9px 14px;font-weight:800;font-size:14px;box-shadow:2px 2px 0 var(--ink)}
+.cr-ghost:active{transform:translate(2px,2px);box-shadow:none}
+.cr-error{margin-top:14px!important;padding:12px 14px;border:2.5px solid var(--ink);border-radius:12px;background:#FFE0D8;font-weight:700;font-size:14px}
+.cr-fine{font-size:13px;font-weight:700;opacity:.65;text-align:center;margin-top:10px!important}
+.cr-waiting{text-align:center;font-weight:800;font-size:16px;padding:14px;border:2.5px dashed var(--ink);border-radius:14px;background:#fffdf7aa}
+.cr-status{text-align:center;padding:80px 20px;font-weight:800}
+.cr-notice{position:fixed;left:50%;bottom:calc(18px + env(safe-area-inset-bottom));transform:translateX(-50%);z-index:60;max-width:calc(100% - 32px);
+  padding:10px 16px;border:2.5px solid var(--ink);border-radius:12px;background:var(--yolk);font-weight:800;font-size:14px;box-shadow:var(--shadow);overflow-wrap:anywhere}
+
+/* ---------------------------------------------------------------- entry */
+.cr-entry-body{max-width:440px;margin:0 auto;padding:6px 16px 40px}
+.cr-hero{text-align:center;padding:8px 0 18px}
+.cr-hero-clock{width:148px;height:148px;display:block;margin:0 auto 6px}
+.cr-hero-hand{transform-origin:100px 100px;animation:cr-tick 4s steps(20) infinite}
+.cr-hero h1{font-family:'Baloo Bhaijaan 2',sans-serif;font-weight:800;font-size:52px;line-height:1.05;letter-spacing:0;text-shadow:3px 3px 0 var(--yolk)}
+.cr-hero p{font-weight:800;font-size:17px;margin-top:8px!important;opacity:.85}
+.cr-intents{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
+.cr-intent{display:flex;flex-direction:column;align-items:center;gap:2px;padding:16px 8px 13px;border:3px solid var(--ink);border-radius:18px;background:var(--yolk);
+  font-family:'Baloo Bhaijaan 2',sans-serif!important;font-weight:800;font-size:22px;line-height:1.1;box-shadow:var(--shadow);transition:transform .08s,box-shadow .08s}
+.cr-intent.is-join{background:#9FD9FF}
+.cr-intent small{font-family:'Cairo',sans-serif;font-size:12px;font-weight:700;opacity:.75}
+.cr-intent.is-on{transform:translate(3px,3px);box-shadow:1px 1px 0 var(--ink);outline:3px solid var(--ink);outline-offset:3px}
+.cr-form{padding:18px;display:flex;flex-direction:column;gap:8px}
+.cr-form label{font-weight:900;font-size:13px;margin-top:4px}
+.cr-form>input{width:100%;min-height:54px;padding:10px 14px;border:3px solid var(--ink);border-radius:14px;background:#fff;font-size:18px;font-weight:800}
+.cr-form small{font-size:12px;font-weight:700;opacity:.65}
+.cr-form small.is-error{color:#C0272D;opacity:1}
+.cr-form .cr-primary{margin-top:10px}
+.cr-rules{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:9px}
+.cr-rules li{display:flex;align-items:center;gap:10px;padding:12px 14px;border:2.5px solid var(--ink);border-radius:14px;background:var(--paper);font-weight:800;font-size:15px}
+.cr-rules li:before{content:'';width:14px;height:14px;flex:none;border-radius:50%;border:2.5px solid var(--ink);background:conic-gradient(var(--tomato) 0 30%,var(--paper) 0)}
+.cr-rules li:nth-child(2):before{background:conic-gradient(var(--tomato) 0 60%,var(--paper) 0)}
+.cr-rules li:nth-child(3):before{background:var(--tomato)}
+
+/* five-box code input (shared component from Plot Twist, styled here) */
+.cr-app .pt-code-boxes{position:relative;display:grid;grid-template-columns:repeat(5,1fr);gap:8px;direction:ltr}
+.cr-app .pt-code-field{position:absolute;inset:0;width:100%;height:100%;opacity:0;font-size:16px;border:0;z-index:1;caret-color:transparent}
+.cr-app .pt-code-box{height:58px;display:grid;place-items:center;border:3px solid var(--ink);border-radius:12px;background:#fff;font-family:'Archivo Black',sans-serif;font-size:26px}
+.cr-app .pt-code-box.is-active{background:#FFF1C4;box-shadow:inset 0 -5px 0 var(--yolk)}
+.cr-app .pt-code-boxes.is-invalid .pt-code-box{border-color:#C0272D}
+
+/* ---------------------------------------------------------------- lobby */
+.cr-lobby-body{max-width:440px;margin:0 auto;padding:10px 16px 50px;display:flex;flex-direction:column;gap:16px}
+.cr-lobby-body h1{font-family:'Baloo Bhaijaan 2',sans-serif;font-weight:800;font-size:38px;line-height:1.1;margin-top:6px}
+.cr-code-card{padding:16px;text-align:center;background:var(--yolk)}
+.cr-code-card>span{font-weight:900;font-size:13px}
+.cr-code-card strong{display:block;font-family:'Archivo Black',sans-serif;font-size:50px;letter-spacing:8px;line-height:1.2}
+.cr-qr{width:140px;margin:6px auto 4px;padding:8px;background:#fff;border:3px solid var(--ink);border-radius:12px}
+.cr-qr svg{display:block;width:100%;height:auto}
+.cr-code-actions{display:flex;gap:8px;justify-content:center;margin-top:10px}
+.cr-guests{padding:14px 14px 10px}
+.cr-guests-head{display:flex;justify-content:space-between;align-items:center;font-size:16px;padding-bottom:10px;border-bottom:2.5px dashed #0b0b0b40}
+.cr-guests-head span{font-family:'Archivo Black',sans-serif;font-size:14px}
+.cr-guests ul{list-style:none;margin:0;padding:8px 0 0;display:flex;flex-wrap:wrap;gap:8px}
+.cr-guests li{display:flex;align-items:center;gap:7px;padding:6px 11px 6px 9px;border:2.5px solid var(--ink);border-radius:999px;background:#fff;font-weight:800;font-size:15px;max-width:100%}
+.cr-guests li span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cr-guests li i{width:13px;height:13px;border-radius:50%;border:2px solid var(--ink);flex:none}
+.cr-guests li small{font-size:11px;font-weight:900;padding:1px 7px;border-radius:999px;background:var(--ink);color:var(--paper)}
+.cr-guests li small.is-me{background:var(--yolk);color:var(--ink)}
+.cr-start{min-height:66px;font-size:26px}
+
+/* ---------------------------------------------------------------- race layout */
+.cr-race{display:flex;flex-direction:column}
+.cr-top{flex:none;display:flex;align-items:flex-start;gap:8px;padding:calc(8px + env(safe-area-inset-top)) 10px 8px;background:var(--paper);border-bottom:3px solid var(--ink);position:relative;z-index:3}
+.cr-top .cr-round-btn{margin-top:6px}
+.cr-dials{flex:1;min-width:0;display:flex;flex-wrap:wrap;justify-content:center;gap:2px 4px}
+.cr-dial-seat{width:58px;display:flex;flex-direction:column;align-items:center;gap:1px;transition:opacity .2s}
+.cr-dials.is-many .cr-dial-seat{width:calc((100% - 20px) / 6);max-width:54px}
+.cr-dial-seat.is-out{opacity:.35}
+.cr-dial-wrap{position:relative;display:block;line-height:0}
+.cr-dial{display:block;overflow:visible}
+.cr-dial-fill{transition:stroke-dashoffset .35s cubic-bezier(.3,1.4,.5,1)}
+.cr-dial-hand{transform-origin:50px 50px;transition:transform .35s cubic-bezier(.3,1.4,.5,1)}
+.cr-dial-pop{position:absolute;inset:-3px;border:3px solid;border-radius:50%;pointer-events:none;animation:cr-pop .45s ease-out forwards}
+.cr-dial-name{max-width:100%;font-size:11px;font-weight:800;line-height:1.3;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;padding:0 4px;border-radius:6px}
+.cr-dial-seat.is-me .cr-dial-name{background:var(--yolk);border:1.5px solid var(--ink)}
+.cr-dial-seat.is-me .cr-dial{filter:drop-shadow(0 0 0 var(--ink))}
+.cr-dial-seat.is-winner .cr-dial-name{background:var(--ink);color:var(--yolk)}
+
+.cr-stage{flex:1;min-height:0;display:flex;flex-direction:column;padding:12px 14px calc(14px + env(safe-area-inset-bottom));max-width:520px;width:100%;margin:0 auto}
+.cr-task-head{display:flex;align-items:center;justify-content:space-between;gap:8px;flex:none}
+.cr-count{font-family:'Archivo Black',sans-serif;font-size:14px;padding:3px 10px;border:2.5px solid var(--ink);border-radius:999px;background:var(--paper);box-shadow:2px 2px 0 var(--ink)}
+.cr-task-name{font-weight:900;font-size:13px;padding:3px 11px;border-radius:999px;background:var(--ink);color:var(--paper)}
+.cr-play{flex:1;min-height:0;display:flex;flex-direction:column;justify-content:center;padding-bottom:4vh}
+.cr-prompt{flex:none;font-family:'Baloo Bhaijaan 2',sans-serif;font-weight:800;font-size:clamp(26px,7.4vw,34px);line-height:1.15;text-align:center;margin:10px 0 12px!important}
+.cr-task-body{flex:none;min-height:0;display:flex;flex-direction:column;justify-content:center;animation:cr-in .14s ease-out}
+.cr-spectate{margin:auto!important;max-width:300px;text-align:center;font-weight:800;font-size:18px;padding:18px;border:3px dashed var(--ink);border-radius:18px;background:var(--paper)}
+.cr-done-wait{margin:auto}
+
+/* ---------------------------------------------------------------- faces */
+.cr-face-grid{--gap:7px;display:grid;grid-template-columns:repeat(var(--cols),1fr);gap:var(--gap);width:100%;
+  max-width:min(100%,calc((var(--cr-h,100dvh) - 220px) * var(--cols) / var(--rows)));margin:0 auto;direction:ltr}
+.cr-face-cell{aspect-ratio:1;padding:6%;border:0;background:transparent;border-radius:50%;display:grid;place-items:center;touch-action:manipulation}
+.cr-face-cell .cr-face{width:100%;height:100%;display:block;transition:transform .08s}
+.cr-face-cell:active .cr-face{transform:scale(.9)}
+.cr-face-cell.is-bad{animation:cr-shake .3s}
+.cr-face-cell.is-bad .cr-face circle:nth-child(2){fill:#FF6B5A}
+
+/* ---------------------------------------------------------------- letters */
+.cr-letters-task{display:flex;flex-direction:column;gap:14px}
+.cr-alphabet{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;direction:rtl}
+.cr-letter{aspect-ratio:1/1.05;display:grid;place-items:center;border:2.5px solid var(--ink);border-radius:11px;background:var(--paper);
+  font-family:'Baloo Bhaijaan 2',sans-serif;font-weight:800;font-size:clamp(22px,6.6vw,30px);line-height:1;padding:0 0 4px;box-shadow:2px 2px 0 var(--ink)}
+.cr-alphabet.is-tappable .cr-letter{background:#fff;transition:transform .07s}
+.cr-alphabet.is-tappable .cr-letter:active{transform:translate(2px,2px);box-shadow:none}
+.cr-letter.is-found{background:var(--mint)!important;color:#fff;transform:translate(2px,2px);box-shadow:none}
+.cr-letter.is-bad,.cr-choice.is-bad{animation:cr-shake .3s;background:#FFB3A6!important}
+.cr-choices{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.cr-choice{min-height:68px;border:3px solid var(--ink);border-radius:16px;background:var(--yolk);font-family:'Baloo Bhaijaan 2',sans-serif!important;font-weight:800;font-size:38px;line-height:1;padding-bottom:6px;box-shadow:var(--shadow);transition:transform .07s,box-shadow .07s}
+.cr-choice:active{transform:translate(3px,3px);box-shadow:1px 1px 0 var(--ink)}
+.cr-swap-count{display:flex;justify-content:center;gap:10px}
+.cr-swap-count i{width:16px;height:16px;border-radius:50%;border:2.5px solid var(--ink);background:var(--paper)}
+.cr-swap-count i.on{background:var(--mint)}
+
+/* ---------------------------------------------------------------- friend question */
+.cr-race.is-vote .cr-backdrop{background:radial-gradient(#ff5fa222 2px,transparent 2.4px) 0 0/22px 22px,#FFE3EC}
+.cr-stage-vote .cr-task-name{background:var(--pink);color:var(--ink);border:2px solid var(--ink)}
+.cr-stage-vote .cr-prompt{font-size:clamp(28px,8vw,38px)}
+.cr-vote{display:flex;flex-direction:column;gap:12px}
+.cr-vote-hint{text-align:center;font-weight:800;font-size:14px;opacity:.7}
+.cr-tags{display:grid;grid-template-columns:1fr 1fr;gap:16px 12px;padding:4px 4px 8px}
+.cr-vote.is-many .cr-tags{grid-template-columns:1fr 1fr 1fr;gap:12px 8px}
+.cr-tag{position:relative;min-height:66px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;padding:8px 10px 8px 28px;
+  border:3px solid var(--ink);border-radius:14px 26px 26px 14px;background:var(--tag);color:#fff;box-shadow:var(--shadow);
+  transform:rotate(var(--tilt));transition:transform .1s,box-shadow .1s}
+.cr-tag:active{transform:rotate(0) scale(.95);box-shadow:1px 1px 0 var(--ink)}
+.cr-tag-hole{position:absolute;left:9px;top:50%;width:12px;height:12px;margin-top:-6px;border-radius:50%;background:var(--cream);border:2.5px solid var(--ink)}
+.cr-tag:before{content:'';position:absolute;left:-10px;top:50%;width:16px;border-top:2.5px solid var(--ink);transform:rotate(-18deg)}
+.cr-tag-name{max-width:100%;font-family:'Baloo Bhaijaan 2',sans-serif;font-weight:800;font-size:22px;line-height:1.15;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-shadow:0 2px 0 #0b0b0b55}
+.cr-vote.is-many .cr-tag{min-height:56px;padding-left:22px}
+.cr-vote.is-many .cr-tag-name{font-size:17px}
+.cr-tag small{font-size:10px;font-weight:900;color:var(--ink);background:var(--paper);border:1.5px solid var(--ink);border-radius:999px;padding:0 6px;margin-top:2px}
+
+/* ---------------------------------------------------------------- word rush */
+.cr-word{display:flex;flex-direction:column;gap:14px;justify-content:center}
+.cr-word-prompt{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:6px 9px;text-align:center;font-family:'Baloo Bhaijaan 2',sans-serif;font-weight:800;font-size:clamp(24px,6.8vw,31px);line-height:1.2}
+.cr-word-prompt b{display:inline-grid;place-items:center;min-width:52px;height:52px;padding:0 8px;border:3px solid var(--ink);border-radius:12px;background:var(--yolk);
+  font-family:'Archivo Black',sans-serif;font-size:30px;box-shadow:3px 3px 0 var(--ink)}
+.cr-word-row{display:flex;gap:8px;direction:ltr}
+.cr-word-row.is-wrong{animation:cr-shake .3s}
+.cr-word-input{flex:1;min-width:0;min-height:62px;padding:8px 14px;border:3px solid var(--ink);border-radius:16px;background:#fff;
+  font-family:'Archivo Black',sans-serif!important;font-size:24px!important;letter-spacing:2px;text-transform:uppercase;box-shadow:inset 0 4px 0 #0b0b0b14}
+.cr-word-input::placeholder{color:#0b0b0b40;letter-spacing:1px}
+.cr-word-row.is-wrong .cr-word-input{border-color:#C0272D;background:#FFF0EC}
+.cr-word-go{flex:none;min-width:76px;border:3px solid var(--ink);border-radius:16px;background:var(--mint);color:#fff;font-family:'Baloo Bhaijaan 2',sans-serif!important;font-weight:800;font-size:22px;box-shadow:var(--shadow)}
+.cr-word-go:active{transform:translate(3px,3px);box-shadow:1px 1px 0 var(--ink)}
+.cr-word-note{text-align:center;font-weight:800;font-size:14px;opacity:.6}
+.cr-word-note.is-wrong{opacity:1;color:#C0272D}
+
+/* ---------------------------------------------------------------- final boss */
+.cr-race.is-boss .cr-backdrop{background:radial-gradient(circle at 50% 30%,#2a1a12 0,#0B0B0B 70%)}
+.cr-race.is-boss .cr-stage{color:var(--paper)}
+.cr-race.is-boss .cr-prompt{color:var(--yolk);text-shadow:3px 3px 0 var(--tomato)}
+.cr-race.is-boss .cr-count{background:var(--yolk)}
+.cr-boss-stamp{font-family:'Baloo Bhaijaan 2',sans-serif;font-weight:800;font-size:16px;padding:2px 14px;background:var(--tomato);color:#fff;border:2.5px solid var(--paper);border-radius:8px;transform:rotate(-3deg);animation:cr-stamp .3s cubic-bezier(.3,1.6,.5,1)}
+.cr-stage-boss .cr-task-body{animation:cr-slam .26s cubic-bezier(.3,1.5,.5,1)}
+.cr-face-grid.is-boss{--gap:6px;padding:10px;border:3px solid var(--yolk);border-radius:20px;background:#1a1a1a;box-shadow:0 0 0 3px var(--ink),6px 7px 0 3px var(--tomato)}
+.cr-face-grid.is-boss .cr-face-cell{padding:5%}
+
+/* ---------------------------------------------------------------- overlays */
+.cr-countdown{position:fixed;inset:0;z-index:40;display:grid;place-items:center;background:var(--cream);pointer-events:all}
+.cr-countdown span{display:grid;place-items:center;width:170px;height:170px;border-radius:50%;border:6px solid var(--ink);background:var(--yolk);box-shadow:8px 9px 0 var(--ink);
+  font-family:'Archivo Black',sans-serif;font-size:96px;line-height:1;animation:cr-count .9s ease-out both}
+.cr-countdown.is-go{background:transparent;pointer-events:none}
+.cr-countdown.is-go span{font-family:'Baloo Bhaijaan 2',sans-serif;font-weight:800;font-size:64px;background:var(--mint);color:#fff;-webkit-text-stroke:1.5px var(--ink);animation:cr-go .7s ease-out forwards}
+.cr-toast{position:fixed;left:50%;top:38%;z-index:30;pointer-events:none;transform:translateX(-50%);padding:10px 20px;border:3px solid var(--ink);border-radius:16px;
+  background:var(--yolk);font-family:'Baloo Bhaijaan 2',sans-serif;font-weight:800;font-size:28px;white-space:nowrap;box-shadow:var(--shadow);animation:cr-toast .9s ease-out forwards}
+.cr-toast.is-word{background:var(--mint);color:#fff;font-family:'Archivo Black',sans-serif;font-size:24px;letter-spacing:2px;-webkit-text-stroke:.8px var(--ink)}
+.cr-finish{position:fixed;inset:0;z-index:50;display:grid;place-items:center;padding:16px;background:#0b0b0bb3;overflow-y:auto}
+.cr-finish-card{width:100%;max-width:380px;padding:22px 18px 16px;text-align:center;background:var(--paper);border:3px solid var(--ink);border-radius:24px;box-shadow:8px 9px 0 var(--tomato);animation:cr-slam .3s cubic-bezier(.3,1.5,.5,1);display:flex;flex-direction:column;align-items:center;gap:10px}
+.cr-finish-kicker{font-weight:900;font-size:14px;padding:2px 12px;background:var(--ink);color:var(--yolk);border-radius:999px}
+.cr-finish-card h2{font-family:'Baloo Bhaijaan 2',sans-serif;font-weight:800;font-size:40px;line-height:1.1;max-width:100%;overflow-wrap:anywhere}
+.cr-results{list-style:none;margin:0;padding:0;width:100%;display:flex;flex-direction:column;gap:6px;max-height:34vh;overflow-y:auto}
+.cr-results li{display:flex;align-items:center;gap:9px;padding:7px 12px;border:2.5px solid var(--ink);border-radius:12px;background:#fff;font-weight:800}
+.cr-results li.is-me{background:#FFF1C4}
+.cr-results li i{width:14px;height:14px;border-radius:50%;border:2px solid var(--ink);flex:none}
+.cr-results li span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cr-results li b{font-family:'Archivo Black',sans-serif;font-size:14px}
+.cr-finish-card .cr-primary{margin-top:4px}
+.cr-finish-card .cr-ghost{border:0;box-shadow:none;background:transparent;text-decoration:underline}
+
+/* ---------------------------------------------------------------- TEST99 */
+.cr-dev{position:fixed;left:8px;bottom:calc(8px + env(safe-area-inset-bottom));z-index:70;font:600 12px/1.3 ui-monospace,Menlo,monospace;text-align:left}
+.cr-dev-toggle{padding:4px 8px;border:1.5px solid var(--ink);border-radius:6px;background:#E8FF5A;font:inherit;font-weight:800}
+.cr-dev-body{margin-top:6px;width:min(320px,calc(100vw - 16px));padding:8px;border:1.5px solid var(--ink);border-radius:8px;background:#fffffff2;display:flex;flex-direction:column;gap:6px}
+.cr-dev-row{display:flex;flex-wrap:wrap;gap:4px}
+.cr-dev-row button{padding:5px 7px;border:1.5px solid var(--ink);border-radius:5px;background:#fff;font:inherit}
+.cr-dev-row button.is-on{background:#E8FF5A}
+.cr-dev-times{border-collapse:collapse;width:100%}
+.cr-dev-times td{border-top:1px solid #0002;padding:2px 4px}
+.cr-dev small{opacity:.7;word-break:break-all}
+
+/* ---------------------------------------------------------------- motion */
+@keyframes cr-in{from{opacity:.35;transform:translateY(5px)}}
+@keyframes cr-shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-7px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(3px)}}
+@keyframes cr-pop{from{transform:scale(.85);opacity:1}to{transform:scale(1.45);opacity:0}}
+@keyframes cr-tick{to{transform:rotate(360deg)}}
+@keyframes cr-count{0%{transform:scale(1.5);opacity:0}25%{transform:scale(1);opacity:1}85%{transform:scale(.96);opacity:1}100%{transform:scale(.8);opacity:.2}}
+@keyframes cr-go{0%{transform:scale(.6) rotate(-6deg);opacity:0}30%{transform:scale(1.08) rotate(2deg);opacity:1}100%{transform:scale(1.25);opacity:0}}
+@keyframes cr-toast{0%{transform:translate(-50%,10px) scale(.8);opacity:0}18%{transform:translate(-50%,0) scale(1.05);opacity:1}75%{opacity:1}100%{transform:translate(-50%,-26px);opacity:0}}
+@keyframes cr-stamp{from{transform:scale(2) rotate(-12deg);opacity:0}}
+@keyframes cr-slam{from{transform:scale(1.12);opacity:0}}
+@media (prefers-reduced-motion:reduce){.cr-app *{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+@media (min-width:700px){.cr-stage{padding-top:20px}.cr-dial-seat{width:66px}}

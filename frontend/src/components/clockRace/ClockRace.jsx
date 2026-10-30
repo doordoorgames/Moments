@@ -11,7 +11,9 @@ import {TASK_VIEWS, stroopPrompt} from './Tasks';
 import {GEO} from './content';
 import {localCheck} from './localCheck';
 import {TEXT} from './text';
+import {ARCADE} from './theme';
 import './clockRace.css';
+import './arcade.css';
 
 const BASE = '/mini-games/clock-race';
 const KEY = code => `clock-race-session:${code}`;
@@ -41,6 +43,7 @@ async function request(path, body, auth, t) {
 }
 
 function BigClock() {
+  if (ARCADE) return <span className="cr-hero-clock is-arcade"><Dial done={13} color={PLAYER_COLORS[0]} size={150} big/></span>;
   return <svg className="cr-hero-clock" viewBox="0 0 200 200" aria-hidden="true">
     <circle cx="100" cy="108" r="86" fill="#0B0B0B"/>
     <circle cx="100" cy="100" r="86" fill="#FFFDF7" stroke="#0B0B0B" strokeWidth="8"/>
@@ -56,7 +59,7 @@ function BigClock() {
 function Stars({x, y}) {
   return <div className="cr-stars" style={{left: x, top: y}} aria-hidden="true">
     {Array.from({length: 9}, (_, i) => <svg key={i} viewBox="0 0 20 20" style={{'--a': `${i * 40 + 12}deg`, '--d': `${58 + (i % 3) * 20}px`, '--s': 0.7 + (i % 3) * 0.25}}>
-      <path d="M10 1 L12.6 7.2 L19 7.6 L14 11.8 L15.7 18.6 L10 15 L4.3 18.6 L6 11.8 L1 7.6 L7.4 7.2 Z" fill="#FFC93C" stroke="#0B0B0B" strokeWidth="1.6" strokeLinejoin="round"/>
+      <path d="M10 1 L12.6 7.2 L19 7.6 L14 11.8 L15.7 18.6 L10 15 L4.3 18.6 L6 11.8 L1 7.6 L7.4 7.2 Z" fill={ARCADE ? '#F2CF6B' : '#FFC93C'} stroke={ARCADE ? '#3A3446' : '#0B0B0B'} strokeWidth="1.6" strokeLinejoin="round"/>
     </svg>)}
   </div>;
 }
@@ -324,7 +327,16 @@ export default function ClockRace({onContinue}) {
   const View = task ? TASK_VIEWS[task.type] : null;
   const seconds = Math.max(1, Math.ceil((startsAt - clock) / 1000));
   const devPanel = game?.dev && isHost ? <DevPanel open={devOpen} setOpen={setDevOpen} game={game} dev={dev} task={task}/> : null;
-  const shell = (cls, children) => <main className={`cr-app ${cls}`} dir={t.dir} lang={lang} data-typography-ignore>{children}</main>;
+  const shell = (cls, children) => <main className={`cr-app ${ARCADE ? 'cr-arcade' : ''} ${cls}`} dir={t.dir} lang={lang} data-typography-ignore>{children}</main>;
+  // Arcade: the game lives on a cabinet. Marquee (task name and count) on top, the CRT screen in the
+  // middle (the question and its answers), a control panel below. Everything else is the room around it.
+  const cabinet = (cls, head, body) => ARCADE ? <section className={`cr-stage cr-cab-stage ${cls}`}>
+    <div className="cr-cab">
+      <div className="cr-cab-marquee">{head}</div>
+      <div className="cr-cab-shell"><div className="cr-cab-screen">{body}<i className="cr-cab-glass" aria-hidden="true"/></div></div>
+      <div className="cr-cab-panel" aria-hidden="true"><i className="cr-cab-stick"/><i className="cr-cab-btn is-a"/><i className="cr-cab-btn is-b"/><i className="cr-cab-coin"/></div>
+    </div>
+  </section> : <section className={`cr-stage ${cls}`}>{head}{body}</section>;
   const bar = <header className="cr-bar">
     <button className="cr-square-btn" onClick={exit} aria-label={t.back}><Arrow dir={t.dir}/></button>
     <span className="cr-wordmark">{t.title}</span>
@@ -400,19 +412,19 @@ export default function ClockRace({onContinue}) {
       <Dials players={players} me={me} winner={game.winner} youLabel={t.you} bots={game.bots} startsAt={round?.starts_at} offset={offset} racing={game.status === 'racing'}/>
       {devPanel}
     </header>
-    {!inRace ? <section className="cr-stage"><p className="cr-spectate">{t.spectating}</p></section>
-      : task && View ? <section className={`cr-stage cr-stage-${task.type}`}>
+    {!inRace ? cabinet('', null, <p className="cr-spectate">{t.spectating}</p>)
+      : task && View ? cabinet(`cr-stage-${task.type}`,
         <div className="cr-task-head">
           <span className="cr-count" dir="ltr">{t.task(pos + 1, 20)}</span>
           {boss ? <span className="cr-boss-stamp">{t.bossStamp}</span> : <span className="cr-task-name">{t.names[task.type]}</span>}
-        </div>
+        </div>,
         <div className="cr-play" key={`${round.id}-${pos}`}>
           {prompt && <h2 className="cr-prompt" dir="auto">{prompt}</h2>}
           <div className="cr-task-body">
             <View task={task} t={t} lang={lang} onPick={pick} onWord={word} inputRef={wordInput} roster={game.roster} players={game.players} me={me}/>
           </div>
-        </div>
-      </section> : <section className="cr-stage"><div className="cr-done-wait"><Dial done={20} color={PLAYER_COLORS[(game.players.find(p => p.id === me)?.color || 0) % 12]} size={120} big/></div></section>}
+        </div>)
+      : cabinet('', null, <div className="cr-done-wait"><Dial done={20} color={PLAYER_COLORS[(game.players.find(p => p.id === me)?.color || 0) % 12]} size={120} big/></div>)}
     {counting && <div className="cr-countdown" aria-live="assertive"><span key={seconds}>{seconds}</span></div>}
     {!counting && game.status === 'racing' && clock - startsAt < 700 && inRace && pos === 0 && <div className="cr-countdown is-go"><span>{t.go}</span></div>}
     {stars && <Stars key={`s${stars.id}`} x={stars.x} y={stars.y}/>}
@@ -439,7 +451,12 @@ function Arrow({dir}) {
 }
 
 function Backdrop() {
-  return <div className="cr-backdrop" aria-hidden="true"/>;
+  if (!ARCADE) return <div className="cr-backdrop" aria-hidden="true"/>;
+  // A: the painted room. A soft wash of fluorescent light drifts over it very slowly.
+  // F: foreground details over the room (empty slots until real art is supplied), always under the game.
+  return <div className="cr-backdrop is-arcade" aria-hidden="true">
+    <i className="cr-room"/><i className="cr-room-light"/><i className="cr-fg is-top"/><i className="cr-fg is-bottom"/>
+  </div>;
 }
 
 // TEST99 only: a small chip in the top bar. Closed by default; opens a panel under the bar.

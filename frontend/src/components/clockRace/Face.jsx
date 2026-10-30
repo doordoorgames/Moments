@@ -1,9 +1,11 @@
 import React, {memo} from 'react';
+import {ARCADE} from './theme';
 
 // Faces are drawn here, never system emoji, so every phone shows the exact same face.
 // A face code is "eyes-mouth-color". Counts must match EYES / MOUTHS / FACE_COLORS in backend/clock_race_data.py.
-export const FACE_COLORS = ['#FFC93C', '#FF8DB3', '#6ED8B0', '#7DB9FF'];
-const INK = '#0B0B0B';
+// The arcade theme paints them in muted cel colours with a soft violet-grey ink.
+export const FACE_COLORS = ARCADE ? ['#F2D27A', '#EDA6BC', '#9FD6BE', '#A9C8EA'] : ['#FFC93C', '#FF8DB3', '#6ED8B0', '#7DB9FF'];
+const INK = ARCADE ? '#3A3446' : '#0B0B0B';
 
 const EYES = [
   // 0 dots

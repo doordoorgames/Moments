@@ -125,7 +125,7 @@
 
 /* ---------------------------------------------------------------- faces */
 .cr-face-grid{--gap:7px;display:grid;grid-template-columns:repeat(var(--cols),1fr);gap:var(--gap);width:100%;
-  max-width:min(100%,calc((var(--cr-h,100dvh) - 220px) * var(--cols) / var(--rows)));margin:0 auto;direction:ltr}
+  max-width:min(100%,calc((var(--cr-h,100dvh) - 220px - var(--cr-chrome,0px)) * var(--cols) / var(--rows)));margin:0 auto;direction:ltr}
 .cr-face-cell{aspect-ratio:1;padding:6%;border:0;background:transparent;border-radius:0;display:grid;place-items:center;touch-action:manipulation}
 .cr-face-cell .cr-face{width:100%;height:100%;display:block;transition:transform .08s}
 .cr-face-cell:active .cr-face{transform:scale(.9)}
@@ -247,11 +247,11 @@
 .cr-geo{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .cr-geo-card{display:flex;flex-direction:column;align-items:stretch;padding:8px 8px 6px;border:3px solid var(--ink);background:#fff;box-shadow:var(--shadow);transition:transform .07s,box-shadow .07s}
 .cr-geo-card:active{transform:translate(3px,3px);box-shadow:1px 1px 0 var(--ink)}
-.cr-geo-art{display:block;width:100%;aspect-ratio:1;max-height:calc((var(--cr-h,100dvh) - 330px) / 2);margin:0 auto}
+.cr-geo-art{display:block;width:100%;aspect-ratio:1;max-height:calc((var(--cr-h,100dvh) - 330px - var(--cr-chrome,0px)) / 2);margin:0 auto}
 .cr-geo-name{display:block;margin-top:4px;padding-top:5px;border-top:2.5px solid var(--ink);font-weight:900;font-size:15px;line-height:1.2;text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
 /* ---------------------------------------------------------------- lonely sock */
-.cr-socks{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;width:100%;max-width:min(100%,calc((var(--cr-h,100dvh) - 230px) * .95));margin:0 auto;direction:ltr}
+.cr-socks{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;width:100%;max-width:min(100%,calc((var(--cr-h,100dvh) - 230px - var(--cr-chrome,0px)) * .95));margin:0 auto;direction:ltr}
 .cr-sock-cell{aspect-ratio:1/1.05;display:grid;place-items:center;padding:6% 10%;border:2.5px solid var(--ink);background:var(--paper);transition:transform .07s}
 .cr-sock-cell:nth-child(odd){background:#FFF6E2}
 .cr-sock-cell:active{transform:scale(.94)}

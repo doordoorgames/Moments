@@ -11,7 +11,7 @@ import {TASK_VIEWS, stroopPrompt} from './Tasks';
 import {GEO} from './content';
 import {localCheck} from './localCheck';
 import {TEXT} from './text';
-import {ARCADE} from './theme';
+import {ARCADE, ARCADE_VARS} from './theme';
 import './clockRace.css';
 import './arcade.css';
 
@@ -327,7 +327,7 @@ export default function ClockRace({onContinue}) {
   const View = task ? TASK_VIEWS[task.type] : null;
   const seconds = Math.max(1, Math.ceil((startsAt - clock) / 1000));
   const devPanel = game?.dev && isHost ? <DevPanel open={devOpen} setOpen={setDevOpen} game={game} dev={dev} task={task}/> : null;
-  const shell = (cls, children) => <main className={`cr-app ${ARCADE ? 'cr-arcade' : ''} ${cls}`} dir={t.dir} lang={lang} data-typography-ignore>{children}</main>;
+  const shell = (cls, children) => <main className={`cr-app ${ARCADE ? 'cr-arcade' : ''} ${cls}`} style={ARCADE ? ARCADE_VARS : undefined} dir={t.dir} lang={lang} data-typography-ignore>{children}</main>;
   // Arcade: the game lives on a cabinet. Marquee (task name and count) on top, the CRT screen in the
   // middle (the question and its answers), a control panel below. Everything else is the room around it.
   const cabinet = (cls, head, body) => ARCADE ? <section className={`cr-stage cr-cab-stage ${cls}`}>

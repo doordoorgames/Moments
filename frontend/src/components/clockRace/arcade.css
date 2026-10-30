@@ -1,7 +1,8 @@
 /* Clock Race · arcade theme. "An afternoon inside a Japanese game center, circa 1992."
    Everything here is scoped to .cr-arcade (see theme.js); the classic look is untouched.
 
-   Layers (all replaceable files in public/clock-race/arcade/, see README.md there):
+   Layers (all replaceable files in public/clock-race/arcade/, see README.md there). Their URLs come in as
+   CSS variables from theme.js (--arc-room etc.), so the build never tries to bundle them:
      A  a-room.jpg            the painted room behind everything
      B  b-cabinet-shell.png   9-slice cabinet shell around the CRT
      C  c-crt-glass.png       transparent glass over the screen (vignette + one soft reflection)
@@ -20,19 +21,19 @@
   --coral:#E8927C;--coral-d:#C8735E;--yellow:#F4DE96;--yellow-d:#D8BE6E;--pist:#B6D296;--pist-d:#8FB070;--navy:#465474;
   --tomato:var(--coral);--yolk:var(--yellow);--mint:#7DBF9E;--cobalt:#6F98C9;
   --shadow:0 4px 0 rgba(58,52,70,.22);--shadow-lg:0 6px 0 rgba(58,52,70,.2);
-  --paint:url(/clock-race/arcade/d-paint-texture.png);
+  --paint:var(--arc-paint);
   --chrome-top:0px;
   background:var(--blue);color:var(--ink);
 }
 
 /* ---------------------------------------------------------------- A + F: the room */
 .cr-arcade .cr-backdrop.is-arcade{background:var(--blue);overflow:hidden}
-.cr-arcade .cr-room{position:absolute;inset:0;background:url(/clock-race/arcade/a-room.jpg) center 22%/cover no-repeat,var(--blue)}
+.cr-arcade .cr-room{position:absolute;inset:0;background:var(--arc-room) center 22%/cover no-repeat,var(--blue)}
 /* the fluorescent tubes breathe a little, very slowly (one opacity layer, cheap) */
 .cr-arcade .cr-room-light{position:absolute;inset:0;background:radial-gradient(70% 34% at 50% 8%,#fff6e2 0,transparent 70%);opacity:.16;animation:arc-tubes 11s ease-in-out infinite alternate}
 .cr-arcade .cr-fg{position:absolute;left:0;right:0;height:22vw;max-height:240px;background:center/100% 100% no-repeat}
-.cr-arcade .cr-fg.is-top{top:0;background-image:url(/clock-race/arcade/f-foreground-top.png)}
-.cr-arcade .cr-fg.is-bottom{bottom:0;background-image:url(/clock-race/arcade/f-foreground-bottom.png)}
+.cr-arcade .cr-fg.is-top{top:0;background-image:var(--arc-fg-top)}
+.cr-arcade .cr-fg.is-bottom{bottom:0;background-image:var(--arc-fg-bottom)}
 @keyframes arc-tubes{from{opacity:.1}to{opacity:.22}}
 
 /* ---------------------------------------------------------------- D: the hand-inked outline, used everywhere
@@ -45,7 +46,7 @@
 .cr-arcade :is(.cr-choice,.cr-stroop-card,.cr-geo-card,.cr-sock-cell,.cr-primary,.cr-intent,.cr-card,.cr-ghost:not(.cr-link),.cr-square-btn,.cr-rules li,
   .cr-guests li,.cr-word-go,.cr-word-prompt b,.cr-count,.cr-task-name,.cr-lang,.cr-app .pt-code-box,.cr-results li,
   .cr-waiting,.cr-spectate,.cr-error,.cr-notice,.cr-toast,.cr-memory-grid,.cr-cab-panel,.cr-cab-marquee,.cr-sad-face,.cr-countdown span,.cr-finish-card,.cr-qr,.cr-dev-toggle)::after{
-  content:'';position:absolute;inset:-6px -5px -5px -6px;border:12px solid transparent;border-image:url(/clock-race/arcade/d-ink-frame.png) 12 round;pointer-events:none;z-index:2}
+  content:'';position:absolute;inset:-6px -5px -5px -6px;border:12px solid transparent;border-image:var(--arc-ink) 12 round;pointer-events:none;z-index:2}
 /* inputs cannot carry the drawn outline (no ::after), so they get a painted inset line instead */
 .cr-arcade :is(.cr-word-input,.cr-form>input){border:0!important;border-radius:8px;box-shadow:inset 0 0 0 2.5px var(--ink),inset 0 4px 0 rgba(58,52,70,.08)!important}
 /* paint density: a light gouache texture multiplied into flat fills */
@@ -125,13 +126,13 @@
 .cr-arcade .cr-task-name::after,.cr-arcade .cr-count::after{display:none}
 
 /* the shell (B) is a 9-slice painting; the screen sits in its window */
-.cr-cab-shell{flex:1;min-height:0;display:flex;border:26px solid transparent;border-image:url(/clock-race/arcade/b-cabinet-shell.png) 72 / 26px round;
+.cr-cab-shell{flex:1;min-height:0;display:flex;border:26px solid transparent;border-image:var(--arc-shell) 72 / 26px round;
   background:var(--pink) var(--paint);background-blend-mode:multiply;background-clip:padding-box;border-radius:20px}
 .cr-cab-screen{position:relative;flex:1;min-height:0;display:flex;flex-direction:column;overflow:hidden;border-radius:18px / 22px;
   background:#F7F1E3 linear-gradient(#ffffff18 50%,#46547408 50%) 0 0/100% 4px;   /* phosphor ivory, the faintest static scanlines */
   box-shadow:inset 0 0 0 2px var(--ink),inset 0 2px 8px rgba(70,84,116,.14);
   padding:10px 12px 12px;animation:arc-warm .55s ease-out both}
-.cr-cab-glass{position:absolute;inset:0;z-index:3;pointer-events:none;border-radius:inherit;background:url(/clock-race/arcade/c-crt-glass.png) center/100% 100% no-repeat}
+.cr-cab-glass{position:absolute;inset:0;z-index:3;pointer-events:none;border-radius:inherit;background:var(--arc-glass) center/100% 100% no-repeat}
 /* CRT warming up (once, when the cabinet appears) */
 @keyframes arc-warm{0%{clip-path:inset(49% 0 49% 0);filter:brightness(1.6)}55%{clip-path:inset(0 0 0 0);filter:brightness(1.15)}100%{clip-path:inset(0);filter:none}}
 .cr-arcade .cr-play{padding-bottom:1vh;position:relative;z-index:1}
@@ -216,7 +217,7 @@
 
 /* ---------------------------------------------------------------- overlays */
 /* countdown: the room, and one small monitor with the number (opaque, so the first task stays hidden) */
-.cr-arcade .cr-countdown{background:var(--blue) url(/clock-race/arcade/a-room.jpg) center 22%/cover no-repeat}
+.cr-arcade .cr-countdown{background:var(--blue) var(--arc-room) center 22%/cover no-repeat}
 .cr-arcade .cr-countdown span{width:160px;height:150px;border-radius:26px/30px;background:#F7F1E3;color:var(--ink);font-size:92px;
   --edge:0 0 0 14px var(--pink),0 0 0 16px var(--ink),0 18px 0 14px var(--pink-d);animation:arc-count .9s ease-out both}
 .cr-arcade .cr-countdown.is-go span{background:var(--pist);color:var(--ink);-webkit-text-stroke:0;font-size:58px;width:auto;padding:0 30px;animation:cr-go .7s ease-out forwards}

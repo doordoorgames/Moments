@@ -3,10 +3,9 @@ import {botDone, fraction, localCheck} from './localCheck';
 test('tap tasks are checked on the phone', () => {
   expect(localCheck({type: 'odd', odd: 7}, 7)).toBe(true);
   expect(localCheck({type: 'odd', odd: 7}, 6)).toBe(false);
-  expect(localCheck({type: 'missing', answer: 'ج'}, 'ج')).toBe(true);
-  expect(localCheck({type: 'missing', answer: 'ج'}, 'ح')).toBe(false);
-  expect(localCheck({type: 'memory', answer: '12'}, '12')).toBe(true);
-  expect(localCheck({type: 'memory', answer: '12'}, '7')).toBe(false);
+  expect(localCheck({type: 'memory', answer: 'ج'}, 'ج')).toBe(true);
+  expect(localCheck({type: 'memory', answer: 'ج'}, 'ح')).toBe(false);
+  expect(localCheck({type: 'missing', answer: 'ج'}, 'ج')).toBe(null); // removed task type
   expect(localCheck({type: 'stroop', answer: 2}, 2)).toBe(true);
   expect(localCheck({type: 'geo', answer: 0}, 3)).toBe(false);
   expect(localCheck({type: 'sock', answer: 4}, 4)).toBe(true);

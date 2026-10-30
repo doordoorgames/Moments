@@ -130,11 +130,7 @@
 .cr-face-cell .cr-face{width:100%;height:100%;display:block;transition:transform .08s}
 .cr-face-cell:active .cr-face{transform:scale(.9)}
 
-/* ---------------------------------------------------------------- letters */
-.cr-letters-task{display:flex;flex-direction:column;gap:14px}
-.cr-alphabet{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;direction:rtl}
-.cr-letter{aspect-ratio:1/1.05;display:grid;place-items:center;border:2.5px solid var(--ink);border-radius:0;background:var(--paper);
-  font-family:'Baloo Bhaijaan 2',sans-serif;font-weight:800;font-size:clamp(22px,6.6vw,30px);line-height:1;padding:0 0 4px;box-shadow:2px 2px 0 var(--ink)}
+/* ---------------------------------------------------------------- answer buttons */
 .cr-choices{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
 .cr-choice{min-height:68px;border:3px solid var(--ink);border-radius:0;background:var(--yolk);font-family:'Baloo Bhaijaan 2',sans-serif!important;font-weight:800;font-size:38px;line-height:1;padding-bottom:6px;box-shadow:var(--shadow);transition:transform .07s,box-shadow .07s}
 .cr-choice:active{transform:translate(3px,3px);box-shadow:1px 1px 0 var(--ink)}
@@ -260,14 +256,17 @@
 
 /* ---------------------------------------------------------------- three-grid memory */
 .cr-memory{display:flex;flex-direction:column;align-items:center;gap:12px}
-.cr-memory-steps{display:flex;gap:8px}
-.cr-memory-steps i{width:30px;height:8px;border:2px solid var(--ink);background:var(--paper)}
-.cr-memory-steps i.on{background:var(--tomato)}
-.cr-memory-steps i.past{background:var(--ink)}
-.cr-memory-grid{display:grid;grid-template-columns:repeat(3,1fr);width:min(100%,300px);border:3px solid var(--ink);background:var(--ink);gap:3px;box-shadow:var(--shadow-lg);animation:cr-swap .16s ease-out}
-.cr-memory-grid span{aspect-ratio:1;display:grid;place-items:center;background:#fff;font-family:'Archivo Black','Baloo Bhaijaan 2',sans-serif;font-size:clamp(34px,11vw,52px);line-height:1;padding-bottom:4px}
-[lang=ar] .cr-memory-grid span{font-family:'Archivo Black','Baloo Bhaijaan 2',sans-serif}
-.cr-memory-bar{width:min(100%,300px);height:6px;background:var(--ink);transform-origin:left;animation:cr-drain 2s linear forwards}
+/* Remember this: white grid, big black letters, four soft blinks that alternate lilac and powder yellow
+   (neighbouring cells start on opposite colours). Background and a small lift only: cheap on phones. */
+.cr-memory-grid{--lilac:#D9C9FF;--powder:#FFF1A8;display:grid;grid-template-columns:repeat(3,1fr);width:min(100%,312px);border:3px solid var(--ink);background:var(--ink);gap:3px;box-shadow:var(--shadow-lg);animation:cr-swap .16s ease-out}
+.cr-memory-grid span{--c1:var(--lilac);--c2:var(--powder);aspect-ratio:1;display:grid;place-items:center;background:#fff;animation:cr-mem-blink 2s ease-in-out .15s 2 both}
+.cr-memory-grid span.is-b{--c1:var(--powder);--c2:var(--lilac)}
+.cr-memory-grid b{display:block;color:#0B0B0B;font-family:'Archivo Black','Baloo Bhaijaan 2',sans-serif;font-weight:900;font-size:clamp(40px,13vw,60px);line-height:1;padding-bottom:4px;animation:cr-mem-lift 1s ease-in-out .15s 4 both}
+.cr-memory-grid[lang=ar] b{font-family:'Baloo Bhaijaan 2',sans-serif;font-weight:800;font-size:clamp(44px,14vw,64px);padding-bottom:8px}
+@keyframes cr-mem-blink{0%,34%,50%,84%,100%{background:#fff}16%{background:var(--c1)}66%{background:var(--c2)}}
+@keyframes cr-mem-lift{0%,68%,100%{transform:none}32%{transform:scale(1.07)}}
+@media (prefers-reduced-motion:reduce){.cr-memory-grid span,.cr-memory-grid b{animation:none}}
+.cr-memory-bar{width:min(100%,312px);height:6px;background:var(--ink);transform-origin:left;animation:cr-drain 4s linear forwards}
 [dir=rtl] .cr-memory-bar{transform-origin:right}
 .cr-memory-q{font-family:'Baloo Bhaijaan 2',sans-serif;font-weight:800;font-size:clamp(22px,6.4vw,28px);text-align:center;line-height:1.25}
 .cr-memory.is-ask .cr-choices{width:100%}

@@ -1,7 +1,6 @@
 import React, {memo, useEffect, useMemo, useState} from 'react';
 import Face from './Face';
 import Sock from './Sock';
-import Landmark from './Landmarks';
 import {PLAYER_COLORS} from './Dials';
 import {GEO, STROOP} from './content';
 import {GEO_SHAPES} from './geoShapes';
@@ -23,14 +22,6 @@ export function OddFace({task, onPick}) {
   </div>;
 }
 
-// ------------------------------------------------------------------ الحرف الناقص
-export function MissingLetter({task, onPick, lang}) {
-  return <div className="cr-letters-task">
-    <div className="cr-alphabet" dir={lang === 'ar' ? 'rtl' : 'ltr'} aria-label="letters">{task.letters.map((c, i) => <span key={i} className="cr-letter">{c}</span>)}</div>
-    <div className="cr-choices">{task.choices.map(c => <button key={c} type="button" className="cr-choice" {...tap(() => onPick(c))}>{c}</button>)}</div>
-  </div>;
-}
-
 // ------------------------------------------------------------------ لون ولا كلمة؟ (Stroop)
 export function Stroop({task, onPick, lang}) {
   return <div className="cr-stroop">
@@ -45,12 +36,12 @@ export function stroopPrompt(task, t, lang) {
 }
 
 // ------------------------------------------------------------------ دولة، مدينة، قارة
+// Every place, city or not, is the same kind of picture: its real map outline, one colour, one shadow.
 export const GeoPic = memo(function GeoPic({id}) {
-  if (GEO_SHAPES[id]) return <svg viewBox="0 0 100 100" className="cr-geo-art" aria-hidden="true">
+  return <svg viewBox="0 0 100 100" className="cr-geo-art" aria-hidden="true">
     <path d={GEO_SHAPES[id]} fill="#0B0B0B" transform="translate(2 2)"/>
     <path d={GEO_SHAPES[id]} fill="#2E8B6B"/>
   </svg>;
-  return <Landmark id={id}/>;
 });
 
 export function Geography({task, onPick, lang}) {
@@ -71,22 +62,23 @@ export function LonelySock({task, onPick}) {
   </div>;
 }
 
-// ------------------------------------------------------------------ الذاكرة: three grids, two seconds each, then the question
-export const MEMORY_MS = 2000;
-export function Memory({task, t, onPick}) {
-  const [phase, setPhase] = useState(0); // 0-2: grids, 3: question
+// ------------------------------------------------------------------ الذاكرة: one 3x3 grid of letters, four soft blinks, then the question
+export const MEMORY_MS = 4000; // matches MEMORY_SHOW on the server
+export function Memory({task, t, onPick, lang}) {
+  const [asking, setAsking] = useState(false);
   useEffect(() => {
-    const timers = [1, 2, 3].map(n => setTimeout(() => setPhase(n), n * MEMORY_MS));
-    return () => timers.forEach(clearTimeout);
+    const id = setTimeout(() => setAsking(true), MEMORY_MS);
+    return () => clearTimeout(id);
   }, []);
-  if (phase < 3) return <div className="cr-memory">
+  if (!asking) return <div className="cr-memory">
     <h2 className="cr-prompt">{t.memoryIntro}</h2>
-    <div className="cr-memory-steps" aria-hidden="true">{[0, 1, 2].map(n => <i key={n} className={n === phase ? 'on' : n < phase ? 'past' : ''}/>)}</div>
-    <div className="cr-memory-grid" key={phase} dir="ltr">{task.grids[phase].map((s, i) => <span key={i}>{s}</span>)}</div>
-    <div className="cr-memory-bar" key={`b${phase}`}/>
+    <div className="cr-memory-grid" dir={lang === 'ar' ? 'rtl' : 'ltr'} lang={lang}>
+      {task.grid.map((s, i) => <span key={i} className={(i % 2) ? 'is-b' : 'is-a'}><b>{s}</b></span>)}
+    </div>
+    <div className="cr-memory-bar" style={{animationDuration: `${MEMORY_MS}ms`}}/>
   </div>;
   return <div className="cr-memory is-ask">
-    <p className="cr-memory-q">{t.memoryAsk[`${task.kind}-${task.ask}`]}</p>
+    <p className="cr-memory-q">{t.memoryAsk}</p>
     <div className="cr-choices" dir="ltr">{task.choices.map(c => <button key={c} type="button" className="cr-choice" {...tap(() => onPick(c))}>{c}</button>)}</div>
   </div>;
 }
@@ -145,5 +137,5 @@ export function FinalBoss({task, onPick}) {
   </div>;
 }
 
-export const TASK_VIEWS = {odd: OddFace, missing: MissingLetter, stroop: Stroop, geo: Geography, sock: LonelySock, memory: Memory,
+export const TASK_VIEWS = {odd: OddFace, stroop: Stroop, geo: Geography, sock: LonelySock, memory: Memory,
   vote: FriendVote, word: WordRush, boss: FinalBoss};

@@ -18,6 +18,7 @@ import SoloMiniGame from "@/components/miniGames/MiniGames";
 const PlotTwist = lazy(() => import("@/components/plotTwist/PlotTwist"));
 const EmojiRooftop = lazy(() => import("@/components/emojiRooftop/EmojiRooftop"));
 const LetterTV = lazy(() => import("@/components/letterTv/LetterTV"));
+const ClockRace = lazy(() => import("@/components/clockRace/ClockRace"));
 
 const BaccaratAdventureRoom = lazy(() => import("@/components/baccaratAdventure/BaccaratAdventureRoom"));
 
@@ -64,6 +65,7 @@ function App() {
                     <Route path="/mini-games/baccarat-hunt/room/:code" element={<Suspense fallback={null}><BaccaratAdventureRoom /></Suspense>} />
                     <Route path="/mini-games/emoji-rooftop/room/:code" element={<Suspense fallback={null}><EmojiRooftop /></Suspense>} />
                     <Route path="/mini-games/letter-tv/room/:code" element={<Suspense fallback={null}><LetterTV /></Suspense>} />
+                    <Route path="/mini-games/clock-race/room/:code" element={<Suspense fallback={null}><ClockRace /></Suspense>} />
                     <Route path="/mini-games/plot-twist/room/:code" element={<Suspense fallback={null}><PlotTwist /></Suspense>} />
                     <Route path="/mini-games/:gameId" element={<SoloMiniGame />} />
                     <Route path="/visual-test" element={<Navigate to="/" replace />} />

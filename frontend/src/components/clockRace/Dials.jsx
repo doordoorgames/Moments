@@ -14,7 +14,7 @@ export const Dial = memo(function Dial({done, total = 20, color, size = 46, big 
     <circle cx="50" cy="50" r="25" fill="none" stroke={color} strokeWidth="50" transform="rotate(-90 50 50)"
       strokeDasharray={PIE} strokeDashoffset={PIE * (1 - p)} className="cr-dial-fill"/>
     {Array.from({length: total}, (_, i) => <line key={i} x1="50" y1="9" x2="50" y2={i % 5 === 0 ? 17 : 13} stroke="#0B0B0B"
-      strokeWidth={i % 5 === 0 ? 3.5 : 2.2} strokeLinecap="round" transform={`rotate(${i * 360 / total} 50 50)`} opacity={p * total > i ? .35 : 1}/>)}
+      strokeWidth={i % 5 === 0 ? 3.5 : 2.2} transform={`rotate(${i * 360 / total} 50 50)`} opacity={p * total > i ? .35 : 1}/>)}
     <g className="cr-dial-hand" style={{transform: `rotate(${p * 360}deg)`}}>
       <line x1="50" y1="50" x2="50" y2="20" stroke="#0B0B0B" strokeWidth="5.5" strokeLinecap="round"/>
     </g>
@@ -23,9 +23,9 @@ export const Dial = memo(function Dial({done, total = 20, color, size = 46, big 
 });
 
 // The race strip at the top: every player, join order (never re-sorted, so nobody's dial jumps).
-function Dials({players, me, total = 20, winner}) {
+function Dials({players, me, total = 20, winner, t}) {
   const many = players.length > 6;
-  return <div className={`cr-dials ${many ? 'is-many' : ''}`} role="list" aria-label="السباق">
+  return <div className={`cr-dials ${many ? 'is-many' : ''}`} role="list" aria-label={t?.race || 'السباق'}>
     {players.map(p => <div role="listitem" key={p.id}
       className={`cr-dial-seat ${p.id === me ? 'is-me' : ''} ${p.id === winner ? 'is-winner' : ''} ${p.racing === false ? 'is-out' : ''}`}
       aria-label={`${p.name} ${Math.round(fraction(p.done, total) * 100)}%`}>
@@ -33,7 +33,7 @@ function Dials({players, me, total = 20, winner}) {
         <Dial done={p.done} total={total} color={PLAYER_COLORS[p.color % PLAYER_COLORS.length]} size={many ? 40 : 48}/>
         {p.done > 0 && <i className="cr-dial-pop" key={p.done} style={{borderColor: PLAYER_COLORS[p.color % PLAYER_COLORS.length]}}/>}
       </span>
-      <span className="cr-dial-name" dir="auto">{p.id === me ? 'أنت' : p.name}</span>
+      <span className="cr-dial-name" dir="auto">{p.id === me ? (t?.you || 'أنت') : p.name}</span>
     </div>)}
   </div>;
 }

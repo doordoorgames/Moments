@@ -1,4 +1,5 @@
-"""Clock Race content: Arabic alphabet, friend questions, faces, and the English answer sets.
+"""Clock Race content: Arabic alphabet, friend questions, faces, colors, geography, socks,
+memory symbols and the English answer sets.
 
 Everything a round can ask is curated here so the generator never invents an unfair task.
 """
@@ -6,7 +7,7 @@ import os
 
 # The Arabic alphabet in its usual order (28 letters).
 ALPHABET = list('ابتثجحخدذرزسشصضطظعغفقكلمنهوي')
-# Letters that may go missing or be swapped: never the first three (ا ب ت) or the last two (و ي).
+# Letters that may go missing: never the first three (ا ب ت) or the last two (و ي).
 EDITABLE = list(range(3, len(ALPHABET) - 2))  # 23 positions
 
 # سؤال الربع: everyone gets the same question; every name tag is a right answer.
@@ -27,6 +28,47 @@ QUESTIONS = [
     'منو أكثر واحد لو يصير مدير بيطردنا كلنا؟',
     'منو أكثر واحد ممكن يصير مؤثر مشهور؟',
 ]
+# The same questions for players who switched the game to English (same order, same index).
+QUESTIONS_EN = [
+    'Who looks the best today?',
+    'Who has the prettiest eyes here?',
+    'Who is the sharpest dresser today?',
+    'Who would stop answering us if they got famous?',
+    'Who needs a holiday the most?',
+    'Who would be the star of a reality show?',
+    'Who is most likely to get lost at the airport?',
+    'Who would disappear first after winning a million?',
+    'Who has the best taste in colors?',
+    'Who deserves a crown today?',
+    'Who is most likely to be late to their own wedding?',
+    'Who can make drama out of nothing?',
+    'Who has the nicest smile?',
+    'Who would fire all of us if they became the boss?',
+    'Who is most likely to become a famous influencer?',
+]
+
+# الألوان المتلخبطة (Stroop): color ids. Names and ink hex live in the app (clockRace/stroop.js);
+# five colors nobody confuses with each other (no orange/pink next to red, no yellow on cream).
+STROOP_COLORS = ['red', 'blue', 'green', 'purple', 'black']
+
+# Geography. Category of every picture; names and drawings live in the app (clockRace/geo.js).
+# Countries and continents are map silhouettes, cities are landmarks, Texas is the state outline.
+# Australia is left out of the countries on purpose: it is also the continent shape (Oceania).
+GEO = {
+    'country': ['italy', 'japan', 'brazil', 'india', 'egypt', 'saudi', 'uk', 'china', 'mexico', 'canada'],
+    'city': ['paris', 'london', 'new_york', 'dubai', 'cairo', 'rome', 'sydney', 'tokyo', 'rio', 'san_francisco'],
+    'continent': ['africa', 'asia', 'europe', 'north_america', 'south_america', 'oceania', 'antarctica'],
+    'state': ['texas'],
+}
+
+# أي جورب ماله زوج؟ A sock is base color x pattern x accent color (drawn by clockRace/Sock.jsx).
+SOCK_BASES = 6     # cream, sky, mint, pink, yolk, lilac
+SOCK_PATTERNS = 6  # plain, stripes, dots, zigzag, diamonds, checks
+SOCK_ACCENTS = 4   # tomato, cobalt, green, ink
+
+# احفظ اللي تشوفه: letters people never confuse (no I/O next to 1/0) and two-digit numbers.
+MEMORY_LETTERS = list('ABCDEFGHJKLMNPQRSTUVWXYZ')  # 24
+MEMORY_NUMBERS = [str(n) for n in range(10, 100)]
 
 # Faces are drawn by the app (never system emoji), so every phone shows exactly the same face.
 # A face is "eyes-mouth-color". Must match EYES / MOUTHS / FACE_COLORS in frontend clockRace/Face.jsx.

@@ -1,34 +1,22 @@
 import React, {useEffect, useMemo, useRef, useState} from 'react';
 import Face from './Face';
+import GeoPic, {GEO_NAMES} from './Geo';
+import Sock from './Sock';
 import {PLAYER_COLORS} from './Dials';
 
 // Taps count on finger-down (no wait for release); keyboard Enter/Space still works through click.
+// Every task takes exactly one answer: ClockRace shows the stars or the sad face and moves on.
 const tap = fn => ({
   onPointerDown: e => {if (e.button > 0) return; e.preventDefault(); fn();},
   onClick: e => {if (e.detail === 0) fn();},
 });
 
-// A tapped wrong thing shakes for a moment; the player can tap again straight away.
-function useBad() {
-  const [bad, setBad] = useState(null);
-  const timer = useRef(null);
-  useEffect(() => () => clearTimeout(timer.current), []);
-  const flag = key => {
-    clearTimeout(timer.current);
-    setBad(null);
-    requestAnimationFrame(() => setBad(key));
-    timer.current = setTimeout(() => setBad(null), 320);
-  };
-  return [bad, flag];
-}
-
-// ------------------------------------------------------------------ الإيموجي المختلف
-export function OddFace({task, onPick}) {
-  const [bad, flag] = useBad();
+// ------------------------------------------------------------------ الوجه الحزين
+export function OddFace({task, t, onPick}) {
   const cells = task.rows * task.cols;
   return <div className="cr-face-grid" style={{'--cols': task.cols, '--rows': task.rows}}>
-    {Array.from({length: cells}, (_, i) => <button key={i} type="button" className={`cr-face-cell ${bad === i ? 'is-bad' : ''}`}
-      aria-label={i === task.odd ? 'وجه حزين' : 'وجه مبتسم'} {...tap(() => {if (!onPick(i)) flag(i);})}>
+    {Array.from({length: cells}, (_, i) => <button key={i} type="button" className="cr-face-cell"
+      aria-label={i === task.odd ? t.oddFace : t.smileFace} {...tap(() => onPick(i))}>
       <Face mood={i === task.odd ? 'sad' : 'smile'} color={task.color}/>
     </button>)}
   </div>;
@@ -36,30 +24,79 @@ export function OddFace({task, onPick}) {
 
 // ------------------------------------------------------------------ الحرف الناقص
 export function MissingLetter({task, onPick}) {
-  const [bad, flag] = useBad();
   return <div className="cr-letters-task">
-    <div className="cr-alphabet" aria-label="الحروف">{task.letters.map((c, i) => <span key={i} className="cr-letter">{c}</span>)}</div>
-    <div className="cr-choices">{task.choices.map(c => <button key={c} type="button" className={`cr-choice ${bad === c ? 'is-bad' : ''}`}
-      {...tap(() => {if (!onPick(c)) flag(c);})}>{c}</button>)}</div>
+    <div className="cr-alphabet" dir="rtl" lang="ar">{task.letters.map((c, i) => <span key={i} className="cr-letter">{c}</span>)}</div>
+    <div className="cr-choices" dir="rtl" lang="ar">{task.choices.map(c => <button key={c} type="button" className="cr-choice"
+      {...tap(() => onPick(c))}>{c}</button>)}</div>
   </div>;
 }
 
-// ------------------------------------------------------------------ الحروف المتبدلة
-export function SwapLetters({task, onPick}) {
-  const [bad, flag] = useBad();
-  const [found, setFound] = useState([]);
-  const pick = i => {
-    if (found.includes(i)) return;
-    if (!task.answer.includes(i)) { flag(i); return; }
-    const next = [...found, i];
-    setFound(next);
-    if (next.length === 2) onPick(next);
-  };
-  return <div className="cr-letters-task">
-    <div className="cr-alphabet is-tappable">{task.letters.map((c, i) => <button key={i} type="button"
-      className={`cr-letter ${found.includes(i) ? 'is-found' : ''} ${bad === i ? 'is-bad' : ''}`}
-      {...tap(() => pick(i))}>{c}</button>)}</div>
-    <div className="cr-swap-count" aria-live="polite"><i className={found.length > 0 ? 'on' : ''}/><i className={found.length > 1 ? 'on' : ''}/></div>
+// ------------------------------------------------------------------ الألوان المتلخبطة (Stroop)
+export const STROOP = [
+  {id: 'red', ink: '#E3262E'},
+  {id: 'blue', ink: '#1F47FF'},
+  {id: 'green', ink: '#0E9F4F'},
+  {id: 'purple', ink: '#8B2FD9'},
+  {id: 'black', ink: '#111111'},
+];
+
+export function StroopPrompt({task, t}) {
+  const color = STROOP[task.target].id;
+  const [before, name] = task.variant === 'word' ? t.stroopWord(t.colors[color]) : t.stroopInk(t.colorsThe[color]);
+  return <h2 className="cr-prompt" dir={t.dir}>{before} <span className="cr-stroop-target">{name}</span></h2>;
+}
+
+export function Stroop({task, t, onPick}) {
+  return <div className="cr-stroop">
+    <p className="cr-task-hint">{task.variant === 'word' ? t.stroopHintWord : t.stroopHintInk}</p>
+    <div className="cr-stroop-grid">{task.choices.map((c, i) => <button key={i} type="button" className="cr-stroop-choice"
+      style={{color: STROOP[c.ink].ink}} {...tap(() => onPick(i))}>{t.colors[STROOP[c.word].id]}</button>)}</div>
+  </div>;
+}
+
+// ------------------------------------------------------------------ جغرافيا
+export function Geography({task, t, onPick}) {
+  return <div className="cr-geo-grid">{task.items.map((item, i) => <button key={item.key} type="button" className="cr-geo-card"
+    {...tap(() => onPick(i))}>
+    <span className="cr-geo-art"><GeoPic id={item.key}/></span>
+    <span className="cr-geo-name">{GEO_NAMES[item.key]?.[t.lang] || item.key}</span>
+  </button>)}</div>;
+}
+
+// ------------------------------------------------------------------ الجورب الوحيد
+export function LonelySock({task, t, onPick}) {
+  return <div className="cr-sock-grid">{task.socks.map((code, i) => <button key={i} type="button" className="cr-sock-cell"
+    style={{'--tilt': `${task.tilts?.[i] || 0}deg`}} aria-label={t.sockLabel(i + 1)} {...tap(() => onPick(i))}>
+    <Sock code={code}/>
+  </button>)}</div>;
+}
+
+// ------------------------------------------------------------------ احفظ اللي تشوفه
+// Three grids, two seconds each, swapped automatically; then the question. Nothing can be tapped
+// before the question shows (the server checks the timing too).
+export function Memory({task, t, onPick, showFor = 6}) {
+  const [phase, setPhase] = useState(0);
+  const each = (showFor * 1000) / task.grids.length;
+  const grids = task.grids.length;
+  // Timed from when this task first appeared (the view is re-mounted per task); room refreshes
+  // hand in a new task object and must not restart the grids.
+  useEffect(() => {
+    const timers = Array.from({length: grids}, (_, i) => setTimeout(() => setPhase(i + 1), each * (i + 1)));
+    return () => timers.forEach(clearTimeout);
+  }, [grids, each]);
+  const asking = phase >= task.grids.length;
+  return <div className="cr-memory">
+    {asking
+      ? <h2 className="cr-prompt cr-memory-q" dir={t.dir}>{t.memoryQuestion(task.question, task.kind)}</h2>
+      : <h2 className="cr-prompt" dir={t.dir}>{t.memoryIntro}</h2>}
+    {!asking ? <>
+      <div className="cr-memory-steps" aria-label={t.memoryGrid(phase + 1, task.grids.length)}>
+        {task.grids.map((_, i) => <i key={i} className={i < phase ? 'is-done' : i === phase ? 'is-on' : ''}/>)}
+      </div>
+      <div className="cr-memory-grid" key={phase} dir="ltr">{task.grids[phase].map((s, i) => <span key={i}>{s}</span>)}</div>
+      <div className="cr-memory-bar" key={`bar${phase}`} style={{'--each': `${each}ms`}}><i/></div>
+    </> : <div className="cr-memory-choices" dir="ltr">{task.choices.map(c => <button key={c} type="button" className="cr-choice is-memory"
+      {...tap(() => onPick(c))}>{c}</button>)}</div>}
   </div>;
 }
 
@@ -75,7 +112,7 @@ export function FriendVote({task, roster, players, me, t, onPick}) {
       const color = PLAYER_COLORS[(byId[id]?.color ?? i) % PLAYER_COLORS.length];
       return <button key={id} type="button" className="cr-tag" style={{'--tag': color, '--tilt': `${TILTS[i % TILTS.length]}deg`}}
         {...tap(() => onPick(id))}>
-        <span className="cr-tag-hole"/><span className="cr-tag-name" dir="auto">{names[id] || '؟'}</span>
+        <span className="cr-tag-hole"/><span className="cr-tag-name" dir="auto">{names[id] || '?'}</span>
         {id === me && <small>{t.you}</small>}
       </button>;
     })}</div>
@@ -83,20 +120,16 @@ export function FriendVote({task, roster, players, me, t, onPick}) {
 }
 
 // ------------------------------------------------------------------ تحدي الكلمات
+// One submission: the server says right or wrong, and either way the race moves on.
 export function WordRush({task, t, onWord, inputRef}) {
   const [text, setText] = useState('');
-  const [state, setState] = useState('');
-  const [shake, setShake] = useState(0);
-  const sending = useRef(false);
+  const [sending, setSending] = useState(false);
+  const busy = useRef(false);
   const submit = async e => {
     e?.preventDefault();
-    if (sending.current || !text.trim()) { inputRef.current?.focus(); return; }
-    sending.current = true; setState('sending');
-    try {
-      const r = await onWord(text);
-      if (!r?.right) { setState('wrong'); setShake(s => s + 1); inputRef.current?.focus(); inputRef.current?.select(); }
-    } catch { setState('wrong'); setShake(s => s + 1); }
-    finally { sending.current = false; setState(s => s === 'sending' ? '' : s); }
+    if (busy.current || !text.trim()) { inputRef.current?.focus(); return; }
+    busy.current = true; setSending(true);
+    try { await onWord(text); } finally { busy.current = false; setSending(false); }
   };
   const letters = task.variant === 'pair' ? [task.first, task.last] : [task.letter];
   return <form className="cr-word" onSubmit={submit} noValidate>
@@ -105,26 +138,26 @@ export function WordRush({task, t, onWord, inputRef}) {
         ? <><span>{t.wordPair[0]}</span><b dir="ltr">{letters[0]}</b><span>{t.wordPair[1]}</span><b dir="ltr">{letters[1]}</b></>
         : <><span>{task.variant === 'country' ? t.wordCountry : t.wordFruit}</span><b dir="ltr">{letters[0]}</b></>}
     </div>
-    <div className={`cr-word-row ${state === 'wrong' ? 'is-wrong' : ''}`} key={shake}>
+    <div className="cr-word-row">
       <input ref={inputRef} className="cr-word-input" dir="ltr" lang="en" type="text" inputMode="text" value={text}
-        onChange={e => {setText(e.target.value); if (state === 'wrong') setState('');}}
+        onChange={e => setText(e.target.value)} disabled={sending}
         placeholder={t.wordPlaceholder} autoComplete="off" autoCorrect="off" autoCapitalize="characters" spellCheck={false}
         enterKeyHint="done" maxLength={40} aria-label={t.wordHint}/>
-      <button type="submit" className="cr-word-go" disabled={state === 'sending'}>{t.wordSubmit}</button>
+      <button type="submit" className="cr-word-go" disabled={sending}>{t.wordSubmit}</button>
     </div>
-    <p className={`cr-word-note ${state === 'wrong' ? 'is-wrong' : ''}`} role={state === 'wrong' ? 'alert' : undefined}>{state === 'wrong' ? t.wordWrong : t.wordHint}</p>
+    <p className="cr-word-note">{t.wordHint}</p>
   </form>;
 }
 
 // ------------------------------------------------------------------ الوجه المكرر
-export function FinalBoss({task, onPick}) {
-  const [bad, flag] = useBad();
+export function FinalBoss({task, t, onPick}) {
   return <div className="cr-face-grid is-boss" style={{'--cols': task.cols, '--rows': task.rows}}>
-    {task.faces.map((f, i) => <button key={i} type="button" className={`cr-face-cell ${bad === i ? 'is-bad' : ''}`}
-      aria-label={`وجه ${i + 1}`} {...tap(() => {if (!onPick(i)) flag(i);})}>
+    {task.faces.map((f, i) => <button key={i} type="button" className="cr-face-cell"
+      aria-label={t.face(i + 1)} {...tap(() => onPick(i))}>
       <Face code={f}/>
     </button>)}
   </div>;
 }
 
-export const TASK_VIEWS = {odd: OddFace, missing: MissingLetter, swap: SwapLetters, vote: FriendVote, word: WordRush, boss: FinalBoss};
+export const TASK_VIEWS = {odd: OddFace, missing: MissingLetter, stroop: Stroop, geo: Geography, sock: LonelySock,
+  memory: Memory, vote: FriendVote, word: WordRush, boss: FinalBoss};

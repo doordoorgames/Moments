@@ -35,24 +35,23 @@ const MOUTHS = [
   <g key="m5"><path d="M45 69 V77 Q50 84 55 77 V69 Z" fill="#FF5B6E" stroke={INK} strokeWidth="3.5" strokeLinejoin="round"/><path d="M31 63 Q50 76 69 63" fill="none" stroke={INK} strokeWidth="6" strokeLinecap="round"/></g>,
 ];
 
-// A worried brow pair only on the sad face of "the odd face", so it reads as sad at a glance.
-const SAD_BROWS = <g fill="none" stroke={INK} strokeWidth="4.5" strokeLinecap="round"><path d="M26 31 L42 27"/><path d="M58 27 L74 31"/></g>;
-
 function parse(code) {
   const [e, m, c] = String(code).split('-').map(Number);
   return {e: e || 0, m: m || 0, c: c || 0};
 }
 
+// mood 'smile' / 'sad': the faces of "the sad face" task and the wrong-answer face. They share
+// size, shape, color, eyes and stroke; only the mouth differs (no eyebrows, no other clue).
 function Face({code, mood, color = 0, size}) {
-  let e, m, c, brows = null;
+  let e, m, c;
   if (mood === 'smile') { e = 0; m = 0; c = color; }
-  else if (mood === 'sad') { e = 0; m = 1; c = color; brows = SAD_BROWS; }
+  else if (mood === 'sad') { e = 0; m = 1; c = color; }
   else ({e, m, c} = parse(code));
   return <svg viewBox="0 0 100 100" width={size} height={size} aria-hidden="true" className="cr-face">
     <circle cx="50" cy="52" r="42" fill={INK}/>
     <circle cx="50" cy="50" r="42" fill={FACE_COLORS[c % FACE_COLORS.length]} stroke={INK} strokeWidth="5"/>
     <ellipse cx="34" cy="26" rx="9" ry="5" fill="#fff" opacity=".55" transform="rotate(-25 34 26)"/>
-    {brows}{EYES[e % EYES.length]}{MOUTHS[m % MOUTHS.length]}
+    {EYES[e % EYES.length]}{MOUTHS[m % MOUTHS.length]}
   </svg>;
 }
 

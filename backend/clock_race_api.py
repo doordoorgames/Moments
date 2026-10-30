@@ -135,8 +135,15 @@ def router(db, query):
     @api.get('/rooms/{code}')
     async def state(code: str, response: Response, authorization: str = Header(default='')):
         response.headers['Cache-Control'] = 'private, no-store'
-        g, _ = await load(code)
-        return engine.view(g, auth(g, authorization)['id'])
+        g, old = await load(code)
+        me = auth(g, authorization)
+        if g.get('bot_plans') and g['status'] == 'racing':
+            # TEST99: Test Bot moves on the server clock; any read catches it up.
+            async with locks[code]:
+                g, old = await load(code)
+                if engine.sync_bots(g):
+                    await save(code, g, old, None if g['status'] == 'finished' else {'type': 'progress', **engine.progress(g)})
+        return engine.view(g, me['id'])
 
     @api.post('/rooms/{code}/start')
     async def start(code: str, body: Start, response: Response, authorization: str = Header(default='')):
@@ -156,11 +163,12 @@ def router(db, query):
         async with locks[code]:
             g, old = await load(code)
             me = auth(g, authorization)
+            bots_moved = engine.sync_bots(g)  # Test Bot's earlier steps count before this answer
             try:
                 result = engine.answer(g, me['id'], body.round, body.task, body.answer)
             except engine.GameError as e:
                 raise HTTPException(409, str(e))
-            if result['changed']:
+            if result['changed'] or bots_moved:
                 ended = g['status'] == 'finished'
                 await save(code, g, old, None if ended else {'type': 'progress', **engine.progress(g)})
             out = {k: v for k, v in result.items() if k != 'changed'}
@@ -171,7 +179,8 @@ def router(db, query):
 
     @api.post('/rooms/{code}/dev')
     async def dev(code: str, body: Dev, response: Response, authorization: str = Header(default='')):
-        """TEST99 rooms only: add test players, move them, or solve your own current task."""
+        """TEST99 rooms only: add more test players, move them, or solve your own current task.
+        (Test Bot itself is created with the room and runs by itself.)"""
         response.headers['Cache-Control'] = 'private, no-store'
         async with locks[code]:
             g, old = await load(code)

@@ -1,4 +1,5 @@
 """Clock Race rooms, stored in the existing rooms table (encrypted flags), like Letter TV and Plot Twist.
+TEST99 rooms come with one simulated player ("Test Bot") whose clock follows a schedule set at the start.
 
 Answers go over HTTP and the server judges every one. WebSockets push the public race picture
 (who is at how many tasks) so the clock circles move without every phone re-reading the room.
@@ -29,6 +30,10 @@ class Nick(BaseModel):
     nickname: str = Field(min_length=1, max_length=100)
 
 
+class Create(Nick):
+    lang: Literal['ar', 'en'] = 'ar'
+
+
 class Start(BaseModel):
     round: str = Field(default='', max_length=40)
 
@@ -40,7 +45,7 @@ class Answer(BaseModel):
 
 
 class Dev(BaseModel):
-    action: Literal['add', 'add_twin', 'bots', 'solve']
+    action: Literal['add', 'add_twin', 'solve']
     count: int = Field(default=1, ge=1, le=engine.MAX_PLAYERS)
 
 
@@ -69,6 +74,8 @@ def router(db, query):
             g = json.loads(cipher().decrypt(flags[0][len(PREFIX):].encode()))
         except InvalidToken:
             raise HTTPException(503, 'Room cannot be decrypted with the current server key.')
+        if g.get('v') != engine.VERSION:
+            raise HTTPException(410, 'This room is from an older version. Create a new room. · هالغرفة قديمة، سوّ غرفة جديدة.')
         return g, result.data['wheel_winner_choice_id']
 
     async def save(code, g, old, message=None):
@@ -99,10 +106,10 @@ def router(db, query):
         return dict(code=code, player_id=p['id'], token=p['token'], state=engine.view(g, p['id']))
 
     @api.post('/rooms')
-    async def create(body: Nick, response: Response):
+    async def create(body: Create, response: Response):
         response.headers['Cache-Control'] = 'no-store'
         try:
-            g, host = engine.new_room(body.nickname)
+            g, host = engine.new_room(body.nickname, body.lang)
         except engine.GameError as e:
             raise HTTPException(400, str(e))
         for _ in range(50):
@@ -135,8 +142,16 @@ def router(db, query):
     @api.get('/rooms/{code}')
     async def state(code: str, response: Response, authorization: str = Header(default='')):
         response.headers['Cache-Control'] = 'private, no-store'
-        g, _ = await load(code)
-        return engine.view(g, auth(g, authorization)['id'])
+        g, old = await load(code)
+        me = auth(g, authorization)
+        if g['status'] == 'racing' and g.get('bots'):
+            # simulated players move by the clock; write their progress down when it changed
+            async with locks[code]:
+                g, old = await load(code)
+                if engine.sync_bots(g):
+                    ended = g['status'] == 'finished'
+                    await save(code, g, old, None if ended else {'type': 'progress', **engine.progress(g)})
+        return engine.view(g, me['id'])
 
     @api.post('/rooms/{code}/start')
     async def start(code: str, body: Start, response: Response, authorization: str = Header(default='')):
@@ -156,11 +171,14 @@ def router(db, query):
         async with locks[code]:
             g, old = await load(code)
             me = auth(g, authorization)
+            moved = engine.sync_bots(g)
             try:
                 result = engine.answer(g, me['id'], body.round, body.task, body.answer)
             except engine.GameError as e:
+                if moved:
+                    await save(code, g, old)
                 raise HTTPException(409, str(e))
-            if result['changed']:
+            if result['changed'] or moved:
                 ended = g['status'] == 'finished'
                 await save(code, g, old, None if ended else {'type': 'progress', **engine.progress(g)})
             out = {k: v for k, v in result.items() if k != 'changed'}
@@ -186,14 +204,13 @@ def router(db, query):
                         engine.add_player(g, name, sim=True)
                 elif body.action == 'add_twin':
                     engine.add_player(g, me['name'], sim=True)  # same nickname as the host
-                elif body.action == 'bots':
-                    engine.bots_step(g)
                 elif body.action == 'solve' and g['status'] == 'racing':
                     i = len(g['progress'].get(me['id'], []))
                     if i < engine.TASKS:
+                        # skips the memory display wait: solving is a test shortcut
                         engine.answer(g, me['id'], g['round']['id'], i,
                                       engine.solve(g['round']['tasks'][i], [p['id'] for p in g['roster']]),
-                                      max(g['round']['starts_at'], time.time()))
+                                      max(engine.reached_at(g, me['id'], i) + engine.show_time(g['round']['tasks'][i]), time.time()))
             except engine.GameError as e:
                 raise HTTPException(400, str(e))
             await save(code, g, old)

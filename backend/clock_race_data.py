@@ -1,32 +1,65 @@
-"""Clock Race content: Arabic alphabet, friend questions, faces, and the English answer sets.
+"""Clock Race content: alphabets, friend questions, faces, geography, socks, memory and the English answer sets.
 
 Everything a round can ask is curated here so the generator never invents an unfair task.
 """
 import os
 
-# The Arabic alphabet in its usual order (28 letters).
-ALPHABET = list('ابتثجحخدذرزسشصضطظعغفقكلمنهوي')
-# Letters that may go missing or be swapped: never the first three (ا ب ت) or the last two (و ي).
-EDITABLE = list(range(3, len(ALPHABET) - 2))  # 23 positions
+LANGS = ('ar', 'en')
 
-# سؤال الربع: everyone gets the same question; every name tag is a right answer.
+# Alphabets in their usual order. Missing-letter tasks never touch the first three or the last two.
+ALPHABETS = {
+    'ar': list('ابتثجحخدذرزسشصضطظعغفقكلمنهوي'),           # 28
+    'en': [chr(c) for c in range(ord('A'), ord('Z') + 1)],  # 26
+}
+EDITABLE = {lang: list(range(3, len(letters) - 2)) for lang, letters in ALPHABETS.items()}
+
+# سؤال الربع: everyone gets the same question; every name tag is a right answer. (Arabic, English)
 QUESTIONS = [
-    'منو أحلى واحد لابس اليوم؟',
-    'منو عيونه أحلى شي بالقعدة؟',
-    'منو أكثر واحد كشخة اليوم؟',
-    'منو لو يصير مشهور ما راح يرد علينا؟',
-    'منو أكثر واحد يحتاج إجازة؟',
-    'منو لو يدخل برنامج واقع بيصير نجم؟',
-    'منو أكثر واحد ممكن يضيع بالمطار؟',
-    'منو لو يفوز بمليون أول شي يختفي؟',
-    'منو أكثر واحد عنده ذوق بالألوان؟',
-    'منو أكثر واحد يستاهل تاج اليوم؟',
-    'منو أكثر واحد ممكن يتأخر على عرسه؟',
-    'منو أكثر واحد يعرف يسوي دراما من ولا شي؟',
-    'منو أكثر واحد عنده ابتسامة حلوة؟',
-    'منو أكثر واحد لو يصير مدير بيطردنا كلنا؟',
-    'منو أكثر واحد ممكن يصير مؤثر مشهور؟',
+    ('منو أحلى واحد لابس اليوم؟', 'Who is dressed best today?'),
+    ('منو عيونه أحلى شي بالقعدة؟', 'Who has the prettiest eyes here?'),
+    ('منو أكثر واحد كشخة اليوم؟', 'Who looks the sharpest today?'),
+    ('منو لو يصير مشهور ما راح يرد علينا؟', 'Who would ignore us all if they got famous?'),
+    ('منو أكثر واحد يحتاج إجازة؟', 'Who needs a holiday the most?'),
+    ('منو لو يدخل برنامج واقع بيصير نجم؟', 'Who would be the star of a reality show?'),
+    ('منو أكثر واحد ممكن يضيع بالمطار؟', 'Who is most likely to get lost at the airport?'),
+    ('منو لو يفوز بمليون أول شي يختفي؟', 'Who would vanish first after winning a million?'),
+    ('منو أكثر واحد عنده ذوق بالألوان؟', 'Who has the best taste in colours?'),
+    ('منو أكثر واحد يستاهل تاج اليوم؟', 'Who deserves a crown today?'),
+    ('منو أكثر واحد ممكن يتأخر على عرسه؟', 'Who would be late to their own wedding?'),
+    ('منو أكثر واحد يعرف يسوي دراما من ولا شي؟', 'Who can make drama out of nothing?'),
+    ('منو أكثر واحد عنده ابتسامة حلوة؟', 'Who has the sweetest smile?'),
+    ('منو أكثر واحد لو يصير مدير بيطردنا كلنا؟', 'Who would fire all of us if they became the boss?'),
+    ('منو أكثر واحد ممكن يصير مؤثر مشهور؟', 'Who is most likely to become a famous influencer?'),
 ]
+
+# Stroop: colour keys. Names and ink values live in frontend clockRace/content.js (STROOP).
+STROOP_COLORS = ['red', 'blue', 'green', 'orange', 'purple', 'black']
+
+# Geography: key -> category. Names and pictures live in frontend clockRace/content.js (GEO).
+# Australia the country is left out on purpose: it would also read as a continent.
+GEO = {
+    **{k: 'country' for k in ('italy', 'brazil', 'japan', 'egypt', 'india', 'saudi', 'uk', 'mexico', 'chile', 'france')},
+    **{k: 'city' for k in ('paris', 'london', 'newyork', 'dubai', 'cairo', 'sydney', 'rome', 'sanfrancisco', 'kuwaitcity', 'pisa')},
+    **{k: 'continent' for k in ('africa', 'asia', 'europe', 'north_america', 'south_america', 'oceania', 'antarctica')},
+    'texas': 'state',
+}
+# A city never sits next to its own country (Paris beside France would be a giveaway pairing).
+GEO_SAME_PLACE = {('paris', 'france'), ('london', 'uk'), ('cairo', 'egypt'), ('rome', 'italy'), ('pisa', 'italy')}
+
+# Socks: a design is "color-pattern-accent". Must match SOCK_* in frontend clockRace/Sock.jsx.
+SOCK_COLORS = 5     # coral, sky, mint, sun, lilac
+SOCK_PATTERNS = 5   # plain, stripes, dots, zigzag, checks
+SOCK_ACCENTS = 3    # cream, ink, red (cuff, heel and toe)
+
+# Three-grid memory. Each symbol appears at most once inside a grid, so "appeared in all three"
+# and "appeared exactly twice" count grids, which is the same as counting cells.
+MEMORY_SHOW = 2.0   # seconds per grid
+MEMORY_GRIDS = 3
+MEMORY_POOLS = {
+    'number': [str(n) for n in range(1, 21)],
+    'letter_ar': list('ابجدرسصطعفقكلمنهويحش'),
+    'letter_en': list('ABCDEFGHJKLMNPRSTUVY'),
+}
 
 # Faces are drawn by the app (never system emoji), so every phone shows exactly the same face.
 # A face is "eyes-mouth-color". Must match EYES / MOUTHS / FACE_COLORS in frontend clockRace/Face.jsx.

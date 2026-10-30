@@ -42,6 +42,8 @@ class Query:
 def client(monkeypatch):
     monkeypatch.setenv('SUPABASE_SERVICE_ROLE_KEY', 'test-only-key')
     monkeypatch.setattr(E, 'COUNTDOWN', 0.0)
+    monkeypatch.setattr(E, 'WRONG_DELAY', 0.0)
+    monkeypatch.setattr(E.D, 'MEMORY_SHOW', 0.0)
     db = DB()
 
     async def query(fn): return fn()
@@ -56,36 +58,46 @@ def h(s): return {'Authorization': f"Bearer {s['player_id']}:{s['token']}"}
 
 def test_race_over_http(client):
     c, db = client
-    host = c.post('/api/clock-race/rooms', json={'nickname': 'Khaled'}).json()
+    host = c.post('/api/clock-race/rooms', json={'nickname': 'Khaled', 'lang': 'en'}).json()
     url = '/api/clock-race/rooms/' + host['code']
     guest = c.post(url + '/join', json={'nickname': 'Khaled'}).json()          # duplicate nickname is fine
+    assert guest['state']['lang'] == 'en'                                        # joiners follow the room
     assert c.post(url + '/start', json={'round': ''}, headers=h(guest)).status_code == 403
     state = c.post(url + '/start', json={'round': ''}, headers=h(host)).json()
     rid = state['round']['id']
     assert c.post(url + '/start', json={'round': ''}, headers=h(host)).json()['round']['id'] == rid
     assert len(state['round']['tasks']) == 20 and state['round']['tasks'][10]['type'] == 'vote'
-    # The guest's view is the same round.
     assert c.get(url, headers=h(guest)).json()['round']['tasks'] == state['round']['tasks']
-    # Wrong answer: nothing lost.
+    ids = [p['id'] for p in state['roster']]
+    # first answer wrong: it still moves the guest on, and is recorded as wrong
     r = c.post(url + '/answer', json={'round': rid, 'task': 0, 'answer': 'nope'}, headers=h(guest)).json()
-    assert r['right'] is False and r['done'] == 0
-    # The server knows the right answers; play the guest to the end through the engine's solver.
-    for i in range(20):
+    assert r['right'] is False and r['done'] == 1
+    again = c.post(url + '/answer', json={'round': rid, 'task': 0, 'answer': E.solve(state['round']['tasks'][0], ids)}, headers=h(guest)).json()
+    assert again['right'] is False and again['done'] == 1                        # no second try
+    for i in range(1, 20):
         t = state['round']['tasks'][i]
-        if t['type'] == 'word':
-            value = E.solve(t, [p['id'] for p in state['roster']])
-        elif t['type'] == 'vote':
-            value = guest['player_id']                                           # voting for yourself works
-        elif t['type'] == 'odd':
-            value = t['odd']
-        elif t['type'] == 'boss':
-            value = t['faces'].index(t['answer'])
-        else:
-            value = t['answer']
+        value = guest['player_id'] if t['type'] == 'vote' else E.solve(t, ids)  # voting for yourself works
         r = c.post(url + '/answer', json={'round': rid, 'task': i, 'answer': value}, headers=h(guest)).json()
         assert r['right'] and r['done'] == i + 1
     assert r['state']['status'] == 'finished' and r['state']['winner'] == guest['player_id']
+    me = [p for p in r['state']['players'] if p['id'] == guest['player_id']][0]
+    assert me['done'] == 20 and me['right'] == 19
     assert 'token' not in str(r['state'])
+
+
+def test_test99_bot_runs_on_the_server_clock(client, monkeypatch):
+    c, _ = client
+    dev = c.post('/api/clock-race/rooms', json={'nickname': 'test99'}).json()
+    url = f"/api/clock-race/rooms/{dev['code']}"
+    assert [p['name'] for p in dev['state']['players']] == ['test99', 'Test Bot']
+    s = c.post(url + '/start', json={'round': ''}, headers=h(dev)).json()
+    bot = s['players'][1]['id']
+    assert len(s['bots'][bot]) == 20
+    real = E.time.time
+    monkeypatch.setattr(E.time, 'time', lambda: real() + 1000)                  # the phone slept; time went on
+    v = c.get(url, headers=h(dev)).json()
+    assert v['status'] == 'finished' and v['winner'] == bot
+    assert [p['done'] for p in v['players'] if p['id'] == bot] == [20]
 
 
 def test_dev_only_in_test99(client):
@@ -94,7 +106,8 @@ def test_dev_only_in_test99(client):
     assert c.post(f"/api/clock-race/rooms/{normal['code']}/dev", json={'action': 'add', 'count': 3}, headers=h(normal)).status_code == 403
     dev = c.post('/api/clock-race/rooms', json={'nickname': 'test99'}).json()
     url = f"/api/clock-race/rooms/{dev['code']}"
-    s = c.post(url + '/dev', json={'action': 'add', 'count': 11}, headers=h(dev)).json()
+    assert c.post(url + '/dev', json={'action': 'bots'}, headers=h(dev)).status_code == 422   # removed
+    s = c.post(url + '/dev', json={'action': 'add', 'count': 10}, headers=h(dev)).json()
     assert len(s['players']) == 12
     assert c.post(url + '/join', json={'nickname': 'late'}).status_code == 400
     c.post(url + '/start', json={'round': ''}, headers=h(dev))

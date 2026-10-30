@@ -27,7 +27,7 @@ COUNTDOWN = 3.0  # seconds between START and the first tap counting, so every ph
 WRONG_DELAY = 1.0  # a wrong answer holds the player this long before the next task
 GRACE = 0.25     # network slack on the server-side waits
 NAME_MAX = 24
-ORDINARY_MIX = {'odd': 3, 'missing': 3, 'stroop': 3, 'geo': 3, 'sock': 3, 'memory': 2}  # 17; one fewer with 2 Word Rush
+ORDINARY_MIX = {'odd': 3, 'missing': 2, 'stroop': 4, 'geo': 3, 'sock': 3, 'memory': 2}  # 17; one fewer with 2 Word Rush
 WORD_VARIANTS = ('pair', 'country', 'fruit')
 TYPO_MIN_LENGTH = 5  # one-typo forgiveness only for words this long or longer
 TEST_BOT = 'Test Bot'
@@ -286,19 +286,37 @@ def signature(t):
     return repr((t['type'],) + tuple(repr(t.get(k)) for k in keys))
 
 
+SPREAD = 3      # a type never comes back within 3 tasks
+OPENING = 6     # the first six tasks are six different challenges
+
+
 def plan_types(rng):
-    """The 20 task types: vote at 11, boss at 20, 1-2 Word Rush, the rest from ORDINARY_MIX,
-    never the same type twice in a row (and no face task right before the face boss)."""
+    """The 20 task types: vote at 11, boss at 20, 1-2 Word Rush, the rest from ORDINARY_MIX.
+    Variety first: the opening six are all different, a type never repeats within SPREAD tasks,
+    and no face task right before the face boss."""
     words = rng.choice([1, 2])
     mix = dict(ORDINARY_MIX)
     if words == 2:
         mix[rng.choice(['sock', 'odd', 'stroop'])] -= 1
-    pool = [k for k, n in mix.items() for _ in range(n)] + ['word'] * words
+    mix['word'] = words
     while True:
-        rng.shuffle(pool)
-        it = iter(pool)
-        types = ['vote' if i == VOTE_AT else 'boss' if i == BOSS_AT else next(it) for i in range(TASKS)]
-        if all(types[i] != types[i - 1] for i in range(1, TASKS)) and types[BOSS_AT - 1] != 'odd':
+        left, types, ok = dict(mix), [], True
+        for i in range(TASKS):
+            if i in (VOTE_AT, BOSS_AT):
+                types.append('vote' if i == VOTE_AT else 'boss')
+                continue
+            recent = types[max(0, i - SPREAD + 1):]
+            options = [k for k, n in left.items() if n and k not in recent
+                       and not (i < OPENING and k in types)
+                       and not (i == BOSS_AT - 1 and k == 'odd')]
+            if not options:
+                ok = False
+                break
+            # weight by what is left so the big piles get spread out instead of bunching at the end
+            k = rng.choices(options, weights=[left[o] for o in options])[0]
+            left[k] -= 1
+            types.append(k)
+        if ok:
             return types
 
 

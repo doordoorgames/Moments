@@ -24,7 +24,11 @@ def test_round_shape(seed):
     assert kinds[19] == 'boss' and kinds.count('boss') == 1 and kinds[18] != 'odd'
     assert kinds.count('word') in (1, 2)
     assert 'swap' not in kinds                                   # letter swapping is gone
-    assert all(kinds[i] != kinds[i - 1] for i in range(1, 20))  # never the same type twice in a row
+    for i in range(20):                                          # a type never returns within 3 tasks
+        if kinds[i] not in ('vote', 'boss'):
+            assert kinds[i] not in kinds[max(0, i - 2):i], (i, kinds)
+    assert len(set(kinds[:6])) == 6, kinds                        # opening six are all different
+    assert kinds.count('missing') <= 2                            # letters are a small share
     for k in ('odd', 'missing', 'stroop', 'geo', 'sock', 'memory'):
         assert kinds.count(k) >= 2, k
     variants = [t['variant'] for t in tasks if t['type'] == 'word']

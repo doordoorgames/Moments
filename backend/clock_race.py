@@ -7,8 +7,8 @@ Every answer moves the player on: a right answer straight away, a wrong one afte
 pause. The clock fills by tasks answered; the results also show how many were right.
 
 Round shape: task 11 is always the friend question and task 20 the final boss (the repeated
-face). The other 18 mix the sad face, the missing letter, Stroop colours, geography, the lonely
-sock and the three-grid memory with 1-2 Word Rush tasks, never the same type twice in a row.
+face). The other 18 mix the sad face, Stroop colours, geography maps, the lonely sock and the
+letter memory grid with 1-2 Word Rush tasks, spread so no type comes back within three tasks.
 """
 import random
 import secrets
@@ -18,7 +18,7 @@ import uuid
 
 import clock_race_data as D
 
-VERSION = 2
+VERSION = 3
 MAX_PLAYERS = 12
 TASKS = 20
 VOTE_AT = 10    # task 11 (0-based)
@@ -27,14 +27,15 @@ COUNTDOWN = 3.0  # seconds between START and the first tap counting, so every ph
 WRONG_DELAY = 1.0  # a wrong answer holds the player this long before the next task
 GRACE = 0.25     # network slack on the server-side waits
 NAME_MAX = 24
-ORDINARY_MIX = {'odd': 3, 'missing': 2, 'stroop': 4, 'geo': 3, 'sock': 3, 'memory': 2}  # 17; one fewer with 2 Word Rush
+ORDINARY_MIX = {'odd': 3, 'stroop': 4, 'geo': 4, 'sock': 4, 'memory': 2}  # 17; one fewer with 2 Word Rush
+# The memory grid is the only letter challenge: 1 or 2 a round (half of v2's ~3 letter tasks).
 WORD_VARIANTS = ('pair', 'country', 'fruit')
 TYPO_MIN_LENGTH = 5  # one-typo forgiveness only for words this long or longer
 TEST_BOT = 'Test Bot'
 BOT_NAMES = ['نورة', 'سارة', 'فهد', 'دانة', 'عبدالله', 'شوق', 'يوسف', 'مريم', 'Noor', 'Hamad', 'لولوة', 'بدر']
 # Simulated players: typical seconds per task type (measured feel: taps ~2-3s, typing ~7s,
-# memory = 6s of grids + the answer). Each task varies 0.7x-1.35x and ~12% are "wrong" (+1s).
-BOT_SECONDS = {'odd': 2.4, 'missing': 3.2, 'stroop': 2.2, 'geo': 2.6, 'sock': 3.4, 'memory': 8.6,
+# memory = 4s of grid + the answer). Each task varies 0.7x-1.35x and ~12% are "wrong" (+1s).
+BOT_SECONDS = {'odd': 2.4, 'stroop': 2.2, 'geo': 2.6, 'sock': 3.4, 'memory': 6.3,
                'word': 7.5, 'vote': 2.0, 'boss': 5.5}
 BOT_WRONG = 0.12
 
@@ -124,14 +125,6 @@ def gen_odd(rng, lang):
     return dict(type='odd', rows=rows, cols=cols, odd=rng.randrange(rows * cols), color=rng.randrange(D.FACE_COLORS))
 
 
-def gen_missing(rng, lang):
-    alphabet = D.ALPHABETS[lang]
-    letter = alphabet[rng.choice(D.EDITABLE[lang])]
-    choices = rng.sample([c for c in alphabet if c != letter], 3) + [letter]
-    rng.shuffle(choices)
-    return dict(type='missing', letters=[c for c in alphabet if c != letter], choices=choices, answer=letter)
-
-
 def _derangement(items, rng):
     while True:
         out = list(items)
@@ -193,53 +186,15 @@ def gen_sock(rng, lang):
     return dict(type='sock', socks=socks, answer=socks.index(lone))
 
 
-def memory_counts(grids):
-    counts = {}
-    for grid in grids:
-        for s in set(grid):
-            counts[s] = counts.get(s, 0) + 1
-    return counts
-
-
-def gen_memory(rng, lang, kind=None, ask=None):
-    """Three 3x3 grids shown two seconds each, then one question. Counts are by grid (a symbol
-    is never twice in one grid). Built so exactly one symbol answers the question."""
-    kind = kind or rng.choice(['number', 'letter'])
-    ask = ask or rng.choice(['all', 'twice'])
-    pool = list(D.MEMORY_POOLS['number' if kind == 'number' else f'letter_{lang}'])
-    while True:
-        rng.shuffle(pool)
-        if ask == 'all':
-            answer, rest = pool[0], pool[1:]
-            g1 = [answer] + rng.sample(rest, 8)
-            g2 = [answer] + rng.sample(rest, 8)
-            both = set(g1) & set(g2)
-            g3 = [answer] + rng.sample([s for s in rest if s not in both], 8)
-            grids = [g1, g2, g3]
-        else:
-            triples, answer, singles = pool[:3], pool[3], pool[4:]
-            with_answer = rng.sample(range(3), 2)
-            grids, i = [], 0
-            for g in range(3):
-                need = 9 - 3 - (1 if g in with_answer else 0)
-                grids.append(triples + ([answer] if g in with_answer else []) + singles[i:i + need])
-                i += need
-        for g in grids:
-            rng.shuffle(g)
-        counts = memory_counts(grids)
-        want = 3 if ask == 'all' else 2
-        right = [s for s, n in counts.items() if n == want]
-        if right != [answer] and sorted(right) != [answer]:
-            continue
-        # distractors: things that were on screen but not the answer (the near-misses first)
-        near = [s for s, n in counts.items() if s != answer and n == (2 if ask == 'all' else 3)]
-        far = [s for s, n in counts.items() if s != answer and n == 1]
-        rng.shuffle(near)
-        rng.shuffle(far)
-        distract = (near[:2] + far)[:3]
-        choices = distract + [answer]
-        rng.shuffle(choices)
-        return dict(type='memory', kind=kind, ask=ask, grids=grids, choices=choices, answer=answer)
+def gen_memory(rng, lang):
+    """Remember this: nine different letters in a 3x3 grid, then "which letter was there?" with
+    four choices: one from the grid, three that were not in it."""
+    pool = D.MEMORY_LETTERS[lang]
+    grid = rng.sample(pool, 9)
+    answer = rng.choice(grid)
+    choices = rng.sample([c for c in pool if c not in grid], 3) + [answer]
+    rng.shuffle(choices)
+    return dict(type='memory', grid=grid, choices=choices, answer=answer)
 
 
 def gen_word(rng, lang, variant):
@@ -280,22 +235,25 @@ def gen_boss(rng):
 
 
 def signature(t):
-    keys = {'odd': ('rows', 'cols', 'odd'), 'missing': ('answer',), 'stroop': ('mode', 'target', 'choices'),
-            'geo': ('variant', 'items'), 'sock': ('socks',), 'memory': ('grids',),
+    keys = {'odd': ('rows', 'cols', 'odd'), 'stroop': ('mode', 'target', 'choices'),
+            'geo': ('variant', 'items'), 'sock': ('socks',), 'memory': ('grid',),
             'word': ('variant', 'first', 'last', 'letter'), 'vote': ('question',), 'boss': ('faces',)}[t['type']]
     return repr((t['type'],) + tuple(repr(t.get(k)) for k in keys))
 
 
 SPREAD = 3      # a type never comes back within 3 tasks
-OPENING = 6     # the first six tasks are six different challenges
+OPENING = 5     # the first five tasks are five different challenges
 
 
 def plan_types(rng):
     """The 20 task types: vote at 11, boss at 20, 1-2 Word Rush, the rest from ORDINARY_MIX.
-    Variety first: the opening six are all different, a type never repeats within SPREAD tasks,
+    Variety first: the opening five are all different, a type never repeats within SPREAD tasks,
     and no face task right before the face boss."""
     words = rng.choice([1, 2])
     mix = dict(ORDINARY_MIX)
+    if rng.random() < 0.5:   # one memory grid instead of two; the slot goes to a face task
+        mix['memory'] -= 1
+        mix['odd'] += 1
     if words == 2:
         mix[rng.choice(['sock', 'odd', 'stroop'])] -= 1
     mix['word'] = words
@@ -326,9 +284,9 @@ def gen_round(roster, lang='ar', avoid_question=None, rng=None, avoid=()):
     variants = rng.sample(WORD_VARIANTS, types.count('word'))
     # spread the variations: both Stroop modes, different geography kinds (Texas at most once)
     stroop_modes = iter(rng.sample(['word', 'color', 'word', 'color'], 4))
-    geo_kinds = ['country', 'city', 'continent']
+    geo_kinds = ['country', 'city', 'continent', rng.choice(['country', 'city', 'continent'])]
     if rng.random() < 0.4:
-        geo_kinds[rng.randrange(3)] = 'state'  # "tap the US state": Texas, about two rounds in five
+        geo_kinds[rng.randrange(4)] = 'state'  # "tap the US state": Texas, about two rounds in five
     rng.shuffle(geo_kinds)
     geo_kinds = iter(geo_kinds)
     tasks, seen = [], set(avoid)
@@ -336,8 +294,6 @@ def gen_round(roster, lang='ar', avoid_question=None, rng=None, avoid=()):
         for _ in range(200):
             if kind == 'odd':
                 t = gen_odd(rng, lang)
-            elif kind == 'missing':
-                t = gen_missing(rng, lang)
             elif kind == 'stroop':
                 t = gen_stroop(rng, lang, next(stroop_modes, None))
             elif kind == 'geo':
@@ -367,7 +323,7 @@ def correct(task, answer, roster_ids):
     try:
         if kind == 'odd':
             return int(answer) == task['odd'], None
-        if kind in ('missing', 'memory'):
+        if kind == 'memory':
             return answer == task['answer'], None
         if kind in ('stroop', 'geo', 'sock'):
             return int(answer) == task['answer'], None
@@ -390,7 +346,7 @@ def solve(task, roster_ids):
     kind = task['type']
     if kind == 'odd':
         return task['odd']
-    if kind in ('missing', 'memory', 'stroop', 'geo', 'sock'):
+    if kind in ('memory', 'stroop', 'geo', 'sock'):
         return task['answer']
     if kind == 'vote':
         return roster_ids[0]
@@ -401,8 +357,8 @@ def solve(task, roster_ids):
 
 
 def show_time(task):
-    """Seconds a task is on screen before an answer may count (the memory grids)."""
-    return D.MEMORY_SHOW * D.MEMORY_GRIDS if task['type'] == 'memory' else 0.0
+    """Seconds a task is on screen before an answer may count (the memory grid)."""
+    return D.MEMORY_SHOW if task['type'] == 'memory' else 0.0
 
 
 # ------------------------------------------------------------------ rooms

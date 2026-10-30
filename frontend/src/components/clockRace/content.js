@@ -10,8 +10,8 @@ export const STROOP = {
   black: {ar: 'أسود', en: 'BLACK', ink: '#0B0B0B'},
 };
 
-// kind: country / city / continent / state. Countries, continents and Texas are map
-// silhouettes (geoShapes.js); cities are landmark drawings (Landmarks.jsx).
+// kind: country / city / continent / state. Every one is drawn as its real map outline (geoShapes.js),
+// cities included, all in the same style.
 export const GEO = {
   italy: {kind: 'country', ar: 'إيطاليا', en: 'Italy'},
   brazil: {kind: 'country', ar: 'البرازيل', en: 'Brazil'},
@@ -26,13 +26,13 @@ export const GEO = {
   paris: {kind: 'city', ar: 'باريس', en: 'Paris'},
   london: {kind: 'city', ar: 'لندن', en: 'London'},
   newyork: {kind: 'city', ar: 'نيويورك', en: 'New York'},
-  dubai: {kind: 'city', ar: 'دبي', en: 'Dubai'},
-  cairo: {kind: 'city', ar: 'القاهرة', en: 'Cairo'},
-  sydney: {kind: 'city', ar: 'سيدني', en: 'Sydney'},
-  rome: {kind: 'city', ar: 'روما', en: 'Rome'},
   sanfrancisco: {kind: 'city', ar: 'سان فرانسيسكو', en: 'San Francisco'},
+  rome: {kind: 'city', ar: 'روما', en: 'Rome'},
+  dubai: {kind: 'city', ar: 'دبي', en: 'Dubai'},
   kuwaitcity: {kind: 'city', ar: 'مدينة الكويت', en: 'Kuwait City'},
-  pisa: {kind: 'city', ar: 'بيزا', en: 'Pisa'},
+  istanbul: {kind: 'city', ar: 'إسطنبول', en: 'Istanbul'},
+  tokyo: {kind: 'city', ar: 'طوكيو', en: 'Tokyo'},
+  rio: {kind: 'city', ar: 'ريو دي جانيرو', en: 'Rio de Janeiro'},
   africa: {kind: 'continent', ar: 'أفريقيا', en: 'Africa'},
   asia: {kind: 'continent', ar: 'آسيا', en: 'Asia'},
   europe: {kind: 'continent', ar: 'أوروبا', en: 'Europe'},

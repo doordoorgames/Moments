@@ -27,9 +27,10 @@ def test_round_shape(seed):
     for i in range(20):                                          # a type never returns within 3 tasks
         if kinds[i] not in ('vote', 'boss'):
             assert kinds[i] not in kinds[max(0, i - 2):i], (i, kinds)
-    assert len(set(kinds[:6])) == 6, kinds                        # opening six are all different
-    assert kinds.count('missing') <= 2                            # letters are a small share
-    for k in ('odd', 'missing', 'stroop', 'geo', 'sock', 'memory'):
+    assert len(set(kinds[:5])) == 5, kinds                        # opening five are all different
+    assert 'missing' not in kinds                                 # the missing-letter task is gone
+    assert kinds.count('memory') in (1, 2)                        # the only letter challenge
+    for k in ('odd', 'stroop', 'geo', 'sock'):
         assert kinds.count(k) >= 2, k
     variants = [t['variant'] for t in tasks if t['type'] == 'word']
     assert len(variants) == len(set(variants))
@@ -46,20 +47,12 @@ def test_both_word_counts_happen():
     assert counts == {1, 2}
 
 
-# ------------------------------------------------------------------ letters
-
-@pytest.mark.parametrize('lang', ['ar', 'en'])
-def test_missing_letter_rules(lang):
-    alphabet = D.ALPHABETS[lang]
-    rng = random.Random(1)
-    gone = set()
-    for _ in range(3000):
-        t = E.gen_missing(rng, lang)
-        gone.add(t['answer'])
-        assert t['answer'] not in alphabet[:3] + alphabet[-2:]
-        assert t['letters'] == [c for c in alphabet if c != t['answer']]
-        assert len(t['choices']) == 4 and len(set(t['choices'])) == 4 and t['choices'].count(t['answer']) == 1
-    assert len(gone) == len(alphabet) - 5
+def test_letter_challenges_halved():
+    # v2 averaged ~3 letter tasks a round (2 missing-letter + half of 2 memory grids); now 1.5
+    rounds = [E.gen_round(roster(2), rng=random.Random(s)) for s in range(2000)]
+    letters = sum(t['type'] == 'memory' for r in rounds for t in r) / len(rounds)
+    assert 1.4 < letters < 1.6
+    assert not hasattr(E, 'gen_missing')
 
 
 # ------------------------------------------------------------------ Stroop
@@ -123,23 +116,28 @@ def test_one_lonely_sock():
 # ------------------------------------------------------------------ memory
 
 @pytest.mark.parametrize('lang', ['ar', 'en'])
-@pytest.mark.parametrize('kind', ['number', 'letter'])
-@pytest.mark.parametrize('ask', ['all', 'twice'])
-def test_memory_has_exactly_one_answer(lang, kind, ask):
-    rng = random.Random(hash((lang, kind, ask)) % 1000)
-    seen = set()
-    for _ in range(1000):
-        t = E.gen_memory(rng, lang, kind, ask)
-        assert len(t['grids']) == 3 and all(len(g) == 9 and len(set(g)) == 9 for g in t['grids'])
-        counts = E.memory_counts(t['grids'])
-        want = 3 if ask == 'all' else 2
-        assert [s for s, n in counts.items() if n == want] == [t['answer']]
-        assert len(t['choices']) == 4 and len(set(t['choices'])) == 4 and t['answer'] in t['choices']
-        assert all(counts.get(c, 0) != want for c in t['choices'] if c != t['answer'])
-        pool = D.MEMORY_POOLS['number' if kind == 'number' else f'letter_{lang}']
-        assert all(s in pool for g in t['grids'] for s in g)
-        seen.add(E.signature(t))
-    assert len(seen) == 1000                    # no repeated sequences
+def test_memory_grid_is_nine_letters_with_one_answer(lang):
+    rng = random.Random(len(lang))
+    pool = D.MEMORY_LETTERS[lang]
+    answers, grids = Counter(), set()
+    for _ in range(5000):
+        t = E.gen_memory(rng, lang)
+        assert set(t) == {'type', 'grid', 'choices', 'answer'}   # one format only: no "twice", no sequences
+        assert len(t['grid']) == 9 and len(set(t['grid'])) == 9 and set(t['grid']) <= set(pool)
+        assert len(t['choices']) == 4 and len(set(t['choices'])) == 4
+        assert [c for c in t['choices'] if c in t['grid']] == [t['answer']]   # exactly one was on screen
+        assert all(c in pool for c in t['choices'])
+        assert E.correct(t, t['answer'], [])[0]
+        assert not any(E.correct(t, c, [])[0] for c in t['choices'] if c != t['answer'])
+        answers[t['choices'].index(t['answer'])] += 1
+        grids.add(tuple(t['grid']))
+    assert min(answers.values()) > 1100                # the right answer lands in every position
+    assert len(grids) > 4990                           # a fresh grid every time
+
+
+def test_memory_letters_are_unique_per_language():
+    for lang in ('ar', 'en'):
+        assert len(set(D.MEMORY_LETTERS[lang])) == len(D.MEMORY_LETTERS[lang]) >= 13
 
 
 # ------------------------------------------------------------------ faces
@@ -265,7 +263,7 @@ def play(g, pid, now, right=True):
 
 
 def wrong_value(t):
-    return {'odd': -1, 'missing': 'x', 'memory': 'x', 'stroop': -1, 'geo': -1, 'sock': -1,
+    return {'odd': -1, 'memory': 'x', 'stroop': -1, 'geo': -1, 'sock': -1,
             'word': 'zzzzz', 'vote': 'stranger', 'boss': -1}[t['type']]
 
 
@@ -316,7 +314,7 @@ def test_wrong_answer_holds_one_second_and_never_counts_as_right():
     assert ok['changed'] and ok['done'] == i + 2
 
 
-def test_memory_answers_wait_for_the_three_grids():
+def test_memory_answers_wait_for_the_grid():
     g, host = E.new_room('Khaled')
     E.start(g, '', now=0)
     now = 5
@@ -327,7 +325,7 @@ def test_memory_answers_wait_for_the_three_grids():
     t = g['round']['tasks'][i]
     r = E.answer(g, host['id'], g['round']['id'], i, t['answer'], now=shown + 2)
     assert r.get('wait') and not r['changed']
-    assert E.answer(g, host['id'], g['round']['id'], i, t['answer'], now=shown + 6)['right']
+    assert E.answer(g, host['id'], g['round']['id'], i, t['answer'], now=shown + 4)['right']
 
 
 def test_late_joiner_waits_for_next_round_and_replay():

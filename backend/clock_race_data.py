@@ -1,17 +1,10 @@
-"""Clock Race content: alphabets, friend questions, faces, geography, socks, memory and the English answer sets.
+"""Clock Race content: friend questions, faces, geography, socks, memory and the English answer sets.
 
 Everything a round can ask is curated here so the generator never invents an unfair task.
 """
 import os
 
 LANGS = ('ar', 'en')
-
-# Alphabets in their usual order. Missing-letter tasks never touch the first three or the last two.
-ALPHABETS = {
-    'ar': list('ابتثجحخدذرزسشصضطظعغفقكلمنهوي'),           # 28
-    'en': [chr(c) for c in range(ord('A'), ord('Z') + 1)],  # 26
-}
-EDITABLE = {lang: list(range(3, len(letters) - 2)) for lang, letters in ALPHABETS.items()}
 
 # سؤال الربع: everyone gets the same question; every name tag is a right answer. (Arabic, English)
 QUESTIONS = [
@@ -39,26 +32,24 @@ STROOP_COLORS = ['red', 'blue', 'green', 'orange', 'purple', 'black']
 # Australia the country is left out on purpose: it would also read as a continent.
 GEO = {
     **{k: 'country' for k in ('italy', 'brazil', 'japan', 'egypt', 'india', 'saudi', 'uk', 'mexico', 'chile', 'france')},
-    **{k: 'city' for k in ('paris', 'london', 'newyork', 'dubai', 'cairo', 'sydney', 'rome', 'sanfrancisco', 'kuwaitcity', 'pisa')},
+    **{k: 'city' for k in ('paris', 'london', 'newyork', 'sanfrancisco', 'rome', 'dubai', 'kuwaitcity', 'istanbul', 'tokyo', 'rio')},
     **{k: 'continent' for k in ('africa', 'asia', 'europe', 'north_america', 'south_america', 'oceania', 'antarctica')},
     'texas': 'state',
 }
 # A city never sits next to its own country (Paris beside France would be a giveaway pairing).
-GEO_SAME_PLACE = {('paris', 'france'), ('london', 'uk'), ('cairo', 'egypt'), ('rome', 'italy'), ('pisa', 'italy')}
+GEO_SAME_PLACE = {('paris', 'france'), ('london', 'uk'), ('rome', 'italy'), ('tokyo', 'japan')}
 
 # Socks: a design is "color-pattern-accent". Must match SOCK_* in frontend clockRace/Sock.jsx.
 SOCK_COLORS = 5     # coral, sky, mint, sun, lilac
 SOCK_PATTERNS = 5   # plain, stripes, dots, zigzag, checks
 SOCK_ACCENTS = 3    # cream, ink, red (cuff, heel and toe)
 
-# Three-grid memory. Each symbol appears at most once inside a grid, so "appeared in all three"
-# and "appeared exactly twice" count grids, which is the same as counting cells.
-MEMORY_SHOW = 2.0   # seconds per grid
-MEMORY_GRIDS = 3
-MEMORY_POOLS = {
-    'number': [str(n) for n in range(1, 21)],
-    'letter_ar': list('ابجدرسصطعفقكلمنهويحش'),
-    'letter_en': list('ABCDEFGHJKLMNPRSTUVY'),
+# Memory: one 3x3 grid of nine different letters, gently blinking (four blinks) for MEMORY_SHOW
+# seconds, then "which letter was there?". Letters that are easy to tell apart at a glance.
+MEMORY_SHOW = 4.0
+MEMORY_LETTERS = {
+    'ar': list('ابجدرسصطعفقكلمنهويحش'),
+    'en': list('ABCDEFGHJKLMNPRSTUVY'),
 }
 
 # Faces are drawn by the app (never system emoji), so every phone shows exactly the same face.

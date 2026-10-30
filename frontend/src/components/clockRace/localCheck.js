@@ -3,7 +3,6 @@
 export function localCheck(task, value, rosterIds = []) {
   switch (task?.type) {
     case 'odd': return value === task.odd;
-    case 'missing':
     case 'memory': return value === task.answer;
     case 'stroop':
     case 'geo':

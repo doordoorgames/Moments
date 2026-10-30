@@ -6,19 +6,29 @@ import RoomCodeInput from '../plotTwist/RoomCodeInput';
 import RoomQR from '../plotTwist/RoomQR';
 import {normalizeCode, validRoomCode} from '../plotTwist/roomCode';
 import Dials, {Dial, PLAYER_COLORS} from './Dials';
-import {TASK_VIEWS} from './Tasks';
+import Face from './Face';
+import {TASK_VIEWS, stroopPrompt} from './Tasks';
+import {GEO} from './content';
 import {localCheck} from './localCheck';
 import {TEXT} from './text';
 import './clockRace.css';
 
 const BASE = '/mini-games/clock-race';
 const KEY = code => `clock-race-session:${code}`;
-const GUARD_MS = 180; // a double tap can't spill onto the next task
-const t = TEXT.ar;
+const LANG_KEY = 'clock-race-lang';
+const GUARD_MS = 180;     // a double tap can't spill onto the next task
+const WRONG_MS = 1000;    // the sad face holds the player this long, then the next task comes
+const STARS_MS = 520;
 
 function saved(code) { try { return JSON.parse(localStorage.getItem(KEY(code)) || 'null'); } catch { return null; } }
+function savedLang() {
+  const fromLink = new URLSearchParams(window.location.search).get('lang');
+  if (fromLink === 'en' || fromLink === 'ar') return fromLink;
+  try { return localStorage.getItem(LANG_KEY) === 'en' ? 'en' : 'ar'; } catch { return 'ar'; }
+}
+const sleep = ms => new Promise(r => setTimeout(r, ms));
 
-async function request(path, body, auth) {
+async function request(path, body, auth, t) {
   if (!BACKEND_URL) throw new Error(t.noBackend);
   const response = await fetch(`${BACKEND_URL}/api/clock-race${path}`, {
     method: body ? 'POST' : 'GET', cache: 'no-store',
@@ -38,13 +48,23 @@ function BigClock() {
     {Array.from({length: 20}, (_, i) => <line key={i} x1="100" y1="22" x2="100" y2={i % 5 ? 30 : 36} stroke="#0B0B0B" strokeWidth={i % 5 ? 4 : 6} strokeLinecap="round" transform={`rotate(${i * 18} 100 100)`}/>)}
     <g className="cr-hero-hand"><line x1="100" y1="100" x2="100" y2="40" stroke="#0B0B0B" strokeWidth="9" strokeLinecap="round"/></g>
     <circle cx="100" cy="100" r="11" fill="#0B0B0B"/><circle cx="100" cy="100" r="4" fill="#FFC93C"/>
-    <rect x="86" y="2" width="28" height="16" rx="5" fill="#FFC93C" stroke="#0B0B0B" strokeWidth="5"/>
+    <rect x="86" y="2" width="28" height="16" fill="#FFC93C" stroke="#0B0B0B" strokeWidth="5"/>
   </svg>;
+}
+
+// A short burst of golden stars where the finger landed.
+function Stars({x, y}) {
+  return <div className="cr-stars" style={{left: x, top: y}} aria-hidden="true">
+    {Array.from({length: 9}, (_, i) => <svg key={i} viewBox="0 0 20 20" style={{'--a': `${i * 40 + 12}deg`, '--d': `${58 + (i % 3) * 20}px`, '--s': 0.7 + (i % 3) * 0.25}}>
+      <path d="M10 1 L12.6 7.2 L19 7.6 L14 11.8 L15.7 18.6 L10 15 L4.3 18.6 L6 11.8 L1 7.6 L7.4 7.2 Z" fill="#FFC93C" stroke="#0B0B0B" strokeWidth="1.6" strokeLinejoin="round"/>
+    </svg>)}
+  </div>;
 }
 
 export default function ClockRace({onContinue}) {
   const navigate = useNavigate();
   const {code} = useParams();
+  const [pickedLang, setPickedLang] = useState(savedLang);
   const [intent, setIntent] = useState(code ? 'join' : null);
   const [name, setName] = useState('');
   const [joinCode, setJoinCode] = useState(normalizeCode(code || ''));
@@ -57,16 +77,28 @@ export default function ClockRace({onContinue}) {
   const [mine, setMine] = useState({round: null, done: 0});
   const [clock, setClock] = useState(Date.now());
   const [toast, setToast] = useState(null);
-  const [autoBots, setAutoBots] = useState(false);
+  const [stars, setStars] = useState(null);
+  const [sad, setSad] = useState(false);
   const [devOpen, setDevOpen] = useState(false);
+  const lang = game?.lang || pickedLang;
+  const t = TEXT[lang] || TEXT.ar;
   const auth = creds ? `Bearer ${creds.player_id}:${creds.token}` : '';
   const offset = useRef(0);
   const gameRef = useRef(null), mineRef = useRef(mine), queue = useRef([]), pumping = useRef(false), confirmed = useRef({round: null, done: 0});
-  const guardUntil = useRef(0), wordInput = useRef(null), nickRef = useRef(null), codeRef = useRef(null), toastTimer = useRef(null);
-  const live = useRef({code, auth});
-  live.current = {code, auth};
+  const guardUntil = useRef(0), locked = useRef(false), wordInput = useRef(null), nickRef = useRef(null), codeRef = useRef(null);
+  const toastTimer = useRef(null), starsTimer = useRef(null), point = useRef({x: 0, y: 0});
+  const live = useRef({code, auth, t});
+  live.current = {code, auth, t};
   gameRef.current = game;
   mineRef.current = mine;
+
+  useEffect(() => { try { localStorage.setItem(LANG_KEY, pickedLang); } catch { /* private mode */ } }, [pickedLang]);
+  // where the last finger landed, for the stars
+  useEffect(() => {
+    const down = e => { point.current = {x: e.clientX, y: e.clientY}; };
+    window.addEventListener('pointerdown', down, true);
+    return () => window.removeEventListener('pointerdown', down, true);
+  }, []);
 
   // ---------------------------------------------------------------- server state
   const accept = useCallback(view => {
@@ -79,25 +111,24 @@ export default function ClockRace({onContinue}) {
     // A slow GET can arrive after a newer answer reply; the count never goes down within a round.
     const done = Math.max(serverDone, confirmed.current.done);
     if (m.round !== rid) setMine({round: rid, done});
-    else if (!queue.current.length && done !== m.done) setMine({round: rid, done});
+    else if (!queue.current.length && !locked.current && done > m.done) setMine({round: rid, done});
   }, []);
 
   const refresh = useCallback(async () => {
-    const {code: c, auth: a} = live.current;
+    const {code: c, auth: a, t: tx} = live.current;
     if (!c || !a) return;
-    try { accept(await request(`/rooms/${c}`, null, a)); setNotice(''); }
-    catch (e) { if (e.status === 403 || e.status === 404) { localStorage.removeItem(KEY(c)); setCreds(null); setError(e.message); } else setNotice(e.message); }
+    try { accept(await request(`/rooms/${c}`, null, a, tx)); setNotice(''); }
+    catch (e) { if ([403, 404, 410].includes(e.status)) { localStorage.removeItem(KEY(c)); setCreds(null); setGame(null); setError(e.message); } else setNotice(e.message); }
   }, [accept]);
 
   // The public race picture (from a WebSocket push or an answer reply): move the dials only.
   const applyRace = useCallback(race => {
     if (!race) return;
     const g = gameRef.current;
-    if (!g || race.round !== g.round?.id) { refresh(); return; }
-    if (race.status !== g.status) { refresh(); return; }
-    const done = Object.fromEntries(race.players.map(p => [p.id, p.done]));
+    if (!g || race.round !== g.round?.id || race.status !== g.status) { refresh(); return; }
+    const by = Object.fromEntries(race.players.map(p => [p.id, p]));
     setGame(prev => prev && prev.round?.id === race.round
-      ? {...prev, winner: race.winner, players: prev.players.map(p => p.id in done ? {...p, done: done[p.id]} : p)} : prev);
+      ? {...prev, winner: race.winner, players: prev.players.map(p => by[p.id] ? {...p, done: by[p.id].done, right: by[p.id].right} : p)} : prev);
   }, [refresh]);
 
   useEffect(() => { setCreds(code ? saved(code) : null); if (code) { setJoinCode(normalizeCode(code)); setIntent('join'); } }, [code]);
@@ -120,13 +151,24 @@ export default function ClockRace({onContinue}) {
     return () => { stopped = true; clearInterval(poll); clearInterval(beat); clearTimeout(retry); socket?.close(); window.removeEventListener('online', wake); window.removeEventListener('focus', wake); };
   }, [code, auth, refresh, applyRace]);
 
-  // Keep the race screen above the phone keyboard (Word Rush).
+  // Race screen follows the visible viewport (the phone keyboard in Word Rush shrinks it and may scroll it).
   useEffect(() => {
     const vv = window.visualViewport;
-    const update = () => document.documentElement.style.setProperty('--cr-h', `${vv?.height || window.innerHeight}px`);
-    update(); vv?.addEventListener('resize', update);
-    return () => { vv?.removeEventListener('resize', update); document.documentElement.style.removeProperty('--cr-h'); };
+    const root = document.documentElement.style;
+    const update = () => { root.setProperty('--cr-h', `${vv?.height || window.innerHeight}px`); root.setProperty('--cr-top', `${vv?.offsetTop || 0}px`); };
+    update(); vv?.addEventListener('resize', update); vv?.addEventListener('scroll', update);
+    return () => { vv?.removeEventListener('resize', update); vv?.removeEventListener('scroll', update); root.removeProperty('--cr-h'); root.removeProperty('--cr-top'); };
   }, []);
+
+  // A test bot that crosses the line ends the race: ask the server right then, not at the next poll.
+  useEffect(() => {
+    if (game?.status !== 'racing' || !game.bots || !game.round) return undefined;
+    const ends = Object.values(game.bots).map(plan => plan[plan.length - 1]).filter(Boolean);
+    if (!ends.length) return undefined;
+    const at = (game.round.starts_at + Math.min(...ends)) * 1000 - offset.current - Date.now();
+    const id = setTimeout(refresh, Math.max(0, at) + 200);
+    return () => clearTimeout(id);
+  }, [game?.status, game?.bots, game?.round, refresh]);
 
   // ---------------------------------------------------------------- answers: one at a time, in order
   const pump = useCallback(async () => {
@@ -135,18 +177,21 @@ export default function ClockRace({onContinue}) {
     while (queue.current.length) {
       const job = queue.current[0];
       let result = null;
-      for (let attempt = 0; attempt < 4 && !result; attempt++) {
-        try { result = await request(`/rooms/${live.current.code}/answer`, job.item, live.current.auth); }
-        catch (e) {
-          if (e.status && e.status < 500) { result = {right: false, done: -1, error: e.message}; break; }
-          await new Promise(r => setTimeout(r, 600 * (attempt + 1)));
+      for (let attempt = 0; attempt < 6 && !result; attempt++) {
+        try {
+          const r = await request(`/rooms/${live.current.code}/answer`, job.item, live.current.auth, live.current.t);
+          if (r.wait) { await sleep(r.wait * 1000); continue; } // the server's clock says "not yet" (memory grids / 1s pause)
+          result = r;
+        } catch (e) {
+          if (e.status && e.status < 500) { result = {right: false, done: -1}; break; }
+          await sleep(600 * (attempt + 1));
         }
       }
       queue.current.shift();
       if (!result || result.done < 0) {
         // The round ended or the phone lost the server: drop what's queued and take the server's word.
         queue.current.splice(0).forEach(j => j.resolve({right: false}));
-        job.resolve({right: false});
+        job.resolve({right: false, failed: true});
         await refresh();
         const g = gameRef.current;
         setMine({round: g?.round?.id || null, done: g?.players.find(p => p.id === g.me)?.done ?? 0});
@@ -155,11 +200,6 @@ export default function ClockRace({onContinue}) {
       if (job.item.round === confirmed.current.round || confirmed.current.round === null) confirmed.current = {round: job.item.round, done: Math.max(confirmed.current.done, result.done)};
       applyRace(result.race);
       if (result.state) accept(result.state);
-      if (!result.right && result.done <= job.item.task) {
-        // The server disagrees (rare): put this phone back where the server has it.
-        queue.current.splice(0).forEach(j => j.resolve({right: false, done: result.done}));
-        setMine(m => m.round === job.item.round ? {round: m.round, done: result.done} : m);
-      }
       job.resolve(result);
     }
     pumping.current = false;
@@ -173,6 +213,12 @@ export default function ClockRace({onContinue}) {
     toastTimer.current = setTimeout(() => setToast(null), 900);
   }, []);
 
+  const burst = useCallback(() => {
+    clearTimeout(starsTimer.current);
+    setStars({...point.current, id: Date.now()});
+    starsTimer.current = setTimeout(() => setStars(null), STARS_MS);
+  }, []);
+
   const advance = useCallback((rid, next) => {
     flushSync(() => setMine({round: rid, done: next}));
     guardUntil.current = Date.now() + GUARD_MS;
@@ -180,50 +226,60 @@ export default function ClockRace({onContinue}) {
     if (gameRef.current?.round?.tasks[next]?.type === 'word') wordInput.current?.focus();
   }, []);
 
+  // Right: stars and the next task at once. Wrong: the sad face for a second, then the next task.
+  const settle = useCallback((rid, i, right, extra) => {
+    if (right) {
+      burst();
+      advance(rid, i + 1);
+      if (extra) say(extra, 'word');
+      return;
+    }
+    locked.current = true;
+    setSad(true);
+    setTimeout(() => {
+      setSad(false);
+      locked.current = false;
+      if (mineRef.current.round === rid && mineRef.current.done === i) advance(rid, i + 1);
+    }, WRONG_MS);
+  }, [advance, burst, say]);
+
   const pick = useCallback(value => {
     const g = gameRef.current, m = mineRef.current;
-    if (!g?.round || g.status !== 'racing' || m.round !== g.round.id) return true;
-    if (Date.now() + offset.current < g.round.starts_at * 1000 || Date.now() < guardUntil.current) return true;
+    if (!g?.round || g.status !== 'racing' || m.round !== g.round.id || locked.current) return;
+    if (Date.now() + offset.current < g.round.starts_at * 1000 || Date.now() < guardUntil.current) return;
     const i = m.done, task = g.round.tasks[i];
-    if (!task) return true;
-    if (!localCheck(task, value, g.roster.map(p => p.id))) return false;
-    advance(g.round.id, i + 1);
-    if (task.type === 'vote') say(t.reactions[Math.floor(Math.random() * t.reactions.length)]);
+    if (!task) return;
+    const right = !!localCheck(task, value, g.roster.map(p => p.id));
     enqueue({round: g.round.id, task: i, answer: value});
-    return true;
-  }, [advance, enqueue, say]);
+    if (right && task.type === 'vote') say(t.reactions[Math.floor(Math.random() * t.reactions.length)]);
+    settle(g.round.id, i, right);
+  }, [enqueue, say, settle, t]);
 
   const word = useCallback(async text => {
     const g = gameRef.current, m = mineRef.current;
-    if (!g?.round || g.status !== 'racing') return {right: false};
+    if (!g?.round || g.status !== 'racing' || locked.current) return;
     const i = m.done;
+    locked.current = true;
     const r = await enqueue({round: g.round.id, task: i, answer: text});
-    if (r.right && r.done > i && mineRef.current.done === i) {
-      advance(g.round.id, r.done);
-      if (r.word) say(r.word, 'word');
-    }
-    return r;
-  }, [advance, enqueue, say]);
+    locked.current = false;
+    if (r.failed || mineRef.current.done !== i) return;
+    settle(g.round.id, i, !!r.right, r.word);
+  }, [enqueue, settle]);
 
-  // ---------------------------------------------------------------- countdown clock
+  // ---------------------------------------------------------------- countdown clock (ticks only around the start)
   const startsAt = game?.round ? game.round.starts_at * 1000 - offset.current : 0;
   const counting = game?.status === 'racing' && clock < startsAt;
   useEffect(() => {
-    if (game?.status !== 'racing') return undefined;
-    const id = setInterval(() => setClock(Date.now()), 100);
+    if (game?.status !== 'racing' || Date.now() > startsAt + 900) return undefined;
+    const id = setInterval(() => { setClock(Date.now()); if (Date.now() > startsAt + 900) clearInterval(id); }, 100);
     return () => clearInterval(id);
-  }, [game?.status, game?.round?.id]);
+  }, [game?.status, startsAt]);
 
   // ---------------------------------------------------------------- developer room (TEST99)
   const dev = useCallback(async (action, count = 1) => {
-    try { accept(await request(`/rooms/${live.current.code}/dev`, {action, count}, live.current.auth)); }
+    try { accept(await request(`/rooms/${live.current.code}/dev`, {action, count}, live.current.auth, live.current.t)); }
     catch (e) { setNotice(e.message); }
   }, [accept]);
-  useEffect(() => {
-    if (!autoBots || game?.status !== 'racing' || counting) return undefined;
-    const id = setInterval(() => dev('bots'), 1300);
-    return () => clearInterval(id);
-  }, [autoBots, game?.status, counting, dev]);
 
   // ---------------------------------------------------------------- room entry
   async function enter(e) {
@@ -233,7 +289,7 @@ export default function ClockRace({onContinue}) {
     if (intent === 'join' && !validRoomCode(joinCode)) { setCodeError(true); codeRef.current?.focus(); return; }
     setBusy(true); setError('');
     try {
-      const r = await request(intent === 'create' ? '/rooms' : `/rooms/${joinCode}/join`, {nickname: name.trim()});
+      const r = await request(intent === 'create' ? '/rooms' : `/rooms/${joinCode}/join`, intent === 'create' ? {nickname: name.trim(), lang: pickedLang} : {nickname: name.trim()}, '', t);
       const c = {player_id: r.player_id, token: r.token};
       localStorage.setItem(KEY(r.code), JSON.stringify(c));
       setCreds(c); accept(r.state);
@@ -244,12 +300,12 @@ export default function ClockRace({onContinue}) {
   async function start() {
     if (busy) return;
     setBusy(true); setError('');
-    try { accept(await request(`/rooms/${code}/start`, {round: game?.round?.id || ''}, auth)); }
+    try { accept(await request(`/rooms/${code}/start`, {round: game?.round?.id || ''}, auth, t)); }
     catch (e) { setError(e.message); }
     finally { setBusy(false); }
   }
   const exit = () => { if (onContinue) onContinue(); else navigate('/#mini-games'); };
-  const inviteUrl = `${window.location.origin}${BASE}/room/${code}`;
+  const inviteUrl = `${window.location.origin}${BASE}/room/${code}?lang=${lang}`;
   async function share() {
     try { if (navigator.share) await navigator.share({title: t.title, url: inviteUrl}); else { await navigator.clipboard.writeText(inviteUrl); setNotice(t.copied); } }
     catch (err) { if (err.name !== 'AbortError') setNotice(inviteUrl); }
@@ -267,14 +323,24 @@ export default function ClockRace({onContinue}) {
   const winner = game?.players.find(p => p.id === game.winner);
   const View = task ? TASK_VIEWS[task.type] : null;
   const seconds = Math.max(1, Math.ceil((startsAt - clock) / 1000));
+  const devPanel = game?.dev && isHost ? <DevPanel open={devOpen} setOpen={setDevOpen} game={game} dev={dev} task={task}/> : null;
+  const shell = (cls, children) => <main className={`cr-app ${cls}`} dir={t.dir} lang={lang} data-typography-ignore>{children}</main>;
+  const bar = <header className="cr-bar">
+    <button className="cr-square-btn" onClick={exit} aria-label={t.back}><Arrow dir={t.dir}/></button>
+    <span className="cr-wordmark">{t.title}</span>
+    {devPanel}
+  </header>;
 
   // ---------------------------------------------------------------- screens
   if (!game || !auth) {
     const linkJoin = !!code && !auth;
-    return <main className="cr-app cr-entry" dir="rtl" lang="ar" data-typography-ignore>
-      <Backdrop/>
-      <header className="cr-bar"><button className="cr-round-btn" onClick={exit} aria-label={t.back}><Arrow/></button><span className="cr-wordmark">{t.title}</span></header>
+    return shell('cr-page cr-entry', <>
+      <Backdrop/>{bar}
       {code && auth ? <p className="cr-status">{t.reconnecting}</p> : <section className="cr-entry-body">
+        {!linkJoin && <div className="cr-lang" role="group" aria-label={t.langLabel}>
+          <button type="button" className={pickedLang === 'ar' ? 'is-on' : ''} aria-pressed={pickedLang === 'ar'} lang="ar" onClick={() => setPickedLang('ar')}>عربي</button>
+          <button type="button" className={pickedLang === 'en' ? 'is-on' : ''} aria-pressed={pickedLang === 'en'} lang="en" onClick={() => setPickedLang('en')}>English</button>
+        </div>}
         <div className="cr-hero"><BigClock/><h1>{t.title}</h1><p>{t.tagline}</p></div>
         {!linkJoin && <div className="cr-intents">
           <button type="button" className={`cr-intent ${intent === 'create' ? 'is-on' : ''}`} onClick={() => { setIntent('create'); setError(''); setTimeout(() => nickRef.current?.focus()); }}>{t.create}<small>{t.createSmall}</small></button>
@@ -294,13 +360,12 @@ export default function ClockRace({onContinue}) {
         </form> : <ul className="cr-rules">{t.rules.map(r => <li key={r}>{r}</li>)}</ul>}
         {error && <p className="cr-error" role="alert">{error}</p>}
       </section>}
-    </main>;
+    </>);
   }
 
   if (game.status === 'lobby') {
-    return <main className="cr-app cr-lobby" dir="rtl" lang="ar" data-typography-ignore>
-      <Backdrop/>
-      <header className="cr-bar"><button className="cr-round-btn" onClick={exit} aria-label={t.back}><Arrow/></button><span className="cr-wordmark">{t.title}</span></header>
+    return shell('cr-page cr-lobby', <>
+      <Backdrop/>{bar}
       <section className="cr-lobby-body">
         <h1>{t.lobbyTitle}</h1>
         <div className="cr-card cr-code-card">
@@ -312,87 +377,91 @@ export default function ClockRace({onContinue}) {
           </div>
         </div>
         <div className="cr-card cr-guests">
-          <div className="cr-guests-head"><b>الربع</b><span dir="ltr">{t.players(game.players.length)}</span></div>
+          <div className="cr-guests-head"><b>{t.friends}</b><span dir="ltr">{t.players(game.players.length)}</span></div>
           <ul>{game.players.map(p => <li key={p.id}><i style={{background: PLAYER_COLORS[p.color % PLAYER_COLORS.length]}}/><span dir="auto">{p.name}</span>
-            {p.id === game.host && <small>{t.host}</small>}{p.id === me && <small className="is-me">{t.you}</small>}</li>)}</ul>
+            {p.id === game.host && <small>{t.host}</small>}{p.sim && <small className="is-bot">{t.bot}</small>}{p.id === me && <small className="is-me">{t.you}</small>}</li>)}</ul>
         </div>
-        {isHost ? <><button className="cr-primary cr-start" disabled={busy} onClick={start}>{t.start}</button>{game.players.length < 2 && <p className="cr-fine">{t.soloOk}</p>}</>
+        {isHost ? <><button className="cr-primary cr-start" disabled={busy} onClick={start}>{t.start}</button>
+          {game.dev ? <p className="cr-fine">{t.testRoom}</p> : game.players.length < 2 && <p className="cr-fine">{t.soloOk}</p>}</>
           : <p className="cr-waiting">{t.waitHost(hostName)}</p>}
         {error && <p className="cr-error" role="alert">{error}</p>}
       </section>
-      {game.dev && isHost && <DevPanel open={devOpen} setOpen={setDevOpen} game={game} dev={dev} autoBots={autoBots} setAutoBots={setAutoBots}/>}
       {notice && <div className="cr-notice" role="status" onClick={() => setNotice('')}>{notice}</div>}
-    </main>;
+    </>);
   }
 
   const boss = task?.type === 'boss';
-  return <main className={`cr-app cr-race ${boss ? 'is-boss' : ''} ${task?.type === 'vote' ? 'is-vote' : ''}`} dir="rtl" lang="ar" data-typography-ignore>
+  const prompt = !task ? null : task.type === 'vote' ? round.question : task.type === 'stroop' ? stroopPrompt(task, t, lang)
+    : task.type === 'geo' ? t.geo[task.variant] : t.prompts[task.type]; // Word Rush and memory draw their own headings
+  return shell(`cr-race ${boss ? 'is-boss' : ''} ${task?.type === 'vote' ? 'is-vote' : ''}`, <>
     <Backdrop/>
     <header className="cr-top">
-      <button className="cr-round-btn is-small" onClick={exit} aria-label={t.exit}><Arrow/></button>
-      <Dials players={players} me={me} winner={game.winner}/>
+      <button className="cr-square-btn is-small" onClick={exit} aria-label={t.exit}><Arrow dir={t.dir}/></button>
+      <Dials players={players} me={me} winner={game.winner} youLabel={t.you} bots={game.bots} startsAt={round?.starts_at} offset={offset} racing={game.status === 'racing'}/>
+      {devPanel}
     </header>
     {!inRace ? <section className="cr-stage"><p className="cr-spectate">{t.spectating}</p></section>
-      : task && View ? <section className={`cr-stage cr-stage-${task.type}`} aria-live="polite">
+      : task && View ? <section className={`cr-stage cr-stage-${task.type}`}>
         <div className="cr-task-head">
           <span className="cr-count" dir="ltr">{t.task(pos + 1, 20)}</span>
           {boss ? <span className="cr-boss-stamp">{t.bossStamp}</span> : <span className="cr-task-name">{t.names[task.type]}</span>}
         </div>
         <div className="cr-play" key={`${round.id}-${pos}`}>
-          {task.type !== 'word' && <h2 className="cr-prompt" dir="auto">{task.type === 'vote' ? round.question : t.prompts[task.type]}</h2>}
+          {prompt && <h2 className="cr-prompt" dir="auto">{prompt}</h2>}
           <div className="cr-task-body">
-            <View task={task} t={t} onPick={pick} onWord={word} inputRef={wordInput} roster={game.roster} players={game.players} me={me}/>
+            <View task={task} t={t} lang={lang} onPick={pick} onWord={word} inputRef={wordInput} roster={game.roster} players={game.players} me={me}/>
           </div>
         </div>
       </section> : <section className="cr-stage"><div className="cr-done-wait"><Dial done={20} color={PLAYER_COLORS[(game.players.find(p => p.id === me)?.color || 0) % 12]} size={120} big/></div></section>}
     {counting && <div className="cr-countdown" aria-live="assertive"><span key={seconds}>{seconds}</span></div>}
     {!counting && game.status === 'racing' && clock - startsAt < 700 && inRace && pos === 0 && <div className="cr-countdown is-go"><span>{t.go}</span></div>}
-    {toast && <div className={`cr-toast is-${toast.kind}`} key={toast.id} dir="auto">{toast.text}</div>}
+    {stars && <Stars key={`s${stars.id}`} x={stars.x} y={stars.y}/>}
+    {sad && <div className="cr-sad" role="status" aria-label="wrong"><div className="cr-sad-face"><Face mood="sad" color={0}/></div></div>}
+    {toast && <div className={`cr-toast is-${toast.kind}`} key={`t${toast.id}`} dir="auto">{toast.text}</div>}
     {game.status === 'finished' && <div className="cr-finish" role="dialog" aria-modal="true" aria-labelledby="cr-finish-title">
       <div className="cr-finish-card">
         <span className="cr-finish-kicker">{t.winnerTitle}</span>
         {winner && <Dial done={20} color={PLAYER_COLORS[winner.color % PLAYER_COLORS.length]} size={124} big/>}
         <h2 id="cr-finish-title" dir="auto">{winner?.id === me ? t.youWon : t.won(winner?.name || '')}</h2>
-        <ol className="cr-results">{[...players].filter(p => p.racing).sort((a, b) => (b.id === game.winner) - (a.id === game.winner) || b.done - a.done).map(p =>
-          <li key={p.id} className={p.id === me ? 'is-me' : ''}><i style={{background: PLAYER_COLORS[p.color % PLAYER_COLORS.length]}}/><span dir="auto">{p.name}</span><b dir="ltr">{p.done * 5}%</b></li>)}</ol>
+        <ol className="cr-results">{[...players].filter(p => p.racing).sort((a, b) => (b.id === game.winner) - (a.id === game.winner) || b.done - a.done || (b.right || 0) - (a.right || 0)).map(p =>
+          <li key={p.id} className={p.id === me ? 'is-me' : ''}><i style={{background: PLAYER_COLORS[p.color % PLAYER_COLORS.length]}}/><span dir="auto">{p.name}</span>
+            <em>{t.rightOf(p.right || 0, p.done)}</em><b dir="ltr">{p.done * 5}%</b></li>)}</ol>
         {isHost ? <button className="cr-primary" disabled={busy} onClick={start}>{t.again}</button> : <p className="cr-waiting">{t.waitAgain(hostName)}</p>}
-        <button className="cr-ghost" onClick={exit}>{t.exit}</button>
+        <button className="cr-ghost cr-link" onClick={exit}>{t.exit}</button>
       </div>
     </div>}
-    {game.dev && isHost && <DevPanel open={devOpen} setOpen={setDevOpen} game={game} dev={dev} autoBots={autoBots} setAutoBots={setAutoBots} task={task}/>}
     {(notice || error) && <div className="cr-notice" role="status" onClick={() => { setNotice(''); setError(''); }}>{error || notice}</div>}
-  </main>;
+  </>);
 }
 
-function Arrow() {
-  return <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/></svg>;
+function Arrow({dir}) {
+  return <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" style={{transform: dir === 'rtl' ? 'none' : 'scaleX(-1)'}}><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="square"/></svg>;
 }
 
 function Backdrop() {
   return <div className="cr-backdrop" aria-hidden="true"/>;
 }
 
-// TEST99 only: fill the room with test players, move them, solve your own task, see task timings.
-function DevPanel({open, setOpen, game, dev, autoBots, setAutoBots, task}) {
+// TEST99 only: a small chip in the top bar. Closed by default; opens a panel under the bar.
+function DevPanel({open, setOpen, game, dev, task}) {
   const left = 12 - game.players.length;
   return <div className={`cr-dev ${open ? 'is-open' : ''}`} dir="ltr">
-    <button type="button" className="cr-dev-toggle" onClick={() => setOpen(v => !v)}>TEST99</button>
+    <button type="button" className="cr-dev-toggle" aria-expanded={open} onClick={() => setOpen(v => !v)}>TEST99</button>
     {open && <div className="cr-dev-body">
-      {left > 0 && <div className="cr-dev-row">
+      {game.status !== 'racing' && left > 0 && <div className="cr-dev-row">
         <button onClick={() => dev('add', 1)}>+1 player</button>
         {left >= 4 && <button onClick={() => dev('add', 4)}>+4</button>}
         <button onClick={() => dev('add', left)}>fill to 12</button>
         <button onClick={() => dev('add_twin')}>+ same name as me</button>
       </div>}
       {game.status === 'racing' && <div className="cr-dev-row">
-        <button onClick={() => dev('bots')}>bots step</button>
-        <button className={autoBots ? 'is-on' : ''} onClick={() => setAutoBots(v => !v)}>bots auto {autoBots ? 'ON' : 'off'}</button>
         <button onClick={() => dev('solve')}>solve my task{task ? ` (${task.type})` : ''}</button>
       </div>}
       {game.timing && Object.keys(game.timing).length > 0 && <table className="cr-dev-times"><tbody>
         {Object.entries(game.timing).map(([k, v]) => <tr key={k}><td>{k}</td><td>{v.avg}s</td><td>×{v.n}</td></tr>)}
       </tbody></table>}
-      <small>Room {game.players.length}/12 · round tasks: {game.round ? game.round.tasks.map(x => x.type[0]).join('') : '—'}</small>
+      <small>Room {game.players.length}/12 · {game.lang} · tasks: {game.round ? game.round.tasks.map(x => x.type.slice(0, 2)).join(' ') : '—'}</small>
+      {task?.type === 'geo' && <small>geo: {task.items.map(i => `${i}=${GEO[i]?.kind}`).join(', ')}</small>}
     </div>}
   </div>;
 }

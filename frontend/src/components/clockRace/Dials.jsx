@@ -1,5 +1,5 @@
-import React, {memo} from 'react';
-import {fraction} from './localCheck';
+import React, {memo, useEffect, useState} from 'react';
+import {botDone, fraction} from './localCheck';
 
 export const PLAYER_COLORS = ['#FF5B36', '#2E4BFF', '#13B07A', '#FFB300', '#FF5FA2', '#8A5CF6', '#00A2C2', '#E66A00', '#6A8F1F', '#D2335F', '#33507A', '#9B5B2E'];
 const PIE = 2 * Math.PI * 25; // circle r=25 drawn with a 50-wide stroke = a filled wedge
@@ -23,18 +23,30 @@ export const Dial = memo(function Dial({done, total = 20, color, size = 46, big 
 });
 
 // The race strip at the top: every player, join order (never re-sorted, so nobody's dial jumps).
-function Dials({players, me, total = 20, winner}) {
+// Simulated players (TEST99) move by their schedule, ticking here so the rest of the screen stays still.
+function Dials({players, me, total = 20, winner, youLabel, bots, startsAt, offset, racing}) {
   const many = players.length > 6;
-  return <div className={`cr-dials ${many ? 'is-many' : ''}`} role="list" aria-label="السباق">
-    {players.map(p => <div role="listitem" key={p.id}
-      className={`cr-dial-seat ${p.id === me ? 'is-me' : ''} ${p.id === winner ? 'is-winner' : ''} ${p.racing === false ? 'is-out' : ''}`}
-      aria-label={`${p.name} ${Math.round(fraction(p.done, total) * 100)}%`}>
-      <span className="cr-dial-wrap">
-        <Dial done={p.done} total={total} color={PLAYER_COLORS[p.color % PLAYER_COLORS.length]} size={many ? 40 : 48}/>
-        {p.done > 0 && <i className="cr-dial-pop" key={p.done} style={{borderColor: PLAYER_COLORS[p.color % PLAYER_COLORS.length]}}/>}
-      </span>
-      <span className="cr-dial-name" dir="auto">{p.id === me ? 'أنت' : p.name}</span>
-    </div>)}
+  const hasBots = racing && bots && Object.keys(bots).length > 0;
+  const [, tick] = useState(0);
+  useEffect(() => {
+    if (!hasBots) return undefined;
+    const id = setInterval(() => tick(x => x + 1), 250);
+    return () => clearInterval(id);
+  }, [hasBots]);
+  const elapsed = (Date.now() + (offset?.current || 0)) / 1000 - (startsAt || 0);
+  return <div className={`cr-dials ${many ? 'is-many' : ''}`} role="list">
+    {players.map(p => {
+      const done = hasBots && bots[p.id] ? Math.max(p.done, botDone(bots[p.id], elapsed)) : p.done;
+      return <div role="listitem" key={p.id}
+        className={`cr-dial-seat ${p.id === me ? 'is-me' : ''} ${p.id === winner ? 'is-winner' : ''} ${p.racing === false ? 'is-out' : ''}`}
+        aria-label={`${p.name} ${Math.round(fraction(done, total) * 100)}%`}>
+        <span className="cr-dial-wrap">
+          <Dial done={done} total={total} color={PLAYER_COLORS[p.color % PLAYER_COLORS.length]} size={many ? 40 : 48}/>
+          {done > 0 && <i className="cr-dial-pop" key={done} style={{borderColor: PLAYER_COLORS[p.color % PLAYER_COLORS.length]}}/>}
+        </span>
+        <span className="cr-dial-name" dir="auto">{p.id === me ? youLabel : p.name}</span>
+      </div>;
+    })}
   </div>;
 }
 

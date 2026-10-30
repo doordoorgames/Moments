@@ -44,9 +44,9 @@ SOCK_COLORS = 5     # coral, sky, mint, sun, lilac
 SOCK_PATTERNS = 5   # plain, stripes, dots, zigzag, checks
 SOCK_ACCENTS = 3    # cream, ink, red (cuff, heel and toe)
 
-# Memory: one 3x3 grid of nine different letters, gently blinking (four blinks) for MEMORY_SHOW
+# Memory: one 3x3 grid of nine different letters, softly blinking (one slow blink every 2s) for MEMORY_SHOW
 # seconds, then "which letter was there?". Letters that are easy to tell apart at a glance.
-MEMORY_SHOW = 4.0
+MEMORY_SHOW = 12.0
 MEMORY_LETTERS = {
     'ar': list('ابجدرسصطعفقكلمنهويحش'),
     'en': list('ABCDEFGHJKLMNPRSTUVY'),

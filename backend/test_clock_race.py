@@ -323,9 +323,9 @@ def test_memory_answers_wait_for_the_grid():
     i = len(g['progress'][host['id']])
     shown = E.reached_at(g, host['id'], i)
     t = g['round']['tasks'][i]
-    r = E.answer(g, host['id'], g['round']['id'], i, t['answer'], now=shown + 2)
+    r = E.answer(g, host['id'], g['round']['id'], i, t['answer'], now=shown + E.D.MEMORY_SHOW - 1)
     assert r.get('wait') and not r['changed']
-    assert E.answer(g, host['id'], g['round']['id'], i, t['answer'], now=shown + 4)['right']
+    assert E.answer(g, host['id'], g['round']['id'], i, t['answer'], now=shown + E.D.MEMORY_SHOW)['right']
 
 
 def test_late_joiner_waits_for_next_round_and_replay():
@@ -359,8 +359,8 @@ def test_bot_moves_at_a_human_pace_by_the_clock():
     assert E.start(g, '', now=1000)
     plan = g['bots'][bot]
     gaps = [b[0] - a[0] for a, b in zip([[0, True]] + plan, plan)]
-    assert len(plan) == 20 and all(1.3 <= gap <= 13.5 for gap in gaps)
-    assert 45 <= plan[-1][0] <= 130                          # a whole round takes about a minute or two
+    assert len(plan) == 20 and all(1.3 <= gap <= 21 for gap in gaps)
+    assert 45 <= plan[-1][0] <= 150                          # a whole round takes about a minute or two
     E.sync_bots(g, now=1003 + 0.5)
     assert len(g['progress'][bot]) == 0                      # nothing before its first finish time
     E.sync_bots(g, now=1003 + plan[4][0] + 0.01)

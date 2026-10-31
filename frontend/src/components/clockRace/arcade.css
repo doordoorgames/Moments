@@ -313,3 +313,9 @@
 .cr-cab-glass,.cr-cab-panel{display:none!important}
 .cr-cab-marquee{margin:0 0 8px}
 .cr-arcade .cr-task-name{display:none}
+
+/* ---------------------------------------------------------------- v4 challenges in the cabinet: sharp, no ink lines */
+.cr-arcade :is(.cr-scale-card,.cr-shadow-card){border:0;border-radius:0;background-color:#FFFCF4;box-shadow:0 5px 0 var(--ivory-d)}
+.cr-arcade :is(.cr-wallet,.cr-tile-card){border-radius:0;box-shadow:0 5px 0 rgba(58,52,70,.25)}
+.cr-arcade :is(.cr-scale-card,.cr-shadow-card,.cr-wallet,.cr-tile-card):active{transform:translateY(3px);box-shadow:0 1px 0 rgba(58,52,70,.3)}
+.cr-arcade .cr-scale-name{color:var(--ink)}

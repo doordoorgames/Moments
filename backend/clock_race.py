@@ -19,13 +19,15 @@ import uuid
 import clock_race_ar as AR
 import clock_race_data as D
 
-VERSION = 4
+VERSION = 5
 MAX_PLAYERS = 12
 TASKS = 20
 VOTE_AT = 10    # task 11 (0-based)
 BOSS_AT = 19    # task 20
 COUNTDOWN = 3.0  # seconds between START and the first tap counting, so every phone starts together
 WRONG_DELAY = 1.0  # a wrong answer holds the player this long before the next task
+LIVES = 3          # three hearts; losing the third sends the player's clock back to 0
+RESET_DELAY = 1.6  # the heartbreak screen holds the player this long before task 1 again
 GRACE = 0.25     # network slack on the server-side waits
 NAME_MAX = 24
 ORDINARY_MIX = {'odd': 2, 'stroop': 2, 'geo': 2, 'sock': 2, 'memory': 2,
@@ -37,7 +39,7 @@ TEST_BOT = 'Test Bot'
 BOT_NAMES = ['نورة', 'سارة', 'فهد', 'دانة', 'عبدالله', 'شوق', 'يوسف', 'مريم', 'Noor', 'Hamad', 'لولوة', 'بدر']
 # Simulated players: typical seconds per task type (measured feel: taps ~2-3s, typing ~7s,
 # memory = 12s of grid + the answer). Each task varies 0.7x-1.35x and ~12% are "wrong" (+1s).
-BOT_SECONDS = {'odd': 2.4, 'stroop': 2.2, 'geo': 2.6, 'sock': 3.4, 'memory': 14.3,
+BOT_SECONDS = {'odd': 2.4, 'stroop': 2.2, 'geo': 2.6, 'sock': 3.4, 'memory': 7.0,
                'word': 7.5, 'vote': 2.0, 'boss': 5.5, 'scale': 4.5, 'wallet': 4.5, 'shadow': 3.0, 'tile': 3.0}
 BOT_WRONG = 0.12
 
@@ -126,9 +128,16 @@ def check_word(task, text):
 
 # ------------------------------------------------------------------ task generators
 
-def gen_odd(rng, lang):
+ODD_MODES = [('sad', 'smile'), ('smile', 'sad'), ('smile', 'wink'), ('sad', 'tear')]  # (crowd, the different one)
+
+
+def gen_odd(rng, lang, mode=None):
+    """A grid of the same face with one different: a happy one among sad, a sad one among happy,
+    a wink among happy, or a quiet tear (drawn in the eye colour) among sad."""
     rows, cols = rng.choice([(4, 4), (4, 5), (5, 5), (5, 6), (6, 5), (6, 6)])
-    return dict(type='odd', rows=rows, cols=cols, odd=rng.randrange(rows * cols), color=rng.randrange(D.FACE_COLORS))
+    base, odd_mood = mode or rng.choice(ODD_MODES)
+    return dict(type='odd', rows=rows, cols=cols, odd=rng.randrange(rows * cols), color=rng.randrange(D.FACE_COLORS),
+                base=base, mood=odd_mood)
 
 
 def _derangement(items, rng):
@@ -357,7 +366,7 @@ def gen_tile(rng, lang):
 
 
 def signature(t):
-    keys = {'odd': ('rows', 'cols', 'odd'), 'stroop': ('mode', 'target', 'choices'),
+    keys = {'odd': ('rows', 'cols', 'odd', 'base', 'mood'), 'stroop': ('mode', 'target', 'choices'),
             'geo': ('variant', 'items'), 'sock': ('socks',), 'memory': ('grid',),
             'word': ('variant', 'first', 'last', 'letter'), 'vote': ('question',), 'boss': ('faces',),
             'scale': ('groups',), 'wallet': ('wallets',), 'shadow': ('cells',), 'tile': ('scene', 'seed')}[t['type']]
@@ -415,11 +424,14 @@ def gen_round(roster, lang='ar', avoid_question=None, rng=None, avoid=()):
         geo_kinds[rng.randrange(4)] = 'state'  # "tap the US state": Texas, about two rounds in five
     rng.shuffle(geo_kinds)
     geo_kinds = iter(geo_kinds)
+    odd_modes = list(ODD_MODES)
+    rng.shuffle(odd_modes)
+    odd_modes = iter(odd_modes * 2)
     tasks, seen = [], set(avoid)
     for kind in types:
         for _ in range(200):
             if kind == 'odd':
-                t = gen_odd(rng, lang)
+                t = gen_odd(rng, lang, next(odd_modes, None))
             elif kind == 'stroop':
                 t = gen_stroop(rng, lang, next(stroop_modes, None))
             elif kind == 'geo':
@@ -485,8 +497,9 @@ def solve(task, roster_ids):
 
 
 def show_time(task):
-    """Seconds a task is on screen before an answer may count (the memory grid)."""
-    return D.MEMORY_SHOW if task['type'] == 'memory' else 0.0
+    """Seconds a task must stay on screen before an answer may count. None now: the memory grid
+    stays up until the player taps Next, so every player controls their own time."""
+    return 0.0
 
 
 # ------------------------------------------------------------------ rooms
@@ -564,6 +577,7 @@ def start(g, round_id, now=None, rng=None):
     g['round'] = dict(id=uuid.uuid4().hex[:12], tasks=tasks, starts_at=now + COUNTDOWN)
     g['roster'] = roster
     g['progress'] = {p['id']: [] for p in roster}  # per task: [seconds after start, right?]
+    g['lives'] = {p['id']: dict(misses=0, epoch=0, reset_at=0.0) for p in roster}
     g['bots'] = {p['id']: bot_schedule(tasks, rng) for p in g['players'] if p['sim']}
     g['status'] = 'racing'
     g['winner'] = None
@@ -607,33 +621,50 @@ def reached_at(g, pid, index):
     """When this player's task `index` appeared on the server's clock."""
     done = g['progress'][pid]
     if index == 0 or not done:
-        return g['round']['starts_at']
+        return g['round']['starts_at'] + lives(g, pid)['reset_at']
     t, ok = done[index - 1]
     return g['round']['starts_at'] + t + (0.0 if ok else WRONG_DELAY)
 
 
-def answer(g, pid, round_id, index, value, now=None):
-    """One answer from one player. Right or wrong, it moves the player on.
-    Returns dict(right, done, word, changed[, wait])."""
+def lives(g, pid):
+    return g.setdefault('lives', {}).setdefault(pid, dict(misses=0, epoch=0, reset_at=0.0))
+
+
+def answer(g, pid, round_id, index, value, now=None, epoch=None):
+    """One answer from one player. Right or wrong, it moves the player on; every wrong answer
+    costs a heart, and the third one empties the player's clock back to task 1 with full hearts.
+    `epoch` counts those resets, so a late retry from before a reset is ignored.
+    Returns dict(right, done, word, changed, misses, epoch[, wait, reset])."""
     now = time.time() if now is None else now
     sync_bots(g, now)
     done = g['progress'].get(pid)
     if g['round'] is None or round_id != g['round']['id'] or done is None:
         raise GameError('This round is over. · هالجولة خلصت.')
     count = len(done)
+    life = lives(g, pid)
+    same = dict(misses=life['misses'], epoch=life['epoch'])
+    if epoch is not None and epoch != life['epoch']:
+        return dict(right=False, done=count, word=None, changed=False, **same)  # from before a reset
     if index < count:
-        return dict(right=done[index][1], done=count, word=None, changed=False)  # repeat: already counted
+        return dict(right=done[index][1], done=count, word=None, changed=False, **same)  # repeat: already counted
     if g['status'] != 'racing' or index > count:
-        return dict(right=False, done=count, word=None, changed=False)
+        return dict(right=False, done=count, word=None, changed=False, **same)
     task = g['round']['tasks'][index]
     ready = reached_at(g, pid, index) + show_time(task) - GRACE
     if now < ready:
-        return dict(right=False, done=count, word=None, changed=False, wait=round(ready - now + 0.05, 2))
+        return dict(right=False, done=count, word=None, changed=False, wait=round(ready - now + 0.05, 2), **same)
     right, word = correct(task, value, [p['id'] for p in g['roster']])
-    done.append([round(max(0.0, now - g['round']['starts_at']), 3), bool(right)])
+    at = round(max(0.0, now - g['round']['starts_at']), 3)
+    if not right and pid not in g.get('bots', {}):
+        life['misses'] += 1
+        if life['misses'] >= LIVES:
+            done.clear()
+            life.update(misses=0, epoch=life['epoch'] + 1, reset_at=at + RESET_DELAY)
+            return dict(right=False, done=0, word=word, changed=True, reset=True, misses=0, epoch=life['epoch'])
+    done.append([at, bool(right)])
     if len(done) == TASKS:
         _finish(g, pid, now)
-    return dict(right=bool(right), done=len(done), word=word, changed=True)
+    return dict(right=bool(right), done=len(done), word=word, changed=True, misses=life['misses'], epoch=life['epoch'])
 
 
 def progress(g):
@@ -669,7 +700,10 @@ def view(g, pid, now=None):
         now=now, tasks_total=TASKS, wrong_delay=WRONG_DELAY,
         players=[dict(id=p['id'], name=p['name'], color=p['color'], sim=p['sim'], racing=p['id'] in in_race,
                       done=len(g['progress'].get(p['id'], [])),
-                      right=sum(1 for _, ok in g['progress'].get(p['id'], []) if ok)) for p in g['players']],
+                      right=sum(1 for _, ok in g['progress'].get(p['id'], []) if ok),
+                      misses=g.get('lives', {}).get(p['id'], {}).get('misses', 0),
+                      epoch=g.get('lives', {}).get(p['id'], {}).get('epoch', 0)) for p in g['players']],
+        lives=LIVES,
         round=dict(id=r['id'], starts_at=r['starts_at'], tasks=r['tasks'],
                    question=D.QUESTIONS[r['tasks'][VOTE_AT]['question']][lang_i]) if r else None,
         roster=g['roster'],

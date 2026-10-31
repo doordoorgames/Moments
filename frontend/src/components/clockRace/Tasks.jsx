@@ -1,4 +1,4 @@
-import React, {memo, useEffect, useMemo, useState} from 'react';
+import React, {memo, useMemo, useState} from 'react';
 import Face from './Face';
 import Sock from './Sock';
 import {PLAYER_COLORS} from './Dials';
@@ -15,10 +15,11 @@ const tap = fn => ({
 // ------------------------------------------------------------------ الإيموجي المختلف
 export function OddFace({task, onPick}) {
   const cells = task.rows * task.cols;
+  const base = task.base || 'smile', odd = task.mood || 'sad';
   return <div className="cr-face-grid" style={{'--cols': task.cols, '--rows': task.rows}}>
     {Array.from({length: cells}, (_, i) => <button key={i} type="button" className="cr-face-cell"
-      aria-label={i === task.odd ? 'sad' : 'smile'} {...tap(() => onPick(i))}>
-      <Face mood={i === task.odd ? 'sad' : 'smile'} color={task.color}/>
+      aria-label={`face ${i + 1}`} {...tap(() => onPick(i))}>
+      <Face mood={i === task.odd ? odd : base} color={task.color}/>
     </button>)}
   </div>;
 }
@@ -63,20 +64,15 @@ export function LonelySock({task, onPick}) {
   </div>;
 }
 
-// ------------------------------------------------------------------ الذاكرة: one 3x3 grid of letters for 12s (slow soft blinks), then the question
-export const MEMORY_MS = 12000; // matches MEMORY_SHOW on the server
+// ------------------------------------------------------------------ الذاكرة: one 3x3 grid of letters; the player taps Next when ready, then the question
 export function Memory({task, t, onPick, lang}) {
   const [asking, setAsking] = useState(false);
-  useEffect(() => {
-    const id = setTimeout(() => setAsking(true), MEMORY_MS);
-    return () => clearTimeout(id);
-  }, []);
   if (!asking) return <div className="cr-memory">
     <h2 className="cr-prompt">{t.memoryIntro}</h2>
     <div className="cr-memory-grid" dir={lang === 'ar' ? 'rtl' : 'ltr'} lang={lang}>
       {task.grid.map((s, i) => <span key={i} className={(i % 2) ? 'is-b' : 'is-a'}><b>{s}</b></span>)}
     </div>
-    <div className="cr-memory-bar" style={{animationDuration: `${MEMORY_MS}ms`}}/>
+    <button type="button" className="cr-primary cr-memory-next" {...tap(() => setAsking(true))}>{t.memoryNext}</button>
   </div>;
   return <div className="cr-memory is-ask">
     <p className="cr-memory-q">{t.memoryAsk}</p>

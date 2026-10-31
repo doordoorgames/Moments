@@ -4,7 +4,7 @@ import Sock from './Sock';
 import {PLAYER_COLORS} from './Dials';
 import {GEO, STROOP} from './content';
 import {GEO_SHAPES} from './geoShapes';
-import {Heaviest, Wallet, Shadow, MissingTile} from './NewTasks';
+import {Heaviest, Wallet, Shadow, MissingTile, DontTap} from './NewTasks';
 
 // Taps count on finger-down (no wait for release); keyboard Enter/Space still works through click.
 const tap = fn => ({
@@ -137,4 +137,4 @@ export function FinalBoss({task, onPick}) {
 
 export const TASK_VIEWS = {odd: OddFace, stroop: Stroop, geo: Geography, sock: LonelySock, memory: Memory,
   vote: FriendVote, word: WordRush, boss: FinalBoss,
-  scale: Heaviest, wallet: Wallet, shadow: Shadow, tile: MissingTile};
+  scale: Heaviest, wallet: Wallet, shadow: Shadow, tile: MissingTile, avoid: DontTap};

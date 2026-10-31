@@ -19,7 +19,7 @@ import uuid
 import clock_race_ar as AR
 import clock_race_data as D
 
-VERSION = 5
+VERSION = 6
 MAX_PLAYERS = 12
 TASKS = 20
 VOTE_AT = 10    # task 11 (0-based)
@@ -31,7 +31,7 @@ RESET_DELAY = 1.6  # the heartbreak screen holds the player this long before tas
 GRACE = 0.25     # network slack on the server-side waits
 NAME_MAX = 24
 ORDINARY_MIX = {'odd': 2, 'stroop': 2, 'geo': 2, 'sock': 2, 'memory': 2,
-                'scale': 2, 'wallet': 2, 'shadow': 2, 'tile': 1}  # 17; one fewer with 2 Word Rush
+                'scale': 2, 'wallet': 1, 'shadow': 1, 'tile': 1, 'avoid': 2}  # 17; one fewer with 2 Word Rush
 # The memory grid is the only letter challenge: 1 or 2 a round (half of v2's ~3 letter tasks).
 WORD_VARIANTS = ('pair', 'country', 'fruit')
 TYPO_MIN_LENGTH = 5  # one-typo forgiveness only for words this long or longer
@@ -40,7 +40,7 @@ BOT_NAMES = ['نورة', 'سارة', 'فهد', 'دانة', 'عبدالله', 'ش
 # Simulated players: typical seconds per task type (measured feel: taps ~2-3s, typing ~7s,
 # memory = 12s of grid + the answer). Each task varies 0.7x-1.35x and ~12% are "wrong" (+1s).
 BOT_SECONDS = {'odd': 2.4, 'stroop': 2.2, 'geo': 2.6, 'sock': 3.4, 'memory': 7.0,
-               'word': 7.5, 'vote': 2.0, 'boss': 5.5, 'scale': 4.5, 'wallet': 4.5, 'shadow': 3.0, 'tile': 3.0}
+               'word': 7.5, 'vote': 2.0, 'boss': 5.5, 'scale': 4.5, 'wallet': 4.5, 'shadow': 3.0, 'tile': 3.0, 'avoid': 2.3}
 BOT_WRONG = 0.12
 
 
@@ -369,11 +369,37 @@ def signature(t):
     keys = {'odd': ('rows', 'cols', 'odd', 'base', 'mood'), 'stroop': ('mode', 'target', 'choices'),
             'geo': ('variant', 'items'), 'sock': ('socks',), 'memory': ('grid',),
             'word': ('variant', 'first', 'last', 'letter'), 'vote': ('question',), 'boss': ('faces',),
-            'scale': ('groups',), 'wallet': ('wallets',), 'shadow': ('cells',), 'tile': ('scene', 'seed')}[t['type']]
+            'scale': ('groups',), 'wallet': ('wallets',), 'shadow': ('cells',), 'tile': ('scene', 'seed'), 'avoid': ('rule', 'target', 'items')}[t['type']]
     return repr((t['type'],) + tuple(repr(t.get(k)) for k in keys))
 
 
-NEW_GENS = {'scale': gen_scale, 'wallet': gen_wallet, 'shadow': gen_shadow, 'tile': gen_tile}
+AVOID_COLORS = ['blue', 'green', 'red', 'yellow']
+AVOID_SHAPES = ['circle', 'square', 'triangle', 'star']
+
+
+def gen_avoid(rng, lang, rule=None):
+    """Nine buttons in colours and shapes, and one rule: "don't tap the blue ones" or "don't tap
+    anything circular". Most buttons break the rule; tapping any one that doesn't is right.
+    The forbidden colour comes in every shape (and the forbidden shape in every colour) as the trap."""
+    rule = rule or rng.choice(['color', 'shape'])
+    pool = AVOID_COLORS if rule == 'color' else AVOID_SHAPES
+    target = rng.choice(pool)
+    bad = rng.randint(5, 7)
+    items = []
+    for i in range(9):
+        c, sh = rng.choice(AVOID_COLORS), rng.choice(AVOID_SHAPES)
+        if rule == 'color':
+            c = target if i < bad else rng.choice([x for x in AVOID_COLORS if x != target])
+        else:
+            sh = target if i < bad else rng.choice([x for x in AVOID_SHAPES if x != target])
+        items.append([c, sh])
+    rng.shuffle(items)
+    key = 0 if rule == 'color' else 1
+    safe = [i for i, it in enumerate(items) if it[key] != target]
+    return dict(type='avoid', rule=rule, target=target, items=items, safe=safe)
+
+
+NEW_GENS = {'avoid': gen_avoid, 'scale': gen_scale, 'wallet': gen_wallet, 'shadow': gen_shadow, 'tile': gen_tile}
 ANSWER_KINDS = ('stroop', 'geo', 'sock', 'scale', 'wallet', 'shadow', 'tile')
 
 SPREAD = 3      # a type never comes back within 3 tasks
@@ -440,6 +466,8 @@ def gen_round(roster, lang='ar', avoid_question=None, rng=None, avoid=()):
                 t = gen_sock(rng, lang)
             elif kind == 'memory':
                 t = gen_memory(rng, lang)
+            elif kind == 'avoid':
+                t = gen_avoid(rng, lang, ['color', 'shape'][sum(x['type'] == 'avoid' for x in tasks) % 2])
             elif kind in NEW_GENS:
                 t = NEW_GENS[kind](rng, lang)
             elif kind == 'word':
@@ -465,6 +493,8 @@ def correct(task, answer, roster_ids):
             return int(answer) == task['odd'], None
         if kind == 'memory':
             return answer == task['answer'], None
+        if kind == 'avoid':
+            return int(answer) in task['safe'], None
         if kind in ANSWER_KINDS:
             return int(answer) == task['answer'], None
         if kind == 'vote':
@@ -486,6 +516,8 @@ def solve(task, roster_ids):
     kind = task['type']
     if kind == 'odd':
         return task['odd']
+    if kind == 'avoid':
+        return task['safe'][0]
     if kind == 'memory' or kind in ANSWER_KINDS:
         return task['answer']
     if kind == 'vote':
@@ -572,7 +604,7 @@ def start(g, round_id, now=None, rng=None):
         return False
     roster = [dict(id=p['id'], name=p['name']) for p in g['players']]
     tasks = gen_round(roster, g['lang'], g['last_question'], rng, g.get('seen', []))
-    g['seen'] = (g.get('seen', []) + [signature(t) for t in tasks if t['type'] in ('memory',) + ANSWER_KINDS])[-120:]
+    g['seen'] = (g.get('seen', []) + [signature(t) for t in tasks if t['type'] in ('memory', 'avoid') + ANSWER_KINDS])[-120:]
     g['last_question'] = tasks[VOTE_AT]['question']
     g['round'] = dict(id=uuid.uuid4().hex[:12], tasks=tasks, starts_at=now + COUNTDOWN)
     g['roster'] = roster

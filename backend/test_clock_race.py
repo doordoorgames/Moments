@@ -32,7 +32,7 @@ def test_round_shape(seed):
     assert kinds.count('memory') in (1, 2)                        # the only letter challenge
     for k in ('odd', 'stroop', 'geo', 'sock'):
         assert kinds.count(k) >= 1, k
-    for k in ('scale', 'wallet', 'shadow', 'tile'):              # v4 challenges every round
+    for k in ('scale', 'wallet', 'shadow', 'tile', 'avoid'):              # v4 challenges every round
         assert kinds.count(k) >= 1, k
     variants = [t['variant'] for t in tasks if t['type'] == 'word']
     assert len(variants) == len(set(variants))
@@ -267,7 +267,7 @@ def play(g, pid, now, right=True):
 def wrong_value(t):
     return {'odd': -1, 'memory': 'x', 'stroop': -1, 'geo': -1, 'sock': -1,
             'word': 'zzzzz', 'vote': 'stranger', 'boss': -1,
-            'scale': -1, 'wallet': -1, 'shadow': -1, 'tile': -1}[t['type']]
+            'scale': -1, 'wallet': -1, 'shadow': -1, 'tile': -1, 'avoid': -1}[t['type']]
 
 
 def walk(g, pid, now, right=True):
@@ -480,3 +480,13 @@ def test_shadow_options_all_differ_and_one_is_right():
 def test_tile_has_four_looks_one_right():
     t = E.gen_tile(random.Random(1), 'ar')
     assert sorted(t['looks']) == sorted(E.TILE_LOOKS) and t['looks'][t['answer']] == 'ok'
+
+
+def test_avoid_rule_has_safe_and_forbidden_buttons():
+    for s in range(300):
+        t = E.gen_avoid(random.Random(s), 'ar')
+        key = 0 if t['rule'] == 'color' else 1
+        assert len(t['items']) == 9 and 2 <= len(t['safe']) <= 4
+        for i, it in enumerate(t['items']):
+            assert (it[key] != t['target']) == (i in t['safe'])
+            assert E.correct(t, i, [])[0] == (i in t['safe'])

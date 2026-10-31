@@ -210,7 +210,7 @@ def router(db, query):
                     if i < engine.TASKS:
                         # skips the memory display wait: solving is a test shortcut
                         engine.answer(g, me['id'], g['round']['id'], i,
-                                      engine.solve(g['round']['tasks'][i], [p['id'] for p in g['roster']]),
+                                      engine.solve(g['round']['tasks'][i], engine.vote_choices(g, g['round']['tasks'][i], me['id'])),
                                       max(engine.reached_at(g, me['id'], i) + engine.show_time(g['round']['tasks'][i]), time.time()))
             except engine.GameError as e:
                 raise HTTPException(400, str(e))

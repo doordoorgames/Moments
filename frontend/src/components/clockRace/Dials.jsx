@@ -1,5 +1,5 @@
 import React, {memo, useEffect, useState} from 'react';
-import {botDone, fraction} from './localCheck';
+import {TOTAL, botDone, fraction} from './localCheck';
 import {ARCADE} from './theme';
 
 const CLASSIC_COLORS = ['#FF5B36', '#2E4BFF', '#13B07A', '#FFB300', '#FF5FA2', '#8A5CF6', '#00A2C2', '#E66A00', '#6A8F1F', '#D2335F', '#33507A', '#9B5B2E'];
@@ -9,12 +9,12 @@ export const PLAYER_COLORS = ARCADE ? ARCADE_COLORS : CLASSIC_COLORS;
 const PIE = 2 * Math.PI * 25; // circle r=25 drawn with a 50-wide stroke = a filled wedge
 
 // One player's clock: the wedge fills clockwise from 12 o'clock, the hand points at the progress,
-// 20 ticks = 20 tasks.
+// one tick per task (30).
 export const Dial = memo(function Dial(props) {
   return ARCADE ? <ArcadeDial {...props}/> : <ClassicDial {...props}/>;
 });
 
-// Arcade timer: a cabinet-style meter. Ivory bezel with a ring of 20 lamps (one per task) that light in the
+// Arcade timer: a cabinet-style meter. Ivory bezel with a ring of 30 lamps (one per task) that light in the
 // player's colour, a powder-blue face filling like a clock, and a hand. Paint sits a hair off the ink line,
 // as on a hand-painted cel; the outline itself wobbles slightly. Same reading as the classic clock.
 const wob = (r, seed, n = 36) => {
@@ -27,16 +27,16 @@ const wob = (r, seed, n = 36) => {
   return d + 'Z';
 };
 const BEZEL = wob(46, 1.3), FACE = wob(31, 4.1);
-const LAMPS = Array.from({length: 20}, (_, i) => {
-  const a = (i + 0.5) / 20 * Math.PI * 2;
+const LAMPS = Array.from({length: TOTAL}, (_, i) => {
+  const a = (i + 0.5) / TOTAL * Math.PI * 2;
   return [50 + 38.5 * Math.sin(a), 50 - 38.5 * Math.cos(a)];
 });
-const ArcadeDial = memo(function ArcadeDial({done, total = 20, color, size = 46, big = false}) {
+const ArcadeDial = memo(function ArcadeDial({done, total = TOTAL, color, size = 46, big = false}) {
   const p = fraction(done, total);
-  const lit = Math.round(p * 20);
+  const lit = Math.round(p * TOTAL);
   return <svg viewBox="0 0 100 100" width={size} height={size} className={`cr-dial is-arcade ${big ? 'is-big' : ''}`} aria-hidden="true">
     <path d={BEZEL} fill="#F4EAD5" transform="translate(.9 -.7)"/>
-    {LAMPS.map(([x, y], i) => <circle key={i} cx={x} cy={y} r="3.3" fill={i < lit ? color : '#DCD3C1'}/>)}
+    {LAMPS.map(([x, y], i) => <circle key={i} cx={x} cy={y} r="2.8" fill={i < lit ? color : '#DCD3C1'}/>)}
     <path d={FACE} fill="#CFE0EC" transform="translate(.7 -.6)"/>
     <circle cx="50" cy="50" r="15.5" fill="none" stroke={color} strokeWidth="31" transform="rotate(-90 50 50)" opacity=".9"
       strokeDasharray={PIE * 0.62} strokeDashoffset={PIE * 0.62 * (1 - p)} className="cr-dial-fill"/>
@@ -47,7 +47,7 @@ const ArcadeDial = memo(function ArcadeDial({done, total = 20, color, size = 46,
   </svg>;
 });
 
-const ClassicDial = memo(function ClassicDial({done, total = 20, color, size = 46, big = false}) {
+const ClassicDial = memo(function ClassicDial({done, total = TOTAL, color, size = 46, big = false}) {
   const p = fraction(done, total);
   return <svg viewBox="0 0 100 100" width={size} height={size} className={`cr-dial ${big ? 'is-big' : ''}`} aria-hidden="true">
     <circle cx="50" cy="53" r="45" fill="#0B0B0B"/>
@@ -65,7 +65,7 @@ const ClassicDial = memo(function ClassicDial({done, total = 20, color, size = 4
 
 // The race strip at the top: every player, join order (never re-sorted, so nobody's dial jumps).
 // Simulated players (TEST99) move by their schedule, ticking here so the rest of the screen stays still.
-function Dials({players, me, total = 20, winner, youLabel, bots, startsAt, offset, racing}) {
+function Dials({players, me, total = TOTAL, winner, youLabel, bots, startsAt, offset, racing}) {
   const many = players.length > 6;
   const hasBots = racing && bots && Object.keys(bots).length > 0;
   const [, tick] = useState(0);

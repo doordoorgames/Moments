@@ -17,27 +17,25 @@ def roster(n, names=None):
 @pytest.mark.parametrize('seed', range(300))
 def test_round_shape(seed):
     lang = 'ar' if seed % 2 else 'en'
-    tasks = E.gen_round(roster(3), lang, rng=random.Random(seed))
+    people = 3 if seed % 3 else 1
+    tasks = E.gen_round(roster(people), lang, rng=random.Random(seed))
     kinds = [t['type'] for t in tasks]
-    assert len(tasks) == 20
-    assert kinds[10] == 'vote' and kinds.count('vote') == 1
-    assert kinds[19] == 'boss' and kinds.count('boss') == 1 and kinds[18] != 'odd'
+    assert len(tasks) == 30
+    assert kinds[29] == 'boss' and kinds.count('boss') == 1 and kinds[28] != 'odd'
+    if people >= 3:
+        assert kinds[15] == 'vote' and kinds.count('vote') == 1
+    else:
+        assert 'vote' not in kinds                                  # the friend question needs 3+ people
+    assert sum(kinds.count(k) for k in ('belong', 'older', 'compare', 'which')) >= 15
     assert kinds.count('word') in (1, 2)
-    assert 'swap' not in kinds                                   # letter swapping is gone
-    for i in range(20):                                          # a type never returns within 3 tasks
+    for i in range(30):                                             # a type never returns within 3 tasks
         if kinds[i] not in ('vote', 'boss'):
             assert kinds[i] not in kinds[max(0, i - 2):i], (i, kinds)
-    assert len(set(kinds[:5])) == 5, kinds                        # opening five are all different
-    assert 'missing' not in kinds                                 # the missing-letter task is gone
-    assert kinds.count('memory') in (1, 2)                        # the only letter challenge
-    for k in ('odd', 'stroop', 'geo', 'sock'):
-        assert kinds.count(k) >= 1, k
-    for k in ('scale', 'wallet', 'shadow', 'tile', 'avoid'):              # v4 challenges every round
-        assert kinds.count(k) >= 1, k
-    variants = [t['variant'] for t in tasks if t['type'] == 'word']
-    assert len(variants) == len(set(variants))
-    assert len({E.signature(t) for t in tasks}) == 20
-    assert sum(t['type'] == 'geo' and t['variant'] == 'state' for t in tasks) <= 1
+    assert len(set(kinds[:5])) == 5, kinds                           # opening five are all different
+    assert kinds.count('memory') == 1
+    qids = [t['qid'] for t in tasks if t.get('qid')]
+    assert len(qids) == len(set(qids))                              # no question twice in a round
+    assert len({E.signature(t) for t in tasks}) == 30
 
 
 def test_no_swap_generator_left():
@@ -49,12 +47,35 @@ def test_both_word_counts_happen():
     assert counts == {1, 2}
 
 
-def test_letter_challenges_halved():
-    # v2 averaged ~3 letter tasks a round (2 missing-letter + half of 2 memory grids); now 1.5
-    rounds = [E.gen_round(roster(2), rng=random.Random(s)) for s in range(2000)]
-    letters = sum(t['type'] == 'memory' for r in rounds for t in r) / len(rounds)
-    assert 1.4 < letters < 1.6
-    assert not hasattr(E, 'gen_missing')
+def test_picture_answers_move_around_and_bank_rotates():
+    rng = random.Random(3)
+    spots = Counter(E.gen_picture(rng, 'belong')['answer'] for _ in range(400))
+    assert set(spots) == {0, 1, 2, 3}
+    seen = []
+    for _ in range(6):
+        seen += [t['qid'] for t in E.gen_round(roster(1), rng=rng, seen_q=seen[-90:]) if t.get('qid')]
+    assert len(set(seen[:64])) == 64                                # four rounds without a repeat
+
+
+def test_bank_counts_and_answers():
+    from clock_race_bank import QUESTIONS, BY_KIND
+    assert len(QUESTIONS) >= 120 and len({x['id'] for x in QUESTIONS}) == len(QUESTIONS)
+    assert [len(BY_KIND[k]) for k in ('belong', 'older', 'compare', 'which')] == [35, 30, 30, 25]
+    for x in QUESTIONS:
+        assert x['ar'] and x['en'] and x['fact'] and x['source'] and x['difficulty']
+        t = E.gen_picture(random.Random(1), x['kind'])
+        assert t['options'][t['answer']][0] == E.K.BY_ID[t['qid']]['options'][0][0]
+
+
+def test_friend_vote_excludes_yourself():
+    g, host = E.new_room('Khaled')
+    b = E.add_player(g, 'Noor')
+    E.add_player(g, 'Sara')
+    E.start(g, '', now=0)
+    task = g['round']['tasks'][15]
+    assert task['type'] == 'vote'
+    assert E.correct(task, host['id'], E.vote_choices(g, task, host['id']))[0] is False
+    assert E.correct(task, b['id'], E.vote_choices(g, task, host['id']))[0] is True
 
 
 # ------------------------------------------------------------------ Stroop
@@ -267,7 +288,8 @@ def play(g, pid, now, right=True):
 def wrong_value(t):
     return {'odd': -1, 'memory': 'x', 'stroop': -1, 'geo': -1, 'sock': -1,
             'word': 'zzzzz', 'vote': 'stranger', 'boss': -1,
-            'scale': -1, 'wallet': -1, 'shadow': -1, 'tile': -1, 'avoid': -1}[t['type']]
+            'scale': -1, 'wallet': -1, 'shadow': -1, 'tile': -1, 'avoid': -1,
+            'belong': -1, 'older': -1, 'compare': -1, 'which': -1, 'animal': -1}[t['type']]
 
 
 def walk(g, pid, now, right=True):
@@ -285,17 +307,17 @@ def test_full_race_every_answer_moves_on_and_first_to_20_wins():
     assert E.start(g, '', now=100)
     assert not E.start(g, '', now=100)                    # double tap: one round only
     t_host = t_b = 103
-    for k in range(19):
+    for k in range(E.TASKS - 1):
         t_host, r = walk(g, host['id'], t_host, right=(k not in (0, 9)))   # two wrong (two hearts): still moves on
         assert r['done'] == k + 1 and r['right'] == (k not in (0, 9)) or g['round']['tasks'][k]['type'] == 'vote'
         t_b, r = walk(g, b['id'], t_b)
     t_b, r = walk(g, b['id'], t_b)
-    assert r['done'] == 20 and g['winner'] == b['id'] and g['status'] == 'finished'
+    assert r['done'] == E.TASKS and g['winner'] == b['id'] and g['status'] == 'finished'
     late = play(g, host['id'], t_host + 10)
     assert late['changed'] is False and g['winner'] == b['id']
     view = E.view(g, host['id'])
     me = [p for p in view['players'] if p['id'] == host['id']][0]
-    assert me['done'] == 19 and me['right'] < 19        # wrong answers were counted as wrong
+    assert me['done'] == E.TASKS - 1 and me['right'] < E.TASKS - 1        # wrong answers were counted as wrong
 
 
 def test_wrong_answer_holds_one_second_and_never_counts_as_right():
@@ -380,7 +402,7 @@ def test_late_joiner_waits_for_next_round_and_replay():
         now, _ = walk(g, host['id'], now)
     q = g['last_question']
     assert E.start(g, g['round']['id'], now=now + 50)
-    assert late['id'] in g['progress'] and g['round']['tasks'][10]['question'] != q
+    assert late['id'] in g['progress'] and q is None             # two people: no friend question
 
 
 # ------------------------------------------------------------------ TEST99 bot
@@ -399,8 +421,8 @@ def test_bot_moves_at_a_human_pace_by_the_clock():
     assert E.start(g, '', now=1000)
     plan = g['bots'][bot]
     gaps = [b[0] - a[0] for a, b in zip([[0, True]] + plan, plan)]
-    assert len(plan) == 20 and all(1.3 <= gap <= 21 for gap in gaps)
-    assert 45 <= plan[-1][0] <= 150                          # a whole round takes about a minute or two
+    assert len(plan) == E.TASKS and all(1.3 <= gap <= 21 for gap in gaps)
+    assert 60 <= plan[-1][0] <= 220                          # a whole round takes two to three minutes
     E.sync_bots(g, now=1003 + 0.5)
     assert len(g['progress'][bot]) == 0                      # nothing before its first finish time
     E.sync_bots(g, now=1003 + plan[4][0] + 0.01)
@@ -417,7 +439,7 @@ def test_bot_loses_to_a_faster_human_and_human_loses_if_bot_finished_first():
     bot = g['players'][1]['id']
     E.start(g, '', now=0)
     now = 3
-    while g['status'] == 'racing' and len(g['progress'][host['id']]) < 20:
+    while g['status'] == 'racing' and len(g['progress'][host['id']]) < E.TASKS:
         now, _ = walk(g, host['id'], now)
     assert g['winner'] == host['id']                        # instant answers beat the bot
     g2, h2 = E.new_room('TEST99')
@@ -425,7 +447,7 @@ def test_bot_loses_to_a_faster_human_and_human_loses_if_bot_finished_first():
     E.start(g2, '', now=0)
     plan = g2['bots'][bot2]
     now = 3
-    for k in range(19):
+    for k in range(E.TASKS - 1):
         now, _ = walk(g2, h2['id'], now)
     late = 3 + plan[-1][0] + 30
     r = play(g2, h2['id'], late)
@@ -450,7 +472,11 @@ def test_room_limits_and_dev_tools():
     v2 = E.view(g2, g2['host'])
     assert not g2['dev'] and v2['timing'] is None and v2['lang'] == 'en'
     E.start(g2, '', now=0)
-    assert E.view(g2, g2['host'])['round']['question'] in [en for _, en in D.QUESTIONS]
+    assert E.view(g2, g2['host'])['round']['question'] is None    # one person: no friend question
+    g3, h3 = E.new_room('Khaled', 'en')
+    E.add_player(g3, 'Noor'); E.add_player(g3, 'Sara')
+    E.start(g3, '', now=0)
+    assert E.view(g3, h3['id'])['round']['question'] in [en for _, en in D.QUESTIONS]
 
 
 # ------------------------------------------------------------------ v4 challenges

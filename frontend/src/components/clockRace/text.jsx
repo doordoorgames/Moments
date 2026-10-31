@@ -4,7 +4,7 @@ export const TEXT = {
   ar: {
     dir: 'rtl',
     title: 'سباق الساعة',
-    tagline: '٢٠ تحدي سريع. أول واحد يكمّل ساعته يفوز.',
+    tagline: '٣٠ تحدي سريع. أول واحد يكمّل ساعته يفوز.',
     rules: ['كلكم نفس التحديات وبنفس الترتيب', 'عندك ٣ قلوب، ثالث غلطة ترجعك من الصفر', 'شوف ساعات الربع تتعبى وانت تلعب'],
     langLabel: 'لغة اللعبة',
     create: 'سوّ غرفة',
@@ -45,7 +45,7 @@ export const TEXT = {
     waitAgain: name => `${name} بيبدأ الجولة الجاية`,
     exit: 'طلعني',
     names: {odd: 'المختلف', stroop: 'لون ولا كلمة؟', geo: 'دولة، مدينة، قارة', sock: 'الجورب الوحيد', memory: 'الذاكرة', vote: 'سؤال الربع', word: 'تحدي الكلمات', boss: 'الوجه المكرر',
-      avoid: 'لا تضغط', scale: 'الأثقل', wallet: 'المحفظة', shadow: 'الظل', tile: 'القطعة الناقصة'},
+      avoid: 'لا تضغط', belong: 'أي واحد مختلف؟', older: 'أيهم أقدم؟', compare: 'أيهم أثقل؟', which: 'أيهم؟', animal: 'وين الحيوان؟', scale: 'الأثقل', wallet: 'المحفظة', shadow: 'الظل', tile: 'القطعة الناقصة'},
     prompts: {odd: 'اضغط على المختلف', sock: 'أي جورب ماله زوج؟', boss: 'أي وجه مكرر؟',
       scale: 'أي مجموعة أثقل؟', wallet: 'أي محفظة فيها فلوس أكثر؟', shadow: 'أي ظل لهذي القطعة؟', tile: 'أي قطعة تكمّل الصورة؟'},
     stroopWord: c => <>اضغط على <b className="cr-stroop-key">كلمة</b> {c}</>,
@@ -53,6 +53,7 @@ export const TEXT = {
     geo: {country: 'اضغط على الدولة', city: 'اضغط على المدينة', continent: 'اضغط على القارة', state: 'اضغط على الولاية الأمريكية'},
     memoryIntro: 'احفظ هذي.',
     memoryNext: 'التالي',
+    animal: name => <>وين <b className="cr-avoid-key">{name.includes(' ') || name.startsWith('ال') ? name : `ال${name}`}</b>؟</>,
     avoid: task => task.rule === 'color'
       ? <>لا تضغط على أي شي <b className="cr-avoid-key">{{blue: 'أزرق', green: 'أخضر', red: 'أحمر', yellow: 'أصفر'}[task.target]}</b></>
       : <>لا تضغط على أي <b className="cr-avoid-key">{{circle: 'دائرة', square: 'مربع', triangle: 'مثلث', star: 'نجمة'}[task.target]}</b></>,
@@ -75,7 +76,7 @@ export const TEXT = {
   en: {
     dir: 'ltr',
     title: 'Clock Race',
-    tagline: '20 quick challenges. First to fill their clock wins.',
+    tagline: '30 quick challenges. First to fill their clock wins.',
     rules: ['Everyone gets the same challenges, in the same order', 'You have 3 hearts. The third mistake sends you back to zero', 'Watch your friends’ clocks fill as you play'],
     langLabel: 'Game language',
     create: 'Create room',
@@ -116,7 +117,7 @@ export const TEXT = {
     waitAgain: name => `${name} will start the next round`,
     exit: 'Leave',
     names: {odd: 'Odd one out', stroop: 'Colour or word?', geo: 'Country, city, continent', sock: 'Lonely sock', memory: 'Memory', vote: 'Friend question', word: 'Word rush', boss: 'Twin faces',
-      avoid: 'Don’t tap', scale: 'Heaviest', wallet: 'Richest wallet', shadow: 'Shadow match', tile: 'Missing piece'},
+      avoid: 'Don’t tap', belong: 'Odd one out', older: 'Which is older?', compare: 'Which is heavier?', which: 'Which one?', animal: 'Find the animal', scale: 'Heaviest', wallet: 'Richest wallet', shadow: 'Shadow match', tile: 'Missing piece'},
     prompts: {odd: 'Tap the odd one out', sock: 'Which sock has no match?', boss: 'Which face appears twice?',
       scale: 'Which group is heaviest?', wallet: 'Which wallet holds the most money?', shadow: 'Which shadow is this toy’s?', tile: 'Which piece completes the picture?'},
     stroopWord: c => <>Tap the <b className="cr-stroop-key">word</b> {c}</>,
@@ -124,6 +125,7 @@ export const TEXT = {
     geo: {country: 'Tap the country', city: 'Tap the city', continent: 'Tap the continent', state: 'Tap the US state'},
     memoryIntro: 'Remember this.',
     memoryNext: 'Next',
+    animal: name => <>Tap the <b className="cr-avoid-key">{name}</b></>,
     avoid: task => task.rule === 'color'
       ? <>Don’t tap anything <b className="cr-avoid-key">{task.target.toUpperCase()}</b></>
       : <>Don’t tap any <b className="cr-avoid-key">{task.target.toUpperCase()}</b></>,

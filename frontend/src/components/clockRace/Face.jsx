@@ -44,15 +44,19 @@ function parse(code) {
 
 function Face({code, mood, color = 0, size}) {
   // The sad face differs from the smiling one by its mouth only: same eyes, colour and size.
+  // wink = the smile with one eye closed; tear = the sad face with a small drop under one eye, drawn
+  // in the eye colour so it hides in the crowd.
   let e, m, c;
   if (mood === 'smile') { e = 0; m = 0; c = color; }
-  else if (mood === 'sad') { e = 0; m = 1; c = color; }
+  else if (mood === 'sad' || mood === 'tear') { e = 0; m = 1; c = color; }
+  else if (mood === 'wink') { e = 2; m = 0; c = color; }
   else ({e, m, c} = parse(code));
   return <svg viewBox="0 0 100 100" width={size} height={size} aria-hidden="true" className="cr-face">
     {!ARCADE && <circle cx="50" cy="52" r="42" fill={INK}/>}
     <circle cx="50" cy="50" r="42" fill={FACE_COLORS[c % FACE_COLORS.length]} stroke={ARCADE ? 'none' : INK} strokeWidth="5"/>
     <ellipse cx="34" cy="26" rx="9" ry="5" fill="#fff" opacity=".55" transform="rotate(-25 34 26)"/>
     {EYES[e % EYES.length]}{MOUTHS[m % MOUTHS.length]}
+    {mood === 'tear' && <path d="M65 49 Q61.5 55.5 61.5 58.5 Q61.5 62 65 62 Q68.5 62 68.5 58.5 Q68.5 55.5 65 49 Z" fill={INK}/>}
   </svg>;
 }
 

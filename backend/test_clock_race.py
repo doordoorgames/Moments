@@ -286,8 +286,8 @@ def test_full_race_every_answer_moves_on_and_first_to_20_wins():
     assert not E.start(g, '', now=100)                    # double tap: one round only
     t_host = t_b = 103
     for k in range(19):
-        t_host, r = walk(g, host['id'], t_host, right=(k % 3 != 0))   # some wrong: still moves on
-        assert r['done'] == k + 1 and r['right'] == (k % 3 != 0) or g['round']['tasks'][k]['type'] == 'vote'
+        t_host, r = walk(g, host['id'], t_host, right=(k not in (0, 9)))   # two wrong (two hearts): still moves on
+        assert r['done'] == k + 1 and r['right'] == (k not in (0, 9)) or g['round']['tasks'][k]['type'] == 'vote'
         t_b, r = walk(g, b['id'], t_b)
     t_b, r = walk(g, b['id'], t_b)
     assert r['done'] == 20 and g['winner'] == b['id'] and g['status'] == 'finished'
@@ -317,18 +317,55 @@ def test_wrong_answer_holds_one_second_and_never_counts_as_right():
     assert ok['changed'] and ok['done'] == i + 2
 
 
-def test_memory_answers_wait_for_the_grid():
+def test_memory_has_no_forced_wait():
     g, host = E.new_room('Khaled')
     E.start(g, '', now=0)
     now = 5
     while g['round']['tasks'][len(g['progress'][host['id']])]['type'] != 'memory':
         now, _ = walk(g, host['id'], now)
     i = len(g['progress'][host['id']])
-    shown = E.reached_at(g, host['id'], i)
     t = g['round']['tasks'][i]
-    r = E.answer(g, host['id'], g['round']['id'], i, t['answer'], now=shown + E.D.MEMORY_SHOW - 1)
-    assert r.get('wait') and not r['changed']
-    assert E.answer(g, host['id'], g['round']['id'], i, t['answer'], now=shown + E.D.MEMORY_SHOW)['right']
+    r = E.answer(g, host['id'], g['round']['id'], i, t['answer'], now=E.reached_at(g, host['id'], i) + 0.5)
+    assert r['changed'] and r['right']                       # the player taps Next whenever ready
+
+
+def test_three_wrong_answers_reset_the_clock_and_refill_hearts():
+    g, host = E.new_room('Khaled')
+    E.start(g, '', now=0)
+    pid, rid, now = host['id'], g['round']['id'], 3
+    for _ in range(4):
+        now, _ = walk(g, pid, now)
+    assert len(g['progress'][pid]) == 4
+    misses = []
+    while True:
+        i = len(g['progress'][pid])
+        t = g['round']['tasks'][i]
+        if t['type'] == 'vote':
+            now, _ = walk(g, pid, now)
+            continue
+        now = max(now, E.reached_at(g, pid, i))
+        r = E.answer(g, pid, rid, i, wrong_value(t), now=now, epoch=0)
+        now += 0.01
+        misses.append(r['misses'])
+        if r.get('reset'):
+            break
+    assert misses == [1, 2, 0] and r['done'] == 0 and r['epoch'] == 1
+    assert g['progress'][pid] == []
+    stale = E.answer(g, pid, rid, 0, 0, now=now + 5, epoch=0)          # a retry from before the reset
+    assert not stale['changed']
+    early = E.answer(g, pid, rid, 0, E.solve(g['round']['tasks'][0], [pid]), now=now, epoch=1)
+    assert early.get('wait')                                            # the heartbreak pause
+    ok = E.answer(g, pid, rid, 0, E.solve(g['round']['tasks'][0], [pid]), now=now + E.RESET_DELAY, epoch=1)
+    assert ok['right'] and ok['done'] == 1 and ok['misses'] == 0
+
+
+def test_odd_face_modes_are_spread():
+    modes = set()
+    for s in range(200):
+        for t in E.gen_round(roster(2), rng=random.Random(s)):
+            if t['type'] == 'odd':
+                modes.add((t['base'], t['mood']))
+    assert modes == set(E.ODD_MODES)
 
 
 def test_late_joiner_waits_for_next_round_and_replay():

@@ -20,7 +20,18 @@ const KEY = code => `clock-race-session:${code}`;
 const LANG_KEY = 'clock-race-lang';
 const GUARD_MS = 180;     // a double tap can't spill onto the next task
 const WRONG_MS = 1000;    // the sad face holds the player this long, then the next task comes
+const RESET_MS = 1600;    // losing the third heart: the clock drains back to 0, then task 1 again (RESET_DELAY on the server)
+const LIVES = 3;
 const STARS_MS = 520;
+
+// Three hearts in the marquee: full ones on the left, emptied ones fade; the last one left pulses red.
+function Hearts({left, label}) {
+  return <span className={`cr-hearts ${left === 1 ? 'is-last' : ''}`} dir="ltr" role="img" aria-label={label(left)}>
+    {Array.from({length: LIVES}, (_, i) => <svg key={i} viewBox="0 0 24 22" className={`cr-heart ${i < left ? 'is-full' : 'is-empty'}`} aria-hidden="true">
+      <path d="M12 21 L2.6 11.8 Q-1 7.6 2 3.6 Q5.6 -0.4 10 2.6 L12 4.4 L14 2.6 Q18.4 -0.4 22 3.6 Q25 7.6 21.4 11.8 Z"/>
+    </svg>)}
+  </span>;
+}
 
 function saved(code) { try { return JSON.parse(localStorage.getItem(KEY(code)) || 'null'); } catch { return null; } }
 function savedLang() {
@@ -77,7 +88,7 @@ export default function ClockRace({onContinue}) {
   const [notice, setNotice] = useState('');
   const [creds, setCreds] = useState(() => code ? saved(code) : null);
   const [game, setGame] = useState(null);
-  const [mine, setMine] = useState({round: null, done: 0});
+  const [mine, setMine] = useState({round: null, done: 0, misses: 0, epoch: 0});
   const [clock, setClock] = useState(Date.now());
   const [toast, setToast] = useState(null);
   const [stars, setStars] = useState(null);
@@ -87,7 +98,7 @@ export default function ClockRace({onContinue}) {
   const t = TEXT[lang] || TEXT.ar;
   const auth = creds ? `Bearer ${creds.player_id}:${creds.token}` : '';
   const offset = useRef(0);
-  const gameRef = useRef(null), mineRef = useRef(mine), queue = useRef([]), pumping = useRef(false), confirmed = useRef({round: null, done: 0});
+  const gameRef = useRef(null), mineRef = useRef(mine), queue = useRef([]), pumping = useRef(false), confirmed = useRef({round: null, done: 0, epoch: 0});
   const guardUntil = useRef(0), locked = useRef(false), wordInput = useRef(null), nickRef = useRef(null), codeRef = useRef(null);
   const toastTimer = useRef(null), starsTimer = useRef(null), point = useRef({x: 0, y: 0});
   const live = useRef({code, auth, t});
@@ -107,14 +118,19 @@ export default function ClockRace({onContinue}) {
   const accept = useCallback(view => {
     offset.current = view.now * 1000 - Date.now();
     setGame(view);
-    const serverDone = view.players.find(p => p.id === view.me)?.done ?? 0;
+    const meP = view.players.find(p => p.id === view.me);
+    const serverDone = meP?.done ?? 0, serverEpoch = meP?.epoch ?? 0, serverMisses = meP?.misses ?? 0;
     const rid = view.round?.id || null;
     const m = mineRef.current;
-    if (confirmed.current.round !== rid) confirmed.current = {round: rid, done: 0};
-    // A slow GET can arrive after a newer answer reply; the count never goes down within a round.
-    const done = Math.max(serverDone, confirmed.current.done);
-    if (m.round !== rid) setMine({round: rid, done});
-    else if (!queue.current.length && !locked.current && done > m.done) setMine({round: rid, done});
+    if (confirmed.current.round !== rid) confirmed.current = {round: rid, done: 0, epoch: 0};
+    // A slow GET can arrive after a newer answer reply; within one life (epoch) the count never goes down.
+    const c = confirmed.current;
+    const fresh = serverEpoch > c.epoch || (serverEpoch === c.epoch && serverDone >= c.done);
+    if (fresh) confirmed.current = {round: rid, done: serverDone, epoch: serverEpoch};
+    const best = confirmed.current;
+    const next = {round: rid, done: best.done, epoch: best.epoch, misses: fresh ? serverMisses : m.misses};
+    if (m.round !== rid) setMine(next);
+    else if (!queue.current.length && !locked.current && (best.epoch > m.epoch || (best.epoch === m.epoch && best.done > m.done))) setMine(next);
   }, []);
 
   const refresh = useCallback(async () => {
@@ -196,11 +212,14 @@ export default function ClockRace({onContinue}) {
         queue.current.splice(0).forEach(j => j.resolve({right: false}));
         job.resolve({right: false, failed: true});
         await refresh();
-        const g = gameRef.current;
-        setMine({round: g?.round?.id || null, done: g?.players.find(p => p.id === g.me)?.done ?? 0});
+        const g = gameRef.current, meP = g?.players.find(p => p.id === g.me);
+        setMine({round: g?.round?.id || null, done: meP?.done ?? 0, misses: meP?.misses ?? 0, epoch: meP?.epoch ?? 0});
         continue;
       }
-      if (job.item.round === confirmed.current.round || confirmed.current.round === null) confirmed.current = {round: job.item.round, done: Math.max(confirmed.current.done, result.done)};
+      if (job.item.round === confirmed.current.round || confirmed.current.round === null) {
+        const c = confirmed.current, e = result.epoch ?? c.epoch;
+        if (e > c.epoch || (e === c.epoch && result.done >= c.done) || c.round === null) confirmed.current = {round: job.item.round, done: result.done, epoch: e};
+      }
       applyRace(result.race);
       if (result.state) accept(result.state);
       job.resolve(result);
@@ -223,7 +242,7 @@ export default function ClockRace({onContinue}) {
   }, []);
 
   const advance = useCallback((rid, next) => {
-    flushSync(() => setMine({round: rid, done: next}));
+    flushSync(() => setMine(m => ({...m, round: rid, done: next})));
     guardUntil.current = Date.now() + GUARD_MS;
     // Opening the keyboard has to happen inside the tap, so Word Rush gets focus right here.
     if (gameRef.current?.round?.tasks[next]?.type === 'word') wordInput.current?.focus();
@@ -237,14 +256,25 @@ export default function ClockRace({onContinue}) {
       if (extra) say(extra, 'word');
       return;
     }
+    // Wrong: one heart goes. The third one empties the clock back to 0 with full hearts.
     locked.current = true;
-    setSad(true);
+    const misses = mineRef.current.misses + 1;
+    const broken = misses >= LIVES;
+    setMine(m => ({...m, misses: broken ? LIVES : misses}));
+    setSad(broken ? 'reset' : true);
+    if (broken) say(t.resetToast, 'reset');
     setTimeout(() => {
       setSad(false);
       locked.current = false;
-      if (mineRef.current.round === rid && mineRef.current.done === i) advance(rid, i + 1);
-    }, WRONG_MS);
-  }, [advance, burst, say]);
+      const m = mineRef.current;
+      if (m.round !== rid || m.done !== i) return;
+      if (broken) {
+        flushSync(() => setMine(x => ({...x, round: rid, done: 0, misses: 0, epoch: x.epoch + 1})));
+        guardUntil.current = Date.now() + GUARD_MS;
+        if (gameRef.current?.round?.tasks[0]?.type === 'word') wordInput.current?.focus();
+      } else advance(rid, i + 1);
+    }, broken ? RESET_MS : WRONG_MS);
+  }, [advance, burst, say, t]);
 
   const pick = useCallback(value => {
     const g = gameRef.current, m = mineRef.current;
@@ -253,7 +283,7 @@ export default function ClockRace({onContinue}) {
     const i = m.done, task = g.round.tasks[i];
     if (!task) return;
     const right = !!localCheck(task, value, g.roster.map(p => p.id));
-    enqueue({round: g.round.id, task: i, answer: value});
+    enqueue({round: g.round.id, task: i, answer: value, epoch: m.epoch});
     if (right && task.type === 'vote') say(t.reactions[Math.floor(Math.random() * t.reactions.length)]);
     settle(g.round.id, i, right);
   }, [enqueue, say, settle, t]);
@@ -263,7 +293,7 @@ export default function ClockRace({onContinue}) {
     if (!g?.round || g.status !== 'racing' || locked.current) return;
     const i = m.done;
     locked.current = true;
-    const r = await enqueue({round: g.round.id, task: i, answer: text});
+    const r = await enqueue({round: g.round.id, task: i, answer: text, epoch: m.epoch});
     locked.current = false;
     if (r.failed || mineRef.current.done !== i) return;
     settle(g.round.id, i, !!r.right, r.word);
@@ -321,7 +351,7 @@ export default function ClockRace({onContinue}) {
   const inRace = !!game?.roster?.some(p => p.id === me);
   const round = game?.round;
   const pos = round && mine.round === round.id ? mine.done : 0;
-  const players = useMemo(() => (game?.players || []).map(p => p.id === me && round && mine.round === round.id ? {...p, done: Math.max(p.done, mine.done)} : p), [game?.players, me, round, mine]);
+  const players = useMemo(() => (game?.players || []).map(p => p.id === me && round && mine.round === round.id ? {...p, done: mine.done} : p), [game?.players, me, round, mine]);
   const task = round && pos < 20 ? round.tasks[pos] : null;
   const winner = game?.players.find(p => p.id === game.winner);
   const View = task ? TASK_VIEWS[task.type] : null;
@@ -415,9 +445,10 @@ export default function ClockRace({onContinue}) {
       : task && View ? cabinet(`cr-stage-${task.type}`,
         <div className="cr-task-head">
           <span className="cr-count" dir="ltr">{t.task(pos + 1, 20)}</span>
+          <Hearts left={LIVES - (mine.round === round.id ? mine.misses : 0)} label={t.hearts}/>
           {boss && <span className="cr-boss-stamp">{t.bossStamp}</span>}
         </div>,
-        <div className="cr-play" key={`${round.id}-${pos}`}>
+        <div className="cr-play" key={`${round.id}-${mine.epoch}-${pos}`}>
           {prompt && <h2 className="cr-prompt" dir="auto">{prompt}</h2>}
           <div className="cr-task-body">
             <View task={task} t={t} lang={lang} onPick={pick} onWord={word} inputRef={wordInput} roster={game.roster} players={game.players} me={me}/>
@@ -427,7 +458,7 @@ export default function ClockRace({onContinue}) {
     {counting && <div className="cr-countdown" aria-live="assertive"><span key={seconds}>{seconds}</span></div>}
     {!counting && game.status === 'racing' && clock - startsAt < 700 && inRace && pos === 0 && <div className="cr-countdown is-go"><span>{t.go}</span></div>}
     {stars && <Stars key={`s${stars.id}`} x={stars.x} y={stars.y}/>}
-    {sad && <div className="cr-sad" role="status" aria-label="wrong"><div className="cr-sad-face"><Face mood="sad" color={0}/></div></div>}
+    {sad && <div className={`cr-sad ${sad === 'reset' ? 'is-reset' : ''}`} role="status" aria-label="wrong"><div className="cr-sad-face"><Face mood="sad" color={0}/></div></div>}
     {toast && <div className={`cr-toast is-${toast.kind}`} key={`t${toast.id}`} dir="auto">{toast.text}</div>}
     {game.status === 'finished' && <div className="cr-finish" role="dialog" aria-modal="true" aria-labelledby="cr-finish-title">
       <div className="cr-finish-card">

@@ -14,7 +14,7 @@ import secrets
 import time
 from collections import defaultdict
 from datetime import datetime, timezone
-from typing import Any, Literal
+from typing import Any, Literal, Optional
 
 from cryptography.fernet import Fernet, InvalidToken
 from fastapi import APIRouter, Header, HTTPException, Response, WebSocket, WebSocketDisconnect
@@ -42,6 +42,7 @@ class Answer(BaseModel):
     round: str = Field(max_length=40)
     task: int = Field(ge=0, lt=engine.TASKS)
     answer: Any = None
+    epoch: Optional[int] = Field(default=None, ge=0)
 
 
 class Dev(BaseModel):
@@ -173,7 +174,7 @@ def router(db, query):
             me = auth(g, authorization)
             moved = engine.sync_bots(g)
             try:
-                result = engine.answer(g, me['id'], body.round, body.task, body.answer)
+                result = engine.answer(g, me['id'], body.round, body.task, body.answer, epoch=body.epoch)
             except engine.GameError as e:
                 if moved:
                     await save(code, g, old)

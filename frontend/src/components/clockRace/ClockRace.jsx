@@ -433,7 +433,7 @@ export default function ClockRace({onContinue}) {
 
   const boss = task?.type === 'boss';
   const prompt = !task ? null : task.type === 'vote' ? round.question : task.type === 'stroop' ? stroopPrompt(task, t, lang)
-    : task.type === 'geo' ? t.geo[task.variant] : t.prompts[task.type]; // Word Rush and memory draw their own headings
+    : task.type === 'geo' ? t.geo[task.variant] : task.type === 'avoid' ? t.avoid(task) : t.prompts[task.type]; // Word Rush and memory draw their own headings
   return shell(`cr-race ${boss ? 'is-boss' : ''} ${task?.type === 'vote' ? 'is-vote' : ''}`, <>
     <Backdrop/>
     <header className="cr-top">

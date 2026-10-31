@@ -263,3 +263,20 @@ export function MissingTile({task, onPick}) {
     </div>
   </div>;
 }
+
+// ------------------------------------------------------------------ لا تضغط: nine buttons, one rule (by colour or by shape)
+export const AVOID_COLORS = {blue: '#4F86D9', green: '#4DB574', red: '#E2504A', yellow: '#F2C33C'};
+const AVOID_SHAPE = {
+  circle: <circle cx="50" cy="50" r="40"/>,
+  square: <rect x="12" y="12" width="76" height="76"/>,
+  triangle: <polygon points="50,8 92,88 8,88"/>,
+  star: <polygon points="50,6 61,38 95,38 67,58 78,92 50,71 22,92 33,58 5,38 39,38"/>,
+};
+
+export function DontTap({task, onPick}) {
+  return <div className="cr-avoid">
+    {task.items.map(([c, sh], i) => <button key={i} type="button" className="cr-avoid-cell" aria-label={`${c} ${sh}`} {...tap(() => onPick(i))}>
+      <svg viewBox="0 0 100 100" aria-hidden="true"><g fill={AVOID_COLORS[c]}>{AVOID_SHAPE[sh]}</g></svg>
+    </button>)}
+  </div>;
+}

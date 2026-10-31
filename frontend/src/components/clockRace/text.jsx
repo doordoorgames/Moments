@@ -45,7 +45,7 @@ export const TEXT = {
     waitAgain: name => `${name} بيبدأ الجولة الجاية`,
     exit: 'طلعني',
     names: {odd: 'المختلف', stroop: 'لون ولا كلمة؟', geo: 'دولة، مدينة، قارة', sock: 'الجورب الوحيد', memory: 'الذاكرة', vote: 'سؤال الربع', word: 'تحدي الكلمات', boss: 'الوجه المكرر',
-      scale: 'الأثقل', wallet: 'المحفظة', shadow: 'الظل', tile: 'القطعة الناقصة'},
+      avoid: 'لا تضغط', scale: 'الأثقل', wallet: 'المحفظة', shadow: 'الظل', tile: 'القطعة الناقصة'},
     prompts: {odd: 'اضغط على المختلف', sock: 'أي جورب ماله زوج؟', boss: 'أي وجه مكرر؟',
       scale: 'أي مجموعة أثقل؟', wallet: 'أي محفظة فيها فلوس أكثر؟', shadow: 'أي ظل لهذي القطعة؟', tile: 'أي قطعة تكمّل الصورة؟'},
     stroopWord: c => <>اضغط على <b className="cr-stroop-key">كلمة</b> {c}</>,
@@ -53,6 +53,9 @@ export const TEXT = {
     geo: {country: 'اضغط على الدولة', city: 'اضغط على المدينة', continent: 'اضغط على القارة', state: 'اضغط على الولاية الأمريكية'},
     memoryIntro: 'احفظ هذي.',
     memoryNext: 'التالي',
+    avoid: task => task.rule === 'color'
+      ? <>لا تضغط على أي شي <b className="cr-avoid-key">{{blue: 'أزرق', green: 'أخضر', red: 'أحمر', yellow: 'أصفر'}[task.target]}</b></>
+      : <>لا تضغط على أي <b className="cr-avoid-key">{{circle: 'دائرة', square: 'مربع', triangle: 'مثلث', star: 'نجمة'}[task.target]}</b></>,
     hearts: n => `باقي ${n}`,
     resetToast: 'من الصفر!',
     memoryAsk: 'أي حرف كان موجود؟',
@@ -113,7 +116,7 @@ export const TEXT = {
     waitAgain: name => `${name} will start the next round`,
     exit: 'Leave',
     names: {odd: 'Odd one out', stroop: 'Colour or word?', geo: 'Country, city, continent', sock: 'Lonely sock', memory: 'Memory', vote: 'Friend question', word: 'Word rush', boss: 'Twin faces',
-      scale: 'Heaviest', wallet: 'Richest wallet', shadow: 'Shadow match', tile: 'Missing piece'},
+      avoid: 'Don’t tap', scale: 'Heaviest', wallet: 'Richest wallet', shadow: 'Shadow match', tile: 'Missing piece'},
     prompts: {odd: 'Tap the odd one out', sock: 'Which sock has no match?', boss: 'Which face appears twice?',
       scale: 'Which group is heaviest?', wallet: 'Which wallet holds the most money?', shadow: 'Which shadow is this toy’s?', tile: 'Which piece completes the picture?'},
     stroopWord: c => <>Tap the <b className="cr-stroop-key">word</b> {c}</>,
@@ -121,6 +124,9 @@ export const TEXT = {
     geo: {country: 'Tap the country', city: 'Tap the city', continent: 'Tap the continent', state: 'Tap the US state'},
     memoryIntro: 'Remember this.',
     memoryNext: 'Next',
+    avoid: task => task.rule === 'color'
+      ? <>Don’t tap anything <b className="cr-avoid-key">{task.target.toUpperCase()}</b></>
+      : <>Don’t tap any <b className="cr-avoid-key">{task.target.toUpperCase()}</b></>,
     hearts: n => `${n} left`,
     resetToast: 'Back to zero!',
     memoryAsk: 'Which letter was there?',

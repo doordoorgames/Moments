@@ -11,6 +11,7 @@ export function localCheck(task, value, rosterIds = []) {
     case 'wallet':
     case 'shadow':
     case 'tile': return value === task.answer;
+    case 'avoid': return (task.safe || []).includes(value);
     case 'vote': return rosterIds.includes(value);
     case 'boss': return task.faces?.[value] === task.answer;
     default: return null; // not checkable here

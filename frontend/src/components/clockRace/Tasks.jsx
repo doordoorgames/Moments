@@ -5,6 +5,7 @@ import {PLAYER_COLORS} from './Dials';
 import {GEO, STROOP} from './content';
 import {GEO_SHAPES} from './geoShapes';
 import {Heaviest, Wallet, Shadow, MissingTile, DontTap} from './NewTasks';
+import {PictureQuiz} from './PictureTasks';
 
 // Taps count on finger-down (no wait for release); keyboard Enter/Space still works through click.
 const tap = fn => ({
@@ -85,10 +86,11 @@ const TILTS = [-2.5, 2, -1.5, 2.5, -2, 1.5];
 export function FriendVote({task, roster, players, me, t, onPick}) {
   const byId = useMemo(() => Object.fromEntries(players.map(p => [p.id, p])), [players]);
   const names = Object.fromEntries(roster.map(p => [p.id, p.name]));
-  const many = task.order.length > 6;
+  const order = task.order.filter(id => id !== me); // never your own name
+  const many = order.length > 6;
   return <div className={`cr-vote ${many ? 'is-many' : ''}`}>
     <p className="cr-vote-hint">{t.voteHint}</p>
-    <div className="cr-tags">{task.order.map((id, i) => {
+    <div className="cr-tags">{order.map((id, i) => {
       const color = PLAYER_COLORS[(byId[id]?.color ?? i) % PLAYER_COLORS.length];
       return <button key={id} type="button" className="cr-tag" style={{'--tag': color, '--tilt': `${TILTS[i % TILTS.length]}deg`}} {...tap(() => onPick(id))}>
         <span className="cr-tag-body"><span className="cr-tag-hole"/><span className="cr-tag-name" dir="auto">{names[id] || '?'}</span>
@@ -137,4 +139,5 @@ export function FinalBoss({task, onPick}) {
 
 export const TASK_VIEWS = {odd: OddFace, stroop: Stroop, geo: Geography, sock: LonelySock, memory: Memory,
   vote: FriendVote, word: WordRush, boss: FinalBoss,
-  scale: Heaviest, wallet: Wallet, shadow: Shadow, tile: MissingTile, avoid: DontTap};
+  scale: Heaviest, wallet: Wallet, shadow: Shadow, tile: MissingTile, avoid: DontTap,
+  belong: PictureQuiz, older: PictureQuiz, compare: PictureQuiz, which: PictureQuiz, animal: PictureQuiz};

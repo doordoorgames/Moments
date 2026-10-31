@@ -66,7 +66,7 @@ def test_race_over_http(client):
     state = c.post(url + '/start', json={'round': ''}, headers=h(host)).json()
     rid = state['round']['id']
     assert c.post(url + '/start', json={'round': ''}, headers=h(host)).json()['round']['id'] == rid
-    assert len(state['round']['tasks']) == 20 and state['round']['tasks'][10]['type'] == 'vote'
+    assert len(state['round']['tasks']) == E.TASKS and 'vote' not in [t['type'] for t in state['round']['tasks']]  # 2 people
     assert c.get(url, headers=h(guest)).json()['round']['tasks'] == state['round']['tasks']
     ids = [p['id'] for p in state['roster']]
     # first answer wrong: it still moves the guest on, and is recorded as wrong
@@ -74,14 +74,14 @@ def test_race_over_http(client):
     assert r['right'] is False and r['done'] == 1
     again = c.post(url + '/answer', json={'round': rid, 'task': 0, 'answer': E.solve(state['round']['tasks'][0], ids)}, headers=h(guest)).json()
     assert again['right'] is False and again['done'] == 1                        # no second try
-    for i in range(1, 20):
+    for i in range(1, E.TASKS):
         t = state['round']['tasks'][i]
-        value = guest['player_id'] if t['type'] == 'vote' else E.solve(t, ids)  # voting for yourself works
+        value = E.solve(t, ids)
         r = c.post(url + '/answer', json={'round': rid, 'task': i, 'answer': value}, headers=h(guest)).json()
         assert r['right'] and r['done'] == i + 1
     assert r['state']['status'] == 'finished' and r['state']['winner'] == guest['player_id']
     me = [p for p in r['state']['players'] if p['id'] == guest['player_id']][0]
-    assert me['done'] == 20 and me['right'] == 19
+    assert me['done'] == E.TASKS and me['right'] == E.TASKS - 1
     assert 'token' not in str(r['state'])
 
 
@@ -92,12 +92,12 @@ def test_test99_bot_runs_on_the_server_clock(client, monkeypatch):
     assert [p['name'] for p in dev['state']['players']] == ['test99', 'Test Bot']
     s = c.post(url + '/start', json={'round': ''}, headers=h(dev)).json()
     bot = s['players'][1]['id']
-    assert len(s['bots'][bot]) == 20
+    assert len(s['bots'][bot]) == E.TASKS
     real = E.time.time
     monkeypatch.setattr(E.time, 'time', lambda: real() + 1000)                  # the phone slept; time went on
     v = c.get(url, headers=h(dev)).json()
     assert v['status'] == 'finished' and v['winner'] == bot
-    assert [p['done'] for p in v['players'] if p['id'] == bot] == [20]
+    assert [p['done'] for p in v['players'] if p['id'] == bot] == [E.TASKS]
 
 
 def test_dev_only_in_test99(client):

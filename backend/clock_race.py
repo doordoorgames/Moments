@@ -18,20 +18,25 @@ import uuid
 
 import clock_race_ar as AR
 import clock_race_data as D
+import clock_race_bank as K
 
-VERSION = 6
+VERSION = 7
 MAX_PLAYERS = 12
-TASKS = 20
-VOTE_AT = 10    # task 11 (0-based)
-BOSS_AT = 19    # task 20
+TASKS = 30
+VOTE_AT = 15    # task 16 (0-based), only when 3+ people are racing
+BOSS_AT = 29    # task 30
+VOTE_MIN_HUMANS = 3
 COUNTDOWN = 3.0  # seconds between START and the first tap counting, so every phone starts together
 WRONG_DELAY = 1.0  # a wrong answer holds the player this long before the next task
 LIVES = 3          # three hearts; losing the third sends the player's clock back to 0
 RESET_DELAY = 1.6  # the heartbreak screen holds the player this long before task 1 again
 GRACE = 0.25     # network slack on the server-side waits
 NAME_MAX = 24
-ORDINARY_MIX = {'odd': 2, 'stroop': 2, 'geo': 2, 'sock': 2, 'memory': 2,
-                'scale': 2, 'wallet': 1, 'shadow': 1, 'tile': 1, 'avoid': 2}  # 17; one fewer with 2 Word Rush
+# 30 tasks = 16 picture comparisons + 14 of the original challenges (boss included, vote when 3+ people).
+PICTURE_MIX = {'belong': 5, 'older': 4, 'compare': 4, 'which': 3}
+ORDINARY_MIX = {'odd': 1, 'stroop': 1, 'geo': 1, 'sock': 1, 'memory': 1, 'avoid': 1,
+                'scale': 1, 'wallet': 1, 'shadow': 1, 'tile': 1, 'animal': 1}
+EXTRA_POOL = ['odd', 'stroop', 'avoid', 'sock', 'geo']  # fills the slots the vote or a 2nd Word Rush doesn't take  # 17; one fewer with 2 Word Rush
 # The memory grid is the only letter challenge: 1 or 2 a round (half of v2's ~3 letter tasks).
 WORD_VARIANTS = ('pair', 'country', 'fruit')
 TYPO_MIN_LENGTH = 5  # one-typo forgiveness only for words this long or longer
@@ -40,7 +45,8 @@ BOT_NAMES = ['نورة', 'سارة', 'فهد', 'دانة', 'عبدالله', 'ش
 # Simulated players: typical seconds per task type (measured feel: taps ~2-3s, typing ~7s,
 # memory = 12s of grid + the answer). Each task varies 0.7x-1.35x and ~12% are "wrong" (+1s).
 BOT_SECONDS = {'odd': 2.4, 'stroop': 2.2, 'geo': 2.6, 'sock': 3.4, 'memory': 7.0,
-               'word': 7.5, 'vote': 2.0, 'boss': 5.5, 'scale': 4.5, 'wallet': 4.5, 'shadow': 3.0, 'tile': 3.0, 'avoid': 2.3}
+               'word': 7.5, 'vote': 2.0, 'boss': 5.5, 'scale': 4.5, 'wallet': 4.5, 'shadow': 3.0, 'tile': 3.0, 'avoid': 2.3,
+               'belong': 3.8, 'older': 3.4, 'compare': 3.0, 'which': 3.4, 'animal': 2.2}
 BOT_WRONG = 0.12
 
 
@@ -227,8 +233,9 @@ def gen_word(rng, lang, variant):
 
 
 def gen_vote(rng, roster, avoid=None):
+    """The friend question: every person racing (no test bots); each phone hides its own name."""
     options = [i for i in range(len(D.QUESTIONS)) if i != avoid] or list(range(len(D.QUESTIONS)))
-    order = [p['id'] for p in roster]
+    order = [p['id'] for p in roster if not p.get('sim')]
     rng.shuffle(order)
     return dict(type='vote', question=rng.choice(options), order=order)
 
@@ -369,7 +376,8 @@ def signature(t):
     keys = {'odd': ('rows', 'cols', 'odd', 'base', 'mood'), 'stroop': ('mode', 'target', 'choices'),
             'geo': ('variant', 'items'), 'sock': ('socks',), 'memory': ('grid',),
             'word': ('variant', 'first', 'last', 'letter'), 'vote': ('question',), 'boss': ('faces',),
-            'scale': ('groups',), 'wallet': ('wallets',), 'shadow': ('cells',), 'tile': ('scene', 'seed'), 'avoid': ('rule', 'target', 'items')}[t['type']]
+            'scale': ('groups',), 'wallet': ('wallets',), 'shadow': ('cells',), 'tile': ('scene', 'seed'), 'avoid': ('rule', 'target', 'items'),
+            'belong': ('qid',), 'older': ('qid',), 'compare': ('qid',), 'which': ('qid',), 'animal': ('options',)}[t['type']]
     return repr((t['type'],) + tuple(repr(t.get(k)) for k in keys))
 
 
@@ -399,30 +407,62 @@ def gen_avoid(rng, lang, rule=None):
     return dict(type='avoid', rule=rule, target=target, items=items, safe=safe)
 
 
-NEW_GENS = {'avoid': gen_avoid, 'scale': gen_scale, 'wallet': gen_wallet, 'shadow': gen_shadow, 'tile': gen_tile}
-ANSWER_KINDS = ('stroop', 'geo', 'sock', 'scale', 'wallet', 'shadow', 'tile')
+# ------------------------------------------------------------------ picture comparisons (question bank)
+TWO_LAYOUTS = ['pair', 'vs', 'panels']
+FOUR_LAYOUTS = ['board', 'table']
+
+
+def gen_picture(rng, kind, used=(), seen=()):
+    """One question from the bank: never twice in a round, and not one from recent rounds while
+    fresh ones are left. Answer positions are shuffled; the fact stays on the server."""
+    pool = [x for x in K.BY_KIND[kind] if x['id'] not in used]
+    fresh = [x for x in pool if x['id'] not in seen]
+    x = rng.choice(fresh or pool or K.BY_KIND[kind])
+    options = [list(o) for o in x['options']]
+    right = options[0][0]
+    rng.shuffle(options)
+    layout = rng.choice(FOUR_LAYOUTS if len(options) == 4 else TWO_LAYOUTS)
+    return dict(type=kind, qid=x['id'], ar=x['ar'], en=x['en'], options=options,
+                answer=[o[0] for o in options].index(right), layout=layout)
+
+
+def gen_animal(rng, lang):
+    """Four painted animals; tap the one named."""
+    picks = rng.sample(K.ANIMALS, 4)
+    target = picks[0]
+    rng.shuffle(picks)
+    return dict(type='animal', target=list(target), options=[list(a) for a in picks],
+                answer=picks.index(target), layout=rng.choice(FOUR_LAYOUTS))
+
+
+NEW_GENS = {'animal': gen_animal, 'avoid': gen_avoid, 'scale': gen_scale, 'wallet': gen_wallet, 'shadow': gen_shadow, 'tile': gen_tile}
+ANSWER_KINDS = ('stroop', 'geo', 'sock', 'scale', 'wallet', 'shadow', 'tile', 'animal') + K.KINDS
 
 SPREAD = 3      # a type never comes back within 3 tasks
 OPENING = 5     # the first five tasks are five different challenges
 
 
-def plan_types(rng):
-    """The 20 task types: vote at 11, boss at 20, 1-2 Word Rush, the rest from ORDINARY_MIX.
+def plan_types(rng, vote=True):
+    """The 30 task types: 16 picture comparisons (PICTURE_MIX) and 14 of the originals: the boss at 30,
+    the friend vote at 16 when 3+ people race, 1-2 Word Rush, the rest from ORDINARY_MIX and EXTRA_POOL.
     Variety first: the opening five are all different, a type never repeats within SPREAD tasks,
     and no face task right before the face boss."""
-    words = rng.choice([1, 2])
     mix = dict(ORDINARY_MIX)
-    if rng.random() < 0.5:   # one memory grid instead of two; the slot goes to a face task
-        mix['memory'] -= 1
-        mix['odd'] += 1
-    if words == 2:
-        mix[rng.choice(['sock', 'odd', 'stroop'])] -= 1
+    mix.update(PICTURE_MIX)
+    room = (TASKS - 1 - (1 if vote else 0)) - sum(mix.values())
+    words = rng.choice([1, min(2, room)])
     mix['word'] = words
+    extra = room - words
+    for k in rng.sample(EXTRA_POOL, extra):
+        mix[k] += 1
+    fixed = {BOSS_AT: 'boss'}
+    if vote:
+        fixed[VOTE_AT] = 'vote'
     while True:
         left, types, ok = dict(mix), [], True
         for i in range(TASKS):
-            if i in (VOTE_AT, BOSS_AT):
-                types.append('vote' if i == VOTE_AT else 'boss')
+            if i in fixed:
+                types.append(fixed[i])
                 continue
             recent = types[max(0, i - SPREAD + 1):]
             options = [k for k, n in left.items() if n and k not in recent
@@ -439,9 +479,10 @@ def plan_types(rng):
             return types
 
 
-def gen_round(roster, lang='ar', avoid_question=None, rng=None, avoid=()):
+def gen_round(roster, lang='ar', avoid_question=None, rng=None, avoid=(), seen_q=()):
     rng = rng or random.SystemRandom()
-    types = plan_types(rng)
+    humans = sum(1 for p in roster if not p.get('sim'))
+    types = plan_types(rng, vote=humans >= VOTE_MIN_HUMANS)
     variants = rng.sample(WORD_VARIANTS, types.count('word'))
     # spread the variations: both Stroop modes, different geography kinds (Texas at most once)
     stroop_modes = iter(rng.sample(['word', 'color', 'word', 'color'], 4))
@@ -466,6 +507,8 @@ def gen_round(roster, lang='ar', avoid_question=None, rng=None, avoid=()):
                 t = gen_sock(rng, lang)
             elif kind == 'memory':
                 t = gen_memory(rng, lang)
+            elif kind in K.KINDS:
+                t = gen_picture(rng, kind, {x.get('qid') for x in tasks}, seen_q)
             elif kind == 'avoid':
                 t = gen_avoid(rng, lang, ['color', 'shape'][sum(x['type'] == 'avoid' for x in tasks) % 2])
             elif kind in NEW_GENS:
@@ -602,10 +645,12 @@ def start(g, round_id, now=None, rng=None):
     current = g['round']['id'] if g['round'] else ''
     if round_id != current or g['status'] == 'racing':
         return False
-    roster = [dict(id=p['id'], name=p['name']) for p in g['players']]
-    tasks = gen_round(roster, g['lang'], g['last_question'], rng, g.get('seen', []))
+    roster = [dict(id=p['id'], name=p['name'], sim=bool(p['sim'])) for p in g['players']]
+    tasks = gen_round(roster, g['lang'], g['last_question'], rng, g.get('seen', []), g.get('seen_q', []))
+    g['seen_q'] = (g.get('seen_q', []) + [t['qid'] for t in tasks if t.get('qid')])[-90:]
     g['seen'] = (g.get('seen', []) + [signature(t) for t in tasks if t['type'] in ('memory', 'avoid') + ANSWER_KINDS])[-120:]
-    g['last_question'] = tasks[VOTE_AT]['question']
+    if tasks[VOTE_AT]['type'] == 'vote':
+        g['last_question'] = tasks[VOTE_AT]['question']
     g['round'] = dict(id=uuid.uuid4().hex[:12], tasks=tasks, starts_at=now + COUNTDOWN)
     g['roster'] = roster
     g['progress'] = {p['id']: [] for p in roster}  # per task: [seconds after start, right?]
@@ -658,6 +703,13 @@ def reached_at(g, pid, index):
     return g['round']['starts_at'] + t + (0.0 if ok else WRONG_DELAY)
 
 
+def vote_choices(g, task, pid):
+    """Who a player may pick: in the friend question everyone racing except themselves."""
+    if task['type'] == 'vote':
+        return [i for i in task['order'] if i != pid]
+    return [p['id'] for p in g['roster']]
+
+
 def lives(g, pid):
     return g.setdefault('lives', {}).setdefault(pid, dict(misses=0, epoch=0, reset_at=0.0))
 
@@ -685,7 +737,7 @@ def answer(g, pid, round_id, index, value, now=None, epoch=None):
     ready = reached_at(g, pid, index) + show_time(task) - GRACE
     if now < ready:
         return dict(right=False, done=count, word=None, changed=False, wait=round(ready - now + 0.05, 2), **same)
-    right, word = correct(task, value, [p['id'] for p in g['roster']])
+    right, word = correct(task, value, vote_choices(g, task, pid))
     at = round(max(0.0, now - g['round']['starts_at']), 3)
     if not right and pid not in g.get('bots', {}):
         life['misses'] += 1
@@ -737,7 +789,7 @@ def view(g, pid, now=None):
                       epoch=g.get('lives', {}).get(p['id'], {}).get('epoch', 0)) for p in g['players']],
         lives=LIVES,
         round=dict(id=r['id'], starts_at=r['starts_at'], tasks=r['tasks'],
-                   question=D.QUESTIONS[r['tasks'][VOTE_AT]['question']][lang_i]) if r else None,
+                   question=D.QUESTIONS[r['tasks'][VOTE_AT]['question']][lang_i] if r['tasks'][VOTE_AT]['type'] == 'vote' else None) if r else None,
         roster=g['roster'],
         # bot finish times (seconds after the start), so every phone can move the bot's clock smoothly
         bots={b: [t for t, _ in plan] for b, plan in g.get('bots', {}).items()} if r else {},

@@ -10,7 +10,12 @@ export function localCheck(task, value, rosterIds = []) {
     case 'scale':
     case 'wallet':
     case 'shadow':
-    case 'tile': return value === task.answer;
+    case 'tile':
+    case 'belong':
+    case 'older':
+    case 'compare':
+    case 'which':
+    case 'animal': return value === task.answer;
     case 'avoid': return (task.safe || []).includes(value);
     case 'vote': return rosterIds.includes(value);
     case 'boss': return task.faces?.[value] === task.answer;
@@ -19,7 +24,10 @@ export function localCheck(task, value, rosterIds = []) {
 }
 
 // Who is where in the race: clock fill as a fraction.
-export const fraction = (done, total = 20) => Math.max(0, Math.min(1, done / total));
+// Tasks in a race (TASKS on the server).
+export const TOTAL = 30;
+
+export const fraction = (done, total = TOTAL) => Math.max(0, Math.min(1, done / total));
 
 // A simulated player's tasks done at `elapsed` seconds after the start, from its schedule.
 export const botDone = (schedule, elapsed) => (schedule || []).filter(t => t <= elapsed).length;

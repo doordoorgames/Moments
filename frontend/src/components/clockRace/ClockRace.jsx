@@ -8,8 +8,9 @@ import {normalizeCode, validRoomCode} from '../plotTwist/roomCode';
 import Dials, {Dial, PLAYER_COLORS} from './Dials';
 import Face from './Face';
 import {TASK_VIEWS, stroopPrompt} from './Tasks';
+import {picturePrompt} from './PictureTasks';
 import {GEO} from './content';
-import {localCheck} from './localCheck';
+import {TOTAL, localCheck} from './localCheck';
 import {TEXT} from './text';
 import {ARCADE, ARCADE_VARS} from './theme';
 import './clockRace.css';
@@ -352,7 +353,7 @@ export default function ClockRace({onContinue}) {
   const round = game?.round;
   const pos = round && mine.round === round.id ? mine.done : 0;
   const players = useMemo(() => (game?.players || []).map(p => p.id === me && round && mine.round === round.id ? {...p, done: mine.done} : p), [game?.players, me, round, mine]);
-  const task = round && pos < 20 ? round.tasks[pos] : null;
+  const task = round && pos < TOTAL ? round.tasks[pos] : null;
   const winner = game?.players.find(p => p.id === game.winner);
   const View = task ? TASK_VIEWS[task.type] : null;
   const seconds = Math.max(1, Math.ceil((startsAt - clock) / 1000));
@@ -433,7 +434,9 @@ export default function ClockRace({onContinue}) {
 
   const boss = task?.type === 'boss';
   const prompt = !task ? null : task.type === 'vote' ? round.question : task.type === 'stroop' ? stroopPrompt(task, t, lang)
-    : task.type === 'geo' ? t.geo[task.variant] : task.type === 'avoid' ? t.avoid(task) : t.prompts[task.type]; // Word Rush and memory draw their own headings
+    : task.type === 'geo' ? t.geo[task.variant] : task.type === 'avoid' ? t.avoid(task)
+    : ['belong', 'older', 'compare', 'which'].includes(task.type) ? picturePrompt(task, lang)
+    : task.type === 'animal' ? t.animal(lang === 'ar' ? task.target[1] : task.target[2]) : t.prompts[task.type]; // Word Rush and memory draw their own headings
   return shell(`cr-race ${boss ? 'is-boss' : ''} ${task?.type === 'vote' ? 'is-vote' : ''}`, <>
     <Backdrop/>
     <header className="cr-top">
@@ -444,7 +447,7 @@ export default function ClockRace({onContinue}) {
     {!inRace ? cabinet('', null, <p className="cr-spectate">{t.spectating}</p>)
       : task && View ? cabinet(`cr-stage-${task.type}`,
         <div className="cr-task-head">
-          <span className="cr-count" dir="ltr">{t.task(pos + 1, 20)}</span>
+          <span className="cr-count" dir="ltr">{t.task(pos + 1, TOTAL)}</span>
           <Hearts left={LIVES - (mine.round === round.id ? mine.misses : 0)} label={t.hearts}/>
           {boss && <span className="cr-boss-stamp">{t.bossStamp}</span>}
         </div>,
@@ -454,7 +457,7 @@ export default function ClockRace({onContinue}) {
             <View task={task} t={t} lang={lang} onPick={pick} onWord={word} inputRef={wordInput} roster={game.roster} players={game.players} me={me}/>
           </div>
         </div>)
-      : cabinet('', null, <div className="cr-done-wait"><Dial done={20} color={PLAYER_COLORS[(game.players.find(p => p.id === me)?.color || 0) % 12]} size={120} big/></div>)}
+      : cabinet('', null, <div className="cr-done-wait"><Dial done={TOTAL} color={PLAYER_COLORS[(game.players.find(p => p.id === me)?.color || 0) % 12]} size={120} big/></div>)}
     {counting && <div className="cr-countdown" aria-live="assertive"><span key={seconds}>{seconds}</span></div>}
     {!counting && game.status === 'racing' && clock - startsAt < 700 && inRace && pos === 0 && <div className="cr-countdown is-go"><span>{t.go}</span></div>}
     {stars && <Stars key={`s${stars.id}`} x={stars.x} y={stars.y}/>}
@@ -463,11 +466,11 @@ export default function ClockRace({onContinue}) {
     {game.status === 'finished' && <div className="cr-finish" role="dialog" aria-modal="true" aria-labelledby="cr-finish-title">
       <div className="cr-finish-card">
         <span className="cr-finish-kicker">{t.winnerTitle}</span>
-        {winner && <Dial done={20} color={PLAYER_COLORS[winner.color % PLAYER_COLORS.length]} size={124} big/>}
+        {winner && <Dial done={TOTAL} color={PLAYER_COLORS[winner.color % PLAYER_COLORS.length]} size={124} big/>}
         <h2 id="cr-finish-title" dir="auto">{winner?.id === me ? t.youWon : t.won(winner?.name || '')}</h2>
         <ol className="cr-results">{[...players].filter(p => p.racing).sort((a, b) => (b.id === game.winner) - (a.id === game.winner) || b.done - a.done || (b.right || 0) - (a.right || 0)).map(p =>
           <li key={p.id} className={p.id === me ? 'is-me' : ''}><i style={{background: PLAYER_COLORS[p.color % PLAYER_COLORS.length]}}/><span dir="auto">{p.name}</span>
-            <em>{t.rightOf(p.right || 0, p.done)}</em><b dir="ltr">{p.done * 5}%</b></li>)}</ol>
+            <em>{t.rightOf(p.right || 0, p.done)}</em><b dir="ltr">{Math.round(p.done / TOTAL * 100)}%</b></li>)}</ol>
         {isHost ? <button className="cr-primary" disabled={busy} onClick={start}>{t.again}</button> : <p className="cr-waiting">{t.waitAgain(hostName)}</p>}
         <button className="cr-ghost cr-link" onClick={exit}>{t.exit}</button>
       </div>

@@ -127,9 +127,9 @@
 
 /* the shell (B) is a 9-slice painting; the screen sits in its window */
 .cr-cab-shell{flex:1;min-height:0;display:flex;border:26px solid transparent;border-image:var(--arc-shell) 72 / 26px round;
-  background:var(--pink) var(--paint);background-blend-mode:multiply;background-clip:padding-box;border-radius:20px}
+  background:transparent;border-radius:20px}   /* see-through so the room shows behind the screen */
 .cr-cab-screen{position:relative;flex:1;min-height:0;display:flex;flex-direction:column;overflow:hidden;border-radius:18px / 22px;
-  background:#F7F1E3 linear-gradient(#ffffff18 50%,#46547408 50%) 0 0/100% 4px;   /* phosphor ivory, the faintest static scanlines */
+  background:rgba(88,177,173,.5) linear-gradient(#ffffff18 50%,#46547408 50%) 0 0/100% 4px;   /* the room's teal at 50%, faint scanlines; the room shows through */
   box-shadow:inset 0 0 0 2px var(--ink),inset 0 2px 8px rgba(70,84,116,.14);
   padding:10px 12px 12px;animation:arc-warm .55s ease-out both}
 .cr-cab-glass{position:absolute;inset:0;z-index:3;pointer-events:none;border-radius:inherit;background:var(--arc-glass) center/100% 100% no-repeat}

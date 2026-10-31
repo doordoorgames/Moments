@@ -31,7 +31,9 @@ def test_round_shape(seed):
     assert 'missing' not in kinds                                 # the missing-letter task is gone
     assert kinds.count('memory') in (1, 2)                        # the only letter challenge
     for k in ('odd', 'stroop', 'geo', 'sock'):
-        assert kinds.count(k) >= 2, k
+        assert kinds.count(k) >= 1, k
+    for k in ('scale', 'wallet', 'shadow', 'tile'):              # v4 challenges every round
+        assert kinds.count(k) >= 1, k
     variants = [t['variant'] for t in tasks if t['type'] == 'word']
     assert len(variants) == len(set(variants))
     assert len({E.signature(t) for t in tasks}) == 20
@@ -264,7 +266,8 @@ def play(g, pid, now, right=True):
 
 def wrong_value(t):
     return {'odd': -1, 'memory': 'x', 'stroop': -1, 'geo': -1, 'sock': -1,
-            'word': 'zzzzz', 'vote': 'stranger', 'boss': -1}[t['type']]
+            'word': 'zzzzz', 'vote': 'stranger', 'boss': -1,
+            'scale': -1, 'wallet': -1, 'shadow': -1, 'tile': -1}[t['type']]
 
 
 def walk(g, pid, now, right=True):
@@ -411,3 +414,32 @@ def test_room_limits_and_dev_tools():
     assert not g2['dev'] and v2['timing'] is None and v2['lang'] == 'en'
     E.start(g2, '', now=0)
     assert E.view(g2, g2['host'])['round']['question'] in [en for _, en in D.QUESTIONS]
+
+
+# ------------------------------------------------------------------ v4 challenges
+
+def test_scale_has_one_heaviest():
+    for s in range(300):
+        t = E.gen_scale(random.Random(s), 'ar')
+        totals = [g['count'] * g['each'] for g in t['groups']]
+        assert max(totals) == totals[t['answer']] and totals.count(max(totals)) == 1
+
+
+def test_wallet_has_one_richest():
+    for s in range(300):
+        t = E.gen_wallet(random.Random(s), 'ar')
+        totals = [sum(w) for w in t['wallets']]
+        assert max(totals) == totals[t['answer']] and totals.count(max(totals)) == 1
+
+
+def test_shadow_options_all_differ_and_one_is_right():
+    for s in range(300):
+        t = E.gen_shadow(random.Random(s), 'en')
+        shapes = [tuple(E._norm([tuple(c) for c in o])) for o in t['options']]
+        assert len(set(shapes)) == 4
+        assert shapes[t['answer']] == tuple(E._norm([tuple(c) for c in t['cells']]))
+
+
+def test_tile_has_four_looks_one_right():
+    t = E.gen_tile(random.Random(1), 'ar')
+    assert sorted(t['looks']) == sorted(E.TILE_LOOKS) and t['looks'][t['answer']] == 'ok'

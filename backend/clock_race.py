@@ -19,7 +19,7 @@ import uuid
 import clock_race_ar as AR
 import clock_race_data as D
 
-VERSION = 3
+VERSION = 4
 MAX_PLAYERS = 12
 TASKS = 20
 VOTE_AT = 10    # task 11 (0-based)
@@ -28,7 +28,8 @@ COUNTDOWN = 3.0  # seconds between START and the first tap counting, so every ph
 WRONG_DELAY = 1.0  # a wrong answer holds the player this long before the next task
 GRACE = 0.25     # network slack on the server-side waits
 NAME_MAX = 24
-ORDINARY_MIX = {'odd': 3, 'stroop': 4, 'geo': 4, 'sock': 4, 'memory': 2}  # 17; one fewer with 2 Word Rush
+ORDINARY_MIX = {'odd': 2, 'stroop': 2, 'geo': 2, 'sock': 2, 'memory': 2,
+                'scale': 2, 'wallet': 2, 'shadow': 2, 'tile': 1}  # 17; one fewer with 2 Word Rush
 # The memory grid is the only letter challenge: 1 or 2 a round (half of v2's ~3 letter tasks).
 WORD_VARIANTS = ('pair', 'country', 'fruit')
 TYPO_MIN_LENGTH = 5  # one-typo forgiveness only for words this long or longer
@@ -37,7 +38,7 @@ BOT_NAMES = ['نورة', 'سارة', 'فهد', 'دانة', 'عبدالله', 'ش
 # Simulated players: typical seconds per task type (measured feel: taps ~2-3s, typing ~7s,
 # memory = 12s of grid + the answer). Each task varies 0.7x-1.35x and ~12% are "wrong" (+1s).
 BOT_SECONDS = {'odd': 2.4, 'stroop': 2.2, 'geo': 2.6, 'sock': 3.4, 'memory': 14.3,
-               'word': 7.5, 'vote': 2.0, 'boss': 5.5}
+               'word': 7.5, 'vote': 2.0, 'boss': 5.5, 'scale': 4.5, 'wallet': 4.5, 'shadow': 3.0, 'tile': 3.0}
 BOT_WRONG = 0.12
 
 
@@ -245,12 +246,126 @@ def gen_boss(rng):
     return dict(type='boss', rows=rows, cols=cols, faces=faces, answer=twin)
 
 
+# ------------------------------------------------------------------ v4: heaviest, richest wallet, shadow, missing tile
+
+SCALE_STUFF = ['feathers', 'cotton', 'wood', 'sand', 'rice', 'stones', 'iron']
+SCALE_EACH = [0.25, 0.5, 0.75, 1, 1.5, 2, 3]
+
+
+def gen_scale(rng, lang):
+    """Three groups of bags: how many bags, what is inside, the weight printed on each bag. The
+    heaviest group is the one with the biggest total; light-sounding stuff often wins."""
+    while True:
+        stuff = rng.sample(SCALE_STUFF, 3)
+        groups = [dict(stuff=s, count=rng.randint(1, 6), each=rng.choice(SCALE_EACH)) for s in stuff]
+        totals = [g['count'] * g['each'] for g in groups]
+        top = sorted(totals, reverse=True)
+        if len(set(totals)) == 3 and 0.25 <= top[0] - top[1] <= 2 and top[0] <= 12:
+            return dict(type='scale', groups=groups, answer=totals.index(top[0]))
+
+
+NOTES = [20000, 10000, 5000, 1000, 500, 250]   # Kuwaiti dinar notes, in fils
+COINS = [100, 50, 20, 10, 5]
+
+
+def gen_wallet(rng, lang):
+    """Three wallets of notes and coins (fils). Tap the one holding the most money. A wallet of
+    many coins sits next to one with a single note, so counting pieces is the trap."""
+    while True:
+        wallets = []
+        for _ in range(3):
+            n = rng.randint(2, 5)
+            notes = rng.randint(0, min(2, n))
+            items = sorted([rng.choice(NOTES[1:]) for _ in range(notes)] + [rng.choice(COINS) for _ in range(n - notes)], reverse=True)
+            wallets.append(items)
+        totals = [sum(w) for w in wallets]
+        top = sorted(totals, reverse=True)
+        if len(set(totals)) == 3 and top[0] - top[1] <= max(250, top[0] * 0.45):
+            return dict(type='wallet', wallets=wallets, answer=totals.index(top[0]))
+
+
+def _norm(cells):
+    mx, my = min(x for x, _ in cells), min(y for _, y in cells)
+    return sorted((x - mx, y - my) for x, y in cells)
+
+
+def _connected(cells):
+    cells = set(cells)
+    stack, seen = [next(iter(cells))], set()
+    while stack:
+        c = stack.pop()
+        if c in seen:
+            continue
+        seen.add(c)
+        x, y = c
+        stack += [n for n in ((x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1)) if n in cells]
+    return len(seen) == len(cells)
+
+
+def _blob(rng, size, grid=4):
+    cells = {(rng.randrange(grid), rng.randrange(grid))}
+    while len(cells) < size:
+        x, y = rng.choice(sorted(cells))
+        n = rng.choice([(x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1)])
+        if 0 <= n[0] < grid and 0 <= n[1] < grid:
+            cells.add(n)
+    return sorted(cells)
+
+
+def _nudge(rng, cells, grid=4):
+    """The same shape with one block moved somewhere else (still one piece)."""
+    for _ in range(100):
+        out = set(cells)
+        out.discard(rng.choice(cells))
+        spots = [(x, y) for x in range(grid) for y in range(grid) if (x, y) not in out
+                 and any(n in out for n in ((x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1)))]
+        out.add(rng.choice(spots))
+        if _connected(out):
+            return sorted(out)
+    return None
+
+
+def gen_shadow(rng, lang):
+    """A block toy in colour and four black shadows: its own, its mirror image, and two with one
+    block moved. Every shape is new each round."""
+    while True:
+        cells = _blob(rng, rng.choice([6, 7]))
+        mirror = sorted((3 - x, y) for x, y in cells)
+        a, b = _nudge(rng, cells), _nudge(rng, cells)
+        if not a or not b:
+            continue
+        options = [cells, mirror, a, b]
+        if len({tuple(_norm(o)) for o in options}) < 4:
+            continue
+        colors = [rng.randrange(5) for _ in cells]
+        order = list(range(4))
+        rng.shuffle(order)
+        return dict(type='shadow', cells=[list(c) for c in cells], colors=colors,
+                    options=[[list(c) for c in options[i]] for i in order], answer=order.index(0))
+
+
+TILE_SCENES = ['fuji', 'bamboo', 'sushi', 'tokyo']
+TILE_LOOKS = ['ok', 'flip_h', 'flip_v', 'turn']
+
+
+def gen_tile(rng, lang):
+    """A Japanese scene cut into four; the bottom-right piece is missing. Four candidate pieces:
+    the right one, mirrored, upside down, turned a quarter. The scene is drawn from a seed."""
+    looks = list(TILE_LOOKS)
+    rng.shuffle(looks)
+    return dict(type='tile', scene=rng.choice(TILE_SCENES), seed=rng.randrange(1, 2 ** 31), looks=looks, answer=looks.index('ok'))
+
+
 def signature(t):
     keys = {'odd': ('rows', 'cols', 'odd'), 'stroop': ('mode', 'target', 'choices'),
             'geo': ('variant', 'items'), 'sock': ('socks',), 'memory': ('grid',),
-            'word': ('variant', 'first', 'last', 'letter'), 'vote': ('question',), 'boss': ('faces',)}[t['type']]
+            'word': ('variant', 'first', 'last', 'letter'), 'vote': ('question',), 'boss': ('faces',),
+            'scale': ('groups',), 'wallet': ('wallets',), 'shadow': ('cells',), 'tile': ('scene', 'seed')}[t['type']]
     return repr((t['type'],) + tuple(repr(t.get(k)) for k in keys))
 
+
+NEW_GENS = {'scale': gen_scale, 'wallet': gen_wallet, 'shadow': gen_shadow, 'tile': gen_tile}
+ANSWER_KINDS = ('stroop', 'geo', 'sock', 'scale', 'wallet', 'shadow', 'tile')
 
 SPREAD = 3      # a type never comes back within 3 tasks
 OPENING = 5     # the first five tasks are five different challenges
@@ -313,6 +428,8 @@ def gen_round(roster, lang='ar', avoid_question=None, rng=None, avoid=()):
                 t = gen_sock(rng, lang)
             elif kind == 'memory':
                 t = gen_memory(rng, lang)
+            elif kind in NEW_GENS:
+                t = NEW_GENS[kind](rng, lang)
             elif kind == 'word':
                 t = gen_word(rng, lang, variants[len([x for x in tasks if x['type'] == 'word'])])
             elif kind == 'vote':
@@ -336,7 +453,7 @@ def correct(task, answer, roster_ids):
             return int(answer) == task['odd'], None
         if kind == 'memory':
             return answer == task['answer'], None
-        if kind in ('stroop', 'geo', 'sock'):
+        if kind in ANSWER_KINDS:
             return int(answer) == task['answer'], None
         if kind == 'vote':
             return answer in roster_ids, None
@@ -357,7 +474,7 @@ def solve(task, roster_ids):
     kind = task['type']
     if kind == 'odd':
         return task['odd']
-    if kind in ('memory', 'stroop', 'geo', 'sock'):
+    if kind == 'memory' or kind in ANSWER_KINDS:
         return task['answer']
     if kind == 'vote':
         return roster_ids[0]
@@ -442,7 +559,7 @@ def start(g, round_id, now=None, rng=None):
         return False
     roster = [dict(id=p['id'], name=p['name']) for p in g['players']]
     tasks = gen_round(roster, g['lang'], g['last_question'], rng, g.get('seen', []))
-    g['seen'] = (g.get('seen', []) + [signature(t) for t in tasks if t['type'] in ('memory', 'sock', 'stroop', 'geo')])[-120:]
+    g['seen'] = (g.get('seen', []) + [signature(t) for t in tasks if t['type'] in ('memory',) + ANSWER_KINDS])[-120:]
     g['last_question'] = tasks[VOTE_AT]['question']
     g['round'] = dict(id=uuid.uuid4().hex[:12], tasks=tasks, starts_at=now + COUNTDOWN)
     g['roster'] = roster

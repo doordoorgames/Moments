@@ -6,7 +6,11 @@ export function localCheck(task, value, rosterIds = []) {
     case 'memory': return value === task.answer;
     case 'stroop':
     case 'geo':
-    case 'sock': return value === task.answer;
+    case 'sock':
+    case 'scale':
+    case 'wallet':
+    case 'shadow':
+    case 'tile': return value === task.answer;
     case 'vote': return rosterIds.includes(value);
     case 'boss': return task.faces?.[value] === task.answer;
     default: return null; // not checkable here

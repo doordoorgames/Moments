@@ -293,3 +293,36 @@
 @keyframes cr-drain{from{transform:scaleX(1)}to{transform:scaleX(0)}}
 @media (prefers-reduced-motion:reduce){.cr-app *{animation-duration:.01ms!important;transition-duration:.01ms!important}}
 @media (min-width:700px){.cr-stage{padding-top:20px}.cr-dial-seat{width:66px}}
+
+/* ---------------------------------------------------------------- v4: heaviest */
+.cr-scale{display:flex;flex-direction:column;gap:10px;width:100%}
+.cr-scale-card{display:flex;align-items:center;gap:10px;min-height:64px;padding:6px 10px;border:3px solid var(--ink);background:var(--paper);box-shadow:var(--shadow);text-align:start}
+.cr-scale-card:active{transform:translate(3px,3px);box-shadow:1px 1px 0 var(--ink)}
+.cr-scale-name{flex:none;width:58px;font-weight:900;font-size:16px;line-height:1.1}
+.cr-scale-bags{flex:1;min-width:0;display:flex;flex-wrap:wrap;align-items:flex-end;gap:2px;direction:ltr}
+.cr-bag{width:calc(40px * var(--bag,1));height:auto}
+/* ---------------------------------------------------------------- v4: wallet */
+.cr-wallets{display:flex;flex-direction:column;gap:10px;width:100%}
+.cr-wallet{position:relative;min-height:70px;padding:12px 10px 8px;border:0;background:#7A5A44;box-shadow:var(--shadow);overflow:hidden}
+.cr-wallet:active{transform:translate(3px,3px);box-shadow:1px 1px 0 var(--ink)}
+.cr-wallet-flap{position:absolute;inset:0 0 auto;height:7px;background:#5E4433}
+.cr-wallet-money{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:6px}
+.cr-note{display:grid;place-items:center;min-width:62px;height:34px;padding:0 8px;background:var(--note);color:#3A3446;font-weight:900;font-size:15px;box-shadow:inset 0 0 0 3px #FFFFFF55}
+.cr-coin{display:grid;place-items:center;width:34px;height:34px;border-radius:50%;background:#D9DDE2;color:#3A3446;line-height:.95;box-shadow:inset -2px -3px 0 #00000022}
+.cr-coin.is-big{width:40px;height:40px;background:#E9D28A}
+.cr-coin b{font-size:12px;font-weight:900}.cr-coin small{font-size:8px;font-weight:800}
+/* ---------------------------------------------------------------- v4: shadow */
+.cr-shadow{display:flex;flex-direction:column;align-items:center;gap:12px;width:100%}
+.cr-shadow-toy{width:min(34vw,140px,calc((var(--cr-h,100dvh) - 420px) * .5))}
+.cr-shadow-toy .cr-blocks{display:block;width:100%;min-width:80px}
+.cr-shadow-opts{display:grid;grid-template-columns:1fr 1fr;gap:10px;width:min(100%,calc((var(--cr-h,100dvh) - 420px - var(--cr-chrome,0px)) * 1.1 + 140px))}
+.cr-shadow-card{aspect-ratio:1;padding:14%;border:3px solid var(--ink);background:#FFFCF4;box-shadow:var(--shadow)}
+.cr-shadow-card:active{transform:translate(3px,3px);box-shadow:1px 1px 0 var(--ink)}
+.cr-blocks{display:block;width:100%;height:100%}
+/* ---------------------------------------------------------------- v4: missing tile */
+.cr-tile{display:flex;flex-direction:column;align-items:center;gap:12px;width:100%}
+.cr-tile-pic{display:block;width:min(100%,calc((var(--cr-h,100dvh) - 360px - var(--cr-chrome,0px)) * .62),300px)}
+.cr-tile-opts{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;width:100%;max-width:340px}
+.cr-tile-card{aspect-ratio:1;padding:0;border:0;background:none;box-shadow:var(--shadow);overflow:hidden}
+.cr-tile-card svg{display:block;width:100%;height:100%}
+.cr-tile-card:active{transform:translate(3px,3px);box-shadow:1px 1px 0 var(--ink)}

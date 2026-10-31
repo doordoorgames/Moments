@@ -36,16 +36,14 @@ const ArcadeDial = memo(function ArcadeDial({done, total = 20, color, size = 46,
   const lit = Math.round(p * 20);
   return <svg viewBox="0 0 100 100" width={size} height={size} className={`cr-dial is-arcade ${big ? 'is-big' : ''}`} aria-hidden="true">
     <path d={BEZEL} fill="#F4EAD5" transform="translate(.9 -.7)"/>
-    <path d={BEZEL} fill="none" stroke="#3A3446" strokeWidth="3.4"/>
-    {LAMPS.map(([x, y], i) => <circle key={i} cx={x} cy={y} r="3.3" fill={i < lit ? color : '#DCD3C1'} stroke="#3A3446" strokeWidth={i < lit ? 1.1 : 0.7} strokeOpacity={i < lit ? 1 : 0.45}/>)}
+    {LAMPS.map(([x, y], i) => <circle key={i} cx={x} cy={y} r="3.3" fill={i < lit ? color : '#DCD3C1'}/>)}
     <path d={FACE} fill="#CFE0EC" transform="translate(.7 -.6)"/>
     <circle cx="50" cy="50" r="15.5" fill="none" stroke={color} strokeWidth="31" transform="rotate(-90 50 50)" opacity=".9"
       strokeDasharray={PIE * 0.62} strokeDashoffset={PIE * 0.62 * (1 - p)} className="cr-dial-fill"/>
-    <path d={FACE} fill="none" stroke="#3A3446" strokeWidth="2.6"/>
     <g className="cr-dial-hand" style={{transform: `rotate(${p * 360}deg)`}}>
-      <line x1="50" y1="50" x2="50" y2="24" stroke="#3A3446" strokeWidth="4.6" strokeLinecap="round"/>
+      <line x1="50" y1="50" x2="50" y2="24" stroke="#3A3446" strokeWidth="4.6" strokeLinecap="butt"/>
     </g>
-    <circle cx="50" cy="50" r="5.2" fill="#55688F" stroke="#3A3446" strokeWidth="1.6"/>
+    <circle cx="50" cy="50" r="5.2" fill="#55688F"/>
   </svg>;
 });
 

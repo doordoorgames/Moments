@@ -59,7 +59,7 @@ function BigClock() {
 function Stars({x, y}) {
   return <div className="cr-stars" style={{left: x, top: y}} aria-hidden="true">
     {Array.from({length: 9}, (_, i) => <svg key={i} viewBox="0 0 20 20" style={{'--a': `${i * 40 + 12}deg`, '--d': `${58 + (i % 3) * 20}px`, '--s': 0.7 + (i % 3) * 0.25}}>
-      <path d="M10 1 L12.6 7.2 L19 7.6 L14 11.8 L15.7 18.6 L10 15 L4.3 18.6 L6 11.8 L1 7.6 L7.4 7.2 Z" fill={ARCADE ? '#F2CF6B' : '#FFC93C'} stroke={ARCADE ? '#3A3446' : '#0B0B0B'} strokeWidth="1.6" strokeLinejoin="round"/>
+      <path d="M10 1 L12.6 7.2 L19 7.6 L14 11.8 L15.7 18.6 L10 15 L4.3 18.6 L6 11.8 L1 7.6 L7.4 7.2 Z" fill={ARCADE ? '#F2CF6B' : '#FFC93C'} stroke={ARCADE ? 'none' : '#0B0B0B'} strokeWidth="1.6" strokeLinejoin="round"/>
     </svg>)}
   </div>;
 }
@@ -333,8 +333,7 @@ export default function ClockRace({onContinue}) {
   const cabinet = (cls, head, body) => ARCADE ? <section className={`cr-stage cr-cab-stage ${cls}`}>
     <div className="cr-cab">
       <div className="cr-cab-marquee">{head}</div>
-      <div className="cr-cab-shell"><div className="cr-cab-screen">{body}<i className="cr-cab-glass" aria-hidden="true"/></div></div>
-      <div className="cr-cab-panel" aria-hidden="true"><i className="cr-cab-stick"/><i className="cr-cab-btn is-a"/><i className="cr-cab-btn is-b"/><i className="cr-cab-coin"/></div>
+      <div className="cr-cab-shell"><div className="cr-cab-screen">{body}</div></div>
     </div>
   </section> : <section className={`cr-stage ${cls}`}>{head}{body}</section>;
   const bar = <header className="cr-bar">
@@ -416,7 +415,7 @@ export default function ClockRace({onContinue}) {
       : task && View ? cabinet(`cr-stage-${task.type}`,
         <div className="cr-task-head">
           <span className="cr-count" dir="ltr">{t.task(pos + 1, 20)}</span>
-          {boss ? <span className="cr-boss-stamp">{t.bossStamp}</span> : <span className="cr-task-name">{t.names[task.type]}</span>}
+          {boss && <span className="cr-boss-stamp">{t.bossStamp}</span>}
         </div>,
         <div className="cr-play" key={`${round.id}-${pos}`}>
           {prompt && <h2 className="cr-prompt" dir="auto">{prompt}</h2>}

@@ -1,4 +1,5 @@
 import React, {memo, useId} from 'react';
+import {ARCADE} from './theme';
 
 // A sock design is "color-pattern-accent". Counts must match SOCK_* in backend/clock_race_data.py.
 export const SOCK_COLORS = ['#FF7A6B', '#6FB3FF', '#59D3A6', '#FFC93C', '#B79CFF'];
@@ -23,7 +24,7 @@ function Sock({code}) {
   const ink = a === 1 ? '#FFFDF7' : K; // pattern shows in ink on light accents, cream on the black one
   return <svg viewBox="0 0 100 110" className="cr-sock" aria-hidden="true">
     <defs><clipPath id={`s${id}`}><path d={SHAPE}/></clipPath></defs>
-    <path d={SHAPE} fill={K} transform="translate(3 3)"/>
+    {!ARCADE && <path d={SHAPE} fill={K} transform="translate(3 3)"/>}
     <g clipPath={`url(#s${id})`}>
       <rect width="100" height="110" fill={SOCK_COLORS[c % SOCK_COLORS.length]}/>
       <g opacity={a === 1 ? 0.9 : 0.55}>{pattern(p, ink === K ? K : accent)}</g>
@@ -31,7 +32,7 @@ function Sock({code}) {
       <path d="M60 70 Q74 72 86 84 L90 110 L56 110 Z" fill={accent} transform="translate(8 0)"/>
       <path d="M8 66 Q8 90 32 92 L40 72 Z" fill={accent}/>
     </g>
-    <path d={SHAPE} fill="none" stroke={K} strokeWidth="4" strokeLinejoin="round"/>
+    {!ARCADE && <path d={SHAPE} fill="none" stroke={K} strokeWidth="4" strokeLinejoin="round"/>}
     <path d="M16 12 H46" stroke={K} strokeWidth="3"/>
   </svg>;
 }

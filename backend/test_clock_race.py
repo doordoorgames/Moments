@@ -503,9 +503,15 @@ def test_shadow_options_all_differ_and_one_is_right():
         assert shapes[t['answer']] == tuple(E._norm([tuple(c) for c in t['cells']]))
 
 
-def test_tile_has_four_looks_one_right():
-    t = E.gen_tile(random.Random(1), 'ar')
-    assert sorted(t['looks']) == sorted(E.TILE_LOOKS) and t['looks'][t['answer']] == 'ok'
+def test_tile_has_one_unmirrored_turned_piece():
+    for s in range(200):
+        t = E.gen_tile(random.Random(s), 'ar')
+        assert t['pic'] in E.TILE_SET and len(t['opts']) == 4
+        assert [o[0] for o in t['opts']].count('none') == 1 and t['opts'][t['answer']][0] == 'none'
+        assert all(o[1] in (90, 180, 270) for o in t['opts'])
+    for pic, opts in E.TILE_SET.items():
+        flips = sorted(o[0] for o in opts if o[0] != 'none')
+        assert flips in (['H', 'H', 'V'], ['H', 'V', 'V']), pic
 
 
 def test_avoid_rule_has_safe_and_forbidden_buttons():

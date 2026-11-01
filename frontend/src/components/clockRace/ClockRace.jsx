@@ -499,7 +499,7 @@ export default function ClockRace({onContinue}) {
         <div className="cr-play" key={`${round.id}-${mine.epoch}-${pos}`}>
           {prompt && <h2 className="cr-prompt" dir="auto">{prompt}</h2>}
           <div className="cr-task-body">
-            <View task={task} t={t} lang={lang} onPick={pick} onWord={word} inputRef={wordInput} roster={game.roster} players={game.players} me={me}/>
+            <View task={task} t={t} lang={lang} onPick={pick} onWord={word} inputRef={wordInput} roster={game.roster} players={game.players} me={me} index={pos}/>
           </div>
         </div>)
       : cabinet('', null, <div className="cr-done-wait"><Dial done={TOTAL} color={PLAYER_COLORS[(game.players.find(p => p.id === me)?.color || 0) % 12]} size={120} big/></div>)}

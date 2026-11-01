@@ -343,11 +343,11 @@
 .cr-app.cr-arcade .cr-shadow-card .cr-blocks{filter:drop-shadow(2px 0 0 var(--cr-ivory-lo)) drop-shadow(-2px 0 0 var(--cr-ivory-lo)) drop-shadow(0 2px 0 var(--cr-ivory-lo)) drop-shadow(0 -2px 0 var(--cr-ivory-lo))}
 .cr-app.cr-arcade .cr-shadow-card:active{transform:scale(.9)}
 
-/* missing tile: the picture and its pieces, stepped corners, no frames */
-.cr-app.cr-arcade .cr-tile-pic{clip-path:var(--cr-step);box-shadow:none}
+/* missing tile: the picture and its pieces wear pixel frames (below); the frame sits outside the picture,
+   so the hole and every piece line up exactly as before */
 .cr-app.cr-arcade .cr-tile-hole{border:0;background:var(--cr-charcoal);color:var(--cr-ivory);font-family:var(--cr-press);font-size:clamp(18px,6vw,26px);animation:arc-blink 1s steps(1) infinite}
-.cr-app.cr-arcade .cr-tile-card{clip-path:var(--cr-step-sm);box-shadow:none}
-.cr-app.cr-arcade .cr-tile-card:active{transform:translateY(3px)}
+.cr-app.cr-arcade .cr-tile-opts{gap:10px;padding:0 var(--cr-shadow-off) var(--cr-shadow-off) 0}
+.cr-app.cr-arcade .cr-tile-card:active{transform:translate(2px,2px)}
 
 /* don't tap: coloured shapes on the room with an ivory rim, so every colour reads on teal */
 .cr-app.cr-arcade .cr-avoid{gap:12px}
@@ -355,20 +355,46 @@
 .cr-app.cr-arcade .cr-avoid-cell svg{filter:drop-shadow(2px 0 0 var(--cr-ivory)) drop-shadow(-2px 0 0 var(--cr-ivory)) drop-shadow(0 2px 0 var(--cr-ivory)) drop-shadow(0 -2px 0 var(--cr-ivory)) drop-shadow(0 4px 0 var(--cr-charcoal-a))}
 .cr-app.cr-arcade .cr-avoid-cell:active{transform:scale(.88)}
 
-/* picture questions: the paintings stand on the room; layouts still differ by arrangement */
-.cr-app.cr-arcade .cr-pic-art{filter:drop-shadow(0 4px 0 var(--cr-charcoal-a))}
+/* picture questions: framed photographs standing on the room; layouts still differ by arrangement */
+.cr-app.cr-arcade .cr-pic-art{position:relative}
+/* the photo keeps its own shape inside the square slot, so the frame hugs the photo, not the slot;
+   the slot leaves room bottom-right for the shadow */
+.cr-app.cr-arcade .cr-pic-art .cr-art{position:absolute;inset:0 var(--cr-shadow-off) var(--cr-shadow-off) 0;margin:auto;width:auto;height:auto;max-width:calc(100% - var(--cr-shadow-off));max-height:calc(100% - var(--cr-shadow-off));object-fit:contain}
 .cr-app.cr-arcade .cr-pic-name{padding:0 2px;background:none;font-family:var(--cr-pixel);font-weight:700;font-size:clamp(20px,5.8vw,24px)}
 .cr-app.cr-arcade .cr-vs{background:none;box-shadow:none;padding:0 2px;font-family:var(--cr-press);font-size:22px;color:var(--cr-pink-l);text-shadow:var(--cr-ol-2)}
+/* photos are never mirrored or tilted: a tilted pixel frame stops being pixel-crisp */
+.cr-app.cr-arcade .cr-pics :is(.cr-pic,.cr-pic-art),.cr-app.cr-arcade .cr-pics.is-vs .is-right .cr-pic-art{transform:none}
 .cr-app.cr-arcade .cr-pics.is-panels{padding:0;background:none;gap:10px}
 .cr-app.cr-arcade .cr-pics.is-panels .cr-pic{background:none;padding:4px;clip-path:none}
-.cr-app.cr-arcade .cr-pics.is-panels .cr-pic:nth-child(1) .cr-pic-art{transform:rotate(-2deg)}
-.cr-app.cr-arcade .cr-pics.is-panels .cr-pic:nth-child(2) .cr-pic-art{transform:rotate(2.5deg)}
+.cr-app.cr-arcade .cr-pics.is-panels .cr-pic:nth-child(2){margin-top:18px}
 .cr-app.cr-arcade .cr-pics.is-board{padding:4px 0;background:none;gap:14px 12px}
 .cr-app.cr-arcade .cr-pics.is-board .cr-pic{background:none;box-shadow:none;padding:2px}
 .cr-app.cr-arcade .cr-pics.is-board .cr-pic-name{font-size:clamp(19px,5.4vw,22px)}
 .cr-app.cr-arcade .cr-pics.is-table{padding:4px 0 8px;background:none;box-shadow:none;gap:10px 14px}
-.cr-app.cr-arcade .cr-pics.is-table .cr-pic-num{border-radius:0;background:none;color:var(--cr-powder);font-family:var(--cr-press);font-size:13px;text-shadow:var(--cr-ol-1);transform:none}
+.cr-app.cr-arcade .cr-pics.is-table .cr-pic-art{filter:none}
+.cr-app.cr-arcade .cr-pics.is-table .cr-pic-num{z-index:1;border-radius:0;background:none;color:var(--cr-powder);font-family:var(--cr-press);font-size:13px;text-shadow:var(--cr-ol-1);transform:none}
 .cr-app.cr-arcade .cr-pics.is-table .cr-pic-name{background:none;font-size:clamp(19px,5.4vw,22px)}
+.cr-app.cr-arcade .cr-pic:active{transform:translate(2px,2px)}
+
+/* maps: the silhouette inside its own frame */
+.cr-app.cr-arcade .cr-geo-frame{display:block;margin:0 auto;padding:6%;box-sizing:border-box;width:calc(100% - var(--cr-shadow-off))}
+.cr-app.cr-arcade .cr-geo-frame .cr-geo-art{width:100%}
+
+/* ================================================================ universal pixel photo frame
+   One utility for every picture: a crisp 3px border in the colour frames.js hands it (--frame), and an
+   always-pink hard pixel shadow offset bottom-right. Nothing touches the picture itself: no filter, no
+   overlay, no tint, no rounding. The border sits outside the picture's own box. */
+.cr-app.cr-arcade{--cr-frame-w:3px;--cr-shadow:#D592AA;--cr-shadow-off:5px}
+.cr-app.cr-arcade .cr-frame{border:var(--cr-frame-w) solid var(--frame,#4F9E9B);border-radius:0;
+  box-shadow:var(--cr-shadow-off) var(--cr-shadow-off) 0 0 var(--cr-shadow);filter:none;clip-path:none;image-rendering:auto;background-clip:padding-box}
+.cr-app.cr-arcade img.cr-frame{box-sizing:border-box}
+/* the puzzle keeps its picture box exact; the frame is added around it */
+.cr-app.cr-arcade .cr-tile-pic.cr-frame{box-sizing:content-box}
+.cr-app.cr-arcade .cr-tile-card.cr-frame{--cr-shadow-off:4px}
+/* small pictures (four to a screen, puzzle pieces) take a 2px frame */
+.cr-app.cr-arcade :is(.cr-pics.is-n4 .cr-frame,.cr-tile-card.cr-frame){--cr-frame-w:2px}
+.cr-app.cr-arcade .cr-pics.is-n4 .cr-frame{--cr-shadow-off:4px}
+@media (max-width:370px){.cr-app.cr-arcade .cr-tile-card.cr-frame{--cr-shadow-off:3px}}
 
 /* ================================================================ overlays */
 /* countdown: the room, one huge printed number per second, ticking in pixel steps */

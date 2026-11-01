@@ -321,10 +321,12 @@
 .cr-blocks{display:block;width:100%;height:100%}
 /* ---------------------------------------------------------------- v4: missing tile */
 .cr-tile{display:flex;flex-direction:column;align-items:center;gap:12px;width:100%}
-.cr-tile-pic{display:block;width:min(100%,calc((var(--cr-h,100dvh) - 360px - var(--cr-chrome,0px)) * .62),300px)}
+.cr-tile-pic{position:relative;display:block;width:min(100%,calc((var(--cr-h,100dvh) - 360px - var(--cr-chrome,0px)) * .62),300px);aspect-ratio:1;box-shadow:var(--shadow)}
+.cr-tile-pic img{display:block;width:100%;height:100%;user-select:none;-webkit-user-drag:none}
+.cr-tile-hole{position:absolute;left:66.667%;top:66.667%;width:33.333%;height:33.333%;display:flex;align-items:center;justify-content:center;box-sizing:border-box;border:2px dashed #FBF5E8b3;font-size:clamp(24px,9vw,40px);font-weight:900;color:#FBF5E8cc;background:#3A3446}
 .cr-tile-opts{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;width:100%;max-width:340px}
 .cr-tile-card{aspect-ratio:1;padding:0;border:0;background:none;box-shadow:var(--shadow);overflow:hidden}
-.cr-tile-card svg{display:block;width:100%;height:100%}
+.cr-tile-card img{display:block;width:100%;height:100%;user-select:none;-webkit-user-drag:none}
 .cr-tile-card:active{transform:translate(3px,3px);box-shadow:1px 1px 0 var(--ink)}
 
 /* ---------------------------------------------------------------- hearts (three lives) */

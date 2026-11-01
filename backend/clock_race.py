@@ -360,23 +360,38 @@ def gen_shadow(rng, lang):
                     options=[[list(c) for c in options[i]] for i in order], answer=order.index(0))
 
 
-TILE_SCENES = ['fuji', 'bamboo', 'sushi', 'tokyo']
-TILE_LOOKS = ['ok', 'flip_h', 'flip_v', 'turn']
+# Ten hand-picked pictures, each squared, its bottom-right third missing (public/clock-race/tiles/).
+# Every option is the same real piece: the right one is only turned, never mirrored; the three decoys are
+# mirrored (left-right "H" or top-bottom "V") and turned. Each set is checked so no two options look alike.
+# Sets alternate between two mixes: A = 2 H + 1 V decoys, B = 1 H + 2 V decoys.
+TILE_SET = {
+    'p01': [('none', 270), ('V', 180), ('H', 180), ('H', 90)],
+    'p02': [('none', 270), ('H', 90), ('V', 90), ('V', 180)],
+    'p03': [('none', 90), ('H', 180), ('H', 270), ('V', 270)],
+    'p04': [('none', 270), ('V', 90), ('V', 180), ('H', 180)],
+    'p05': [('none', 180), ('H', 270), ('H', 180), ('V', 270)],
+    'p06': [('none', 180), ('V', 180), ('H', 180), ('V', 270)],
+    'p07': [('none', 90), ('H', 90), ('H', 270), ('V', 180)],
+    'p08': [('none', 90), ('V', 270), ('H', 180), ('V', 180)],
+    'p09': [('none', 270), ('H', 180), ('V', 180), ('H', 270)],
+    'p10': [('none', 90), ('V', 90), ('H', 180), ('V', 270)],
+}
 
 
 def gen_tile(rng, lang):
-    """A Japanese scene cut into four; the bottom-right piece is missing. Four candidate pieces:
-    the right one, mirrored, upside down, turned a quarter. The scene is drawn from a seed."""
-    looks = list(TILE_LOOKS)
-    rng.shuffle(looks)
-    return dict(type='tile', scene=rng.choice(TILE_SCENES), seed=rng.randrange(1, 2 ** 31), looks=looks, answer=looks.index('ok'))
+    """A picture with its bottom-right corner missing and four copies of that piece to pick from:
+    the real one turned, three mirrored and turned. The options are shuffled on every draw."""
+    pic = rng.choice(sorted(TILE_SET))
+    opts = [list(o) for o in TILE_SET[pic]]
+    rng.shuffle(opts)
+    return dict(type='tile', pic=pic, opts=opts, answer=next(i for i, o in enumerate(opts) if o[0] == 'none'))
 
 
 def signature(t):
     keys = {'odd': ('rows', 'cols', 'odd', 'base', 'mood'), 'stroop': ('mode', 'target', 'choices'),
             'geo': ('variant', 'items'), 'sock': ('socks',), 'memory': ('grid',),
             'word': ('variant', 'first', 'last', 'letter'), 'vote': ('question',), 'boss': ('faces',),
-            'scale': ('groups',), 'wallet': ('wallets',), 'shadow': ('cells',), 'tile': ('scene', 'seed'), 'avoid': ('rule', 'target', 'items'),
+            'scale': ('groups',), 'wallet': ('wallets',), 'shadow': ('cells',), 'tile': ('pic',), 'avoid': ('rule', 'target', 'items'),
             'belong': ('qid',), 'older': ('qid',), 'compare': ('qid',), 'which': ('qid',), 'animal': ('options',)}[t['type']]
     return repr((t['type'],) + tuple(repr(t.get(k)) for k in keys))
 

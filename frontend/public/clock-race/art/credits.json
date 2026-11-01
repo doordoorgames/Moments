@@ -1,0 +1,2253 @@
+{
+  "africa": {
+    "key": "africa",
+    "original": "https://github.com/nvkelso/natural-earth-vector/blob/master/geojson/ne_10m_geography_regions_polys.geojson",
+    "source": "https://github.com/nvkelso/natural-earth-vector/blob/master/geojson/ne_10m_geography_regions_polys.geojson",
+    "creator": "Natural Earth",
+    "license": "Public domain",
+    "license_url": "https://www.naturalearthdata.com/about/terms-of-use/",
+    "changes": "Projected map, cropped and highlighted."
+  },
+  "amazon": {
+    "key": "amazon",
+    "original": "https://github.com/nvkelso/natural-earth-vector/blob/master/geojson/ne_10m_geography_regions_polys.geojson",
+    "source": "https://github.com/nvkelso/natural-earth-vector/blob/master/geojson/ne_10m_geography_regions_polys.geojson",
+    "creator": "Natural Earth",
+    "license": "Public domain",
+    "license_url": "https://www.naturalearthdata.com/about/terms-of-use/",
+    "changes": "Projected map, cropped and highlighted."
+  },
+  "amazon_box": {
+    "key": "amazon_box",
+    "source": "https://www.pexels.com/photo/amazon-prime-package-on-the-porch-put-upside-down-16158536/",
+    "original": "https://images.pexels.com/photos/16158536/pexels-photo-16158536.jpeg",
+    "creator": "Erik Mclean",
+    "license": "Pexels License",
+    "license_url": "https://www.pexels.com/license/",
+    "description": "A cardboard box marked with Prime logo placed outside on a porch, ready for delivery.",
+    "changes": "Resized and converted to WebP."
+  },
+  "ant": {
+    "key": "ant",
+    "source": "https://www.pexels.com/photo/red-ant-macro-photography-1086882/",
+    "original": "https://images.pexels.com/photos/1086882/pexels-photo-1086882.jpeg",
+    "creator": "Egor Kamelev",
+    "license": "Pexels License",
+    "license_url": "https://www.pexels.com/license/",
+    "description": "Detailed macro photography of a red ant showcasing its antennae and intricate body features on a leaf.",
+    "changes": "Resized and converted to WebP."
+  },
+  "apple": {
+    "key": "apple",
+    "source": "https://www.pexels.com/photo/red-apples-in-close-up-photography-14408622/",
+    "original": "https://images.pexels.com/photos/14408622/pexels-photo-14408622.jpeg",
+    "creator": "Seda Nur Korkmaz ",
+    "license": "Pexels License",
+    "license_url": "https://www.pexels.com/license/",
+    "description": "Vibrant red apples with water droplets showing freshness and natural beauty against a dark background.",
+    "changes": "Resized and converted to WebP."
+  },
+  "apple_co": {
+    "key": "apple_co",
+    "source": "https://www.pexels.com/photo/apple-store-exterior-with-iconic-logo-33806550/",
+    "original": "https://images.pexels.com/photos/33806550/pexels-photo-33806550.jpeg",
+    "creator": "Andy Lee",
+    "license": "Pexels License",
+    "license_url": "https://www.pexels.com/license/",
+    "description": "Close-up of Apple Store exterior featuring the illuminated logo prominently displayed.",
+    "changes": "Resized and converted to WebP."
+  },
+  "arabic_letters": {
+    "key": "arabic_letters",
+    "creator": "Moments",
+    "source": "https://github.com/doordoorgames/Moments/blob/main/frontend/public/clock-race/art/arabic_letters.webp",
+    "original": "https://github.com/doordoorgames/Moments/blob/main/frontend/public/clock-race/art/arabic_letters.webp",
+    "license": "CC0 1.0",
+    "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "changes": "Original typeset reference chart or geometric diagram."
+  },
+  "arcade": {
+    "key": "arcade",
+    "source": "https://www.pexels.com/photo/classic-pac-man-arcade-machine-in-game-room-38640949/",
+    "original": "https://images.pexels.com/photos/38640949/pexels-photo-38640949.jpeg",
+    "creator": "Magda Ehlers",
+    "license": "Pexels License",
+    "license_url": "https://www.pexels.com/license/",
+    "description": "Vintage Pac-Man arcade machine with colorful graphics and controls, evoking gaming nostalgia.",
+    "changes": "Resized and converted to WebP."
+  },
+  "asia": {
+    "key": "asia",
+    "original": "https://github.com/nvkelso/natural-earth-vector/blob/master/geojson/ne_10m_geography_regions_polys.geojson",
+    "source": "https://github.com/nvkelso/natural-earth-vector/blob/master/geojson/ne_10m_geography_regions_polys.geojson",
+    "creator": "Natural Earth",
+    "license": "Public domain",
+    "license_url": "https://www.naturalearthdata.com/about/terms-of-use/",
+    "changes": "Projected map, cropped and highlighted."
+  },
+  "atlantic": {
+    "key": "atlantic",
+    "original": "https://github.com/nvkelso/natural-earth-vector/blob/master/geojson/ne_10m_geography_marine_polys.geojson",
+    "source": "https://github.com/nvkelso/natural-earth-vector/blob/master/geojson/ne_10m_geography_marine_polys.geojson",
+    "creator": "Natural Earth",
+    "license": "Public domain",
+    "license_url": "https://www.naturalearthdata.com/about/terms-of-use/",
+    "changes": "Projected map, cropped and highlighted."
+  },
+  "australia": {
+    "key": "australia",
+    "source": "https://www.naturalearthdata.com/downloads/50m-cultural-vectors/50m-admin-0-countries-2/",
+    "original": "https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_50m_admin_0_countries.geojson",
+    "creator": "Natural Earth",
+    "license": "Public domain",
+    "license_url": "https://www.naturalearthdata.com/about/terms-of-use/",
+    "changes": "Rendered regional map with highlighted country."
+  },
+  "aztec": {
+    "key": "aztec",
+    "source": "https://commons.wikimedia.org/wiki/File:Teopanzolco_%28cropped%29.jpg",
+    "original": "https://upload.wikimedia.org/wikipedia/commons/8/8b/Teopanzolco_%28cropped%29.jpg",
+    "creator": "Roberto malvido",
+    "license": "CC BY-SA 3.0",
+    "license_url": "https://creativecommons.org/licenses/by-sa/3.0",
+    "description": "Teopanzolco_(cropped).jpg",
+    "changes": "Resized and converted to WebP."
+  },
+  "bahrain": {
+    "key": "bahrain",
+    "source": "https://www.naturalearthdata.com/downloads/50m-cultural-vectors/50m-admin-0-countries-2/",
+    "original": "https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_50m_admin_0_countries.geojson",
+    "creator": "Natural Earth",
+    "license": "Public domain",
+    "license_url": "https://www.naturalearthdata.com/about/terms-of-use/",
+    "changes": "Rendered regional map with highlighted country."
+  },
+  "baklava": {
+    "key": "baklava",
+    "source": "https://commons.wikimedia.org/wiki/File:Baklava(1).png",
+    "original": "https://upload.wikimedia.org/wikipedia/commons/c/c7/Baklava%281%29.png?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "creator": "Sakaman",
+    "license": "CC BY-SA 4.0",
+    "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
+    "description": "Gaziantep'e Özgü Kare Baklava",
+    "changes": "Resized and converted to WebP."
+  },
+  "banana": {
+    "key": "banana",
+    "source": "https://www.pexels.com/photo/background-of-ripe-bananas-with-blots-on-peel-7194965/",
+    "original": "https://images.pexels.com/photos/7194965/pexels-photo-7194965.jpeg",
+    "creator": "SHVETS production",
+    "license": "Pexels License",
+    "license_url": "https://www.pexels.com/license/",
+    "description": "Close-up view of ripe yellow bananas arranged in a curved pattern.",
+    "changes": "Resized and converted to WebP."
+  },
+  "barbie": {
+    "key": "barbie",
+    "source": "https://commons.wikimedia.org/wiki/File:Charlotte_Johnson_with_1965_Barbie_doll.jpg",
+    "original": "https://upload.wikimedia.org/wikipedia/commons/0/0c/Charlotte_Johnson_with_1965_Barbie_doll.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "creator": "Nelson Tiffany, Los Angeles Times",
+    "license": "CC BY 4.0",
+    "license_url": "https://creativecommons.org/licenses/by/4.0",
+    "description": "File:Charlotte Johnson with 1965 Barbie doll.jpg",
+    "changes": "Resized and converted to WebP."
+  },
+  "basketball": {
+    "key": "basketball",
+    "source": "https://commons.wikimedia.org/wiki/File:Spalding-Platinum-ZKPro.jpg",
+    "original": "https://upload.wikimedia.org/wikipedia/commons/c/c2/Spalding-Platinum-ZKPro.jpg",
+    "creator": "https://en.wikipedia.org/wiki/User:Verpacker_Ing.",
+    "license": "Public domain",
+    "license_url": "https://creativecommons.org/publicdomain/mark/1.0/",
+    "description": "Spalding-Platinum-ZKPro.jpg",
+    "changes": "Resized and converted to WebP."
+  },
+  "bat": {
+    "key": "bat",
+    "source": "https://commons.wikimedia.org/wiki/File:Myotis.jpg",
+    "original": "https://upload.wikimedia.org/wikipedia/commons/c/c7/Myotis.jpg",
+    "creator": "Urheber: Manuel Werner, Germany, Wikipedia-Kontakt: http://de.wikipedia.org/wiki/Benutzer:Werner,_Deutschland",
+    "license": "CC BY-SA 3.0",
+    "license_url": "https://creativecommons.org/licenses/by-sa/3.0/",
+    "description": "Myotis.jpg",
+    "changes": "Resized and converted to WebP."
+  },
+  "bee": {
+    "key": "bee",
+    "source": "https://www.pexels.com/photo/close-up-macro-of-a-honeybee-on-green-background-29808603/",
+    "original": "https://images.pexels.com/photos/29808603/pexels-photo-29808603.jpeg",
+    "creator": "Fatih Berat Örer",
+    "license": "Pexels License",
+    "license_url": "https://www.pexels.com/license/",
+    "description": "Detailed macro shot capturing the intricate anatomy of a honeybee in vivid detail on a subtle green background.",
+    "changes": "Resized and converted to WebP."
+  },
+  "betty_white": {
+    "key": "betty_white",
+    "source": "https://commons.wikimedia.org/wiki/File:Betty_White_1988_Emmy_Awards_%28cropped_2%29.jpg",
+    "original": "https://upload.wikimedia.org/wikipedia/commons/6/6a/Betty_White_1988_Emmy_Awards_%28cropped_2%29.jpg",
+    "creator": "Alan Light",
+    "license": "CC BY 2.0",
+    "license_url": "https://creativecommons.org/licenses/by/2.0",
+    "description": "Betty_White_1988_Emmy_Awards_(cropped_2).jpg",
+    "changes": "Resized and converted to WebP."
+  },
+  "bicycle": {
+    "key": "bicycle",
+    "source": "https://commons.wikimedia.org/wiki/File:Left_side_of_Flying_Pigeon.jpg",
+    "original": "https://upload.wikimedia.org/wikipedia/commons/4/41/Left_side_of_Flying_Pigeon.jpg",
+    "creator": "齐健 from Peking, People's Republic of China",
+    "license": "CC BY 2.0",
+    "license_url": "https://creativecommons.org/licenses/by/2.0",
+    "description": "Left_side_of_Flying_Pigeon.jpg",
+    "changes": "Resized and converted to WebP."
+  },
+  "blue_whale": {
+    "key": "blue_whale",
+    "source": "https://commons.wikimedia.org/wiki/File:Anim1754_-_Flickr_-_NOAA_Photo_Library.jpg",
+    "original": "https://upload.wikimedia.org/wikipedia/commons/1/1c/Anim1754_-_Flickr_-_NOAA_Photo_Library.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "creator": "NOAA Photo Library",
+    "license": "Public domain",
+    "license_url": "https://creativecommons.org/publicdomain/mark/1.0/",
+    "description": "Balaenoptera musculus",
+    "changes": "Resized and converted to WebP."
+  },
+  "boat": {
+    "key": "boat",
+    "source": "https://commons.wikimedia.org/wiki/File:Motorboat_at_Kankaria_lake.JPG",
+    "original": "https://upload.wikimedia.org/wikipedia/commons/d/d9/Motorboat_at_Kankaria_lake.JPG",
+    "creator": "Kondicherry",
+    "license": "CC BY-SA 3.0",
+    "license_url": "https://creativecommons.org/licenses/by-sa/3.0",
+    "description": "Motorboat_at_Kankaria_lake.JPG",
+    "changes": "Resized and converted to WebP."
+  },
+  "boot": {
+    "key": "boot",
+    "source": "https://www.pexels.com/photo/stylish-rugged-boots-on-outdoor-pathway-36053889/",
+    "original": "https://images.pexels.com/photos/36053889/pexels-photo-36053889.jpeg",
+    "creator": "Abdellah Benziane",
+    "license": "Pexels License",
+    "license_url": "https://www.pexels.com/license/",
+    "description": "Close-up of sturdy black boots walking on an outdoor stone pathway. Perfect for urban adventure themes.",
+    "changes": "Resized and converted to WebP."
+  },
+  "bowling_ball": {
+    "key": "bowling_ball",
+    "source": "https://www.pexels.com/photo/green-bowling-ball-in-close-up-shot-13165149/",
+    "original": "https://images.pexels.com/photos/13165149/pexels-photo-13165149.jpeg",
+    "creator": "Engin Akyurt",
+    "license": "Pexels License",
+    "license_url": "https://www.pexels.com/license/",
+    "description": "Close-up of a green bowling ball with pins ready to be knocked down.",
+    "changes": "Resized and converted to WebP."
+  },
+  "brain": {
+    "key": "brain",
+    "source": "https://www.pexels.com/photo/technology-computer-head-health-7089331/",
+    "original": "https://images.pexels.com/photos/7089331/pexels-photo-7089331.jpeg",
+    "creator": "MART  PRODUCTION",
+    "license": "Pexels License",
+    "license_url": "https://www.pexels.com/license/",
+    "description": "Close-up of an MRI scan showing a sagittal view of the human brain for analysis.",
+    "changes": "Resized and converted to WebP."
+  },
+  "brick": {
+    "key": "brick",
+    "source": "https://commons.wikimedia.org/wiki/File:Brick.jpg",
+    "original": "https://upload.wikimedia.org/wikipedia/commons/0/01/Brick.jpg",
+    "creator": "Andrewlister",
+    "license": "Public domain",
+    "license_url": "https://creativecommons.org/publicdomain/mark/1.0/",
+    "description": "Brick.jpg",
+    "changes": "Resized and converted to WebP."
+  },
+  "burger": {
+    "key": "burger",
+    "source": "https://commons.wikimedia.org/wiki/File:DowneyMcdonalds.jpg",
+    "original": "https://upload.wikimedia.org/wikipedia/commons/1/17/DowneyMcdonalds.jpg",
+    "creator": "Photo by Bryan Hong (Brybry26)",
+    "license": "CC BY-SA 2.5",
+    "license_url": "https://creativecommons.org/licenses/by-sa/2.5",
+    "description": "DowneyMcdonalds.jpg",
+    "changes": "Resized and converted to WebP."
+  },
+  "burj_al_arab": {
+    "key": "burj_al_arab",
+    "source": "https://www.pexels.com/photo/luxurious-burj-al-arab-hotel-in-dubai-19790158/",
+    "original": "https://images.pexels.com/photos/19790158/pexels-photo-19790158.jpeg",
+    "creator": "Mo Eid",
+    "license": "Pexels License",
+    "license_url": "https://www.pexels.com/license/",
+    "description": "Gorgeous sunset view of the iconic Burj Al Arab hotel in Dubai against the sea.",
+    "changes": "Resized and converted to WebP."
+  },
+  "burj_khalifa": {
+    "key": "burj_khalifa",
+    "source": "https://commons.wikimedia.org/wiki/File:Burj_Khalifa_%28worlds_tallest_building%29_and_the_Dubai_skyline_%2825781049892%29.jpg",
+    "original": "https://upload.wikimedia.org/wikipedia/commons/9/90/Burj_Khalifa_%28worlds_tallest_building%29_and_the_Dubai_skyline_%2825781049892%29.jpg",
+    "creator": "imran shahabuddin",
+    "license": "CC BY 2.0",
+    "license_url": "https://creativecommons.org/licenses/by/2.0",
+    "description": "Burj_Khalifa_(worlds_tallest_building)_and_the_Dubai_skyline_(25781049892).jpg",
+    "changes": "Resized and converted to WebP."
+  },
+  "bus": {
+    "key": "bus",
+    "source": "https://commons.wikimedia.org/wiki/File:LTZ1328-19-20241030-160332.jpg",
+    "original": "https://upload.wikimedia.org/wikipedia/commons/8/84/LTZ1328-19-20241030-160332.jpg",
+    "creator": "SIA321",
+    "license": "CC BY-SA 4.0",
+    "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
+    "description": "LTZ1328-19-20241030-160332.jpg",
+    "changes": "Resized and converted to WebP."
+  },
+  "butter": {
+    "key": "butter",
+    "source": "https://www.pexels.com/photo/close-up-view-of-butter-on-plate-7965940/",
+    "original": "https://images.pexels.com/photos/7965940/pexels-photo-7965940.jpeg",
+    "creator": "Felicity Tai ",
+    "license": "Pexels License",
+    "license_url": "https://www.pexels.com/license/",
+    "description": "Focused shot of cutting butter for meal preparation, essential cooking ingredient.",
+    "changes": "Resized and converted to WebP."
+  },
+  "butterfly": {
+    "key": "butterfly",
+    "source": "https://www.inaturalist.org/photos/758223441",
+    "original": "https://inaturalist-open-data.s3.amazonaws.com/photos/758223441/original.jpg",
+    "creator": "(c) Tyler Cannon, some rights reserved (CC BY)",
+    "license": "CC BY 4.0",
+    "license_url": "https://creativecommons.org/licenses/by/4.0/",
+    "description": "Danaus plexippus",
+    "changes": "Resized and converted to WebP."
+  },
+  "cairo": {
+    "key": "cairo",
+    "original": "https://github.com/nvkelso/natural-earth-vector/blob/master/geojson/ne_10m_populated_places_simple.geojson",
+    "source": "https://github.com/nvkelso/natural-earth-vector/blob/master/geojson/ne_10m_populated_places_simple.geojson",
+    "creator": "Natural Earth",
+    "license": "Public domain",
+    "license_url": "https://www.naturalearthdata.com/about/terms-of-use/",
+    "changes": "Projected map, cropped and highlighted."
+  },
+  "camel": {
+    "key": "camel",
+    "source": "https://www.pexels.com/photo/portrait-of-a-dromedary-camel-in-oman-36189556/",
+    "original": "https://images.pexels.com/photos/36189556/pexels-photo-36189556.jpeg",
+    "creator": "Irma Sjachlan",
+    "license": "Pexels License",
+    "license_url": "https://www.pexels.com/license/",
+    "description": "Close-up of a camel in the desert of Dhofar, Oman, showcasing its resilient features.",
+    "changes": "Resized and converted to WebP."
+  },
+  "car": {
+    "key": "car",
+    "source": "https://www.pexels.com/photo/vintage-blue-car-in-mysuru-showroom-39198817/",
+    "original": "https://images.pexels.com/photos/39198817/pexels-photo-39198817.jpeg",
+    "creator": "Sourabh Narwade",
+    "license": "Pexels License",
+    "license_url": "https://www.pexels.com/license/",
+    "description": "Close-up of a vintage blue car exhibiting classic design in Mysuru showroom.",
+    "changes": "Resized and converted to WebP."
+  },
+  "carrot": {
+    "key": "carrot",
+    "source": "https://commons.wikimedia.org/wiki/File:Vegetable-Carrot-Bundle-wStalks.jpg",
+    "original": "https://upload.wikimedia.org/wikipedia/commons/a/a2/Vegetable-Carrot-Bundle-wStalks.jpg",
+    "creator": "Evan-Amos",
+    "license": "Public domain",
+    "license_url": "https://creativecommons.org/publicdomain/mark/1.0/",
+    "description": "Vegetable-Carrot-Bundle-wStalks.jpg",
+    "changes": "Resized and converted to WebP."
+  },
+  "castle": {
+    "key": "castle",
+    "source": "https://commons.wikimedia.org/wiki/File:Sleeping_Beauty_Castle_-_February_2024.png",
+    "original": "https://upload.wikimedia.org/wikipedia/commons/b/bd/Sleeping_Beauty_Castle_-_February_2024.png",
+    "creator": "Parksfan1955",
+    "license": "CC0",
+    "license_url": "https://creativecommons.org/publicdomain/zero/1.0/deed.en",
+    "description": "Sleeping_Beauty_Castle_-_February_2024.png",
+    "changes": "Resized and converted to WebP."
+  },
+  "cheese": {
+    "key": "cheese",
+    "source": "https://www.pexels.com/photo/packed-cheese-on-table-13079969/",
+    "original": "https://images.pexels.com/photos/13079969/pexels-photo-13079969.jpeg",
+    "creator": "Jason Renfrow Photography ",
+    "license": "Pexels License",
+    "license_url": "https://www.pexels.com/license/",
+    "description": "Close-up view of a selection of artisan cheeses with wooden knife in cozy cheese shop.",
+    "changes": "Resized and converted to WebP."
+  },
+  "cheetah": {
+    "key": "cheetah",
+    "source": "https://www.pexels.com/photo/cheetah-in-close-up-25858622/",
+    "original": "https://images.pexels.com/photos/25858622/pexels-photo-25858622.jpeg",
+    "creator": "Pieter van der Sandt",
+    "license": "Pexels License",
+    "license_url": "https://www.pexels.com/license/",
+    "description": "Close-up of two cheetahs in the wild, showcasing their sleek fur and intense gaze.",
+    "changes": "Resized and converted to WebP."
+  },
+  "chess": {
+    "key": "chess",
+    "source": "https://www.pexels.com/photo/a-person-playing-chess-5960157/",
+    "original": "https://images.pexels.com/photos/5960157/pexels-photo-5960157.jpeg",
+    "creator": "cottonbro studio",
+    "license": "Pexels License",
+    "license_url": "https://www.pexels.com/license/",
+    "description": "Close-up of hands playing a board game, creating a strategic atmosphere indoors.",
+    "changes": "Resized and converted to WebP."
+  },
+  "chicken": {
+    "key": "chicken",
+    "source": "https://commons.wikimedia.org/wiki/File:Male_and_female_chicken_sitting_together.jpg",
+    "original": "https://upload.wikimedia.org/wikipedia/commons/8/84/Male_and_female_chicken_sitting_together.jpg",
+    "creator": "Andrei Niemimäki from Turku, Finland",
+    "license": "CC BY-SA 2.0",
+    "license_url": "https://creativecommons.org/licenses/by-sa/2.0",
+    "description": "Male_and_female_chicken_sitting_together.jpg",
+    "changes": "Resized and converted to WebP."
+  },
+  "circle": {
+    "key": "circle",
+    "creator": "Moments",
+    "source": "https://github.com/doordoorgames/Moments/blob/main/frontend/public/clock-race/art/circle.webp",
+    "original": "https://github.com/doordoorgames/Moments/blob/main/frontend/public/clock-race/art/circle.webp",
+    "license": "CC0 1.0",
+    "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "changes": "Original typeset reference chart or geometric diagram."
+  },
+  "clock": {
+    "key": "clock",
+    "source": "https://www.pexels.com/photo/close-up-of-historic-clock-tower-faces-in-sunlight-30396635/",
+    "original": "https://images.pexels.com/photos/30396635/pexels-photo-30396635.jpeg",
+    "creator": "Marian Florinel Condruz",
+    "license": "Pexels License",
+    "license_url": "https://www.pexels.com/license/",
+    "description": "Detailed view of ornate clock faces on a historic stone tower captured in bright sunlight.",
+    "changes": "Resized and converted to WebP."
+  },
+  "coffee_cup": {
+    "key": "coffee_cup",
+    "source": "https://www.pexels.com/photo/brown-liquid-pouring-on-black-and-white-ceramic-mug-selective-color-photography-1235706/",
+    "original": "https://images.pexels.com/photos/1235706/pexels-photo-1235706.jpeg",
+    "creator": "Lood Goosen",
+    "license": "Pexels License",
+    "license_url": "https://www.pexels.com/license/",
+    "description": "Close-up of steaming dark coffee being poured into a black cup on a dark textured surface. Rich aroma.",
+    "changes": "Resized and converted to WebP."
+  },
+  "cola": {
+    "key": "cola",
+    "source": "https://www.pexels.com/photo/a-close-up-shot-of-coca-cola-bottle-12936159/",
+    "original": "https://images.pexels.com/photos/12936159/pexels-photo-12936159.jpeg",
+    "creator": "Erik Mclean",
+    "license": "Pexels License",
+    "license_url": "https://www.pexels.com/license/",
+    "description": "A classic Coca-Cola bottle sits on an outdoor table against a blurred city nightlife background.",
+    "changes": "Resized and converted to WebP."
+  },
+  "compass": {
+    "key": "compass",
+    "source": "https://www.pexels.com/photo/antique-compass-on-a-table-6593994/",
+    "original": "https://images.pexels.com/photos/6593994/pexels-photo-6593994.jpeg",
+    "creator": "Jaiju Jacob",
+    "license": "Pexels License",
+    "license_url": "https://www.pexels.com/license/",
+    "description": "A close-up of a vintage brass compass on a warm brown surface, perfect for exploration themes.",
+    "changes": "Resized and converted to WebP."
+  },
+  "concrete": {
+    "key": "concrete",
+    "source": "https://commons.wikimedia.org/wiki/File:Bloczek_betonowy.jpg",
+    "original": "https://upload.wikimedia.org/wikipedia/commons/b/b4/Bloczek_betonowy.jpg",
+    "creator": "Ablazejo",
+    "license": "CC BY-SA 3.0",
+    "license_url": "https://creativecommons.org/licenses/by-sa/3.0",
+    "description": "Bloczek_betonowy.jpg",
+    "changes": "Resized and converted to WebP."
+  },
+  "copper": {
+    "key": "copper",
+    "source": "https://www.pexels.com/photo/person-chasing-pattern-on-copper-bowl-20957055/",
+    "original": "https://images.pexels.com/photos/20957055/pexels-photo-20957055.jpeg",
+    "creator": "Duygu  ",
+    "license": "Pexels License",
+    "license_url": "https://www.pexels.com/license/",
+    "description": "Close-up of a craftsman engraving an intricate copper bowl design by hand.",
+    "changes": "Resized and converted to WebP."
+  },
+  "cow": {
+    "key": "cow",
+    "source": "https://www.pexels.com/photo/brown-cow-grazing-in-a-green-meadow-33708857/",
+    "original": "https://images.pexels.com/photos/33708857/pexels-photo-33708857.jpeg",
+    "creator": "Jakub Sambor",
+    "license": "Pexels License",
+    "license_url": "https://www.pexels.com/license/",
+    "description": "Close-up of a brown cow grazing in a lush, green meadow on a bright day.",
+    "changes": "Resized and converted to WebP."
+  },
+  "crocodile": {
+    "key": "crocodile",
+    "source": "https://www.pexels.com/photo/close-up-of-nile-crocodile-on-riverbank-37636513/",
+    "original": "https://images.pexels.com/photos/37636513/pexels-photo-37636513.jpeg",
+    "creator": "Magda Ehlers",
+    "license": "Pexels License",
+    "license_url": "https://www.pexels.com/license/",
+    "description": "Detailed view of a Nile crocodile resting on a riverbank, showcasing textured scales in the sunlight.",
+    "changes": "Resized and converted to WebP."
+  },
+  "dead_sea": {
+    "key": "dead_sea",
+    "original": "https://github.com/nvkelso/natural-earth-vector/blob/master/geojson/ne_10m_lakes.geojson",
+    "source": "https://github.com/nvkelso/natural-earth-vector/blob/master/geojson/ne_10m_lakes.geojson",
+    "creator": "Natural Earth",
+    "license": "Public domain",
+    "license_url": "https://www.naturalearthdata.com/about/terms-of-use/",
+    "changes": "Projected map, cropped and highlighted."
+  },
+  "dog": {
+    "key": "dog",
+    "source": "https://www.pexels.com/photo/white-medium-coat-medium-dog-144608/",
+    "original": "https://images.pexels.com/photos/144608/pexels-photo-144608.jpeg",
+    "creator": "Suvan Chowdhury",
+    "license": "Pexels License",
+    "license_url": "https://www.pexels.com/license/",
+    "description": "Close-up black and white portrait of a playful furry dog showing its teeth, capturing emotion and texture.",
+    "changes": "Resized and converted to WebP."
+  },
+  "dolphin": {
+    "key": "dolphin",
+    "source": "https://www.pexels.com/photo/bottlenose-dolphin-leaping-in-ocean-waters-32585950/",
+    "original": "https://images.pexels.com/photos/32585950/pexels-photo-32585950.jpeg",
+    "creator": "Magda Ehlers",
+    "license": "Pexels License",
+    "license_url": "https://www.pexels.com/license/",
+    "description": "A bottlenose dolphin jumping above the vibrant blue ocean waves on a sunny day.",
+    "changes": "Resized and converted to WebP."
+  },
+  "dominos": {
+    "key": "dominos",
+    "source": "https://www.pexels.com/photo/domino-s-delivery-scooter-on-melbourne-street-31927990/",
+    "original": "https://images.pexels.com/photos/31927990/pexels-photo-31927990.jpeg",
+    "creator": "Jigar Patel",
+    "license": "Pexels License",
+    "license_url": "https://www.pexels.com/license/",
+    "description": "A Domino's pizza delivery scooter rides through a Melbourne street at dusk.",
+    "changes": "Resized and converted to WebP."
+  },
+  "donkey": {
+    "key": "donkey",
+    "source": "https://www.pexels.com/photo/close-up-shot-of-donkeys-11272584/",
+    "original": "https://images.pexels.com/photos/11272584/pexels-photo-11272584.jpeg",
+    "creator": "Di Lewis",
+    "license": "Pexels License",
+    "license_url": "https://www.pexels.com/license/",
+    "description": "A detailed close-up of a donkey eating grass in a natural outdoor setting.",
+    "changes": "Resized and converted to WebP."
+  },
+  "dubai": {
+    "key": "dubai",
+    "original": "https://github.com/nvkelso/natural-earth-vector/blob/master/geojson/ne_10m_populated_places_simple.geojson",
+    "source": "https://github.com/nvkelso/natural-earth-vector/blob/master/geojson/ne_10m_populated_places_simple.geojson",
+    "creator": "Natural Earth",
+    "license": "Public domain",
+    "license_url": "https://www.naturalearthdata.com/about/terms-of-use/",
+    "changes": "Projected map, cropped and highlighted."
+  },
+  "eagle": {
+    "key": "eagle",
+    "source": "https://www.pexels.com/photo/close-up-of-a-golden-eagle-in-natural-habitat-29388744/",
+    "original": "https://images.pexels.com/photos/29388744/pexels-photo-29388744.jpeg",
+    "creator": "Mohan Nannapaneni",
+    "license": "Pexels License",
+    "license_url": "https://www.pexels.com/license/",
+    "description": "A majestic golden eagle perches on a tree branch, showcasing its striking plumage.",
+    "changes": "Resized and converted to WebP."
+  },
+  "earth": {
+    "key": "earth",
+    "source": "https://www.pexels.com/photo/stunning-view-of-earth-from-space-30596291/",
+    "original": "https://images.pexels.com/photos/30596291/pexels-photo-30596291.png",
+    "creator": "Zelch Csaba",
+    "license": "Pexels License",
+    "license_url": "https://www.pexels.com/license/",
+    "description": "Breathtaking image of Earth from space showcasing the vast blue oceans.",
+    "changes": "Resized and converted to WebP."
+  },
+  "eggs": {
+    "key": "eggs",
+    "source": "https://www.pexels.com/photo/close-up-photo-of-pile-of-brown-eggs-in-a-bowl-4184073/",
+    "original": "https://images.pexels.com/photos/4184073/pexels-photo-4184073.jpeg",
+    "creator": "Rio Lecatompessy",
+    "license": "Pexels License",
+    "license_url": "https://www.pexels.com/license/",
+    "description": "A top-down view of brown organic eggs piled in a white bowl against a dark surface.",
+    "changes": "Resized and converted to WebP."
+  },
+  "egypt": {
+    "key": "egypt",
+    "source": "https://www.naturalearthdata.com/downloads/50m-cultural-vectors/50m-admin-0-countries-2/",
+    "original": "https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_50m_admin_0_countries.geojson",
+    "creator": "Natural Earth",
+    "license": "Public domain",
+    "license_url": "https://www.naturalearthdata.com/about/terms-of-use/",
+    "changes": "Rendered regional map with highlighted country."
+  },
+  "eiffel": {
+    "key": "eiffel",
+    "source": "https://www.pexels.com/photo/close-up-view-of-the-eiffel-tower-in-paris-31140822/",
+    "original": "https://images.pexels.com/photos/31140822/pexels-photo-31140822.jpeg",
+    "creator": "Olivia",
+    "license": "Pexels License",
+    "license_url": "https://www.pexels.com/license/",
+    "description": "Detailed close-up of the Eiffel Tower, showcasing its intricate design in Paris.",
+    "changes": "Resized and converted to WebP."
+  },
+  "elbow": {
+    "key": "elbow",
+    "source": "https://www.pexels.com/photo/a-woman-touching-her-elbow-8624600/",
+    "original": "https://images.pexels.com/photos/8624600/pexels-photo-8624600.jpeg",
+    "creator": "Ron Lach ",
+    "license": "Pexels License",
+    "license_url": "https://www.pexels.com/license/",
+    "description": "A soft focus close-up of a person's arm touching the elbow in gentle light.",
+    "changes": "Resized and converted to WebP."
+  },
+  "elephant": {
+    "key": "elephant",
+    "source": "https://www.inaturalist.org/photos/758260730",
+    "original": "https://inaturalist-open-data.s3.amazonaws.com/photos/758260730/original.jpg",
+    "creator": "(c) Karen Eichholz, some rights reserved (CC BY)",
+    "license": "CC BY 4.0",
+    "license_url": "https://creativecommons.org/licenses/by/4.0/",
+    "description": "Loxodonta africana",
+    "changes": "Resized and converted to WebP."
+  },
+  "emirates": {
+    "key": "emirates",
+    "source": "https://www.pexels.com/photo/emirates-airplane-soaring-in-clear-sky-32341632/",
+    "original": "https://images.pexels.com/photos/32341632/pexels-photo-32341632.jpeg",
+    "creator": "Tuan Vy  Spotter ",
+    "license": "Pexels License",
+    "license_url": "https://www.pexels.com/license/",
+    "description": "An Emirates plane flying in a clear sky, showcasing dynamic flight and travel inspiration.",
+    "changes": "Resized and converted to WebP."
+  },
+  "emperor_penguin": {
+    "key": "emperor_penguin",
+    "source": "https://www.pexels.com/photo/emperor-penguins-in-antarctic-habitat-35018549/",
+    "original": "https://images.pexels.com/photos/35018549/pexels-photo-35018549.jpeg",
+    "creator": "Tasha_WhiteGold",
+    "license": "Pexels License",
+    "license_url": "https://www.pexels.com/license/",
+    "description": "Close-up of emperor penguins in a snowy Antarctic setting with icy surroundings.",
+    "changes": "Resized and converted to WebP."
+  },
+  "empty_quarter": {
+    "key": "empty_quarter",
+    "original": "https://github.com/nvkelso/natural-earth-vector/blob/master/geojson/ne_10m_geography_regions_polys.geojson",
+    "source": "https://github.com/nvkelso/natural-earth-vector/blob/master/geojson/ne_10m_geography_regions_polys.geojson",
+    "creator": "Natural Earth",
+    "license": "Public domain",
+    "license_url": "https://www.naturalearthdata.com/about/terms-of-use/",
+    "changes": "Projected map, cropped and highlighted."
+  },
+  "english_letters": {
+    "key": "english_letters",
+    "creator": "Moments",
+    "source": "https://github.com/doordoorgames/Moments/blob/main/frontend/public/clock-race/art/english_letters.webp",
+    "original": "https://github.com/doordoorgames/Moments/blob/main/frontend/public/clock-race/art/english_letters.webp",
+    "license": "CC0 1.0",
+    "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "changes": "Original typeset reference chart or geometric diagram."
+  },
+  "espresso": {
+    "key": "espresso",
+    "source": "https://www.pexels.com/photo/classic-espresso-cup-on-wooden-table-37548742/",
+    "original": "https://images.pexels.com/photos/37548742/pexels-photo-37548742.jpeg",
+    "creator": "Nour Alhoda",
+    "license": "Pexels License",
+    "license_url": "https://www.pexels.com/license/",
+    "description": "A close-up of an espresso cup on a sunlit wooden table, perfect for coffee lovers.",
+    "changes": "Resized and converted to WebP."
+  },
+  "europe": {
+    "key": "europe",
+    "original": "https://github.com/nvkelso/natural-earth-vector/blob/master/geojson/ne_10m_geography_regions_polys.geojson",
+    "source": "https://github.com/nvkelso/natural-earth-vector/blob/master/geojson/ne_10m_geography_regions_polys.geojson",
+    "creator": "Natural Earth",
+    "license": "Public domain",
+    "license_url": "https://www.naturalearthdata.com/about/terms-of-use/",
+    "changes": "Projected map, cropped and highlighted."
+  },
+  "everest": {
+    "key": "everest",
+    "source": "https://www.pexels.com/photo/majestic-mount-everest-at-sunrise-31410274/",
+    "original": "https://images.pexels.com/photos/31410274/pexels-photo-31410274.jpeg",
+    "creator": "Tom fly",
+    "license": "Pexels License",
+    "license_url": "https://www.pexels.com/license/",
+    "description": "Stunning sunrise view of Mount Everest in the Himalayas with warm light on the snow-capped peaks.",
+    "changes": "Resized and converted to WebP."
+  },
+  "facebook": {
+    "key": "facebook",
+    "source": "https://www.pexels.com/photo/a-smartphone-home-screen-displaying-a-facebook-app-icon-21792120/",
+    "original": "https://images.pexels.com/photos/21792120/pexels-photo-21792120.jpeg",
+    "creator": "Image Hunter",
+    "license": "Pexels License",
+    "license_url": "https://www.pexels.com/license/",
+    "description": "Close-up of a smartphone with Facebook app notification on a marble surface.",
+    "changes": "Resized and converted to WebP."
+  },
+  "falcon": {
+    "key": "falcon",
+    "source": "https://www.pexels.com/photo/close-up-of-a-peregrine-falcon-in-vancouver-40439799/",
+    "original": "https://images.pexels.com/photos/40439799/pexels-photo-40439799.jpeg",
+    "creator": "Allan Lee",
+    "license": "Pexels License",
+    "license_url": "https://www.pexels.com/license/",
+    "description": "Detailed view of a Peregrine Falcon perched indoors, showcasing its striking features.",
+    "changes": "Resized and converted to WebP."
+  },
+  "fax": {
+    "key": "fax",
+    "source": "https://commons.wikimedia.org/wiki/File:Samsung_SF-3100_Inkjet_Fax_Machine.jpg",
+    "original": "https://upload.wikimedia.org/wikipedia/commons/f/f5/Samsung_SF-3100_Inkjet_Fax_Machine.jpg",
+    "creator": "Pittigrilli",
+    "license": "CC BY-SA 4.0",
+    "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
+    "description": "Samsung_SF-3100_Inkjet_Fax_Machine.jpg",
+    "changes": "Resized and converted to WebP."
+  },
+  "flute": {
+    "key": "flute",
+    "source": "https://www.pexels.com/photo/close-up-shot-of-silver-flutes-7238910/",
+    "original": "https://images.pexels.com/photos/7238910/pexels-photo-7238910.jpeg",
+    "creator": "Jean-Paul  Wright",
+    "license": "Pexels License",
+    "license_url": "https://www.pexels.com/license/",
+    "description": "Detailed close-up of elegant silver flutes showcasing intricate keys and design.",
+    "changes": "Resized and converted to WebP."
+  },
+  "football": {
+    "key": "football",
+    "source": "https://www.pexels.com/photo/close-up-of-soccer-ball-on-green-field-30986214/",
+    "original": "https://images.pexels.com/photos/30986214/pexels-photo-30986214.jpeg",
+    "creator": "Franco Monsalvo",
+    "license": "Pexels License",
+    "license_url": "https://www.pexels.com/license/",
+    "description": "A detailed photo of a soccer ball on a lush grass field with blurred background.",
+    "changes": "Resized and converted to WebP."
+  },
+  "frog": {
+    "key": "frog",
+    "source": "https://www.pexels.com/photo/close-up-of-a-common-frog-in-natural-habitat-34983525/",
+    "original": "https://images.pexels.com/photos/34983525/pexels-photo-34983525.jpeg",
+    "creator": "Milbela  ",
+    "license": "Pexels License",
+    "license_url": "https://www.pexels.com/license/",
+    "description": "Detailed photo of a common frog among grass, showcasing nature's beauty.",
+    "changes": "Resized and converted to WebP."
+  },
+  "giraffe": {
+    "key": "giraffe",
+    "source": "https://www.pexels.com/photo/giraffe-in-the-wild-namibia-close-up-39820404/",
+    "original": "https://images.pexels.com/photos/39820404/pexels-photo-39820404.jpeg",
+    "creator": "Leon Bastian",
+    "license": "Pexels License",
+    "license_url": "https://www.pexels.com/license/",
+    "description": "Close-up of a giraffe against a clear blue sky in Namibia's wilderness.",
+    "changes": "Resized and converted to WebP."
+  },
+  "glass": {
+    "key": "glass",
+    "source": "https://www.pexels.com/photo/clear-laboratory-glassware-1146627/",
+    "original": "https://images.pexels.com/photos/1146627/pexels-photo-1146627.jpeg",
+    "creator": "Jason  Villanueva",
+    "license": "Pexels License",
+    "license_url": "https://www.pexels.com/license/",
+    "description": "Close-up of transparent glassware bottles with leather accents in a lab environment.",
+    "changes": "Resized and converted to WebP."
+  },
+  "glove": {
+    "key": "glove",
+    "source": "https://commons.wikimedia.org/wiki/File:Centre_de_Documentaci%C3%B3_Museu_T%C3%A8xtil_de_Terrassa-_Reserves-_Teixits-_Guants002.JPG",
+    "original": "https://upload.wikimedia.org/wikipedia/commons/0/01/Centre_de_Documentaci%C3%B3_Museu_T%C3%A8xtil_de_Terrassa-_Reserves-_Teixits-_Guants002.JPG",
+    "creator": "Kippelboy",
+    "license": "CC BY-SA 3.0",
+    "license_url": "https://creativecommons.org/licenses/by-sa/3.0",
+    "description": "Centre_de_Documentació_Museu_Tèxtil_de_Terrassa-_Reserves-_Teixits-_Guants002.JPG",
+    "changes": "Resized and converted to WebP."
+  },
+  "gobi": {
+    "key": "gobi",
+    "original": "https://github.com/nvkelso/natural-earth-vector/blob/master/geojson/ne_10m_geography_regions_polys.geojson",
+    "source": "https://github.com/nvkelso/natural-earth-vector/blob/master/geojson/ne_10m_geography_regions_polys.geojson",
+    "creator": "Natural Earth",
+    "license": "Public domain",
+    "license_url": "https://www.naturalearthdata.com/about/terms-of-use/",
+    "changes": "Projected map, cropped and highlighted."
+  },
+  "gold": {
+    "key": "gold",
+    "source": "https://www.pexels.com/photo/close-up-photo-of-gold-bars-8442325/",
+    "original": "https://images.pexels.com/photos/8442325/pexels-photo-8442325.jpeg",
+    "creator": "Zlaťáky.cz",
+    "license": "Pexels License",
+    "license_url": "https://www.pexels.com/license/",
+    "description": "Close-up of gold and platinum bars depicting wealth and investment potential.",
+    "changes": "Resized and converted to WebP."
+  },
+  "google": {
+    "key": "google",
+    "source": "https://commons.wikimedia.org/wiki/File:Google_Campus,_Mountain_View,_CA.jpg",
+    "original": "https://upload.wikimedia.org/wikipedia/commons/e/e2/Google_Campus%2C_Mountain_View%2C_CA.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "creator": "Austin McKinley",
+    "license": "CC BY 3.0",
+    "license_url": "https://creativecommons.org/licenses/by/3.0",
+    "description": "File:Google Campus, Mountain View, CA.jpg",
+    "changes": "Resized and converted to WebP."
+  },
+  "gorilla": {
+    "key": "gorilla",
+    "source": "https://www.pexels.com/photo/black-gorilla-in-close-up-photography-6233523/",
+    "original": "https://images.pexels.com/photos/6233523/pexels-photo-6233523.jpeg",
+    "creator": "David Atkins",
+    "license": "Pexels License",
+    "license_url": "https://www.pexels.com/license/",
+    "description": "Captivating close-up portrait of a gorilla showcasing its powerful features and intense gaze.",
+    "changes": "Resized and converted to WebP."
+  },
+  "greenland": {
+    "key": "greenland",
+    "source": "https://www.naturalearthdata.com/downloads/50m-cultural-vectors/50m-admin-0-countries-2/",
+    "original": "https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_50m_admin_0_countries.geojson",
+    "creator": "Natural Earth",
+    "license": "Public domain",
+    "license_url": "https://www.naturalearthdata.com/about/terms-of-use/",
+    "changes": "Rendered regional map with highlighted country."
+  },
+  "grizzly": {
+    "key": "grizzly",
+    "source": "https://www.pexels.com/photo/close-up-photo-of-a-grizzly-bear-standing-in-grass-17936270/",
+    "original": "https://images.pexels.com/photos/17936270/pexels-photo-17936270.jpeg",
+    "creator": "Susanne Jutzeler, suju-foto ",
+    "license": "Pexels License",
+    "license_url": "https://www.pexels.com/license/",
+    "description": "A detailed view of a grizzly bear roaming in the wilderness, surrounded by lush greenery.",
+    "changes": "Resized and converted to WebP."
+  },
+  "guitar": {
+    "key": "guitar",
+    "source": "https://www.pexels.com/photo/close-up-shot-of-an-acoustic-guitar-9057791/",
+    "original": "https://images.pexels.com/photos/9057791/pexels-photo-9057791.jpeg",
+    "creator": "Marayah Stumbo",
+    "license": "Pexels License",
+    "license_url": "https://www.pexels.com/license/",
+    "description": "A beautifully patterned acoustic guitar stands among others in a music store.",
+    "changes": "Resized and converted to WebP."
+  },
+  "gulf": {
+    "key": "gulf",
+    "original": "https://github.com/nvkelso/natural-earth-vector/blob/master/geojson/ne_10m_geography_marine_polys.geojson",
+    "source": "https://github.com/nvkelso/natural-earth-vector/blob/master/geojson/ne_10m_geography_marine_polys.geojson",
+    "creator": "Natural Earth",
+    "license": "Public domain",
+    "license_url": "https://www.naturalearthdata.com/about/terms-of-use/",
+    "changes": "Projected map, cropped and highlighted."
+  },
+  "hammer": {
+    "key": "hammer",
+    "source": "https://www.pexels.com/photo/faceless-man-putting-decoration-on-wall-while-using-hammer-4792530/",
+    "original": "https://images.pexels.com/photos/4792530/pexels-photo-4792530.jpeg",
+    "creator": "Anete Lusina",
+    "license": "Pexels License",
+    "license_url": "https://www.pexels.com/license/",
+    "description": "Close-up of a man using a hammer to hang decorations on a wall indoors.",
+    "changes": "Resized and converted to WebP."
+  },
+  "harry_potter": {
+    "key": "harry_potter",
+    "creator": "Alicia Christin Gerald",
+    "license": "Unsplash License",
+    "license_url": "https://unsplash.com/license",
+    "source": "https://unsplash.com/photos/harry-potter-and-the-philosophers-stone-book-cover-XCVFpiMfpZc",
+    "original": "https://images.unsplash.com/photo-1771712969766-b50d5cba6d96",
+    "changes": "Resized and converted to WebP."
+  },
+  "heart": {
+    "key": "heart",
+    "source": "https://www.pexels.com/photo/person-with-tattoo-on-hand-holding-ceramic-figurine-of-human-heart-10064753/",
+    "original": "https://images.pexels.com/photos/10064753/pexels-photo-10064753.jpeg",
+    "creator": "Isadora Serpa",
+    "license": "Pexels License",
+    "license_url": "https://www.pexels.com/license/",
+    "description": "A tattooed hand holds a colorful anatomical heart model against a plain background.",
+    "changes": "Resized and converted to WebP."
+  },
+  "helium": {
+    "key": "helium",
+    "source": "https://www.pexels.com/photo/crop-woman-holding-canister-with-refrigerant-5747548/",
+    "original": "https://images.pexels.com/photos/5747548/pexels-photo-5747548.jpeg",
+    "creator": "Darya Sannikova",
+    "license": "Pexels License",
+    "license_url": "https://www.pexels.com/license/",
+    "description": "Artistic portrait with hands holding a helium tank, illuminated by neon lighting.",
+    "changes": "Resized and converted to WebP."
+  },
+  "hippo": {
+    "key": "hippo",
+    "source": "https://www.inaturalist.org/photos/756342619",
+    "original": "https://inaturalist-open-data.s3.amazonaws.com/photos/756342619/original.jpg",
+    "creator": "(c) Alan Manson, some rights reserved (CC BY)",
+    "license": "CC BY 4.0",
+    "license_url": "https://creativecommons.org/licenses/by/4.0/",
+    "description": "Hippopotamus amphibius",
+    "changes": "Resized and converted to WebP."
+  },
+  "horse": {
+    "key": "horse",
+    "source": "https://commons.wikimedia.org/wiki/File:Nokota_Horses_cropped.jpg",
+    "original": "https://upload.wikimedia.org/wikipedia/commons/d/de/Nokota_Horses_cropped.jpg",
+    "creator": "Nokota_Horses.jpg: François Marchal derivative work: Dana boomer (talk)",
+    "license": "CC BY-SA 2.5",
+    "license_url": "https://creativecommons.org/licenses/by-sa/2.5",
+    "description": "Nokota_Horses_cropped.jpg",
+    "changes": "Resized and converted to WebP."
+  },
+  "hourglass": {
+    "key": "hourglass",
+    "source": "https://www.pexels.com/photo/shallow-focus-of-clear-hourglass-1095601/",
+    "original": "https://images.pexels.com/photos/1095601/pexels-photo-1095601.jpeg",
+    "creator": "Jordan Benton",
+    "license": "Pexels License",
+    "license_url": "https://www.pexels.com/license/",
+    "description": "Close-up of a vintage hourglass surrounded by antique clocks in warm lighting.",
+    "changes": "Resized and converted to WebP."
+  },
+  "house_cat": {
+    "key": "house_cat",
+    "source": "https://www.pexels.com/photo/close-up-portrait-of-a-domestic-cat-30325629/",
+    "original": "https://images.pexels.com/photos/30325629/pexels-photo-30325629.jpeg",
+    "creator": "Fatıma Acunman",
+    "license": "Pexels License",
+    "license_url": "https://www.pexels.com/license/",
+    "description": "Captivating portrait of a domestic cat with green eyes and multicolored fur.",
+    "changes": "Resized and converted to WebP."
+  },
+  "human": {
+    "key": "human",
+    "source": "https://commons.wikimedia.org/wiki/File:Akha_cropped_hires.JPG",
+    "original": "https://upload.wikimedia.org/wikipedia/commons/6/68/Akha_cropped_hires.JPG",
+    "creator": "Weltenbummler84",
+    "license": "CC BY-SA 2.0",
+    "license_url": "https://creativecommons.org/licenses/by-sa/2.0/de/deed.en",
+    "description": "Akha_cropped_hires.JPG",
+    "changes": "Resized and converted to WebP."
+  },
+  "hummingbird": {
+    "key": "hummingbird",
+    "source": "https://www.inaturalist.org/photos/758310345",
+    "original": "https://inaturalist-open-data.s3.amazonaws.com/photos/758310345/original.jpg",
+    "creator": "no rights reserved",
+    "license": "CC0 1.0",
+    "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "description": "Archilochus colubris",
+    "changes": "Resized and converted to WebP."
+  },
+  "hummus": {
+    "key": "hummus",
+    "source": "https://commons.wikimedia.org/wiki/File:Lebanese_style_hummus.jpg",
+    "original": "https://upload.wikimedia.org/wikipedia/commons/b/bf/Lebanese_style_hummus.jpg",
+    "creator": "Beyrouthhh at English Wikipedia",
+    "license": "CC BY 3.0",
+    "license_url": "https://creativecommons.org/licenses/by/3.0",
+    "description": "Lebanese_style_hummus.jpg",
+    "changes": "Resized and converted to WebP."
+  },
+  "hyena": {
+    "key": "hyena",
+    "source": "https://www.pexels.com/photo/close-up-of-resting-spotted-hyenas-in-natural-habitat-35384449/",
+    "original": "https://images.pexels.com/photos/35384449/pexels-photo-35384449.jpeg",
+    "creator": "jann bader",
+    "license": "Pexels License",
+    "license_url": "https://www.pexels.com/license/",
+    "description": "Spotted hyena cuddling in the wild, showcasing natural behavior and fur patterns.",
+    "changes": "Resized and converted to WebP."
+  },
+  "ice": {
+    "key": "ice",
+    "source": "https://commons.wikimedia.org/wiki/File:Ice_cubes_openphoto.jpg",
+    "original": "https://upload.wikimedia.org/wikipedia/commons/9/9e/Ice_cubes_openphoto.jpg",
+    "creator": "Darren Hester",
+    "license": "CC BY-SA 2.5",
+    "license_url": "https://creativecommons.org/licenses/by-sa/2.5",
+    "description": "Ice_cubes_openphoto.jpg",
+    "changes": "Resized and converted to WebP."
+  },
+  "ice_hockey": {
+    "key": "ice_hockey",
+    "source": "https://commons.wikimedia.org/wiki/File:Pittsburgh_Penguins%2C_Washington_Capitals%2C_Bryan_Rust_%2833744033514%29.jpg",
+    "original": "https://upload.wikimedia.org/wikipedia/commons/3/39/Pittsburgh_Penguins%2C_Washington_Capitals%2C_Bryan_Rust_%2833744033514%29.jpg",
+    "creator": "Keith Allison from Hanover, MD, USA",
+    "license": "CC BY-SA 2.0",
+    "license_url": "https://creativecommons.org/licenses/by-sa/2.0",
+    "description": "Pittsburgh_Penguins,_Washington_Capitals,_Bryan_Rust_(33744033514).jpg",
+    "changes": "Resized and converted to WebP."
+  },
+  "india": {
+    "key": "india",
+    "source": "https://www.naturalearthdata.com/downloads/50m-cultural-vectors/50m-admin-0-countries-2/",
+    "original": "https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_50m_admin_0_countries.geojson",
+    "creator": "Natural Earth",
+    "license": "Public domain",
+    "license_url": "https://www.naturalearthdata.com/about/terms-of-use/",
+    "changes": "Rendered regional map with highlighted country."
+  },
+  "indian_ocean": {
+    "key": "indian_ocean",
+    "original": "https://github.com/nvkelso/natural-earth-vector/blob/master/geojson/ne_10m_geography_marine_polys.geojson",
+    "source": "https://github.com/nvkelso/natural-earth-vector/blob/master/geojson/ne_10m_geography_marine_polys.geojson",
+    "creator": "Natural Earth",
+    "license": "Public domain",
+    "license_url": "https://www.naturalearthdata.com/about/terms-of-use/",
+    "changes": "Projected map, cropped and highlighted."
+  },
+  "instagram": {
+    "key": "instagram",
+    "source": "https://www.pexels.com/photo/instagram-on-a-smartphone-with-the-instagram-app-open-27552013/",
+    "original": "https://images.pexels.com/photos/27552013/pexels-photo-27552013.jpeg",
+    "creator": "indra projects",
+    "license": "Pexels License",
+    "license_url": "https://www.pexels.com/license/",
+    "description": "A smartphone displaying the Instagram app open option on a wooden table.",
+    "changes": "Resized and converted to WebP."
+  },
+  "iphone": {
+    "key": "iphone",
+    "source": "https://commons.wikimedia.org/wiki/File:IPhone_First_Generation_8GB_%283677961514%29.jpg",
+    "original": "https://upload.wikimedia.org/wikipedia/commons/9/9e/IPhone_First_Generation_8GB_%283677961514%29.jpg",
+    "creator": "Carl Berkeley from Riverside California",
+    "license": "CC BY-SA 2.0",
+    "license_url": "https://creativecommons.org/licenses/by-sa/2.0",
+    "description": "IPhone_First_Generation_8GB_(3677961514).jpg",
+    "changes": "Resized and converted to WebP."
+  },
+  "iron": {
+    "key": "iron",
+    "source": "https://www.pexels.com/photo/heap-of-old-metal-rusty-segments-6156586/",
+    "original": "https://images.pexels.com/photos/6156586/pexels-photo-6156586.jpeg",
+    "creator": "Laker ",
+    "license": "Pexels License",
+    "license_url": "https://www.pexels.com/license/",
+    "description": "Close-up of overlapping rusty metal sheets creating a textured, weathered industrial look.",
+    "changes": "Resized and converted to WebP."
+  },
+  "jellyfish": {
+    "key": "jellyfish",
+    "source": "https://commons.wikimedia.org/wiki/File:Jelly_cc11.jpg",
+    "original": "https://upload.wikimedia.org/wikipedia/commons/4/44/Jelly_cc11.jpg",
+    "creator": "Dan90266",
+    "license": "CC BY-SA 2.0",
+    "license_url": "https://creativecommons.org/licenses/by-sa/2.0",
+    "description": "Jelly_cc11.jpg",
+    "changes": "Resized and converted to WebP."
+  },
+  "jordan": {
+    "key": "jordan",
+    "source": "https://www.naturalearthdata.com/downloads/50m-cultural-vectors/50m-admin-0-countries-2/",
+    "original": "https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_50m_admin_0_countries.geojson",
+    "creator": "Natural Earth",
+    "license": "Public domain",
+    "license_url": "https://www.naturalearthdata.com/about/terms-of-use/",
+    "changes": "Rendered regional map with highlighted country."
+  },
+  "jupiter": {
+    "key": "jupiter",
+    "source": "https://images.nasa.gov/details/PIA02873",
+    "original": "http://images-assets.nasa.gov/image/PIA02873/PIA02873~orig.jpg",
+    "creator": "NASA/JPL/University of Arizona",
+    "license": "NASA image usage guidelines",
+    "license_url": "https://www.nasa.gov/nasa-brand-center/images-and-media/",
+    "description": "High Resolution Globe of Jupiter",
+    "changes": "Resized and converted to WebP."
+  },
+  "k2": {
+    "key": "k2",
+    "source": "https://commons.wikimedia.org/wiki/File:Chogori.jpg",
+    "original": "https://upload.wikimedia.org/wikipedia/commons/c/c9/Chogori.jpg",
+    "creator": "Zacharie Grossen",
+    "license": "CC BY-SA 4.0",
+    "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
+    "description": "Chogori.jpg",
+    "changes": "Resized and converted to WebP."
+  },
+  "kangaroo": {
+    "key": "kangaroo",
+    "source": "https://www.pexels.com/photo/red-kangaroo-resting-in-zoo-enclosure-33485056/",
+    "original": "https://images.pexels.com/photos/33485056/pexels-photo-33485056.jpeg",
+    "creator": "Veronika Andrews",
+    "license": "Pexels License",
+    "license_url": "https://www.pexels.com/license/",
+    "description": "Close-up of a red kangaroo in a zoo, showcasing its natural behavior.",
+    "changes": "Resized and converted to WebP."
+  },
+  "kenya": {
+    "key": "kenya",
+    "source": "https://www.naturalearthdata.com/downloads/50m-cultural-vectors/50m-admin-0-countries-2/",
+    "original": "https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_50m_admin_0_countries.geojson",
+    "creator": "Natural Earth",
+    "license": "Public domain",
+    "license_url": "https://www.naturalearthdata.com/about/terms-of-use/",
+    "changes": "Rendered regional map with highlighted country."
+  },
+  "kitkat": {
+    "key": "kitkat",
+    "source": "https://commons.wikimedia.org/wiki/File:Kit-Kat-Split.jpg",
+    "original": "https://upload.wikimedia.org/wikipedia/commons/f/fc/Kit-Kat-Split.jpg",
+    "creator": "Evan-Amos",
+    "license": "Public domain",
+    "license_url": "https://creativecommons.org/publicdomain/mark/1.0/",
+    "description": "Kit-Kat-Split.jpg",
+    "changes": "Resized and converted to WebP."
+  },
+  "koala": {
+    "key": "koala",
+    "source": "https://www.pexels.com/photo/koala-resting-on-tree-branch-in-australia-37701031/",
+    "original": "https://images.pexels.com/photos/37701031/pexels-photo-37701031.jpeg",
+    "creator": "Joolsmagools  ®️",
+    "license": "Pexels License",
+    "license_url": "https://www.pexels.com/license/",
+    "description": "Close-up of a koala perched on a tree branch in Werribee South, Australia.",
+    "changes": "Resized and converted to WebP."
+  },
+  "kunafa": {
+    "key": "kunafa",
+    "source": "https://commons.wikimedia.org/wiki/File:K%C3%BCnefe.jpg",
+    "original": "https://upload.wikimedia.org/wikipedia/commons/c/c8/K%C3%BCnefe.jpg",
+    "creator": "elif ayse",
+    "license": "CC BY 2.0",
+    "license_url": "https://creativecommons.org/licenses/by/2.0",
+    "description": "Künefe.jpg",
+    "changes": "Resized and converted to WebP."
+  },
+  "kuwait": {
+    "key": "kuwait",
+    "source": "https://www.naturalearthdata.com/downloads/50m-cultural-vectors/50m-admin-0-countries-2/",
+    "original": "https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_50m_admin_0_countries.geojson",
+    "creator": "Natural Earth",
+    "license": "Public domain",
+    "license_url": "https://www.naturalearthdata.com/about/terms-of-use/",
+    "changes": "Rendered regional map with highlighted country."
+  },
+  "kuwait_airways": {
+    "key": "kuwait_airways",
+    "source": "https://commons.wikimedia.org/wiki/File:9K-AOJ_-_Boeing_777-369%28ER%29_-_Kuwait_Airways_-_Al-Mesila_-_MSN_62567_-_VGHS.jpg",
+    "original": "https://upload.wikimedia.org/wikipedia/commons/1/11/9K-AOJ_-_Boeing_777-369%28ER%29_-_Kuwait_Airways_-_Al-Mesila_-_MSN_62567_-_VGHS.jpg",
+    "creator": "Md Shaifuzzaman Ayon",
+    "license": "CC BY-SA 4.0",
+    "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
+    "description": "9K-AOJ_-_Boeing_777-369(ER)_-_Kuwait_Airways_-_Al-Mesila_-_MSN_62567_-_VGHS.jpg",
+    "changes": "Resized and converted to WebP."
+  },
+  "kuwait_towers": {
+    "key": "kuwait_towers",
+    "source": "https://www.pexels.com/photo/kuwait-towers-with-national-flags-at-dusk-38611371/",
+    "original": "https://images.pexels.com/photos/38611371/pexels-photo-38611371.jpeg",
+    "creator": "Maryam Afana",
+    "license": "Pexels License",
+    "license_url": "https://www.pexels.com/license/",
+    "description": "Kuwait Towers rise majestically against a clear sky, accompanied by waving national flags. Iconic architectural landmark.",
+    "changes": "Resized and converted to WebP."
+  },
+  "ladle": {
+    "key": "ladle",
+    "source": "https://www.pexels.com/photo/steaming-soup-ladled-into-bowl-with-natural-light-39428728/",
+    "original": "https://images.pexels.com/photos/39428728/pexels-photo-39428728.jpeg",
+    "creator": "Jahra Tasfia Reza",
+    "license": "Pexels License",
+    "license_url": "https://www.pexels.com/license/",
+    "description": "Silhouette of hand ladling steaming soup into bowl with warm natural light.",
+    "changes": "Resized and converted to WebP."
+  },
+  "lego": {
+    "key": "lego",
+    "source": "https://commons.wikimedia.org/wiki/File:Billund_Lego_Campus_3.jpg",
+    "original": "https://upload.wikimedia.org/wikipedia/commons/b/b4/Billund_Lego_Campus_3.jpg",
+    "creator": "Andrzej Otrębski",
+    "license": "CC BY-SA 4.0",
+    "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
+    "description": "Billund_Lego_Campus_3.jpg",
+    "changes": "Resized and converted to WebP."
+  },
+  "lemon": {
+    "key": "lemon",
+    "source": "https://commons.wikimedia.org/wiki/File:P1030323.JPG",
+    "original": "https://upload.wikimedia.org/wikipedia/commons/e/e4/P1030323.JPG",
+    "creator": "Elena Chochkova",
+    "license": "CC BY-SA 4.0",
+    "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
+    "description": "P1030323.JPG",
+    "changes": "Resized and converted to WebP."
+  },
+  "leopard": {
+    "key": "leopard",
+    "source": "https://commons.wikimedia.org/wiki/File:African_leopard_male_%28cropped%29.jpg",
+    "original": "https://upload.wikimedia.org/wikipedia/commons/7/70/African_leopard_male_%28cropped%29.jpg",
+    "creator": "Sumeet Moghe",
+    "license": "CC BY-SA 4.0",
+    "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
+    "description": "African_leopard_male_(cropped).jpg",
+    "changes": "Resized and converted to WebP."
+  },
+  "light": {
+    "key": "light",
+    "source": "https://commons.wikimedia.org/wiki/File:Prism_flat_rainbow_%28cropped%29.jpg",
+    "original": "https://upload.wikimedia.org/wikipedia/commons/f/fa/Prism_flat_rainbow_%28cropped%29.jpg",
+    "creator": "User:Kelvinsong",
+    "license": "CC0",
+    "license_url": "https://creativecommons.org/publicdomain/zero/1.0/deed.en",
+    "description": "Prism_flat_rainbow_(cropped).jpg",
+    "changes": "Resized and converted to WebP."
+  },
+  "light_bulb": {
+    "key": "light_bulb",
+    "source": "https://commons.wikimedia.org/wiki/File:Edison_Carbon_Bulb.jpg",
+    "original": "https://upload.wikimedia.org/wikipedia/commons/3/31/Edison_Carbon_Bulb.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "creator": "Terren",
+    "license": "CC BY 2.0",
+    "license_url": "https://creativecommons.org/licenses/by/2.0",
+    "description": "File:Edison Carbon Bulb.jpg",
+    "changes": "Resized and converted to WebP."
+  },
+  "lighter": {
+    "key": "lighter",
+    "source": "https://www.pexels.com/photo/vibrant-lighter-flame-against-red-backdrop-38701029/",
+    "original": "https://images.pexels.com/photos/38701029/pexels-photo-38701029.jpeg",
+    "creator": "Pedro Hypólito ",
+    "license": "Pexels License",
+    "license_url": "https://www.pexels.com/license/",
+    "description": "Close-up of a purple lighter with a flame, set against a red background.",
+    "changes": "Resized and converted to WebP."
+  },
+  "lime": {
+    "key": "lime",
+    "source": "https://www.pexels.com/photo/fresh-limes-close-up-with-bright-green-texture-40239620/",
+    "original": "https://images.pexels.com/photos/40239620/pexels-photo-40239620.jpeg",
+    "creator": "Xavier Messina",
+    "license": "Pexels License",
+    "license_url": "https://www.pexels.com/license/",
+    "description": "Vibrant close-up of fresh green limes showcasing their textured rind, perfect for citrus-themed designs.",
+    "changes": "Resized and converted to WebP."
+  },
+  "lion": {
+    "key": "lion",
+    "source": "https://www.pexels.com/photo/majestic-lion-portrait-in-natural-habitat-29459559/",
+    "original": "https://images.pexels.com/photos/29459559/pexels-photo-29459559.jpeg",
+    "creator": "Jiří Mikoláš",
+    "license": "Pexels License",
+    "license_url": "https://www.pexels.com/license/",
+    "description": "Close-up portrait of a majestic lion with a full mane in a natural setting, showcasing its regal and powerful demeanor.",
+    "changes": "Resized and converted to WebP."
+  },
+  "liver": {
+    "key": "liver",
+    "source": "https://commons.wikimedia.org/wiki/File:Human_Hepar.jpg",
+    "original": "https://upload.wikimedia.org/wikipedia/commons/6/6f/Human_Hepar.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "creator": "Suseno",
+    "license": "Public domain",
+    "license_url": "https://creativecommons.org/publicdomain/mark/1.0/",
+    "description": "File:Human Hepar.jpg",
+    "changes": "Resized and converted to WebP."
+  },
+  "lizard": {
+    "key": "lizard",
+    "source": "https://www.inaturalist.org/photos/757762638",
+    "original": "https://inaturalist-open-data.s3.amazonaws.com/photos/757762638/original.jpg",
+    "creator": "(c) Umut Nuri Erdoğan, some rights reserved (CC BY)",
+    "license": "CC BY 4.0",
+    "license_url": "https://creativecommons.org/licenses/by/4.0/",
+    "description": "Lacerta viridis",
+    "changes": "Resized and converted to WebP."
+  },
+  "lungs": {
+    "key": "lungs",
+    "source": "https://commons.wikimedia.org/wiki/File:COR-2-STND-CHEST-LUNGS.jpg",
+    "original": "https://upload.wikimedia.org/wikipedia/commons/9/9a/COR-2-STND-CHEST-LUNGS.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "creator": "Ptrump16",
+    "license": "CC BY-SA 4.0",
+    "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
+    "description": "File:COR-2-STND-CHEST-LUNGS.jpg",
+    "changes": "Resized and converted to WebP."
+  },
+  "luqaimat": {
+    "key": "luqaimat",
+    "source": "https://commons.wikimedia.org/wiki/File:Lugaimat_Riyadh_2024.jpg",
+    "original": "https://upload.wikimedia.org/wikipedia/commons/7/77/Lugaimat_Riyadh_2024.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "creator": "Hamza A. Durrani",
+    "license": "CC BY 4.0",
+    "license_url": "https://creativecommons.org/licenses/by/4.0",
+    "description": "File:Lugaimat Riyadh 2024.jpg",
+    "changes": "Resized and converted to WebP."
+  },
+  "macaroni": {
+    "key": "macaroni",
+    "source": "https://www.pexels.com/photo/delicious-macaroni-and-ground-beef-dish-36627079/",
+    "original": "https://images.pexels.com/photos/36627079/pexels-photo-36627079.jpeg",
+    "creator": "Valeria Boltneva",
+    "license": "Pexels License",
+    "license_url": "https://www.pexels.com/license/",
+    "description": "Close-up of a hot serving tray filled with macaroni and ground beef garnished with herbs.",
+    "changes": "Resized and converted to WebP."
+  },
+  "mammoth": {
+    "key": "mammoth",
+    "source": "https://www.pexels.com/photo/mammoth-skeleton-in-geological-museum-in-warsaw-13719500/",
+    "original": "https://images.pexels.com/photos/13719500/pexels-photo-13719500.jpeg",
+    "creator": "Anna Holodna",
+    "license": "Pexels License",
+    "license_url": "https://www.pexels.com/license/",
+    "description": "Mammoth skeleton display at geological museum in Warsaw, Poland.",
+    "changes": "Resized and converted to WebP."
+  },
+  "mango": {
+    "key": "mango",
+    "source": "https://www.pexels.com/photo/close-up-of-ripe-mangoes-on-a-tree-branch-36579504/",
+    "original": "https://images.pexels.com/photos/36579504/pexels-photo-36579504.jpeg",
+    "creator": "silas tarus",
+    "license": "Pexels License",
+    "license_url": "https://www.pexels.com/license/",
+    "description": "Vivid image of two ripe mangoes hanging from a tree branch in sunlight.",
+    "changes": "Resized and converted to WebP."
+  },
+  "mars": {
+    "key": "mars",
+    "source": "https://images.nasa.gov/details/PIA04591",
+    "original": "http://images-assets.nasa.gov/image/PIA04591/PIA04591~orig.jpg",
+    "creator": "NASA/JPL/Malin Space Science Systems",
+    "license": "NASA image usage guidelines",
+    "license_url": "https://www.nasa.gov/nasa-brand-center/images-and-media/",
+    "description": "Mars 2003",
+    "changes": "Resized and converted to WebP."
+  },
+  "matches": {
+    "key": "matches",
+    "source": "https://www.pexels.com/photo/bunch-of-matches-21615872/",
+    "original": "https://images.pexels.com/photos/21615872/pexels-photo-21615872.jpeg",
+    "creator": " Damir K ",
+    "license": "Pexels License",
+    "license_url": "https://www.pexels.com/license/",
+    "description": "A close-up shot of wooden matches spilling from a container. Ideal for design and safety concepts.",
+    "changes": "Resized and converted to WebP."
+  },
+  "mediterranean": {
+    "key": "mediterranean",
+    "original": "https://github.com/nvkelso/natural-earth-vector/blob/master/geojson/ne_10m_geography_marine_polys.geojson",
+    "source": "https://github.com/nvkelso/natural-earth-vector/blob/master/geojson/ne_10m_geography_marine_polys.geojson",
+    "creator": "Natural Earth",
+    "license": "Public domain",
+    "license_url": "https://www.naturalearthdata.com/about/terms-of-use/",
+    "changes": "Projected map, cropped and highlighted."
+  },
+  "mercury": {
+    "key": "mercury",
+    "source": "https://commons.wikimedia.org/wiki/File:Pouring_liquid_mercury_bionerd.jpg",
+    "original": "https://upload.wikimedia.org/wikipedia/commons/9/99/Pouring_liquid_mercury_bionerd.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "creator": "Bionerd",
+    "license": "CC BY 3.0",
+    "license_url": "https://creativecommons.org/licenses/by/3.0",
+    "description": "File:Pouring liquid mercury bionerd.jpg",
+    "changes": "Resized and converted to WebP."
+  },
+  "mercury_planet": {
+    "key": "mercury_planet",
+    "source": "https://images.nasa.gov/details/PIA15160",
+    "original": "http://images-assets.nasa.gov/image/PIA15160/PIA15160~orig.jpg",
+    "creator": "NASA/Johns Hopkins University Applied Physics Laboratory/Carnegie Institution of Washington",
+    "license": "NASA image usage guidelines",
+    "license_url": "https://www.nasa.gov/nasa-brand-center/images-and-media/",
+    "description": "Mercury Globe: 0°N, 0°E",
+    "changes": "Resized and converted to WebP."
+  },
+  "microsoft": {
+    "key": "microsoft",
+    "source": "https://www.pexels.com/photo/microsoft-building-with-lush-greenery-foreground-28882519/",
+    "original": "https://images.pexels.com/photos/28882519/pexels-photo-28882519.jpeg",
+    "creator": "Yolier Izquierdo Cuellar",
+    "license": "Pexels License",
+    "license_url": "https://www.pexels.com/license/",
+    "description": "Modern Microsoft office building with lush greenery and cloudy sky in foreground.",
+    "changes": "Resized and converted to WebP."
+  },
+  "mms": {
+    "key": "mms",
+    "source": "https://www.pexels.com/photo/colorful-candy-coated-chocolate-close-up-36482894/",
+    "original": "https://images.pexels.com/photos/36482894/pexels-photo-36482894.png",
+    "creator": "Abubakir Abdusattorov",
+    "license": "Pexels License",
+    "license_url": "https://www.pexels.com/license/",
+    "description": "A vibrant assortment of colorful candy-coated chocolates in a close-up view.",
+    "changes": "Resized and converted to WebP."
+  },
+  "mona_lisa": {
+    "key": "mona_lisa",
+    "source": "https://www.pexels.com/photo/mona-lisa-painting-on-a-wall-18225573/",
+    "original": "https://images.pexels.com/photos/18225573/pexels-photo-18225573.jpeg",
+    "creator": "Bozan  Güzel ",
+    "license": "Pexels License",
+    "license_url": "https://www.pexels.com/license/",
+    "description": "Mona Lisa artwork framed on a rustic, textured brick wall creating an urban aesthetic.",
+    "changes": "Resized and converted to WebP."
+  },
+  "monopoly": {
+    "key": "monopoly",
+    "source": "https://www.pexels.com/photo/close-up-of-dice-on-a-monopoly-board-game-37983582/",
+    "original": "https://images.pexels.com/photos/37983582/pexels-photo-37983582.jpeg",
+    "creator": "Annashoots 📷 ",
+    "license": "Pexels License",
+    "license_url": "https://www.pexels.com/license/",
+    "description": "High-quality close-up photo of dice on a classic Monopoly board game, highlighting the gaming experience.",
+    "changes": "Resized and converted to WebP."
+  },
+  "moon": {
+    "key": "moon",
+    "source": "https://commons.wikimedia.org/wiki/File:FullMoon2010.jpg",
+    "original": "https://upload.wikimedia.org/wikipedia/commons/e/e1/FullMoon2010.jpg",
+    "creator": "Gregory H. Revera",
+    "license": "CC BY-SA 3.0",
+    "license_url": "https://creativecommons.org/licenses/by-sa/3.0",
+    "description": "FullMoon2010.jpg",
+    "changes": "Resized and converted to WebP."
+  },
+  "morocco": {
+    "key": "morocco",
+    "source": "https://www.naturalearthdata.com/downloads/50m-cultural-vectors/50m-admin-0-countries-2/",
+    "original": "https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_50m_admin_0_countries.geojson",
+    "creator": "Natural Earth",
+    "license": "Public domain",
+    "license_url": "https://www.naturalearthdata.com/about/terms-of-use/",
+    "changes": "Rendered regional map with highlighted country."
+  },
+  "netflix": {
+    "key": "netflix",
+    "source": "https://www.pexels.com/photo/vertical-shot-of-watching-netflix-on-tv-4329870/",
+    "original": "https://images.pexels.com/photos/4329870/pexels-photo-4329870.jpeg",
+    "creator": "Fabio Lange",
+    "license": "Pexels License",
+    "license_url": "https://www.pexels.com/license/",
+    "description": "Relaxing indoors with Netflix, showcasing a typical weekend vibe.",
+    "changes": "Resized and converted to WebP."
+  },
+  "nintendo": {
+    "key": "nintendo",
+    "source": "https://www.pexels.com/photo/nintendo-game-boy-19658253/",
+    "original": "https://images.pexels.com/photos/19658253/pexels-photo-19658253.jpeg",
+    "creator": "William Warby",
+    "license": "Pexels License",
+    "license_url": "https://www.pexels.com/license/",
+    "description": "Close-up of a classic Nintendo Game Boy handheld console, iconic retro gaming device.",
+    "changes": "Resized and converted to WebP."
+  },
+  "nitrogen": {
+    "key": "nitrogen",
+    "source": "https://www.pexels.com/photo/red-liquid-nitrogen-cocktail-drink-in-clear-glass-9544253/",
+    "original": "https://images.pexels.com/photos/9544253/pexels-photo-9544253.jpeg",
+    "creator": "Алексей Вечерин",
+    "license": "Pexels License",
+    "license_url": "https://www.pexels.com/license/",
+    "description": "A striking red cocktail served in a martini glass with a dramatic smoke effect using liquid nitrogen.",
+    "changes": "Resized and converted to WebP."
+  },
+  "north_pole": {
+    "key": "north_pole",
+    "original": "https://github.com/nvkelso/natural-earth-vector/blob/master/geojson/ne_50m_admin_0_countries.geojson",
+    "source": "https://github.com/nvkelso/natural-earth-vector/blob/master/geojson/ne_50m_admin_0_countries.geojson",
+    "creator": "Natural Earth",
+    "license": "Public domain",
+    "license_url": "https://www.naturalearthdata.com/about/terms-of-use/",
+    "changes": "Projected map, cropped and highlighted."
+  },
+  "octopus": {
+    "key": "octopus",
+    "source": "https://www.pexels.com/photo/close-up-of-vibrant-octopus-tentacles-underwater-31329010/",
+    "original": "https://images.pexels.com/photos/31329010/pexels-photo-31329010.jpeg",
+    "creator": "Elena Selaru",
+    "license": "Pexels License",
+    "license_url": "https://www.pexels.com/license/",
+    "description": "Detailed view of octopus tentacles displaying vibrant colors underwater.",
+    "changes": "Resized and converted to WebP."
+  },
+  "oil": {
+    "key": "oil",
+    "source": "https://www.pexels.com/photo/close-up-of-a-jar-with-olive-oil-standing-on-a-cutting-board-25745506/",
+    "original": "https://images.pexels.com/photos/25745506/pexels-photo-25745506.jpeg",
+    "creator": "Rahime Gül",
+    "license": "Pexels License",
+    "license_url": "https://www.pexels.com/license/",
+    "description": "Close-up of olive oil and olives with leaves on a wooden cutting board.",
+    "changes": "Resized and converted to WebP."
+  },
+  "oman": {
+    "key": "oman",
+    "source": "https://www.naturalearthdata.com/downloads/50m-cultural-vectors/50m-admin-0-countries-2/",
+    "original": "https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_50m_admin_0_countries.geojson",
+    "creator": "Natural Earth",
+    "license": "Public domain",
+    "license_url": "https://www.naturalearthdata.com/about/terms-of-use/",
+    "changes": "Rendered regional map with highlighted country."
+  },
+  "orange": {
+    "key": "orange",
+    "source": "https://www.pexels.com/photo/close-up-shot-of-sliced-orange-fruits-11065671/",
+    "original": "https://images.pexels.com/photos/11065671/pexels-photo-11065671.jpeg",
+    "creator": "Anastasiya Trefelova",
+    "license": "Pexels License",
+    "license_url": "https://www.pexels.com/license/",
+    "description": "Vibrant close-up shot of two sliced oranges showcasing their juicy texture under sunlight.",
+    "changes": "Resized and converted to WebP."
+  },
+  "ostrich": {
+    "key": "ostrich",
+    "source": "https://www.pexels.com/photo/close-up-of-ostrich-head-16057332/",
+    "original": "https://images.pexels.com/photos/16057332/pexels-photo-16057332.jpeg",
+    "creator": "Abbas Hussain",
+    "license": "Pexels License",
+    "license_url": "https://www.pexels.com/license/",
+    "description": "A detailed close-up of an ostrich head with a vibrant green background in Islamabad, Pakistan.",
+    "changes": "Resized and converted to WebP."
+  },
+  "ostrich_brain": {
+    "key": "ostrich_brain",
+    "source": "https://doi.org/10.1155/vmi/4993179",
+    "original": "https://pmc-oa-opendata.s3.amazonaws.com/PMC12256172.1/VMI2025-4993179.005.jpg",
+    "creator": "Majid Masoudifard, Omid Zehtabvar, Arman Shahbazi, Soroush Bakhtiari Raad and Seyyed Hossein Modarres Tonekabony",
+    "license": "CC BY 4.0",
+    "license_url": "https://creativecommons.org/licenses/by/4.0/",
+    "changes": "Cropped the brain labeled B from the dorsal CT scan in figure 5e."
+  },
+  "ostrich_eye": {
+    "key": "ostrich_eye",
+    "source": "https://www.pexels.com/photo/close-up-of-ostrich-head-16057332/",
+    "original": "https://images.pexels.com/photos/16057332/pexels-photo-16057332.jpeg",
+    "creator": "Abbas Hussain",
+    "license": "Pexels License",
+    "license_url": "https://www.pexels.com/license/",
+    "description": "A detailed close-up of an ostrich head with a vibrant green background in Islamabad, Pakistan.",
+    "changes": "Cropped around the eye of the original ostrich photograph and converted to WebP."
+  },
+  "oud": {
+    "key": "oud",
+    "source": "https://www.pexels.com/photo/brown-wooden-musical-instrument-11970797/",
+    "original": "https://images.pexels.com/photos/11970797/pexels-photo-11970797.jpeg",
+    "creator": "Etkin Celep",
+    "license": "Pexels License",
+    "license_url": "https://www.pexels.com/license/",
+    "description": "A close-up of a traditional oud, showcasing intricate details against a wooden backdrop.",
+    "changes": "Resized and converted to WebP."
+  },
+  "owl": {
+    "key": "owl",
+    "source": "https://www.pexels.com/photo/close-up-of-eurasian-eagle-owl-in-urban-setting-36796546/",
+    "original": "https://images.pexels.com/photos/36796546/pexels-photo-36796546.jpeg",
+    "creator": "Atai Anarbek",
+    "license": "Pexels License",
+    "license_url": "https://www.pexels.com/license/",
+    "description": "Detailed portrait of a Eurasian Eagle-Owl with vibrant orange eyes in an urban environment.",
+    "changes": "Resized and converted to WebP."
+  },
+  "oxford": {
+    "key": "oxford",
+    "source": "https://www.pexels.com/photo/historic-architecture-of-oxford-university-37943874/",
+    "original": "https://images.pexels.com/photos/37943874/pexels-photo-37943874.jpeg",
+    "creator": "Amine Kübranur Çakıroğlu",
+    "license": "Pexels License",
+    "license_url": "https://www.pexels.com/license/",
+    "description": "Elegant Gothic architecture of Oxford University captured on a sunny day.",
+    "changes": "Resized and converted to WebP."
+  },
+  "oxygen": {
+    "key": "oxygen",
+    "source": "https://www.pexels.com/photo/oxygen-cylinders-in-hospital-12344724/",
+    "original": "https://images.pexels.com/photos/12344724/pexels-photo-12344724.jpeg",
+    "creator": "Oleg PavLove",
+    "license": "Pexels License",
+    "license_url": "https://www.pexels.com/license/",
+    "description": "Monochrome photograph showing two oxygen cylinders in a hospital setting.",
+    "changes": "Resized and converted to WebP."
+  },
+  "pacific": {
+    "key": "pacific",
+    "original": "https://github.com/nvkelso/natural-earth-vector/blob/master/geojson/ne_10m_geography_marine_polys.geojson",
+    "source": "https://github.com/nvkelso/natural-earth-vector/blob/master/geojson/ne_10m_geography_marine_polys.geojson",
+    "creator": "Natural Earth",
+    "license": "Public domain",
+    "license_url": "https://www.naturalearthdata.com/about/terms-of-use/",
+    "changes": "Projected map, cropped and highlighted."
+  },
+  "paris": {
+    "key": "paris",
+    "original": "https://github.com/nvkelso/natural-earth-vector/blob/master/geojson/ne_10m_populated_places_simple.geojson",
+    "source": "https://github.com/nvkelso/natural-earth-vector/blob/master/geojson/ne_10m_populated_places_simple.geojson",
+    "creator": "Natural Earth",
+    "license": "Public domain",
+    "license_url": "https://www.naturalearthdata.com/about/terms-of-use/",
+    "changes": "Projected map, cropped and highlighted."
+  },
+  "penguin": {
+    "key": "penguin",
+    "source": "https://www.pexels.com/photo/close-up-of-king-penguin-in-a-zoo-habitat-34812814/",
+    "original": "https://images.pexels.com/photos/34812814/pexels-photo-34812814.jpeg",
+    "creator": "Jean-Paul Wettstein",
+    "license": "Pexels License",
+    "license_url": "https://www.pexels.com/license/",
+    "description": "King Penguin in a zoo exhibit. Close-up view showing its distinct features.",
+    "changes": "Resized and converted to WebP."
+  },
+  "penne": {
+    "key": "penne",
+    "source": "https://www.pexels.com/photo/full-shot-if-uncooked-penne-pasta-4852676/",
+    "original": "https://images.pexels.com/photos/4852676/pexels-photo-4852676.jpeg",
+    "creator": "Bilal Arshad Khan",
+    "license": "Pexels License",
+    "license_url": "https://www.pexels.com/license/",
+    "description": "A detailed close-up of uncooked penne pasta showcasing its texture and shape.",
+    "changes": "Resized and converted to WebP."
+  },
+  "peru": {
+    "key": "peru",
+    "source": "https://www.naturalearthdata.com/downloads/50m-cultural-vectors/50m-admin-0-countries-2/",
+    "original": "https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_50m_admin_0_countries.geojson",
+    "creator": "Natural Earth",
+    "license": "Public domain",
+    "license_url": "https://www.naturalearthdata.com/about/terms-of-use/",
+    "changes": "Rendered regional map with highlighted country."
+  },
+  "pet_cat": {
+    "key": "pet_cat",
+    "source": "https://www.pexels.com/photo/photo-of-a-gray-cat-15624872/",
+    "original": "https://images.pexels.com/photos/15624872/pexels-photo-15624872.jpeg",
+    "creator": "Quỳnh Anh Nguyễn",
+    "license": "Pexels License",
+    "license_url": "https://www.pexels.com/license/",
+    "description": "Close-up of a gray cat being gently petted outdoors with pink flowers in the background.",
+    "changes": "Resized and converted to WebP."
+  },
+  "pineapple": {
+    "key": "pineapple",
+    "source": "https://www.pexels.com/photo/fresh-pineapples-in-a-market-display-37284807/",
+    "original": "https://images.pexels.com/photos/37284807/pexels-photo-37284807.jpeg",
+    "creator": "The Chongaiman Ace",
+    "license": "Pexels License",
+    "license_url": "https://www.pexels.com/license/",
+    "description": "Close-up of several ripe pineapples in a vibrant and colorful arrangement.",
+    "changes": "Resized and converted to WebP."
+  },
+  "pizza_hut": {
+    "key": "pizza_hut",
+    "source": "https://www.pexels.com/photo/a-sign-for-pizza-hut-is-shown-on-the-side-of-a-building-18609291/",
+    "original": "https://images.pexels.com/photos/18609291/pexels-photo-18609291.jpeg",
+    "creator": "Umar Andrabi",
+    "license": "Pexels License",
+    "license_url": "https://www.pexels.com/license/",
+    "description": "Illuminated Pizza Hut sign on a wooden storefront captured in daylight.",
+    "changes": "Resized and converted to WebP."
+  },
+  "playstation": {
+    "key": "playstation",
+    "source": "https://commons.wikimedia.org/wiki/File:PSX-Console-wController.png",
+    "original": "https://upload.wikimedia.org/wikipedia/commons/9/95/PSX-Console-wController.png?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "creator": "Evan-Amos",
+    "license": "Public domain",
+    "license_url": "https://creativecommons.org/publicdomain/mark/1.0/",
+    "description": "File:PSX-Console-wController.png",
+    "changes": "Resized and converted to WebP."
+  },
+  "pluto": {
+    "key": "pluto",
+    "source": "https://images.nasa.gov/details/PIA19952",
+    "original": "http://images-assets.nasa.gov/image/PIA19952/PIA19952~orig.jpg",
+    "creator": "NASA/Johns Hopkins University Applied Physics Laboratory/Southwest Research Institute",
+    "license": "NASA image usage guidelines",
+    "license_url": "https://www.nasa.gov/nasa-brand-center/images-and-media/",
+    "description": "The Rich Color Variations of Pluto",
+    "changes": "Resized and converted to WebP."
+  },
+  "polar_bear": {
+    "key": "polar_bear",
+    "source": "https://www.pexels.com/photo/polar-bears-in-nature-19082892/",
+    "original": "https://images.pexels.com/photos/19082892/pexels-photo-19082892.jpeg",
+    "creator": "Francesco Ungaro",
+    "license": "Pexels License",
+    "license_url": "https://www.pexels.com/license/",
+    "description": "Close-up of two polar bears resting on rocky ground, showcasing their majestic nature in the wilderness.",
+    "changes": "Resized and converted to WebP."
+  },
+  "printing_press": {
+    "key": "printing_press",
+    "source": "https://commons.wikimedia.org/wiki/File:Gutenberg_press.png",
+    "original": "https://upload.wikimedia.org/wikipedia/commons/9/96/Gutenberg_press.png?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "creator": "International Printing Museum",
+    "license": "CC0",
+    "license_url": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
+    "description": "File:Gutenberg press.png",
+    "changes": "Resized and converted to WebP."
+  },
+  "pyramid": {
+    "key": "pyramid",
+    "source": "https://www.pexels.com/photo/street-view-of-giza-pyramid-in-egypt-34852221/",
+    "original": "https://images.pexels.com/photos/34852221/pexels-photo-34852221.jpeg",
+    "creator": "Muhammed Fatih Beki",
+    "license": "Pexels License",
+    "license_url": "https://www.pexels.com/license/",
+    "description": "Urban street view with Giza Pyramid in the background, capturing Egypt's historic charm.",
+    "changes": "Resized and converted to WebP."
+  },
+  "rabbit": {
+    "key": "rabbit",
+    "source": "https://www.inaturalist.org/photos/758006137",
+    "original": "https://inaturalist-open-data.s3.amazonaws.com/photos/758006137/original.jpg",
+    "creator": "(c) Nigel Bentley, some rights reserved (CC BY)",
+    "license": "CC BY 4.0",
+    "license_url": "https://creativecommons.org/licenses/by/4.0/",
+    "description": "Oryctolagus cuniculus",
+    "changes": "Resized and converted to WebP."
+  },
+  "rectangle": {
+    "key": "rectangle",
+    "creator": "Moments",
+    "source": "https://github.com/doordoorgames/Moments/blob/main/frontend/public/clock-race/art/rectangle.webp",
+    "original": "https://github.com/doordoorgames/Moments/blob/main/frontend/public/clock-race/art/rectangle.webp",
+    "license": "CC0 1.0",
+    "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "changes": "Original typeset reference chart or geometric diagram."
+  },
+  "rhino": {
+    "key": "rhino",
+    "source": "https://www.pexels.com/photo/close-up-of-white-rhinoceros-grazing-outdoors-37056793/",
+    "original": "https://images.pexels.com/photos/37056793/pexels-photo-37056793.jpeg",
+    "creator": "Pabby 88",
+    "license": "Pexels License",
+    "license_url": "https://www.pexels.com/license/",
+    "description": "A white rhinoceros grazes peacefully with rocky backdrop in a zoo setting.",
+    "changes": "Resized and converted to WebP."
+  },
+  "rice": {
+    "key": "rice",
+    "source": "https://www.pexels.com/photo/close-up-of-uncooked-white-rice-grains-36346840/",
+    "original": "https://images.pexels.com/photos/36346840/pexels-photo-36346840.jpeg",
+    "creator": "Jonathan Borba",
+    "license": "Pexels License",
+    "license_url": "https://www.pexels.com/license/",
+    "description": "Detailed view of uncooked white rice grains, showcasing texture and pattern.",
+    "changes": "Resized and converted to WebP."
+  },
+  "rubik": {
+    "key": "rubik",
+    "source": "https://www.pexels.com/photo/a-person-holding-a-rubik-s-cube-4602382/",
+    "original": "https://images.pexels.com/photos/4602382/pexels-photo-4602382.jpeg",
+    "creator": "Kenyel Filmmaker",
+    "license": "Pexels License",
+    "license_url": "https://www.pexels.com/license/",
+    "description": "A close-up shot of a person holding a Rubik's Cube outdoors, displaying the cube prominently.",
+    "changes": "Resized and converted to WebP."
+  },
+  "sahara": {
+    "key": "sahara",
+    "original": "https://github.com/nvkelso/natural-earth-vector/blob/master/geojson/ne_10m_geography_regions_polys.geojson",
+    "source": "https://github.com/nvkelso/natural-earth-vector/blob/master/geojson/ne_10m_geography_regions_polys.geojson",
+    "creator": "Natural Earth",
+    "license": "Public domain",
+    "license_url": "https://www.naturalearthdata.com/about/terms-of-use/",
+    "changes": "Projected map, cropped and highlighted."
+  },
+  "salmon": {
+    "key": "salmon",
+    "source": "https://www.inaturalist.org/photos/757578335",
+    "original": "https://inaturalist-open-data.s3.amazonaws.com/photos/757578335/original.jpg",
+    "creator": "(c) Frank Sengpiel, some rights reserved (CC BY)",
+    "license": "CC BY 4.0",
+    "license_url": "https://creativecommons.org/licenses/by/4.0/",
+    "description": "Salmo salar",
+    "changes": "Resized and converted to WebP."
+  },
+  "samsung": {
+    "key": "samsung",
+    "source": "https://www.pexels.com/photo/a-samsung-galaxy-s22-13780425/",
+    "original": "https://images.pexels.com/photos/13780425/pexels-photo-13780425.jpeg",
+    "creator": "DEBRAJ  ROY",
+    "license": "Pexels License",
+    "license_url": "https://www.pexels.com/license/",
+    "description": "Close-up image of Samsung Galaxy S22 with its box in an outdoor setting.",
+    "changes": "Resized and converted to WebP."
+  },
+  "sandal": {
+    "key": "sandal",
+    "source": "https://www.pexels.com/photo/elegant-woman-s-feet-in-high-heel-sandals-35665095/",
+    "original": "https://images.pexels.com/photos/35665095/pexels-photo-35665095.png",
+    "creator": "Yvonne  Lee",
+    "license": "Pexels License",
+    "license_url": "https://www.pexels.com/license/",
+    "description": "Close-up of a woman's feet wearing chic high heel sandals indoors.",
+    "changes": "Resized and converted to WebP."
+  },
+  "saturn": {
+    "key": "saturn",
+    "source": "https://images.nasa.gov/details/PIA11141",
+    "original": "http://images-assets.nasa.gov/image/PIA11141/PIA11141~orig.jpg",
+    "creator": "NASA/JPL/Space Science Institute",
+    "license": "NASA image usage guidelines",
+    "license_url": "https://www.nasa.gov/nasa-brand-center/images-and-media/",
+    "description": "Saturn … Four Years On",
+    "changes": "Resized and converted to WebP."
+  },
+  "saudi": {
+    "key": "saudi",
+    "source": "https://www.naturalearthdata.com/downloads/50m-cultural-vectors/50m-admin-0-countries-2/",
+    "original": "https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_50m_admin_0_countries.geojson",
+    "creator": "Natural Earth",
+    "license": "Public domain",
+    "license_url": "https://www.naturalearthdata.com/about/terms-of-use/",
+    "changes": "Rendered regional map with highlighted country."
+  },
+  "scrabble": {
+    "key": "scrabble",
+    "source": "https://www.pexels.com/photo/close-up-shot-of-scrabble-tiles-on-white-surface-5612814/",
+    "original": "https://images.pexels.com/photos/5612814/pexels-photo-5612814.jpeg",
+    "creator": "Visual Tag Mx",
+    "license": "Pexels License",
+    "license_url": "https://www.pexels.com/license/",
+    "description": "Creative arrangement of Scrabble tiles spelling 'Redes Sociales' on a clean white background.",
+    "changes": "Resized and converted to WebP."
+  },
+  "shark": {
+    "key": "shark",
+    "source": "https://www.inaturalist.org/photos/751828414",
+    "original": "https://inaturalist-open-data.s3.amazonaws.com/photos/751828414/original.jpg",
+    "creator": "(c) Andreas De Beer, some rights reserved (CC BY)",
+    "license": "CC BY 4.0",
+    "license_url": "https://creativecommons.org/licenses/by/4.0/",
+    "description": "Carcharodon carcharias",
+    "changes": "Resized and converted to WebP."
+  },
+  "silicon_chip": {
+    "key": "silicon_chip",
+    "source": "https://commons.wikimedia.org/wiki/File:EPROM_Microchip_SuperMacro.jpg",
+    "original": "https://upload.wikimedia.org/wikipedia/commons/e/ee/EPROM_Microchip_SuperMacro.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "creator": "Zephyris",
+    "license": "CC BY-SA 3.0",
+    "license_url": "https://creativecommons.org/licenses/by-sa/3.0",
+    "description": "File:EPROM Microchip SuperMacro.jpg",
+    "changes": "Resized and converted to WebP."
+  },
+  "skiing": {
+    "key": "skiing",
+    "source": "https://www.pexels.com/photo/man-skiing-in-midair-20375491/",
+    "original": "https://images.pexels.com/photos/20375491/pexels-photo-20375491.jpeg",
+    "creator": "Sajad. isz",
+    "license": "Pexels License",
+    "license_url": "https://www.pexels.com/license/",
+    "description": "Skier performs an impressive jump against a scenic snowy mountain backdrop.",
+    "changes": "Resized and converted to WebP."
+  },
+  "sliced_bread": {
+    "key": "sliced_bread",
+    "source": "https://www.pexels.com/photo/three-types-of-delicious-bread-19062741/",
+    "original": "https://images.pexels.com/photos/19062741/pexels-photo-19062741.jpeg",
+    "creator": "Nadin Sh",
+    "license": "Pexels License",
+    "license_url": "https://www.pexels.com/license/",
+    "description": "Close-up of assorted fresh bread slices, highlighting textures and variety, perfect for bakery promotions.",
+    "changes": "Resized and converted to WebP."
+  },
+  "snake": {
+    "key": "snake",
+    "source": "https://www.pexels.com/photo/head-of-a-snake-on-a-leg-5800063/",
+    "original": "https://images.pexels.com/photos/5800063/pexels-photo-5800063.jpeg",
+    "creator": "Jan Kopřiva",
+    "license": "Pexels License",
+    "license_url": "https://www.pexels.com/license/",
+    "description": "Close-up view of a snake on an arm with a white background, focusing on texture and detail.",
+    "changes": "Resized and converted to WebP."
+  },
+  "snapchat": {
+    "key": "snapchat",
+    "source": "https://www.pexels.com/photo/man-holding-a-iphone-x-with-social-network-service-snapchat-on-the-screen-iphone-x-was-created-and-developed-by-the-apple-inc-snapchat-application-on-iphone-x-17888110/",
+    "original": "https://images.pexels.com/photos/17888110/pexels-photo-17888110.jpeg",
+    "creator": "Sanket  Mishra",
+    "license": "Pexels License",
+    "license_url": "https://www.pexels.com/license/",
+    "description": "Snapchat app logo displayed on a smartphone against a vibrant outdoor patterned surface.",
+    "changes": "Resized and converted to WebP."
+  },
+  "sneaker": {
+    "key": "sneaker",
+    "source": "https://www.pexels.com/photo/two-people-wearing-sneakers-5037306/",
+    "original": "https://images.pexels.com/photos/5037306/pexels-photo-5037306.jpeg",
+    "creator": "Ketut Subiyanto",
+    "license": "Pexels License",
+    "license_url": "https://www.pexels.com/license/",
+    "description": "Close-up of two people sitting on a bench with a blue yoga mat and stylish sneakers.",
+    "changes": "Resized and converted to WebP."
+  },
+  "snowboard": {
+    "key": "snowboard",
+    "source": "https://www.pexels.com/photo/people-snowboarding-on-mountains-13378919/",
+    "original": "https://images.pexels.com/photos/13378919/pexels-photo-13378919.jpeg",
+    "creator": "Игорь Крыканов",
+    "license": "Pexels License",
+    "license_url": "https://www.pexels.com/license/",
+    "description": "Two snowboarders navigating a foggy slope in Adlerskiy, capturing the essence of a Russian winter.",
+    "changes": "Resized and converted to WebP."
+  },
+  "sony": {
+    "key": "sony",
+    "source": "https://commons.wikimedia.org/wiki/File:Sony_headquaters_2.jpg",
+    "original": "https://upload.wikimedia.org/wikipedia/commons/7/7d/Sony_headquaters_2.jpg",
+    "creator": "Akonnchiroll",
+    "license": "CC BY-SA 4.0",
+    "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
+    "description": "Sony_headquaters_2.jpg",
+    "changes": "Resized and converted to WebP."
+  },
+  "sound": {
+    "key": "sound",
+    "source": "https://www.pexels.com/photo/black-twitter-speaker-128611/",
+    "original": "https://images.pexels.com/photos/128611/pexels-photo-128611.jpeg",
+    "creator": "Nao Triponez",
+    "license": "Pexels License",
+    "license_url": "https://www.pexels.com/license/",
+    "description": "Detailed close-up of a black speaker grill, capturing its sleek and modern design",
+    "changes": "Resized and converted to WebP."
+  },
+  "south_pole": {
+    "key": "south_pole",
+    "original": "https://github.com/nvkelso/natural-earth-vector/blob/master/geojson/ne_50m_admin_0_countries.geojson",
+    "source": "https://github.com/nvkelso/natural-earth-vector/blob/master/geojson/ne_50m_admin_0_countries.geojson",
+    "creator": "Natural Earth",
+    "license": "Public domain",
+    "license_url": "https://www.naturalearthdata.com/about/terms-of-use/",
+    "changes": "Projected map, cropped and highlighted."
+  },
+  "spaghetti": {
+    "key": "spaghetti",
+    "source": "https://www.pexels.com/photo/close-up-of-spaghetti-on-plate-5531093/",
+    "original": "https://images.pexels.com/photos/5531093/pexels-photo-5531093.jpeg",
+    "creator": "Rachel Claire",
+    "license": "Pexels License",
+    "license_url": "https://www.pexels.com/license/",
+    "description": "Close-up of a gourmet spaghetti dish with cream sauce, spinach, and mushrooms, perfect for a dinner setting.",
+    "changes": "Resized and converted to WebP."
+  },
+  "sparrow": {
+    "key": "sparrow",
+    "source": "https://www.inaturalist.org/photos/758336113",
+    "original": "https://inaturalist-open-data.s3.amazonaws.com/photos/758336113/original.jpg",
+    "creator": "(c) Igor Balashov, some rights reserved (CC BY)",
+    "license": "CC BY 4.0",
+    "license_url": "https://creativecommons.org/licenses/by/4.0/",
+    "description": "Passer domesticus",
+    "changes": "Resized and converted to WebP."
+  },
+  "spatula": {
+    "key": "spatula",
+    "source": "https://commons.wikimedia.org/wiki/File:Fishslice1.jpg",
+    "original": "https://upload.wikimedia.org/wikipedia/commons/e/e2/Fishslice1.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "creator": "FreeDigitalPhotos.net",
+    "license": "CC BY-SA 3.0",
+    "license_url": "http://creativecommons.org/licenses/by-sa/3.0/",
+    "description": "File:Fishslice1.jpg",
+    "changes": "Resized and converted to WebP."
+  },
+  "spider": {
+    "key": "spider",
+    "source": "https://www.inaturalist.org/photos/758241830",
+    "original": "https://inaturalist-open-data.s3.amazonaws.com/photos/758241830/original.jpg",
+    "creator": "(c) Claus Giloi, some rights reserved (CC BY)",
+    "license": "CC BY 4.0",
+    "license_url": "https://creativecommons.org/licenses/by/4.0/",
+    "description": "Araneus diadematus",
+    "changes": "Resized and converted to WebP."
+  },
+  "sprinter": {
+    "key": "sprinter",
+    "source": "https://commons.wikimedia.org/wiki/File:Usain_Bolt_winning-cropped.jpg",
+    "original": "https://upload.wikimedia.org/wikipedia/commons/d/df/Usain_Bolt_winning-cropped.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "creator": "Usain_Bolt_winning.jpg: PhotoBobil\nderivative work: SeizureDog (talk)",
+    "license": "CC BY 2.0",
+    "license_url": "https://creativecommons.org/licenses/by/2.0",
+    "description": "File:Usain Bolt winning-cropped.jpg",
+    "changes": "Resized and converted to WebP."
+  },
+  "square": {
+    "key": "square",
+    "creator": "Moments",
+    "source": "https://github.com/doordoorgames/Moments/blob/main/frontend/public/clock-race/art/square.webp",
+    "original": "https://github.com/doordoorgames/Moments/blob/main/frontend/public/clock-race/art/square.webp",
+    "license": "CC0 1.0",
+    "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "changes": "Original typeset reference chart or geometric diagram."
+  },
+  "starfish": {
+    "key": "starfish",
+    "source": "https://www.inaturalist.org/photos/758072299",
+    "original": "https://inaturalist-open-data.s3.amazonaws.com/photos/758072299/original.jpg",
+    "creator": "(c) Lasse R, some rights reserved (CC BY-SA)",
+    "license": "CC BY-SA 4.0",
+    "license_url": "https://creativecommons.org/licenses/by-sa/4.0/",
+    "description": "Asterias rubens",
+    "changes": "Resized and converted to WebP."
+  },
+  "stegosaurus": {
+    "key": "stegosaurus",
+    "source": "https://www.pexels.com/photo/stegosaurus-skeleton-display-in-museum-34522414/",
+    "original": "https://images.pexels.com/photos/34522414/pexels-photo-34522414.jpeg",
+    "creator": "Matheus Bertelli",
+    "license": "Pexels License",
+    "license_url": "https://www.pexels.com/license/",
+    "description": "Fascinating Stegosaurus skeleton exhibit at a science museum with star constellations background.",
+    "changes": "Resized and converted to WebP."
+  },
+  "sun": {
+    "key": "sun",
+    "source": "https://www.pexels.com/photo/detailed-solar-surface-with-sunspots-in-pittsburgh-30665394/",
+    "original": "https://images.pexels.com/photos/30665394/pexels-photo-30665394.jpeg",
+    "creator": "Jay Brand",
+    "license": "Pexels License",
+    "license_url": "https://www.pexels.com/license/",
+    "description": "Close-up of the sun with visible sunspots, captured from Pittsburgh, PA.",
+    "changes": "Resized and converted to WebP."
+  },
+  "sundial": {
+    "key": "sundial",
+    "source": "https://www.pexels.com/photo/photo-of-a-sundial-in-cesky-krumlov-czechia-15260039/",
+    "original": "https://images.pexels.com/photos/15260039/pexels-photo-15260039.jpeg",
+    "creator": "Magda Ehlers",
+    "license": "Pexels License",
+    "license_url": "https://www.pexels.com/license/",
+    "description": "Close-up of an ornate sundial on a historic wall in Cesky Krumlov, Czech Republic.",
+    "changes": "Resized and converted to WebP."
+  },
+  "surfing": {
+    "key": "surfing",
+    "source": "https://www.pexels.com/photo/surfing-adventure-captured-in-action-on-ocean-waves-37606687/",
+    "original": "https://images.pexels.com/photos/37606687/pexels-photo-37606687.jpeg",
+    "creator": "josemiguel67bio jose miguel",
+    "license": "Pexels License",
+    "license_url": "https://www.pexels.com/license/",
+    "description": "Two surfers skillfully ride big ocean waves, showcasing athleticism and thrill.",
+    "changes": "Resized and converted to WebP."
+  },
+  "telephone": {
+    "key": "telephone",
+    "source": "https://www.pexels.com/photo/person-holding-a-telephone-7580825/",
+    "original": "https://images.pexels.com/photos/7580825/pexels-photo-7580825.jpeg",
+    "creator": "RDNE Stock project",
+    "license": "Pexels License",
+    "license_url": "https://www.pexels.com/license/",
+    "description": "Close-up of hands dialing a desk telephone in an office setting.",
+    "changes": "Resized and converted to WebP."
+  },
+  "tennis": {
+    "key": "tennis",
+    "source": "https://www.pexels.com/photo/close-up-of-tennis-player-holding-racquet-38083825/",
+    "original": "https://images.pexels.com/photos/38083825/pexels-photo-38083825.jpeg",
+    "creator": "Nenyasha Manzvera",
+    "license": "Pexels License",
+    "license_url": "https://www.pexels.com/license/",
+    "description": "Detail shot of a tennis player's hands gripping a racquet, showcasing grip technique.",
+    "changes": "Resized and converted to WebP."
+  },
+  "tiger": {
+    "key": "tiger",
+    "source": "https://www.pexels.com/photo/intense-bengal-tiger-portrait-in-natural-habitat-30239395/",
+    "original": "https://images.pexels.com/photos/30239395/pexels-photo-30239395.jpeg",
+    "creator": "Maheera Kulsoom",
+    "license": "Pexels License",
+    "license_url": "https://www.pexels.com/license/",
+    "description": "Close-up of a Bengal tiger walking in its natural environment, showcasing strong features and majestic stripes.",
+    "changes": "Resized and converted to WebP."
+  },
+  "titanic": {
+    "key": "titanic",
+    "source": "https://commons.wikimedia.org/wiki/File:RMS_Titanic_3_(cropped_to_ship).jpg",
+    "original": "https://upload.wikimedia.org/wikipedia/commons/6/6d/RMS_Titanic_3_%28cropped_to_ship%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "creator": "Francis Godolphin Osbourne Stuart",
+    "license": "Public domain",
+    "license_url": "https://creativecommons.org/publicdomain/mark/1.0/",
+    "description": "File:RMS Titanic 3 (cropped to ship).jpg",
+    "changes": "Resized and converted to WebP."
+  },
+  "tokyo": {
+    "key": "tokyo",
+    "original": "https://github.com/nvkelso/natural-earth-vector/blob/master/geojson/ne_10m_populated_places_simple.geojson",
+    "source": "https://github.com/nvkelso/natural-earth-vector/blob/master/geojson/ne_10m_populated_places_simple.geojson",
+    "creator": "Natural Earth",
+    "license": "Public domain",
+    "license_url": "https://www.naturalearthdata.com/about/terms-of-use/",
+    "changes": "Projected map, cropped and highlighted."
+  },
+  "tortoise": {
+    "key": "tortoise",
+    "source": "https://www.pexels.com/photo/aldabra-giant-tortoise-grazing-in-parkville-38297531/",
+    "original": "https://images.pexels.com/photos/38297531/pexels-photo-38297531.jpeg",
+    "creator": "Joolsmagools  ®️",
+    "license": "Pexels License",
+    "license_url": "https://www.pexels.com/license/",
+    "description": "Close-up of Aldabra giant tortoise eating grass, captured in Parkville, Australia.",
+    "changes": "Resized and converted to WebP."
+  },
+  "tree": {
+    "key": "tree",
+    "source": "https://commons.wikimedia.org/wiki/File:Usamljeni_jasen_-_panoramio_%28cropped%29.jpg",
+    "original": "https://upload.wikimedia.org/wikipedia/commons/7/7f/Usamljeni_jasen_-_panoramio_%28cropped%29.jpg",
+    "creator": "menergo",
+    "license": "CC BY-SA 3.0",
+    "license_url": "https://creativecommons.org/licenses/by-sa/3.0",
+    "description": "Usamljeni_jasen_-_panoramio_(cropped).jpg",
+    "changes": "Resized and converted to WebP."
+  },
+  "trex": {
+    "key": "trex",
+    "source": "https://commons.wikimedia.org/wiki/File:Tyrannosaurus_Rex_Holotype.jpg",
+    "original": "https://upload.wikimedia.org/wikipedia/commons/9/94/Tyrannosaurus_Rex_Holotype.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "creator": "ScottRobertAnselmo",
+    "license": "CC BY-SA 3.0",
+    "license_url": "https://creativecommons.org/licenses/by-sa/3.0",
+    "description": "File:Tyrannosaurus Rex Holotype.jpg",
+    "changes": "Resized and converted to WebP."
+  },
+  "triangle": {
+    "key": "triangle",
+    "creator": "Moments",
+    "source": "https://github.com/doordoorgames/Moments/blob/main/frontend/public/clock-race/art/triangle.webp",
+    "original": "https://github.com/doordoorgames/Moments/blob/main/frontend/public/clock-race/art/triangle.webp",
+    "license": "CC0 1.0",
+    "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "changes": "Original typeset reference chart or geometric diagram."
+  },
+  "tuna": {
+    "key": "tuna",
+    "source": "https://www.pexels.com/photo/a-butcher-slicing-a-tuna-8351644/",
+    "original": "https://images.pexels.com/photos/8351644/pexels-photo-8351644.jpeg",
+    "creator": "Kindel Media",
+    "license": "Pexels License",
+    "license_url": "https://www.pexels.com/license/",
+    "description": "Image of raw Yellowfin tuna being expertly sliced, showing fresh seafood preparation.",
+    "changes": "Resized and converted to WebP."
+  },
+  "turtle": {
+    "key": "turtle",
+    "source": "https://www.pexels.com/photo/sea-turtle-in-close-up-6310392/",
+    "original": "https://images.pexels.com/photos/6310392/pexels-photo-6310392.jpeg",
+    "creator": "Adventure Travelers TheAdventureTravelers.com",
+    "license": "Pexels License",
+    "license_url": "https://www.pexels.com/license/",
+    "description": "Close-up of a green sea turtle swimming underwater in the crystal clear waters of the British Virgin Islands.",
+    "changes": "Resized and converted to WebP."
+  },
+  "twitter": {
+    "key": "twitter",
+    "source": "https://www.pexels.com/photo/person-holding-a-phone-displaying-twitter-app-13240228/",
+    "original": "https://images.pexels.com/photos/13240228/pexels-photo-13240228.jpeg",
+    "creator": "greenwish _",
+    "license": "Pexels License",
+    "license_url": "https://www.pexels.com/license/",
+    "description": "A close-up of a smartphone displaying the Twitter app, emphasizing digital connection and modern technology.",
+    "changes": "Resized and converted to WebP."
+  },
+  "venus": {
+    "key": "venus",
+    "source": "https://commons.wikimedia.org/wiki/File:Venus_from_Mariner_10.jpg",
+    "original": "https://upload.wikimedia.org/wikipedia/commons/0/08/Venus_from_Mariner_10.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "creator": "NASA/JPL-Caltech",
+    "license": "Public domain",
+    "license_url": "https://creativecommons.org/publicdomain/mark/1.0/",
+    "description": "File:Venus from Mariner 10.jpg",
+    "changes": "Resized and converted to WebP."
+  },
+  "violin": {
+    "key": "violin",
+    "source": "https://commons.wikimedia.org/wiki/File:Violin_VL100.png",
+    "original": "https://upload.wikimedia.org/wikipedia/commons/1/1b/Violin_VL100.png",
+    "creator": "Just plain Bill",
+    "license": "CC0",
+    "license_url": "https://creativecommons.org/publicdomain/zero/1.0/deed.en",
+    "description": "Violin_VL100.png",
+    "changes": "Resized and converted to WebP."
+  },
+  "water": {
+    "key": "water",
+    "source": "https://www.pexels.com/photo/woman-looking-at-glass-of-water-8484008/",
+    "original": "https://images.pexels.com/photos/8484008/pexels-photo-8484008.jpeg",
+    "creator": "Sasha  Kim",
+    "license": "Pexels License",
+    "license_url": "https://www.pexels.com/license/",
+    "description": "Intimate close-up of a woman gazing through a water glass, highlighting her features.",
+    "changes": "Resized and converted to WebP."
+  },
+  "watermelon": {
+    "key": "watermelon",
+    "source": "https://www.pexels.com/photo/sliced-watermelon-in-close-up-photography-12932797/",
+    "original": "https://images.pexels.com/photos/12932797/pexels-photo-12932797.jpeg",
+    "creator": "Atlantic Ambience",
+    "license": "Pexels License",
+    "license_url": "https://www.pexels.com/license/",
+    "description": "Close-up of fresh, sliced watermelons on a plate perfect for summer refreshment.",
+    "changes": "Resized and converted to WebP."
+  },
+  "whatsapp": {
+    "key": "whatsapp",
+    "source": "https://www.pexels.com/photo/whatsapp-on-a-smartphone-21792116/",
+    "original": "https://images.pexels.com/photos/21792116/pexels-photo-21792116.jpeg",
+    "creator": "Image Hunter",
+    "license": "Pexels License",
+    "license_url": "https://www.pexels.com/license/",
+    "description": "Close-up image of a smartphone displaying WhatsApp on a white table.",
+    "changes": "Resized and converted to WebP."
+  },
+  "whisk": {
+    "key": "whisk",
+    "source": "https://www.pexels.com/photo/close-up-shot-of-a-whisk-6996346/",
+    "original": "https://images.pexels.com/photos/6996346/pexels-photo-6996346.jpeg",
+    "creator": "Pavel Danilyuk",
+    "license": "Pexels License",
+    "license_url": "https://www.pexels.com/license/",
+    "description": "A whisk resting on a kitchen counter with a blurred mixer in the background.",
+    "changes": "Resized and converted to WebP."
+  },
+  "wooden_spoon": {
+    "key": "wooden_spoon",
+    "source": "https://www.pexels.com/photo/close-up-shot-of-herbal-medicine-on-a-wooden-spoon-6694160/",
+    "original": "https://images.pexels.com/photos/6694160/pexels-photo-6694160.jpeg",
+    "creator": "Tara Winstead",
+    "license": "Pexels License",
+    "license_url": "https://www.pexels.com/license/",
+    "description": "Close-up of dried lavender and chamomile on wooden spoons, showcasing natural remedies.",
+    "changes": "Resized and converted to WebP."
+  },
+  "yogurt": {
+    "key": "yogurt",
+    "source": "https://www.pexels.com/photo/close-up-of-fruit-yogurt-in-a-blue-bowl-38928050/",
+    "original": "https://images.pexels.com/photos/38928050/pexels-photo-38928050.jpeg",
+    "creator": "Golboo Maghooli",
+    "license": "Pexels License",
+    "license_url": "https://www.pexels.com/license/",
+    "description": "Delicious fruit yogurt in a blue bowl on a wooden table, lit by natural sunlight.",
+    "changes": "Resized and converted to WebP."
+  },
+  "youtube": {
+    "key": "youtube",
+    "source": "https://www.pexels.com/photo/person-holding-space-gray-iphone-5-34407/",
+    "original": "https://images.pexels.com/photos/34407/pexels-photo.jpg",
+    "creator": "freestocks.org",
+    "license": "Pexels License",
+    "license_url": "https://www.pexels.com/license/",
+    "description": "Close-up of a hand holding a smartphone displaying the YouTube app on the screen.",
+    "changes": "Resized and converted to WebP."
+  }
+}

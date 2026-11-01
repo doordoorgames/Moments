@@ -7,8 +7,8 @@ Four kinds:
   which    أيهم؟            two pictures, a surprising factual comparison
 
 Every option is (art key, Arabic name, English name). The FIRST option is always the right answer;
-the server shuffles positions for every task. `art` keys map to illustration files listed in
-frontend/src/components/clockRace/artManifest.js (missing art shows a painted placeholder card).
+the server shuffles positions for every task. `art` keys map to local WebP files listed in
+frontend/src/components/clockRace/artManifest.js.
 
 Each entry: id, kind, Arabic and English question, options, difficulty (e/m/h), a one-line fact
 (never shown before the answer) and a source note. Animal sizes use typical healthy adults with a
@@ -37,13 +37,13 @@ q('b03', B, 'أي واحد مو فاكهة؟', 'Which one is not a fruit?',
   [('carrot', 'جزر', 'Carrot'), ('apple', 'تفاح', 'Apple'), ('mango', 'مانجو', 'Mango'), ('banana', 'موز', 'Banana')],
   E, 'A carrot is a root.', 'Britannica: carrot')
 q('b04', B, 'أي واحد ما يطير؟', 'Which one can\'t fly?',
-  [('penguin', 'بطريق', 'Penguin'), ('eagle', 'نسر', 'Eagle'), ('owl', 'بومة', 'Owl'), ('bat', 'خفاش', 'Bat')],
+  [('penguin', 'بطريق', 'Penguin'), ('eagle', 'عقاب ذهبي', 'Golden eagle'), ('owl', 'بومة', 'Owl'), ('bat', 'خفاش', 'Bat')],
   E, 'Penguins are flightless; bats fly.', 'Britannica: penguin')
 q('b05', B, 'أي واحد مو كوكب؟', 'Which one is not a planet?',
   [('moon', 'القمر', 'The Moon'), ('mars', 'المريخ', 'Mars'), ('saturn', 'زحل', 'Saturn'), ('venus', 'الزهرة', 'Venus')],
   E, 'The Moon is Earth\'s satellite.', 'NASA solar system')
 q('b06', B, 'أي واحد مو طير؟', 'Which one is not a bird?',
-  [('bat', 'خفاش', 'Bat'), ('ostrich', 'نعامة', 'Ostrich'), ('penguin', 'بطريق', 'Penguin'), ('eagle', 'نسر', 'Eagle')],
+  [('bat', 'خفاش', 'Bat'), ('ostrich', 'نعامة', 'Ostrich'), ('penguin', 'بطريق', 'Penguin'), ('eagle', 'عقاب ذهبي', 'Golden eagle')],
   M, 'Bats are mammals; ostriches and penguins are birds that cannot fly.', 'Britannica: bat')
 q('b07', B, 'أي واحد مو حشرة؟', 'Which one is not an insect?',
   [('spider', 'عنكبوت', 'Spider'), ('ant', 'نملة', 'Ant'), ('bee', 'نحلة', 'Bee'), ('butterfly', 'فراشة', 'Butterfly')],
@@ -209,7 +209,7 @@ q('c01', C, HEAVY_AR, HEAVY_EN, [('blue_whale', 'الحوت الأزرق', 'Blue
 q('c02', C, HEAVY_AR, HEAVY_EN, [('elephant', 'فيل أفريقي', 'African elephant'), ('hippo', 'فرس النهر', 'Hippo')], M, 'About 6 tonnes vs about 1.5.', 'Smithsonian\'s National Zoo')
 q('c03', C, HEAVY_AR, HEAVY_EN, [('giraffe', 'زرافة', 'Giraffe'), ('lion', 'أسد', 'Lion')], M, 'Adult giraffes weigh about 800-1,200 kg; lions about 190.', 'Smithsonian\'s National Zoo')
 q('c04', C, HEAVY_AR, HEAVY_EN, [('bowling_ball', 'كورة بولنج', 'Bowling ball'), ('basketball', 'كورة سلة', 'Basketball')], E, 'Up to 7 kg vs about 0.6 kg.', 'USBC; FIBA rules')
-q('c05', C, HEAVY_AR, HEAVY_EN, [('ostrich', 'نعامة', 'Ostrich'), ('eagle', 'نسر', 'Eagle')], E, 'About 100 kg vs about 5 kg.', 'San Diego Zoo')
+q('c05', C, HEAVY_AR, HEAVY_EN, [('ostrich', 'نعامة', 'Ostrich'), ('eagle', 'عقاب ذهبي', 'Golden eagle')], E, 'About 100 kg vs about 5 kg.', 'San Diego Zoo')
 q('c06', C, HEAVY_AR, HEAVY_EN, [('polar_bear', 'دب قطبي', 'Polar bear'), ('gorilla', 'غوريلا', 'Gorilla')], M, 'About 450 kg vs about 160 kg (males).', 'WWF')
 q('c07', C, HEAVY_AR, HEAVY_EN, [('camel', 'جمل', 'Camel'), ('donkey', 'حمار', 'Donkey')], E, 'About 500 kg vs about 200 kg.', 'Britannica')
 q('c08', C, HEAVY_AR, HEAVY_EN, [('brick', 'طابوقة', 'A brick'), ('football', 'كورة قدم', 'A football')], E, 'About 2.5 kg vs 0.43 kg.', 'FIFA Laws of the Game')
@@ -219,22 +219,22 @@ q('c11', C, BIG_AR, BIG_EN, [('jupiter', 'المشتري', 'Jupiter'), ('earth',
 q('c12', C, TALL_AR, TALL_EN, [('giraffe', 'زرافة', 'Giraffe'), ('elephant', 'فيل', 'Elephant')], E, 'About 5 m vs about 3 m.', 'San Diego Zoo')
 q('c13', C, TALL_AR, TALL_EN, [('burj_khalifa', 'برج خليفة', 'Burj Khalifa'), ('eiffel', 'برج إيفل', 'Eiffel Tower')], E, '828 m vs 330 m.', 'CTBUH')
 q('c14', C, FAST_AR, FAST_EN, [('falcon', 'صقر شاهين (وهو ينقض)', 'Peregrine falcon (diving)'), ('cheetah', 'فهد صياد', 'Cheetah')], M, 'Over 300 km/h in a dive vs about 110 km/h.', 'Audubon; Smithsonian')
-q('c15', C, SMALL_AR, SMALL_EN, [('hummingbird', 'طائر الطنان', 'Hummingbird'), ('sparrow', 'عصفور', 'Sparrow')], E, 'About 3-4 g vs about 30 g.', 'Audubon')
+q('c15', C, 'أي طير وزنه أخف بالعادة؟', 'Which bird typically weighs less?', [('hummingbird', 'الطنّان ياقوتي الحنجرة', 'Ruby-throated hummingbird'), ('sparrow', 'عصفور الدوري المنزلي', 'House sparrow')], E, 'About 3-4 g vs about 30 g.', 'Audubon')
 q('c16', C, SMALL_AR, SMALL_EN, [('bahrain', 'البحرين', 'Bahrain'), ('kuwait', 'الكويت', 'Kuwait')], M, 'About 780 km² vs about 17,800 km².', 'CIA World Factbook')
 q('c17', C, BIG_AR, BIG_EN, [('saudi', 'السعودية', 'Saudi Arabia'), ('egypt', 'مصر', 'Egypt')], M, 'About 2.15 million km² vs about 1.0 million.', 'CIA World Factbook')
 q('c18', C, BIG_AR, BIG_EN, [('australia', 'أستراليا', 'Australia'), ('india', 'الهند', 'India')], M, 'About 7.7 million km² vs about 3.3 million.', 'CIA World Factbook')
 q('c19', C, HEAVY_AR, HEAVY_EN, [('watermelon', 'جحة', 'Watermelon'), ('pineapple', 'أناناس', 'Pineapple')], E, 'Usually 5-9 kg vs 1-2 kg.', 'USDA')
-q('c20', C, 'أيهم أثقل: لتر ماي ولا لتر زيت؟', 'Which is heavier: a litre of water or of oil?', [('water', 'لتر ماي', 'A litre of water'), ('oil', 'لتر زيت', 'A litre of oil')], H, 'Oil is less dense than water (it floats).', 'Britannica: density')
+q('c20', C, 'بدرجة حرارة الغرفة، أي لتر أثقل؟', 'At room temperature, which litre weighs more?', [('water', 'لتر ماي', 'A litre of water'), ('oil', 'لتر زيت زيتون', 'A litre of olive oil')], H, 'Oil is less dense than water (it floats).', 'Britannica: density')
 q('c21', C, HEAVY_AR, HEAVY_EN, [('emperor_penguin', 'بطريق إمبراطور', 'Emperor penguin'), ('house_cat', 'قطوة', 'House cat')], M, 'About 23-40 kg vs about 4 kg.', 'British Antarctic Survey')
 q('c22', C, BIG_AR, BIG_EN, [('basketball', 'كورة سلة', 'Basketball'), ('football', 'كورة قدم', 'Football')], M, 'Size 7 basketball is about 24 cm across; size 5 football about 22 cm.', 'FIBA; FIFA')
 q('c23', C, TALL_AR, TALL_EN, [('eiffel', 'برج إيفل', 'Eiffel Tower'), ('kuwait_towers', 'أبراج الكويت', 'Kuwait Towers')], M, '330 m vs 187 m.', 'CTBUH')
 q('c24', C, FAST_AR, FAST_EN, [('light', 'الضوء', 'Light'), ('sound', 'الصوت', 'Sound')], E, 'About 300,000 km/s vs 0.34 km/s.', 'NIST')
 q('c25', C, 'أيهم أثقل: مخ الإنسان ولا قلبه؟', 'Which is heavier: the human brain or heart?', [('brain', 'المخ', 'Brain'), ('heart', 'القلب', 'Heart')], H, 'About 1.4 kg vs about 0.3 kg.', 'NIH')
 q('c26', C, SMALL_AR, SMALL_EN, [('pluto', 'بلوتو', 'Pluto'), ('moon', 'القمر', 'The Moon')], H, 'Pluto is about 2,377 km across; the Moon 3,474 km.', 'NASA')
-q('c27', C, HEAVY_AR, HEAVY_EN, [('rhino', 'وحيد القرن', 'Rhino'), ('giraffe', 'زرافة', 'Giraffe')], H, 'White rhinos weigh about 2,000 kg; giraffes about 1,000.', 'WWF; San Diego Zoo')
-q('c28', C, BIG_AR, BIG_EN, [('pacific', 'المحيط الهادئ', 'Pacific Ocean'), ('atlantic', 'المحيط الأطلسي', 'Atlantic Ocean')], E, 'The Pacific is about twice the Atlantic.', 'NOAA')
+q('c27', C, HEAVY_AR, HEAVY_EN, [('rhino', 'وحيد قرن أبيض بالغ', 'Adult white rhinoceros'), ('giraffe', 'زرافة بالغة', 'Adult giraffe')], H, 'White rhinos weigh about 2,000 kg; giraffes about 1,000.', 'WWF; San Diego Zoo')
+q('c28', C, 'أي محيط مساحته أكبر؟', 'Which ocean has the larger surface area?', [('pacific', 'المحيط الهادئ', 'Pacific Ocean'), ('atlantic', 'المحيط الأطلسي', 'Atlantic Ocean')], E, 'The Pacific has the largest surface area of any ocean basin.', 'https://oceanservice.noaa.gov/facts/pacific.html')
 q('c29', C, TALL_AR, TALL_EN, [('everest', 'إيفرست', 'Mount Everest'), ('k2', 'كيه ٢', 'K2')], M, '8,849 m vs 8,611 m.', 'National Geographic')
-q('c30', C, FAST_AR, FAST_EN, [('kangaroo', 'كنغر', 'Kangaroo'), ('sprinter', 'أسرع عدّاء بالعالم', 'World\'s fastest sprinter')], M, 'About 70 km/h vs about 44 km/h.', 'Australian Museum; World Athletics')
+q('c30', C, 'أيهم أسرع بأقصى سرعته؟', 'Which has the higher top speed?', [('kangaroo', 'الكنغر الأحمر', 'Red kangaroo'), ('sprinter', 'يوسين بولت', 'Usain Bolt')], M, 'About 70 km/h vs about 44 km/h.', 'Australian Museum; World Athletics')
 
 # ------------------------------------------------------------------ أيهم؟ (25)
 W = 'which'
@@ -242,7 +242,7 @@ q('w01', W, 'أيهم أسرع بالركض؟', 'Which runs faster (top speed)?'
 q('w02', W, 'أيهم أبعد عن الشمس؟', 'Which is farther from the Sun?', [('mars', 'المريخ', 'Mars'), ('venus', 'الزهرة', 'Venus')], E, 'Mars is the 4th planet, Venus the 2nd.', 'NASA')
 q('w03', W, 'أيهم فيه عظام أكثر؟', 'Which has more bones?', [('human', 'الإنسان', 'An adult human'), ('shark', 'القرش', 'A shark')], M, 'Sharks have cartilage, no bones.', 'NOAA')
 q('w04', W, 'أيهم عنده رجول أكثر؟', 'Which has more legs?', [('spider', 'عنكبوت', 'Spider'), ('ant', 'نملة', 'Ant')], E, 'Eight vs six.', 'Britannica')
-q('w05', W, 'أيهم فيه كافيين أكثر؟', 'Which has more caffeine?', [('coffee_cup', 'كوب قهوة عادي', 'A cup of brewed coffee'), ('espresso', 'شوت إسبريسو', 'One espresso shot')], H, 'About 95 mg in a cup vs about 63 mg in a shot.', 'USDA FoodData Central')
+q('w05', W, 'بالعادة، أي حصة فيها كافيين أكثر؟', 'Which serving usually contains more caffeine?', [('coffee_cup', 'قهوة مفلترة (٢٤٠ مل)', 'Brewed coffee (240 mL)'), ('espresso', 'إسبريسو (٣٠ مل)', 'Espresso (30 mL)')], H, 'About 95 mg in a cup vs about 63 mg in a shot.', 'USDA FoodData Central')
 q('w06', W, 'أيهم طلع أول؟', 'Which came out first?', [('instagram', 'إنستغرام', 'Instagram'), ('snapchat', 'سناب شات', 'Snapchat')], M, 'Instagram Oct 2010; Snapchat 2011.', 'Britannica')
 q('w07', W, 'أيهم أحر؟', 'Which is hotter?', [('venus', 'الزهرة', 'Venus'), ('mercury_planet', 'عطارد', 'Mercury')], H, 'Venus\'s thick air traps heat: about 465°C; Mercury peaks around 430°C.', 'NASA')
 q('w08', W, 'أيهم عنده قلوب أكثر؟', 'Which has more hearts?', [('octopus', 'أخطبوط', 'Octopus'), ('human', 'إنسان', 'Human')], M, 'An octopus has three hearts.', 'Smithsonian Ocean')
@@ -252,17 +252,17 @@ q('w11', W, 'أيهم أبرد؟', 'Which is colder?', [('south_pole', 'القط
 q('w12', W, 'أيهم سكانه أكثر؟', 'Which has more people?', [('kuwait', 'الكويت', 'Kuwait'), ('bahrain', 'البحرين', 'Bahrain')], E, 'About 4.9 million vs about 1.6 million.', 'UN population data')
 q('w13', W, 'أيهم عنده أقمار أكثر؟', 'Which has more moons?', [('mars', 'المريخ', 'Mars'), ('earth', 'الأرض', 'Earth')], M, 'Mars has two (Phobos, Deimos).', 'NASA')
 q('w14', W, 'أيهم ينام أكثر؟', 'Which sleeps more?', [('koala', 'كوالا', 'Koala'), ('human', 'إنسان', 'Human')], E, 'Koalas sleep about 18-22 hours a day.', 'Australian Koala Foundation')
-q('w15', W, 'عند النعامة أيهم أكبر؟', 'In an ostrich, which is bigger?', [('ostrich_eye', 'عينها', 'Its eye'), ('ostrich_brain', 'مخها', 'Its brain')], H, 'An ostrich eye is bigger than its brain.', 'San Diego Zoo')
-q('w16', W, 'أيهم أقرب للكويت؟', 'Which is closer to Kuwait?', [('dubai', 'دبي', 'Dubai'), ('cairo', 'القاهرة', 'Cairo')], M, 'About 850 km vs about 1,600 km.', 'Great-circle distance')
+q('w15', W, 'بفحص الأشعة للنعام، أيهم كان حجمه أكبر بالمتوسط؟', 'In a CT study of ostriches, which had the larger average volume?', [('ostrich_brain', 'المخ', 'The brain'), ('ostrich_eye', 'عين وحدة', 'One eyeball')], H, 'Mean brain volume was 36.58 cm³, compared with 29.6 and 31.8 cm³ for individual eyes.', 'Masoudifard et al., Table 3: https://doi.org/10.1155/vmi/4993179')
+q('w16', W, 'أي مدينة أقرب لمدينة الكويت بخط مستقيم؟', 'Which city is closer to Kuwait City as the crow flies?', [('dubai', 'دبي', 'Dubai'), ('cairo', 'القاهرة', 'Cairo')], M, 'About 860 km to Dubai and 1,620 km to Cairo.', 'Natural Earth populated-place coordinates, great-circle distance')
 q('w17', W, 'أيهم فيها دول أكثر؟', 'Which has more countries?', [('africa', 'أفريقيا', 'Africa'), ('europe', 'أوروبا', 'Europe')], M, '54 vs about 44.', 'UN member states')
 q('w18', W, 'أيهم أملح؟', 'Which is saltier?', [('dead_sea', 'البحر الميت', 'Dead Sea'), ('gulf', 'الخليج العربي', 'Arabian Gulf')], E, 'About 34% salt vs about 4%.', 'Britannica: Dead Sea')
 q('w19', W, 'أيهم سنته أطول؟', 'Which has the longer year?', [('mars', 'المريخ', 'Mars'), ('earth', 'الأرض', 'Earth')], E, '687 days vs 365.', 'NASA')
 q('w20', W, 'أيهم أثقل؟', 'Which is heavier?', [('water', 'لتر ماي', 'A litre of water'), ('ice', 'لتر ثلج', 'A litre of ice')], H, 'Ice is less dense than water; that is why it floats.', 'USGS Water Science')
-q('w21', W, 'أيهم يومه أطول؟', 'Which has the longer day?', [('venus', 'الزهرة', 'Venus'), ('earth', 'الأرض', 'Earth')], H, 'Venus spins once every 243 Earth days.', 'NASA')
-q('w22', W, 'أيهم أسرع بالركض؟', 'Which runs faster?', [('ostrich', 'نعامة', 'Ostrich'), ('sprinter', 'أسرع عدّاء بالعالم', 'World\'s fastest sprinter')], M, 'About 70 km/h vs about 44 km/h.', 'San Diego Zoo; World Athletics')
+q('w21', W, 'أي كوكب يستغرق وقت أطول عشان يلف حول محوره مرة؟', 'Which planet takes longer to spin once on its axis?', [('venus', 'الزهرة', 'Venus'), ('earth', 'الأرض', 'Earth')], H, 'Venus spins once every 243 Earth days.', 'https://science.nasa.gov/venus/venus-facts/')
+q('w22', W, 'أيهم أسرع بالركض؟', 'Which runs faster?', [('ostrich', 'نعامة', 'Ostrich'), ('sprinter', 'يوسين بولت', 'Usain Bolt')], M, 'About 70 km/h vs about 44 km/h.', 'San Diego Zoo; World Athletics')
 q('w23', W, 'أيهم قلبه أكبر؟', 'Which has the bigger heart?', [('blue_whale', 'الحوت الأزرق', 'Blue whale'), ('elephant', 'فيل', 'Elephant')], E, 'A blue whale heart weighs about 180 kg.', 'Royal Ontario Museum')
 q('w24', W, 'أيهم حروفه أكثر؟', 'Which alphabet has more letters?', [('arabic_letters', 'الأبجدية العربية', 'Arabic alphabet'), ('english_letters', 'الأبجدية الإنجليزية', 'English alphabet')], E, '28 vs 26.', '-')
-q('w25', W, 'أيهم انخترع أول؟', 'Which was invented first?', [('telephone', 'التلفون', 'The telephone'), ('light_bulb', 'المصباح الكهربائي', 'Edison\'s light bulb')], M, '1876 vs 1879.', 'Britannica')
+q('w25', W, 'أيهم انخترع أول؟', 'Which was invented first?', [('telephone', 'التلفون', 'The telephone'), ('light_bulb', 'مصباح أديسون', 'Edison\'s light bulb')], M, '1876 vs 1879.', 'Britannica')
 
 # ------------------------------------------------------------------ وين الحيوان؟ (animal identification)
 ANIMALS = [

@@ -9,6 +9,7 @@ import Dials, {Dial, PLAYER_COLORS} from './Dials';
 import Face from './Face';
 import {TASK_VIEWS, stroopPrompt} from './Tasks';
 import {picturePrompt} from './PictureTasks';
+import {ART, ART_BASE} from './artManifest';
 import {GEO} from './content';
 import {TOTAL, localCheck} from './localCheck';
 import {TEXT} from './text';
@@ -354,6 +355,15 @@ export default function ClockRace({onContinue}) {
   const pos = round && mine.round === round.id ? mine.done : 0;
   const players = useMemo(() => (game?.players || []).map(p => p.id === me && round && mine.round === round.id ? {...p, done: mine.done} : p), [game?.players, me, round, mine]);
   const task = round && pos < TOTAL ? round.tasks[pos] : null;
+  const nextPictureKeys = (Array.isArray(round?.tasks[pos + 1]?.options) ? round.tasks[pos + 1].options : []).filter(Array.isArray).map(option => option[0]).filter(key => ART[key]).join(' ') || '';
+  useEffect(() => {
+    if (!nextPictureKeys) return;
+    for (const key of nextPictureKeys.split(' ')) {
+      const img = new Image();
+      img.fetchPriority = 'low';
+      img.src = ART_BASE + ART[key];
+    }
+  }, [nextPictureKeys]);
   const winner = game?.players.find(p => p.id === game.winner);
   const View = task ? TASK_VIEWS[task.type] : null;
   const seconds = Math.max(1, Math.ceil((startsAt - clock) / 1000));
@@ -400,6 +410,7 @@ export default function ClockRace({onContinue}) {
           </>}
           <button className="cr-primary" disabled={busy || !name.trim()}>{busy ? t.opening : intent === 'create' ? t.openRoom : t.enterRoom}</button>
         </form> : <ul className="cr-rules">{t.rules.map(r => <li key={r}>{r}</li>)}</ul>}
+        <a href="/clock-race/art/CREDITS.html" target="_blank" rel="noreferrer">{pickedLang === 'ar' ? 'مصادر الصور' : 'Image credits'}</a>
         {error && <p className="cr-error" role="alert">{error}</p>}
       </section>}
     </>);

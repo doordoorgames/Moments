@@ -365,7 +365,6 @@
 .cr-pics.is-pair .cr-pic:nth-child(1) .cr-pic-art{transform:rotate(-1.2deg)}
 /* E: facing each other with a VS stamp */
 .cr-pics.is-vs{grid-template-columns:1fr auto 1fr;align-items:center;gap:4px}
-.cr-pics.is-vs .is-right .cr-pic-art{transform:scaleX(-1)}
 .cr-vs{font-family:'Archivo Black','Baloo Bhaijaan 2',sans-serif;font-size:26px;color:#FBF5E8;background:#E2504A;padding:6px 8px 4px;transform:rotate(-8deg);box-shadow:3px 4px 0 #3A344655;letter-spacing:1px}
 /* C: two uneven manga panels */
 .cr-pics.is-panels{grid-template-columns:1.12fr .88fr;gap:6px;padding:6px;background:#3A3446}

@@ -1,12 +1,6 @@
-# Clock Race artwork needed
+# Clock Race artwork inventory
 
-Every picture in the comparison questions and the animal finder. None is painted yet: the game shows a painted placeholder plate for each.
-
-How to add one: paint it, export a square PNG or WebP (about 512 x 512, transparent or painted background), name it `<key>.webp`, put it in this folder, and add the key to `frontend/src/components/clockRace/artManifest.js`.
-
-Style: late-80s / early-90s Japanese picture-book and arcade art. Hand-inked outlines with uneven weight, painted shadows, slight misregistration, paper grain. No brand logos or real-person likenesses; for brands paint the product or object (a cola bottle, a game console), for people a respectful vintage-magazine style that does not copy a photograph.
-
-Total: 229 pictures.
+The 229 keys below are used by the comparison bank and animal finder. The WebP files live alongside this inventory. See [credits](CREDITS.html) for sources, creators, licenses, and modifications. Validate coverage with `python scripts/validate_clock_race_art.py` from the repository root (requires Pillow).
 
 | key | Arabic | English | used in |
 |---|---|---|---|

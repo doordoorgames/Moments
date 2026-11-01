@@ -26,12 +26,19 @@ const RESET_MS = 1600;    // losing the third heart: the clock drains back to 0,
 const LIVES = 3;
 const STARS_MS = 520;
 
-// Three hearts in the marquee: full ones on the left, emptied ones fade; the last one left pulses red.
+// Three hearts next to the count: full ones on the left, emptied ones fade; the last one left pulses red.
+// Arcade hearts are drawn on a 9x8 pixel grid, with one lighter pixel of shine.
+const PIXEL_HEART = ['.XX...XX.', 'XXXX.XXXX', 'XXXXXXXXX', 'XXXXXXXXX', '.XXXXXXX.', '..XXXXX..', '...XXX...', '....X....']
+  .flatMap((row, y) => [...row].map((c, x) => c === 'X' ? `M${x} ${y}h1v1h-1z` : '')).join('');
 function Hearts({left, label}) {
   return <span className={`cr-hearts ${left === 1 ? 'is-last' : ''}`} dir="ltr" role="img" aria-label={label(left)}>
-    {Array.from({length: LIVES}, (_, i) => <svg key={i} viewBox="0 0 24 22" className={`cr-heart ${i < left ? 'is-full' : 'is-empty'}`} aria-hidden="true">
-      <path d="M12 21 L2.6 11.8 Q-1 7.6 2 3.6 Q5.6 -0.4 10 2.6 L12 4.4 L14 2.6 Q18.4 -0.4 22 3.6 Q25 7.6 21.4 11.8 Z"/>
-    </svg>)}
+    {Array.from({length: LIVES}, (_, i) => ARCADE
+      ? <svg key={i} viewBox="0 0 9 8" className={`cr-heart is-pixel ${i < left ? 'is-full' : 'is-empty'}`} shapeRendering="crispEdges" aria-hidden="true">
+        <path d={PIXEL_HEART}/><path className="cr-heart-shine" d="M1 1h1v1h-1z"/>
+      </svg>
+      : <svg key={i} viewBox="0 0 24 22" className={`cr-heart ${i < left ? 'is-full' : 'is-empty'}`} aria-hidden="true">
+        <path d="M12 21 L2.6 11.8 Q-1 7.6 2 3.6 Q5.6 -0.4 10 2.6 L12 4.4 L14 2.6 Q18.4 -0.4 22 3.6 Q25 7.6 21.4 11.8 Z"/>
+      </svg>)}
   </span>;
 }
 
@@ -66,6 +73,35 @@ function BigClock() {
     <circle cx="100" cy="100" r="11" fill="#0B0B0B"/><circle cx="100" cy="100" r="4" fill="#FFC93C"/>
     <rect x="86" y="2" width="28" height="16" fill="#FFC93C" stroke="#0B0B0B" strokeWidth="5"/>
   </svg>;
+}
+
+// The third heart is gone: your own clock, wearing the sad face, winds back to 0 (lamps go out last-first,
+// the wedge drains, the hand sweeps back), then the three hearts light up again. Runs inside RESET_MS.
+const RESET_PIE = 2 * Math.PI * 15.5;
+const RESET_LAMPS = Array.from({length: TOTAL}, (_, i) => {
+  const a = (i + 0.5) / TOTAL * Math.PI * 2;
+  return [50 + 38.5 * Math.sin(a), 50 - 38.5 * Math.cos(a)];
+});
+function ResetClock({from, color, caption, hearts}) {
+  const p = Math.max(0, Math.min(1, from / TOTAL));
+  const lit = Math.round(p * TOTAL);
+  const drain = 900; // ms for the clock to reach 0
+  return <div className="cr-reset" role="status" aria-label={caption}>
+    <svg viewBox="0 0 100 100" className="cr-reset-clock" aria-hidden="true"
+      style={{'--from-off': `${RESET_PIE * (1 - p)}`, '--to-off': `${RESET_PIE}`, '--from-deg': `${p * 360}deg`, '--drain': `${drain}ms`}}>
+      <circle cx="50" cy="50" r="46" fill="#F4EAD5"/>
+      {RESET_LAMPS.map(([x, y], i) => <circle key={i} cx={x} cy={y} r="2.8" fill="#DCD3C1"/>)}
+      {RESET_LAMPS.slice(0, lit).map(([x, y], i) => <circle key={`l${i}`} cx={x} cy={y} r="2.8" fill={color} className="cr-reset-lamp"
+        style={{animationDelay: `${120 + Math.round((lit - 1 - i) / Math.max(1, lit) * drain)}ms`}}/>)}
+      <circle cx="50" cy="50" r="31" fill="#CFE0EC"/>
+      <circle cx="50" cy="50" r="15.5" fill="none" stroke={color} strokeWidth="31" transform="rotate(-90 50 50)" opacity=".9"
+        strokeDasharray={RESET_PIE} className="cr-reset-wedge"/>
+      <g className="cr-reset-hand"><line x1="50" y1="50" x2="50" y2="22" stroke="#3A3446" strokeWidth="4.6"/></g>
+      <g transform="translate(34 34) scale(.32)"><Face mood="sad" color={0}/></g>
+    </svg>
+    <Hearts left={LIVES} label={hearts}/>
+    <p className="cr-reset-caption">{caption}</p>
+  </div>;
 }
 
 // A short burst of golden stars where the finger landed.
@@ -263,8 +299,7 @@ export default function ClockRace({onContinue}) {
     const misses = mineRef.current.misses + 1;
     const broken = misses >= LIVES;
     setMine(m => ({...m, misses: broken ? LIVES : misses}));
-    setSad(broken ? 'reset' : true);
-    if (broken) say(t.resetToast, 'reset');
+    setSad(broken ? {from: i} : true);
     setTimeout(() => {
       setSad(false);
       locked.current = false;
@@ -276,7 +311,7 @@ export default function ClockRace({onContinue}) {
         if (gameRef.current?.round?.tasks[0]?.type === 'word') wordInput.current?.focus();
       } else advance(rid, i + 1);
     }, broken ? RESET_MS : WRONG_MS);
-  }, [advance, burst, say, t]);
+  }, [advance, burst, say]);
 
   const pick = useCallback(value => {
     const g = gameRef.current, m = mineRef.current;
@@ -369,17 +404,15 @@ export default function ClockRace({onContinue}) {
   const seconds = Math.max(1, Math.ceil((startsAt - clock) / 1000));
   const devPanel = game?.dev && isHost ? <DevPanel open={devOpen} setOpen={setDevOpen} game={game} dev={dev} task={task}/> : null;
   const shell = (cls, children) => <main className={`cr-app ${ARCADE ? 'cr-arcade' : ''} ${cls}`} style={ARCADE ? ARCADE_VARS : undefined} dir={t.dir} lang={lang} data-typography-ignore>{children}</main>;
-  // Arcade: the game lives on a cabinet. Marquee (task name and count) on top, the CRT screen in the
-  // middle (the question and its answers), a control panel below. Everything else is the room around it.
-  const cabinet = (cls, head, body) => ARCADE ? <section className={`cr-stage cr-cab-stage ${cls}`}>
-    <div className="cr-cab">
-      <div className="cr-cab-marquee">{head}</div>
-      <div className="cr-cab-shell"><div className="cr-cab-screen">{body}</div></div>
-    </div>
+  // Arcade: no cabinet and no panels. The count and hearts sit on one line over the room, the question and
+  // its answers below it, straight on the painting.
+  const cabinet = (cls, head, body) => ARCADE ? <section className={`cr-stage cr-open ${cls}`}>
+    {head && <div className="cr-open-head">{head}</div>}
+    <div className="cr-open-body">{body}</div>
   </section> : <section className={`cr-stage ${cls}`}>{head}{body}</section>;
   const bar = <header className="cr-bar">
     <button className="cr-square-btn" onClick={exit} aria-label={t.back}><Arrow dir={t.dir}/></button>
-    <span className="cr-wordmark">{t.title}</span>
+    <span className="cr-wordmark"><span className="cr-letter">{t.title}</span></span>
     {devPanel}
   </header>;
 
@@ -393,10 +426,10 @@ export default function ClockRace({onContinue}) {
           <button type="button" className={pickedLang === 'ar' ? 'is-on' : ''} aria-pressed={pickedLang === 'ar'} lang="ar" onClick={() => setPickedLang('ar')}>عربي</button>
           <button type="button" className={pickedLang === 'en' ? 'is-on' : ''} aria-pressed={pickedLang === 'en'} lang="en" onClick={() => setPickedLang('en')}>English</button>
         </div>}
-        <div className="cr-hero"><BigClock/><h1>{t.title}</h1><p>{t.tagline}</p></div>
+        <div className="cr-hero"><BigClock/><h1><span className="cr-letter">{t.title}</span></h1><p><span className="cr-letter">{t.tagline}</span></p></div>
         {!linkJoin && <div className="cr-intents">
-          <button type="button" className={`cr-intent ${intent === 'create' ? 'is-on' : ''}`} onClick={() => { setIntent('create'); setError(''); setTimeout(() => nickRef.current?.focus()); }}>{t.create}<small>{t.createSmall}</small></button>
-          <button type="button" className={`cr-intent is-join ${intent === 'join' ? 'is-on' : ''}`} onClick={() => { setIntent('join'); setError(''); setTimeout(() => nickRef.current?.focus()); }}>{t.join}<small>{t.joinSmall}</small></button>
+          <button type="button" className={`cr-intent ${intent === 'create' ? 'is-on' : ''}`} onClick={() => { setIntent('create'); setError(''); setTimeout(() => nickRef.current?.focus()); }}><span className="cr-letter">{t.create}</span><small>{t.createSmall}</small></button>
+          <button type="button" className={`cr-intent is-join ${intent === 'join' ? 'is-on' : ''}`} onClick={() => { setIntent('join'); setError(''); setTimeout(() => nickRef.current?.focus()); }}><span className="cr-letter">{t.join}</span><small>{t.joinSmall}</small></button>
         </div>}
         {intent ? <form className="cr-card cr-form" onSubmit={enter} noValidate>
           <label htmlFor="cr-nick">{t.nick}</label>
@@ -408,9 +441,9 @@ export default function ClockRace({onContinue}) {
               onChange={v => { setJoinCode(v); if (validRoomCode(v)) setCodeError(false); }}/>
             <small id="cr-code-hint" className={codeError ? 'is-error' : ''}>{codeError ? t.codeIncomplete(5 - joinCode.length) : t.codeHint}</small>
           </>}
-          <button className="cr-primary" disabled={busy || !name.trim()}>{busy ? t.opening : intent === 'create' ? t.openRoom : t.enterRoom}</button>
-        </form> : <ul className="cr-rules">{t.rules.map(r => <li key={r}>{r}</li>)}</ul>}
-        <a href="/clock-race/art/CREDITS.html" target="_blank" rel="noreferrer">{pickedLang === 'ar' ? 'مصادر الصور' : 'Image credits'}</a>
+          <button className="cr-primary" disabled={busy || !name.trim()}><span className="cr-letter">{busy ? t.opening : intent === 'create' ? t.openRoom : t.enterRoom}</span></button>
+        </form> : !ARCADE && <ul className="cr-rules">{t.rules.map(r => <li key={r}>{r}</li>)}</ul>}
+        <a href="/clock-race/art/CREDITS.html" target="_blank" rel="noreferrer"><span className="cr-letter">{pickedLang === 'ar' ? 'مصادر الصور' : 'Image credits'}</span></a>
         {error && <p className="cr-error" role="alert">{error}</p>}
       </section>}
     </>);
@@ -420,21 +453,22 @@ export default function ClockRace({onContinue}) {
     return shell('cr-page cr-lobby', <>
       <Backdrop/>{bar}
       <section className="cr-lobby-body">
-        <h1>{t.lobbyTitle}</h1>
-        <div className="cr-card cr-code-card">
-          <span>{t.yourCode}</span><strong dir="ltr">{code}</strong>
+        <h1 className="cr-lobby-title"><span className="cr-letter">{t.lobbyTitle}</span></h1>
+        {/* Arcade: nothing boxed. The code reads straight off the room, the QR floats with only its quiet zone. */}
+        <div className={ARCADE ? 'cr-room-code' : 'cr-card cr-code-card'}>
+          <span className="cr-meta">{t.yourCode}</span><strong dir="ltr">{code}</strong>
           {isHost && <div className="cr-qr"><RoomQR url={inviteUrl} label={code}/></div>}
           <div className="cr-code-actions">
-            <button type="button" className="cr-ghost" onClick={async () => { try { await navigator.clipboard.writeText(code); setNotice(t.copied); } catch { setNotice(code); } }}>{t.copyCode}</button>
-            <button type="button" className="cr-ghost" onClick={share}>{t.share}</button>
+            <button type="button" className="cr-ghost cr-tab" onClick={async () => { try { await navigator.clipboard.writeText(code); setNotice(t.copied); } catch { setNotice(code); } }}>{t.copyCode}</button>
+            <button type="button" className="cr-ghost cr-textbtn" onClick={share}><span>{t.share}</span><Arrow dir={t.dir === 'rtl' ? 'ltr' : 'rtl'}/></button>
           </div>
         </div>
-        <div className="cr-card cr-guests">
+        <div className={ARCADE ? 'cr-guests' : 'cr-card cr-guests'}>
           <div className="cr-guests-head"><b>{t.friends}</b><span dir="ltr">{t.players(game.players.length)}</span></div>
           <ul>{game.players.map(p => <li key={p.id}><i style={{background: PLAYER_COLORS[p.color % PLAYER_COLORS.length]}}/><span dir="auto">{p.name}</span>
             {p.id === game.host && <small>{t.host}</small>}{p.sim && <small className="is-bot">{t.bot}</small>}{p.id === me && <small className="is-me">{t.you}</small>}</li>)}</ul>
         </div>
-        {isHost ? <><button className="cr-primary cr-start" disabled={busy} onClick={start}>{t.start}</button>
+        {isHost ? <><button className="cr-primary cr-start" disabled={busy} onClick={start}><span className="cr-letter">{t.start}</span></button>
           {game.dev ? <p className="cr-fine">{t.testRoom}</p> : game.players.length < 2 && <p className="cr-fine">{t.soloOk}</p>}</>
           : <p className="cr-waiting">{t.waitHost(hostName)}</p>}
         {error && <p className="cr-error" role="alert">{error}</p>}
@@ -472,7 +506,10 @@ export default function ClockRace({onContinue}) {
     {counting && <div className="cr-countdown" aria-live="assertive"><span key={seconds}>{seconds}</span></div>}
     {!counting && game.status === 'racing' && clock - startsAt < 700 && inRace && pos === 0 && <div className="cr-countdown is-go"><span>{t.go}</span></div>}
     {stars && <Stars key={`s${stars.id}`} x={stars.x} y={stars.y}/>}
-    {sad && <div className={`cr-sad ${sad === 'reset' ? 'is-reset' : ''}`} role="status" aria-label="wrong"><div className="cr-sad-face"><Face mood="sad" color={0}/></div></div>}
+    {sad === true && <div className="cr-sad" role="status" aria-label="wrong"><div className="cr-sad-face"><Face mood="sad" color={0}/></div></div>}
+    {sad?.from != null && <div className="cr-sad is-reset">
+      <ResetClock from={sad.from} color={PLAYER_COLORS[(game.players.find(p => p.id === me)?.color || 0) % PLAYER_COLORS.length]} caption={t.resetToast} hearts={t.hearts}/>
+    </div>}
     {toast && <div className={`cr-toast is-${toast.kind}`} key={`t${toast.id}`} dir="auto">{toast.text}</div>}
     {game.status === 'finished' && <div className="cr-finish" role="dialog" aria-modal="true" aria-labelledby="cr-finish-title">
       <div className="cr-finish-card">
@@ -482,7 +519,7 @@ export default function ClockRace({onContinue}) {
         <ol className="cr-results">{[...players].filter(p => p.racing).sort((a, b) => (b.id === game.winner) - (a.id === game.winner) || b.done - a.done || (b.right || 0) - (a.right || 0)).map(p =>
           <li key={p.id} className={p.id === me ? 'is-me' : ''}><i style={{background: PLAYER_COLORS[p.color % PLAYER_COLORS.length]}}/><span dir="auto">{p.name}</span>
             <em>{t.rightOf(p.right || 0, p.done)}</em><b dir="ltr">{Math.round(p.done / TOTAL * 100)}%</b></li>)}</ol>
-        {isHost ? <button className="cr-primary" disabled={busy} onClick={start}>{t.again}</button> : <p className="cr-waiting">{t.waitAgain(hostName)}</p>}
+        {isHost ? <button className="cr-primary" disabled={busy} onClick={start}><span className="cr-letter">{t.again}</span></button> : <p className="cr-waiting">{t.waitAgain(hostName)}</p>}
         <button className="cr-ghost cr-link" onClick={exit}>{t.exit}</button>
       </div>
     </div>}
@@ -497,9 +534,9 @@ function Arrow({dir}) {
 function Backdrop() {
   if (!ARCADE) return <div className="cr-backdrop" aria-hidden="true"/>;
   // A: the painted room. A soft wash of fluorescent light drifts over it very slowly.
-  // F: foreground details over the room (empty slots until real art is supplied), always under the game.
+  // Wash: a soft teal veil over the painting (not a panel) so ivory lettering and answers stay legible.
   return <div className="cr-backdrop is-arcade" aria-hidden="true">
-    <i className="cr-room"/><i className="cr-room-light"/><i className="cr-fg is-top"/><i className="cr-fg is-bottom"/>
+    <i className="cr-room"/><i className="cr-room-light"/><i className="cr-room-wash"/>
   </div>;
 }
 

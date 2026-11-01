@@ -1,321 +1,452 @@
 /* Clock Race · arcade theme. "An afternoon inside a Japanese game center, circa 1992."
-   Everything here is scoped to .cr-arcade (see theme.js); the classic look is untouched.
+   One design system, scoped to .cr-arcade (theme.js switches it; ?theme=classic shows the old look).
 
-   Layers (all replaceable files in public/clock-race/arcade/, see README.md there). Their URLs come in as
-   CSS variables from theme.js (--arc-room etc.), so the build never tries to bundle them:
-     A  a-room.jpg            the painted room behind everything
-     B  b-cabinet-shell.png   9-slice cabinet shell around the CRT
-     C  c-crt-glass.png       transparent glass over the screen (vignette + one soft reflection)
-     D  d-ink-frame.png       9-slice hand-inked outline for buttons and panels
-        d-paint-texture.png   tileable gouache density, multiplied into painted surfaces
-     E  the timer dials       drawn in code (Dials.jsx), they show live progress
-     F  f-foreground-*.png    details over the room, under the game
+   The painted room (public/clock-race/arcade/a-room.jpg) is the star: nothing sits in a panel on top of it.
+   A soft teal veil keeps the lettering legible; words and answers sit straight on the painting.
 
-   Analog character comes from the art itself (paint density, ink wobble, the paint sitting a hair off its
-   outline, grain baked into the room), not from full-screen filters. Text and answers stay crisp. */
+   Type   CR Handjet (pixel grid, Arabic + English) for everything read; CR Press Start (Press Start 2P)
+          for English marquee lettering and numbers. Declared in theme.js.
+   Colour ivory lettering, warm-grey secondary, a hard charcoal outline; teal, cotton-candy pink and
+          powder yellow only on the few things you press.
+   Shapes no rounded rectangles. Pressable things have stepped pixel corners and a painted bottom lip, and
+          each kind of control has its own silhouette (capsule key, paper tag, text link, menu cursor). */
 
+/* ================================================================ tokens */
 .cr-app.cr-arcade{
-  --ink:#3A3446;--paper:#FBF5E8;--cream:#F1E6CF;
-  --turq:#7EC4BE;--turq-d:#5CA09E;--pink:#E8A8B6;--pink-d:#C8849A;--blue:#ACCAE2;--blue-d:#84A6C8;
-  --ivory:#F6ECD6;--ivory-d:#E2D2B6;--lav:#C4B8E0;--lav-d:#A092C4;
-  --coral:#E8927C;--coral-d:#C8735E;--yellow:#F4DE96;--yellow-d:#D8BE6E;--pist:#B6D296;--pist-d:#8FB070;--navy:#465474;
-  --tomato:var(--coral);--yolk:var(--yellow);--mint:#7DBF9E;--cobalt:#6F98C9;
-  --shadow:0 4px 0 rgba(58,52,70,.22);--shadow-lg:0 6px 0 rgba(58,52,70,.2);
-  --paint:var(--arc-paint);
-  --chrome-top:0px;
-  background:var(--blue);color:var(--ink);
+  --cr-ivory:#F7EEDB;--cr-ivory-lo:#DCD3C3;--cr-gray:#CFC6B7;--cr-charcoal:#2A2630;--cr-charcoal-a:rgba(42,38,48,.55);
+  --cr-pink:#EEA5BD;--cr-pink-d:#C67C96;--cr-pink-l:#F8D3DF;
+  --cr-teal:#4F9E9B;--cr-teal-d:#2E6E6F;
+  --cr-powder:#F2E09C;--cr-powder-d:#CDB66B;
+  --cr-mint:#A3D6BD;--cr-mint-d:#6DAA8E;
+  --cr-paper:#FBF5E8;--cr-paper-d:#DCCFB4;
+  --cr-red:#E2505B;
+
+  --cr-pixel:'CR Handjet','Handjet',ui-monospace,monospace;
+  --cr-press:'CR Press Start','CR Handjet',ui-monospace,monospace;
+
+  /* type scale (Handjet is tall and narrow, so it runs larger than a normal face) */
+  --cr-fs-hero:clamp(58px,17vw,72px);   /* game title */
+  --cr-fs-h1:clamp(42px,12vw,50px);     /* screen headings */
+  --cr-fs-q:clamp(29px,8.4vw,36px);     /* questions */
+  --cr-fs-btn:clamp(28px,8vw,33px);     /* main buttons */
+  --cr-fs-label:22px;                   /* labels, names */
+  --cr-fs-meta:18px;                    /* small print */
+
+  /* hard pixel outlines: no blur anywhere */
+  --cr-ol-1:1px 0 0 var(--cr-charcoal),-1px 0 0 var(--cr-charcoal),0 1px 0 var(--cr-charcoal),0 -1px 0 var(--cr-charcoal),0 2px 0 var(--cr-charcoal);
+  --cr-ol-2:2px 0 0 var(--cr-charcoal),-2px 0 0 var(--cr-charcoal),0 2px 0 var(--cr-charcoal),0 -2px 0 var(--cr-charcoal),
+    2px 2px 0 var(--cr-charcoal),-2px 2px 0 var(--cr-charcoal),2px -2px 0 var(--cr-charcoal),-2px -2px 0 var(--cr-charcoal),0 4px 0 var(--cr-charcoal);
+  --cr-ol-drop:drop-shadow(2px 0 0 var(--cr-charcoal)) drop-shadow(-2px 0 0 var(--cr-charcoal)) drop-shadow(0 2px 0 var(--cr-charcoal)) drop-shadow(0 -2px 0 var(--cr-charcoal)) drop-shadow(0 3px 0 var(--cr-charcoal));
+
+  /* stepped pixel corners (3px steps) for every pressable surface */
+  --cr-step:polygon(0 6px,3px 6px,3px 3px,6px 3px,6px 0,calc(100% - 6px) 0,calc(100% - 6px) 3px,calc(100% - 3px) 3px,calc(100% - 3px) 6px,100% 6px,
+    100% calc(100% - 6px),calc(100% - 3px) calc(100% - 6px),calc(100% - 3px) calc(100% - 3px),calc(100% - 6px) calc(100% - 3px),calc(100% - 6px) 100%,
+    6px 100%,6px calc(100% - 3px),3px calc(100% - 3px),3px calc(100% - 6px),0 calc(100% - 6px));
+  --cr-step-sm:polygon(0 3px,3px 3px,3px 0,calc(100% - 3px) 0,calc(100% - 3px) 3px,100% 3px,100% calc(100% - 3px),calc(100% - 3px) calc(100% - 3px),
+    calc(100% - 3px) 100%,3px 100%,3px calc(100% - 3px),0 calc(100% - 3px));
+
+  --ink:var(--cr-charcoal);--paper:var(--cr-paper);--cream:var(--cr-paper);
+  background:var(--cr-teal);color:var(--cr-ivory);
+  font-family:var(--cr-pixel);font-weight:500;font-size:20px;line-height:1.2;
+  -webkit-font-smoothing:antialiased;
 }
+.cr-app.cr-arcade :is(button,input){font-family:var(--cr-pixel)}
+.cr-app.cr-arcade :focus-visible{outline:3px dashed var(--cr-powder);outline-offset:4px}
+.cr-app.cr-arcade button:disabled{opacity:.55}
 
-/* ---------------------------------------------------------------- A + F: the room */
-.cr-arcade .cr-backdrop.is-arcade{background:var(--blue);overflow:hidden}
-.cr-arcade .cr-room{position:absolute;inset:0;background:var(--arc-room) center 22%/cover no-repeat,var(--blue)}
-/* the fluorescent tubes breathe a little, very slowly (one opacity layer, cheap) */
-.cr-arcade .cr-room-light{position:absolute;inset:0;background:radial-gradient(70% 34% at 50% 8%,#fff6e2 0,transparent 70%);opacity:.16;animation:arc-tubes 11s ease-in-out infinite alternate}
-.cr-arcade .cr-fg{position:absolute;left:0;right:0;height:22vw;max-height:240px;background:center/100% 100% no-repeat}
-.cr-arcade .cr-fg.is-top{top:0;background-image:var(--arc-fg-top)}
-.cr-arcade .cr-fg.is-bottom{bottom:0;background-image:var(--arc-fg-bottom)}
-@keyframes arc-tubes{from{opacity:.1}to{opacity:.22}}
+/* ================================================================ lettering */
+/* plain ivory lettering with a hard outline (most text) */
+.cr-app.cr-arcade :is(.cr-prompt,.cr-memory-q,.cr-word-prompt,.cr-vote-hint,.cr-word-note,.cr-wordmark,.cr-fine,.cr-waiting,.cr-spectate,.cr-status,
+  .cr-form label,.cr-form small,.cr-guests,.cr-meta,.cr-dial-name,.cr-pic-name,.cr-geo-name,.cr-scale-name,.cr-results,.cr-finish-card h2,.cr-reset-caption,
+  .cr-lang button,.cr-intent,.cr-textbtn,.cr-link){color:var(--cr-ivory);text-shadow:var(--cr-ol-1)}
+/* large printed lettering: ivory with a warm-grey lower third, outlined like a cartridge label */
+.cr-app.cr-arcade .cr-letter{display:inline-block;color:transparent;padding:.04em .08em .1em;line-height:1.05;
+  background:linear-gradient(180deg,var(--cr-ivory) 0%,var(--cr-ivory) 60%,var(--cr-ivory-lo) 61%,var(--cr-ivory-lo) 100%);
+  -webkit-background-clip:text;background-clip:text;text-shadow:none;filter:var(--cr-ol-drop)}
+.cr-app.cr-arcade .cr-meta{display:block;font-family:var(--cr-pixel);font-size:var(--cr-fs-meta);font-weight:600;color:var(--cr-gray);letter-spacing:.06em;text-transform:uppercase}
+.cr-app.cr-arcade[lang=en] :is(.cr-hero h1,.cr-lobby-title,.cr-finish-kicker,.cr-countdown span){font-family:var(--cr-press);font-weight:400;letter-spacing:0}
 
-/* ---------------------------------------------------------------- D: the hand-inked outline, used everywhere
-   The paint is the element's own background; the ink is a 9-slice drawn line one pixel off, like a cel
-   whose paint and line never quite registered. */
-.cr-arcade :is(.cr-choice,.cr-stroop-card,.cr-geo-card,.cr-sock-cell,.cr-primary,.cr-intent,.cr-card,.cr-ghost:not(.cr-link),.cr-square-btn,.cr-rules li,
-  .cr-guests li,.cr-word-go,.cr-word-prompt b,.cr-count,.cr-task-name,.cr-lang,.cr-app .pt-code-box,.cr-results li,
-  .cr-waiting,.cr-spectate,.cr-error,.cr-notice,.cr-toast,.cr-memory-grid,.cr-cab-panel,.cr-cab-marquee,.cr-sad-face,.cr-countdown span,.cr-finish-card,.cr-qr,.cr-dev-toggle){
-  position:relative;border:0!important;border-radius:6px;box-shadow:var(--edge,0 4px 0 rgba(58,52,70,.2))}
-.cr-arcade :is(.cr-choice,.cr-stroop-card,.cr-geo-card,.cr-sock-cell,.cr-primary,.cr-intent,.cr-card,.cr-ghost:not(.cr-link),.cr-square-btn,.cr-rules li,
-  .cr-guests li,.cr-word-go,.cr-word-prompt b,.cr-count,.cr-task-name,.cr-lang,.cr-app .pt-code-box,.cr-results li,
-  .cr-waiting,.cr-spectate,.cr-error,.cr-notice,.cr-toast,.cr-memory-grid,.cr-cab-panel,.cr-cab-marquee,.cr-sad-face,.cr-countdown span,.cr-finish-card,.cr-qr,.cr-dev-toggle)::after{
-  content:'';position:absolute;inset:-6px -5px -5px -6px;border:12px solid transparent;border-image:var(--arc-ink) 12 round;pointer-events:none;z-index:2}
-/* inputs cannot carry the drawn outline (no ::after), so they get a painted inset line instead */
-.cr-arcade :is(.cr-word-input,.cr-form>input){border:0!important;border-radius:8px;box-shadow:inset 0 0 0 2.5px var(--ink),inset 0 4px 0 rgba(58,52,70,.08)!important}
-/* paint density: a light gouache texture multiplied into flat fills */
-.cr-arcade :is(.cr-choice,.cr-stroop-card,.cr-primary,.cr-intent,.cr-card,.cr-word-go,.cr-word-prompt b,.cr-cab-panel,.cr-cab-marquee,.cr-finish-card,.cr-rules li,.cr-guests li,.cr-results li,.cr-geo-card,.cr-sock-cell){
-  background-image:var(--paint);background-blend-mode:multiply;background-size:256px}
+/* ================================================================ the room */
+.cr-app.cr-arcade .cr-backdrop{position:fixed;inset:0;z-index:-1;background:var(--cr-teal);overflow:hidden}
+.cr-app.cr-arcade .cr-room{position:absolute;inset:0;background:var(--arc-room) center 30%/cover no-repeat,var(--cr-teal)}
+.cr-app.cr-arcade .cr-room-light{position:absolute;inset:0;background:radial-gradient(70% 34% at 50% 8%,#fff6e2 0,transparent 70%);opacity:.12;
+  animation:arc-tubes 11s ease-in-out infinite alternate}
+/* the veil: a teal wash and a little print grain, heavier where the game sits */
+.cr-app.cr-arcade .cr-room-wash{position:absolute;inset:0;
+  background:linear-gradient(180deg,rgba(46,110,111,.38) 0%,rgba(46,110,111,.18) 26%,rgba(46,110,111,.28) 62%,rgba(46,110,111,.5) 100%)}
+.cr-app.cr-arcade .cr-room-wash:after{content:'';position:absolute;inset:0;opacity:.13;mix-blend-mode:multiply;
+  background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .2  0 0 0 0 .18  0 0 0 0 .22  0 0 0 .9 0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E")}
+.cr-app.cr-arcade.cr-race .cr-room-wash{background:linear-gradient(180deg,rgba(46,110,111,.55) 0%,rgba(46,110,111,.5) 40%,rgba(46,110,111,.58) 100%)}
+.cr-app.cr-arcade.cr-race.is-vote .cr-room-wash{background:linear-gradient(180deg,rgba(150,80,110,.5),rgba(150,80,110,.56))}
+.cr-app.cr-arcade.cr-race.is-boss .cr-room-wash{background:linear-gradient(180deg,rgba(66,52,104,.66),rgba(66,52,104,.74))}
+@keyframes arc-tubes{from{opacity:.08}to{opacity:.18}}
 
-/* mechanical buttons: a darker painted edge under the cap; pressing sinks the cap onto it */
-.cr-arcade :is(.cr-choice,.cr-stroop-card,.cr-geo-card,.cr-primary,.cr-intent,.cr-word-go,.cr-ghost:not(.cr-link),.cr-square-btn,.cr-lang button){transition:transform .06s ease-out,box-shadow .06s ease-out}
-.cr-arcade :is(.cr-choice,.cr-stroop-card,.cr-geo-card,.cr-primary,.cr-intent,.cr-word-go,.cr-ghost:not(.cr-link),.cr-square-btn):active:not(:disabled){transform:translateY(3px)!important;box-shadow:0 1px 0 var(--btn-edge,rgba(58,52,70,.3))!important}
+/* ================================================================ controls: a small family, each its own silhouette */
+/* 1. main key: cotton-candy pink, stepped corners, painted lip; the label in print; a blinking start cursor */
+.cr-app.cr-arcade .cr-primary{position:relative;display:block;width:100%;max-width:340px;margin-inline:auto;min-height:66px;padding:6px 28px 12px;border:0;
+  background:var(--cr-pink) var(--arc-paint);background-size:256px;background-blend-mode:multiply;clip-path:var(--cr-step);
+  box-shadow:inset 0 -7px 0 var(--cr-pink-d),inset 0 3px 0 rgba(255,255,255,.45),inset 3px 0 0 rgba(255,255,255,.18);
+  font-family:var(--cr-pixel);font-weight:700;font-size:var(--cr-fs-btn);line-height:1;color:var(--cr-ivory);transition:transform .06s steps(2)}
+.cr-app.cr-arcade .cr-primary:active:not(:disabled){transform:translateY(3px);box-shadow:inset 0 -3px 0 var(--cr-pink-d),inset 0 3px 0 rgba(255,255,255,.3)}
+.cr-app.cr-arcade .cr-primary .cr-letter{filter:drop-shadow(2px 0 0 var(--cr-charcoal)) drop-shadow(-2px 0 0 var(--cr-charcoal)) drop-shadow(0 2px 0 var(--cr-charcoal)) drop-shadow(0 -2px 0 var(--cr-charcoal))}
+.cr-app.cr-arcade .cr-primary:not(:disabled):before{content:'';position:absolute;top:50%;inset-inline-start:14px;width:9px;height:12px;margin-top:-8px;background:var(--cr-ivory);
+  clip-path:polygon(0 0,33% 0,33% 17%,66% 17%,66% 33%,100% 33%,100% 66%,66% 66%,66% 83%,33% 83%,33% 100%,0 100%);animation:arc-blink 1s steps(1) infinite}
+.cr-app.cr-arcade[dir=rtl] .cr-primary:not(:disabled):before{transform:scaleX(-1)}
+.cr-app.cr-arcade .cr-start{min-height:76px;font-size:calc(var(--cr-fs-btn) + 4px)}
+@keyframes arc-blink{50%{opacity:0}}
 
-/* ---------------------------------------------------------------- type */
-.cr-arcade{font-family:'Cairo','Segoe UI',Tahoma,sans-serif}
-.cr-arcade .cr-prompt,.cr-arcade .cr-memory-q{color:var(--ink);letter-spacing:0}
-.cr-arcade :focus-visible{outline:3px solid var(--blue-d);outline-offset:4px}
+/* 2. paper tag (copy code, small secondary actions): ivory label with a clipped corner, charcoal text */
+.cr-app.cr-arcade .cr-tab{min-height:44px;padding:6px 18px 9px 16px;border:0;background:var(--cr-paper);color:var(--cr-charcoal);text-shadow:none;
+  font-family:var(--cr-pixel);font-weight:700;font-size:21px;line-height:1;box-shadow:inset 0 -4px 0 var(--cr-paper-d);
+  clip-path:polygon(10px 0,100% 0,100% 100%,0 100%,0 10px)}
+.cr-app.cr-arcade .cr-tab:active{transform:translateY(2px);box-shadow:inset 0 -2px 0 var(--cr-paper-d)}
 
-/* ---------------------------------------------------------------- shared pieces */
-.cr-arcade .cr-bar{position:relative}
-.cr-arcade .cr-wordmark{padding:2px 12px 4px;background:var(--ivory);border-radius:6px;box-shadow:0 3px 0 rgba(58,52,70,.18)}
-.cr-arcade .cr-square-btn{background:var(--ivory);--edge:0 3px 0 var(--ivory-d);--btn-edge:var(--ivory-d)}
-.cr-arcade .cr-primary{background-color:var(--coral);color:#fff!important;--edge:0 5px 0 var(--coral-d);--btn-edge:var(--coral-d);text-shadow:0 1px 0 #00000022}
-.cr-arcade .cr-ghost{background-color:var(--ivory);--edge:0 3px 0 var(--ivory-d)}
-.cr-arcade .cr-card{background-color:var(--paper);--edge:0 6px 0 rgba(58,52,70,.16)}
-.cr-arcade .cr-waiting{background:var(--paper);--edge:none}
-.cr-arcade .cr-error{background:#F7D9D0}
-.cr-arcade .cr-notice{background:var(--yellow);--edge:0 3px 0 var(--yellow-d)}
-.cr-arcade .cr-fine{opacity:.75;background:#fbf5e8cc;padding:4px 10px;border-radius:6px;margin-inline:auto!important;width:fit-content}
+/* 3. text link with a dotted pixel underline and an arrow (share link, exit) */
+.cr-app.cr-arcade :is(.cr-textbtn,.cr-link){display:inline-flex;align-items:center;gap:6px;min-height:44px;padding:4px 4px;border:0;background:none;box-shadow:none;
+  font-family:var(--cr-pixel);font-weight:700;font-size:21px;line-height:1;text-decoration:none}
+.cr-app.cr-arcade :is(.cr-textbtn,.cr-link) span,.cr-app.cr-arcade .cr-link{background:linear-gradient(90deg,var(--cr-ivory) 50%,transparent 0) 0 100%/6px 2px repeat-x;padding-bottom:5px}
+.cr-app.cr-arcade .cr-textbtn svg{width:16px;height:16px;filter:drop-shadow(1px 1px 0 var(--cr-charcoal))}
+.cr-app.cr-arcade :is(.cr-textbtn,.cr-link):active{transform:translateY(2px)}
 
-/* ---------------------------------------------------------------- entry + lobby: ivory panels in the room */
-.cr-arcade.cr-page{background:transparent}
-.cr-arcade .cr-hero{padding:4px 0 14px}
-.cr-arcade .cr-hero-clock.is-arcade{display:block;width:150px;height:150px;margin:0 auto 4px}
-.cr-arcade .cr-hero h1{display:inline-block;padding:2px 22px 8px;background:var(--ivory) var(--paint);background-blend-mode:multiply;border-radius:10px;
-  text-shadow:2px 2px 0 var(--pink);box-shadow:0 5px 0 var(--ivory-d)}
-.cr-arcade .cr-hero p{display:inline-block;margin-top:10px!important;padding:3px 12px;background:#fbf5e8d9;border-radius:6px;opacity:1}
-.cr-arcade .cr-intent{background-color:var(--yellow);--edge:0 5px 0 var(--yellow-d);--btn-edge:var(--yellow-d)}
-.cr-arcade .cr-intent.is-join{background-color:var(--blue);--edge:0 5px 0 var(--blue-d);--btn-edge:var(--blue-d)}
-.cr-arcade .cr-intent.is-on{transform:translateY(3px);box-shadow:0 2px 0 var(--btn-edge);outline:3px solid var(--ink);outline-offset:4px}
-.cr-arcade .cr-rules li{background-color:var(--paper);--edge:0 3px 0 rgba(58,52,70,.14)}
-.cr-arcade .cr-rules li:before{border-color:var(--ink);background:conic-gradient(var(--coral) 0 30%,var(--paper) 0)}
-.cr-arcade .cr-rules li:nth-child(2):before{background:conic-gradient(var(--coral) 0 60%,var(--paper) 0)}
-.cr-arcade .cr-rules li:nth-child(3):before{background:var(--coral)}
-.cr-arcade .cr-form>input{background:#fffdf8}
-.cr-arcade .pt-code-box{background:#fffdf8;--edge:inset 0 3px 0 rgba(58,52,70,.08)}
-.cr-arcade .pt-code-box.is-active{background:#FFF5CF}
-.cr-arcade .cr-lang{overflow:visible;background:var(--paper);--edge:0 3px 0 rgba(58,52,70,.16)}
-.cr-arcade .cr-lang button{background:transparent;border-radius:6px}
-.cr-arcade .cr-lang button+button{border-inline-start:0}
-.cr-arcade .cr-lang button.is-on{background:var(--navy);color:var(--yellow)}
-.cr-arcade .cr-lobby-body h1{display:inline-block;align-self:flex-start;padding:0 16px 6px;background:var(--ivory);border-radius:8px;box-shadow:0 4px 0 var(--ivory-d)}
-.cr-arcade .cr-code-card{background-color:var(--yellow)}
-.cr-arcade .cr-guests li{background-color:#fffdf8}
-.cr-arcade .cr-guests li i,.cr-arcade .cr-results li i{border-radius:50%;border-color:var(--ink)}
-.cr-arcade .cr-guests li small{background:var(--navy);color:var(--paper);border-radius:4px}
-.cr-arcade .cr-guests li small.is-me{background:var(--yellow);color:var(--ink)}
-.cr-arcade .cr-qr{background:#fff}
+/* 4. back: a bare pixel arrow */
+.cr-app.cr-arcade .cr-square-btn{width:40px;height:40px;border:0;background:none;box-shadow:none;color:var(--cr-ivory);
+  filter:drop-shadow(1.5px 0 0 var(--cr-charcoal)) drop-shadow(-1.5px 0 0 var(--cr-charcoal)) drop-shadow(0 1.5px 0 var(--cr-charcoal)) drop-shadow(0 -1.5px 0 var(--cr-charcoal))}
+.cr-app.cr-arcade .cr-square-btn svg{width:24px;height:24px}
+.cr-app.cr-arcade .cr-square-btn:active{transform:translateX(-2px)}
+.cr-app.cr-arcade[dir=rtl] .cr-square-btn:active{transform:translateX(2px)}
 
-/* ---------------------------------------------------------------- race: timer strip over the ceiling */
-.cr-arcade.cr-race{--cr-chrome:150px}
-.cr-arcade .cr-top{background:transparent;border-bottom:0;padding-bottom:4px}
-.cr-arcade .cr-dial-name{background:#fbf5e8e6;border-radius:4px;margin-top:1px}
-.cr-arcade .cr-dial-seat.is-me .cr-dial-name{background:var(--yellow);border:0;box-shadow:0 0 0 1.5px var(--ink)}
-.cr-arcade .cr-dial-seat.is-winner .cr-dial-name{background:var(--navy);color:var(--yellow)}
-.cr-arcade .cr-dial-pop{border-radius:50%}
-.cr-arcade .cr-dial.is-arcade{filter:drop-shadow(0 2px 0 rgba(58,52,70,.22))}
+/* 5. answer keys (letters, memory): powder-yellow keys, stepped, painted lip */
+.cr-app.cr-arcade :is(.cr-choice,.cr-memory.is-ask .cr-choice){min-height:72px;padding:0 0 8px;border:0;background:var(--cr-powder);color:var(--cr-charcoal);clip-path:var(--cr-step);
+  box-shadow:inset 0 -6px 0 var(--cr-powder-d),inset 0 3px 0 rgba(255,255,255,.5);font-family:var(--cr-press);font-size:26px;line-height:1;transition:transform .06s steps(2)}
+.cr-app.cr-arcade[lang=ar] :is(.cr-choice,.cr-memory.is-ask .cr-choice){font-family:var(--cr-pixel);font-weight:700;font-size:44px;padding-bottom:12px}
+.cr-app.cr-arcade .cr-choice:active{transform:translateY(3px);box-shadow:inset 0 -2px 0 var(--cr-powder-d)}
+.cr-app.cr-arcade .cr-choices{gap:10px}
 
-/* ---------------------------------------------------------------- B + C: the cabinet */
-.cr-arcade .cr-cab-stage{padding:2px 12px calc(8px + env(safe-area-inset-bottom));max-width:540px}
-.cr-cab{flex:1;min-height:0;display:flex;flex-direction:column}
-.cr-cab-marquee{flex:none;z-index:1;margin:0 10px -6px;padding:7px 12px 12px;background-color:var(--yellow);--edge:0 3px 0 var(--yellow-d)}
-/* small cabinet lamps along the marquee edge: lit, with a slow gentle glow */
-.cr-cab-marquee:before{content:'';position:absolute;left:10px;right:10px;bottom:4px;height:5px;border-radius:3px;
-  background:radial-gradient(circle,var(--coral) 0 2px,transparent 2.6px) 0 50%/16px 5px repeat-x;opacity:.75;animation:arc-lamps 4.5s ease-in-out infinite alternate}
-@keyframes arc-lamps{from{opacity:.55}to{opacity:.9}}
-.cr-arcade .cr-cab-marquee .cr-task-head{min-height:30px}
-.cr-arcade .cr-count{background:var(--paper);--edge:0 2px 0 var(--yellow-d);font-size:13px;padding:2px 9px}
-.cr-arcade .cr-task-name{background:var(--navy);color:var(--yellow);--edge:none;font-size:13px;padding:3px 11px}
-.cr-arcade .cr-task-name::after,.cr-arcade .cr-count::after{display:none}
+/* ================================================================ shared bits */
+.cr-app.cr-arcade .cr-bar{padding:calc(12px + env(safe-area-inset-top)) 14px 0;gap:8px}
+.cr-app.cr-arcade .cr-wordmark{font-family:var(--cr-pixel);font-weight:700;font-size:24px;background:none;box-shadow:none;padding:0}
+.cr-app.cr-arcade .cr-wordmark .cr-letter{filter:drop-shadow(1px 0 0 var(--cr-charcoal)) drop-shadow(-1px 0 0 var(--cr-charcoal)) drop-shadow(0 1px 0 var(--cr-charcoal)) drop-shadow(0 -1px 0 var(--cr-charcoal)) drop-shadow(0 2px 0 var(--cr-charcoal))}
+.cr-app.cr-arcade .cr-fine{background:none;padding:0;margin:4px auto 0;font-size:var(--cr-fs-meta);font-weight:600;opacity:1;color:var(--cr-gray)}
+.cr-app.cr-arcade :is(.cr-waiting,.cr-spectate){border:0;background:none;padding:10px 0;font-size:24px;font-weight:600;text-align:center}
+.cr-app.cr-arcade .cr-waiting:after,.cr-app.cr-arcade .cr-spectate:after{content:'...';display:inline-block;width:1.2em;text-align:start;animation:arc-dots 1.2s steps(4) infinite;overflow:hidden;vertical-align:bottom}
+@keyframes arc-dots{from{width:0}to{width:1.2em}}
+.cr-app.cr-arcade .cr-status{font-size:24px}
+.cr-app.cr-arcade .cr-error{margin:12px auto 0;width:fit-content;max-width:100%;padding:8px 14px 10px;border:0;background:var(--cr-charcoal);color:var(--cr-pink-l);
+  clip-path:var(--cr-step-sm);font-size:var(--cr-fs-meta);font-weight:600;text-shadow:none}
+.cr-app.cr-arcade .cr-notice{border:0;background:var(--cr-charcoal);color:var(--cr-ivory);clip-path:var(--cr-step-sm);box-shadow:none;
+  font-size:20px;font-weight:600;padding:8px 16px 10px;text-shadow:none}
 
-/* the shell (B) is a 9-slice painting; the screen sits in its window */
-.cr-cab-shell{flex:1;min-height:0;display:flex;border:26px solid transparent;border-image:var(--arc-shell) 72 / 26px round;
-  background:transparent;border-radius:20px}   /* see-through so the room shows behind the screen */
-.cr-cab-screen{position:relative;flex:1;min-height:0;display:flex;flex-direction:column;overflow:hidden;border-radius:18px / 22px;
-  background:rgba(88,177,173,.5) linear-gradient(#ffffff18 50%,#46547408 50%) 0 0/100% 4px;   /* the room's teal at 50%, faint scanlines; the room shows through */
-  box-shadow:inset 0 0 0 2px var(--ink),inset 0 2px 8px rgba(70,84,116,.14);
-  padding:10px 12px 12px;animation:arc-warm .55s ease-out both}
-.cr-cab-glass{position:absolute;inset:0;z-index:3;pointer-events:none;border-radius:inherit;background:var(--arc-glass) center/100% 100% no-repeat}
-/* CRT warming up (once, when the cabinet appears) */
-@keyframes arc-warm{0%{clip-path:inset(49% 0 49% 0);filter:brightness(1.6)}55%{clip-path:inset(0 0 0 0);filter:brightness(1.15)}100%{clip-path:inset(0);filter:none}}
-.cr-arcade .cr-play{padding-bottom:1vh;position:relative;z-index:1}
-/* Never clip a question: if it is taller than the screen (phone keyboard open, very short phones) the
-   screen scrolls, and centring only applies while everything fits (auto margins = "safe" centring). */
-.cr-cab-screen{overflow-y:auto;overscroll-behavior:contain;scrollbar-width:none}
-.cr-cab-screen::-webkit-scrollbar{display:none}
-.cr-arcade .cr-play{justify-content:flex-start}
-.cr-arcade .cr-play>:first-child{margin-top:auto}
-.cr-arcade .cr-play>:last-child{margin-bottom:auto}
+/* ================================================================ entry: title screen and a console menu */
+.cr-app.cr-arcade.cr-page{background:transparent}
+.cr-app.cr-arcade .cr-entry-body{max-width:440px;margin:0 auto;padding:2px 22px 34px;display:flex;flex-direction:column;min-height:calc(100dvh - 64px)}
+.cr-app.cr-arcade .cr-hero{text-align:center;padding:4px 0 0}
+.cr-app.cr-arcade .cr-hero-clock.is-arcade{display:block;width:92px;height:92px;margin:0 auto 6px;filter:drop-shadow(0 3px 0 var(--cr-charcoal-a))}
+.cr-app.cr-arcade .cr-hero-clock.is-arcade svg{width:100%;height:100%}
+.cr-app.cr-arcade .cr-hero h1{margin:0;font-family:var(--cr-pixel);font-weight:800;font-size:var(--cr-fs-hero);line-height:1;text-shadow:none;background:none;padding:0}
+.cr-app.cr-arcade[lang=en] .cr-hero h1{font-size:clamp(26px,8vw,34px);line-height:1.2}
+.cr-app.cr-arcade .cr-hero p{margin-top:10px;font-family:var(--cr-pixel);font-weight:600;font-size:21px;line-height:1.25;background:none;padding:0;opacity:1}
+.cr-app.cr-arcade .cr-hero p .cr-letter{background:none;color:var(--cr-gray);filter:none;text-shadow:var(--cr-ol-1)}
 
-/* Word Rush brings up the keyboard, which takes half the phone. The cabinet goes compact: no control
-   panel, slim shell and marquee, smaller letter tiles, so the question, the letters, the box and the
-   button all fit above the keyboard. */
-.cr-arcade .cr-stage-word .cr-cab-panel{height:12px;padding:0;margin-top:-6px}
-.cr-arcade .cr-stage-word .cr-cab-panel>*{display:none}
-.cr-arcade .cr-stage-word .cr-cab-marquee{padding:4px 10px 8px}
-.cr-arcade .cr-stage-word .cr-cab-marquee:before{display:none}
-.cr-arcade .cr-stage-word .cr-cab-shell{border-width:14px;border-image-width:14px}
-.cr-arcade .cr-stage-word .cr-cab-screen{padding:8px 10px}
-.cr-arcade .cr-stage-word .cr-word{gap:10px}
-.cr-arcade .cr-stage-word .cr-word-prompt{font-size:clamp(20px,5.6vw,26px);gap:4px 8px}
-.cr-arcade .cr-stage-word .cr-word-prompt b{min-width:44px;height:44px;font-size:26px}
-.cr-arcade .cr-stage-word .cr-word-input,.cr-arcade .cr-stage-word .cr-word-go{min-height:54px}
-.cr-arcade .cr-stage-word .cr-word-note{font-size:13px}
-.cr-arcade .cr-task-body{animation:arc-swap .18s ease-out}
-@keyframes arc-swap{from{opacity:0}}
+/* language: two words; the chosen one carries a pixel diamond */
+.cr-app.cr-arcade .cr-lang{display:flex;justify-content:center;gap:26px;border:0;background:none;box-shadow:none;margin:0 auto 8px;max-width:none}
+.cr-app.cr-arcade .cr-lang button{position:relative;min-height:40px;padding:0 4px 8px;border:0;background:none;font-family:var(--cr-pixel);font-weight:700;font-size:22px;opacity:.6}
+.cr-app.cr-arcade .cr-lang button+button{border:0}
+.cr-app.cr-arcade .cr-lang button.is-on{opacity:1;background:none;color:var(--cr-ivory)}
+.cr-app.cr-arcade .cr-lang button.is-on:after{content:'';position:absolute;left:50%;bottom:0;width:8px;height:8px;margin-left:-4px;background:var(--cr-pink);
+  clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%);filter:drop-shadow(0 1px 0 var(--cr-charcoal))}
 
-/* control panel (D): joystick, two buttons, a coin slot. Pure decoration, hidden on short screens. */
-.cr-cab-panel{flex:none;height:46px;margin:-8px 4px 0;display:flex;align-items:center;justify-content:center;gap:16px;background-color:var(--ivory);--edge:0 4px 0 var(--ivory-d);z-index:0;padding-top:6px}
-.cr-cab-panel::after{inset:-6px -5px -5px -6px}
-.cr-cab-stick{width:18px;height:18px;border-radius:50%;background:var(--coral);box-shadow:inset -3px -3px 0 var(--coral-d),0 0 0 2px var(--ink),0 9px 0 -6px var(--ink);margin-inline-end:12px}
-.cr-cab-btn{width:20px;height:20px;border-radius:50%;background:var(--blue);box-shadow:inset -3px -3px 0 var(--blue-d),0 0 0 2px var(--ink)}
-.cr-cab-btn.is-b{background:var(--yellow);box-shadow:inset -3px -3px 0 var(--yellow-d),0 0 0 2px var(--ink)}
-.cr-cab-coin{width:8px;height:18px;border-radius:3px;background:var(--navy);margin-inline-start:14px;box-shadow:0 0 0 2px var(--ivory-d)}
-@media (max-height:700px){
-  .cr-arcade.cr-race{--cr-chrome:110px}
-  .cr-cab-panel{height:16px;padding:0}
-  .cr-cab-panel>*{display:none}
-  .cr-cab-marquee{padding:5px 10px 10px}
-  .cr-cab-shell{border-width:18px;border-image-width:18px}
-}
+/* the two actions read like a console title menu: big words, a blinking cursor on the chosen line */
+.cr-app.cr-arcade .cr-intents{display:flex;flex-direction:column;align-items:center;gap:2px;margin:auto 0 0;padding-top:30px}
+.cr-app.cr-arcade .cr-intent{position:relative;display:flex;align-items:center;justify-content:center;min-height:60px;min-width:220px;padding:0 34px 6px;border:0;background:none;box-shadow:none;
+  font-family:var(--cr-pixel);font-weight:800;font-size:40px;line-height:1;transition:opacity .15s}
+.cr-app.cr-arcade .cr-intent small{display:none}
+.cr-app.cr-arcade .cr-intent .cr-letter{filter:var(--cr-ol-drop)}
+.cr-app.cr-arcade .cr-intent.is-join .cr-letter{background:linear-gradient(180deg,var(--cr-powder) 0%,var(--cr-powder) 60%,var(--cr-powder-d) 61%);-webkit-background-clip:text;background-clip:text}
+.cr-app.cr-arcade .cr-intent:not(.is-join) .cr-letter{background:linear-gradient(180deg,var(--cr-pink-l) 0%,var(--cr-pink-l) 60%,var(--cr-pink) 61%);-webkit-background-clip:text;background-clip:text}
+.cr-app.cr-arcade .cr-intent:active{transform:translateY(2px)}
+.cr-app.cr-arcade .cr-intent.is-on{transform:none;outline:0;box-shadow:none}
+.cr-app.cr-arcade .cr-intents:has(.is-on) .cr-intent:not(.is-on){opacity:.5}
+.cr-app.cr-arcade .cr-intent.is-on:before{content:'';position:absolute;top:50%;inset-inline-start:4px;width:12px;height:16px;margin-top:-10px;background:var(--cr-ivory);
+  clip-path:polygon(0 0,33% 0,33% 17%,66% 17%,66% 33%,100% 33%,100% 66%,66% 66%,66% 83%,33% 83%,33% 100%,0 100%);
+  filter:drop-shadow(0 2px 0 var(--cr-charcoal));animation:arc-blink 1s steps(1) infinite}
+.cr-app.cr-arcade[dir=rtl] .cr-intent.is-on:before{transform:scaleX(-1)}
+.cr-app.cr-arcade .cr-entry-body:has(.cr-form) .cr-intents{margin-top:18px;padding-top:0;flex-direction:row;justify-content:center;gap:4px}
+.cr-app.cr-arcade .cr-entry-body:has(.cr-form) .cr-intent{font-size:clamp(25px,7.6vw,32px);white-space:nowrap;min-width:0;min-height:52px;padding:0 22px 6px}
 
-/* ---------------------------------------------------------------- question types on the screen */
-.cr-arcade .cr-prompt{font-size:clamp(23px,6.6vw,31px);margin:4px 0 10px!important}
-/* faces: a clean grid on the screen, nothing decorative inside the puzzle */
-.cr-arcade .cr-face-cell{border-radius:8px}
-.cr-arcade .cr-face-cell:active{background:#46547414}
+/* the name form: no sheet behind it, just labels and fields */
+.cr-app.cr-arcade .cr-form{margin-top:10px;padding:0;border:0;background:none;box-shadow:none;gap:6px}
+.cr-app.cr-arcade .cr-form label{font-size:var(--cr-fs-label);font-weight:700;margin-top:8px}
+.cr-app.cr-arcade .cr-form small{font-size:var(--cr-fs-meta);font-weight:600;opacity:1;color:var(--cr-gray)}
+.cr-app.cr-arcade .cr-form small.is-error{color:var(--cr-pink-l)}
+.cr-app.cr-arcade :is(.cr-form>input,.cr-word-input){min-height:58px;padding:6px 16px 10px;border:0;background:var(--cr-paper);color:var(--cr-charcoal);clip-path:var(--cr-step);
+  box-shadow:inset 0 4px 0 rgba(42,38,48,.12),inset 0 -3px 0 #fff;font-family:var(--cr-pixel);font-weight:600;font-size:28px;line-height:1}
+.cr-app.cr-arcade :is(.cr-form>input,.cr-word-input)::placeholder{color:#2A263070}
+.cr-app.cr-arcade .cr-form .cr-primary{margin-top:16px}
+.cr-app.cr-arcade .pt-code-boxes{gap:8px}
+.cr-app.cr-arcade .pt-code-box{height:60px;border:0;background:var(--cr-paper);color:var(--cr-charcoal);clip-path:var(--cr-step);box-shadow:inset 0 4px 0 rgba(42,38,48,.12);
+  font-family:var(--cr-press);font-size:22px}
+.cr-app.cr-arcade .pt-code-box.is-active{background:var(--cr-powder);box-shadow:inset 0 -5px 0 var(--cr-pink-d)}
+.cr-app.cr-arcade .pt-code-boxes.is-invalid .pt-code-box{background:var(--cr-pink-l)}
 
-/* answer keys (missing letter / memory): pastel arcade buttons */
-.cr-arcade .cr-choice{background-color:var(--yellow);--edge:0 5px 0 var(--yellow-d);--btn-edge:var(--yellow-d);color:var(--ink);border-radius:10px}
-.cr-arcade .cr-choices{gap:12px}
+/* ================================================================ lobby: open, nothing boxed */
+.cr-app.cr-arcade .cr-lobby-body{max-width:440px;margin:0 auto;padding:4px 22px calc(36px + env(safe-area-inset-bottom));display:flex;flex-direction:column;align-items:center;gap:0}
+.cr-app.cr-arcade .cr-lobby-title{margin:4px 0 0;text-align:center;font-family:var(--cr-pixel);font-weight:800;font-size:var(--cr-fs-h1);line-height:1}
+.cr-app.cr-arcade[lang=en] .cr-lobby-title{font-size:clamp(18px,5.4vw,22px);line-height:1.5}
+.cr-app.cr-arcade .cr-room-code{display:flex;flex-direction:column;align-items:center;margin-top:20px;text-align:center}
+.cr-app.cr-arcade .cr-room-code strong{display:block;margin:6px 0 2px;font-family:var(--cr-press);font-weight:400;font-size:clamp(36px,11.5vw,46px);letter-spacing:.06em;line-height:1.1;
+  color:var(--cr-ivory);padding-inline-start:.06em;
+  text-shadow:3px 0 0 var(--cr-charcoal),-3px 0 0 var(--cr-charcoal),0 3px 0 var(--cr-charcoal),0 -3px 0 var(--cr-charcoal),3px 3px 0 var(--cr-charcoal),-3px 3px 0 var(--cr-charcoal),3px -3px 0 var(--cr-charcoal),-3px -3px 0 var(--cr-charcoal),0 7px 0 var(--cr-pink-d)}
+/* the QR floats on the room with only the white quiet zone it needs to scan */
+.cr-app.cr-arcade .cr-qr{width:136px;margin:14px auto 4px;padding:8px;border:0;background:#fff;box-shadow:none}
+.cr-app.cr-arcade .cr-qr svg{display:block;width:100%;height:auto}
+.cr-app.cr-arcade .cr-code-actions{display:flex;align-items:center;justify-content:center;gap:22px;margin-top:12px}
 
-/* Stroop: big tactile cream keys so every ink colour reads; the word colours are the puzzle */
-.cr-arcade .cr-stroop{gap:14px}
-.cr-arcade .cr-stroop-card{background-color:#FFFCF4;--edge:0 6px 0 var(--ivory-d);--btn-edge:var(--ivory-d);border-radius:12px;min-height:92px}
-.cr-arcade .cr-prompt .cr-stroop-key{background:var(--navy);color:var(--yellow);border-radius:4px}
+/* players: a light roll call, a pixel diamond in each player's colour */
+.cr-app.cr-arcade .cr-guests{width:100%;margin-top:22px;padding:0;border:0;background:none;box-shadow:none}
+.cr-app.cr-arcade .cr-guests-head{display:flex;align-items:center;gap:10px;padding:0 0 8px;border:0;font-size:var(--cr-fs-meta)}
+.cr-app.cr-arcade .cr-guests-head b{font-weight:700;color:var(--cr-gray);letter-spacing:.06em;text-transform:uppercase}
+.cr-app.cr-arcade .cr-guests-head:after{content:'';flex:1;height:2px;order:1;background:linear-gradient(90deg,var(--cr-ivory) 50%,transparent 0) 0 0/6px 2px repeat-x;opacity:.55}
+.cr-app.cr-arcade .cr-guests-head span{order:2;font-family:var(--cr-press);font-size:12px;color:var(--cr-gray)}
+.cr-app.cr-arcade .cr-guests ul{display:flex;flex-wrap:wrap;gap:4px 18px;padding:2px 0 0}
+.cr-app.cr-arcade .cr-guests li{display:flex;align-items:center;gap:8px;padding:2px 0;border:0;background:none;box-shadow:none;font-size:25px;font-weight:700}
+.cr-app.cr-arcade .cr-guests li i{width:12px;height:12px;border:0;border-radius:0;clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%)}
+.cr-app.cr-arcade .cr-guests li small{padding:0;border:0;background:none;color:var(--cr-gray);font-size:19px;font-weight:600;text-shadow:var(--cr-ol-1)}
+.cr-app.cr-arcade .cr-guests li small.is-me{color:var(--cr-pink-l)}
+.cr-app.cr-arcade .cr-guests li small.is-bot{color:var(--cr-mint)}
+.cr-app.cr-arcade .cr-lobby-body>.cr-start{margin-top:30px}
+.cr-app.cr-arcade .cr-lobby-body>.cr-waiting{margin-top:26px}
 
-/* geography: illustrated selection panels, map on top, label plate below */
-.cr-arcade .cr-geo{gap:12px}
-.cr-arcade .cr-geo-card{background-color:#FFFCF4;--edge:0 5px 0 var(--ivory-d);--btn-edge:var(--ivory-d);border-radius:10px;padding:8px 8px 6px}
-.cr-arcade .cr-geo-art path:first-child{fill:#3A3446;opacity:.85}
-.cr-arcade .cr-geo-art path:last-child{fill:#6FB3A5}
-.cr-arcade .cr-geo-name{border-top:0;margin:4px -2px 0;padding:3px 4px 4px;background:var(--blue);border-radius:5px;color:var(--ink)}
+/* ================================================================ race: dials over the ceiling, the challenge on the room */
+.cr-app.cr-arcade.cr-race{--cr-chrome:96px}
+.cr-app.cr-arcade .cr-top{background:none;border:0;padding:calc(8px + env(safe-area-inset-top)) 8px 2px}
+.cr-app.cr-arcade .cr-top .cr-square-btn{width:34px;height:34px;margin-top:8px}
+.cr-app.cr-arcade .cr-dial.is-arcade{filter:drop-shadow(0 2px 0 var(--cr-charcoal-a))}
+.cr-app.cr-arcade .cr-dial-name{margin-top:1px;padding:0 2px 2px;border:0;background:none;font-size:16px;font-weight:700;line-height:1.1}
+.cr-app.cr-arcade .cr-dial-seat.is-me .cr-dial-name{border:0;background:linear-gradient(var(--cr-pink),var(--cr-pink)) 0 100%/100% 2px no-repeat;color:var(--cr-pink-l)}
+.cr-app.cr-arcade .cr-dial-seat.is-winner .cr-dial-name{background:none;color:var(--cr-powder)}
 
-/* lonely sock: same socks, now on a little cabinet-tile grid */
-.cr-arcade .cr-socks{gap:9px}
-.cr-arcade .cr-sock-cell{background-color:#FFFCF4;--edge:0 4px 0 var(--ivory-d);border-radius:10px}
-.cr-arcade .cr-sock-cell:nth-child(odd){background-color:#FBF0F2}
+.cr-app.cr-arcade .cr-open{padding:0 16px calc(10px + env(safe-area-inset-bottom));max-width:540px}
+.cr-app.cr-arcade .cr-open-head{flex:none;display:flex;align-items:center;gap:10px;min-height:30px;padding:2px 2px 0}
+.cr-app.cr-arcade .cr-task-head{flex:1;display:flex;align-items:center;gap:12px}
+.cr-app.cr-arcade .cr-count{padding:0;border:0;background:none;box-shadow:none;font-family:var(--cr-press);font-size:14px;color:var(--cr-ivory);text-shadow:var(--cr-ol-1)}
+.cr-app.cr-arcade .cr-task-name{display:none}
+.cr-app.cr-arcade .cr-boss-stamp{padding:0;border:0;background:none;transform:none;font-family:var(--cr-pixel);font-weight:800;font-size:22px;color:var(--cr-pink-l);text-shadow:var(--cr-ol-1);
+  animation:arc-blink .5s steps(1) 4}
+/* never clip a question: if it is taller than the room (keyboard open, short phones) the area scrolls;
+   centring only applies while everything fits */
+.cr-app.cr-arcade .cr-open-body{position:relative;flex:1;min-height:0;display:flex;flex-direction:column;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:none;padding:2px 0 6px}
+.cr-app.cr-arcade .cr-open-body::-webkit-scrollbar{display:none}
+.cr-app.cr-arcade .cr-open-body>*{flex:none}
+.cr-app.cr-arcade .cr-open-body>:first-child{margin-top:auto}
+.cr-app.cr-arcade .cr-open-body>:last-child{margin-bottom:auto}
+.cr-app.cr-arcade .cr-play{padding-bottom:2vh;justify-content:flex-start}
+.cr-app.cr-arcade .cr-task-body{animation:arc-swap .16s steps(3)}
+@keyframes arc-swap{from{opacity:0;transform:translateY(4px)}}
 
-/* memory: the letters on the CRT itself, extremely readable */
-.cr-arcade .cr-memory-grid{background:var(--ink);gap:3px;border-radius:8px;overflow:visible;--edge:0 5px 0 rgba(58,52,70,.18);--lilac:#E6DBFA;--powder:#FBF0C4;--blend:#F7F1E8}
-.cr-arcade .cr-memory-grid span{background:#fff;border-radius:0}
-.cr-arcade .cr-memory-grid span:first-child{border-top-left-radius:7px}.cr-arcade .cr-memory-grid span:nth-child(3){border-top-right-radius:7px}
-.cr-arcade .cr-memory-grid span:nth-child(7){border-bottom-left-radius:7px}.cr-arcade .cr-memory-grid span:nth-child(9){border-bottom-right-radius:7px}
-.cr-arcade .cr-memory-grid[dir=rtl] span:first-child{border-radius:0 7px 0 0}.cr-arcade .cr-memory-grid[dir=rtl] span:nth-child(3){border-radius:7px 0 0 0}
-.cr-arcade .cr-memory-grid[dir=rtl] span:nth-child(7){border-radius:0 0 7px 0}.cr-arcade .cr-memory-grid[dir=rtl] span:nth-child(9){border-radius:0 0 0 7px}
-.cr-arcade .cr-memory-grid b{color:#2E2A38}
-.cr-arcade .cr-memory-bar{background:var(--coral);border-radius:3px}
+/* hearts: pixel hearts with a hard shadow */
+.cr-app.cr-arcade .cr-hearts{gap:5px}
+.cr-app.cr-arcade .cr-heart.is-pixel{width:25px;height:22px;filter:drop-shadow(0 2px 0 var(--cr-charcoal)) drop-shadow(1.5px 0 0 var(--cr-charcoal)) drop-shadow(-1.5px 0 0 var(--cr-charcoal)) drop-shadow(0 -1.5px 0 var(--cr-charcoal))}
+.cr-app.cr-arcade .cr-heart.is-pixel path{fill:var(--cr-red)}
+.cr-app.cr-arcade .cr-heart.is-pixel .cr-heart-shine{fill:#FFD9DC}
+.cr-app.cr-arcade .cr-heart.is-pixel.is-empty path{fill:#6E6672}
+.cr-app.cr-arcade .cr-heart.is-pixel.is-empty .cr-heart-shine{fill:#6E6672}
+.cr-app.cr-arcade .cr-hearts.is-last .cr-heart.is-full{animation:arc-heart 0.7s steps(2) infinite}
+@keyframes arc-heart{50%{transform:scale(1.2)}}
 
-/* word rush: the input is part of the screen; Arabic stays RTL with the native keyboard */
-.cr-arcade .cr-word-prompt b{background-color:var(--yellow);--edge:0 4px 0 var(--yellow-d);border-radius:8px}
-.cr-arcade .cr-word-input{background:#fffdf8;color:var(--ink)}
-.cr-arcade .cr-word-go{background-color:var(--pist);color:var(--ink);--edge:0 5px 0 var(--pist-d);--btn-edge:var(--pist-d);border-radius:8px}
+/* the question */
+.cr-app.cr-arcade .cr-prompt{margin:4px 0 14px;font-family:var(--cr-pixel);font-weight:700;font-size:var(--cr-fs-q);line-height:1.1;text-align:center;text-shadow:var(--cr-ol-2)}
+.cr-app.cr-arcade .cr-prompt :is(.cr-stroop-key,.cr-avoid-key){display:inline;padding:0;background:none;color:var(--cr-powder);font-weight:800}
+.cr-app.cr-arcade .cr-prompt .cr-stroop-name{text-decoration:none;color:var(--cr-pink-l);background:linear-gradient(var(--cr-pink-l),var(--cr-pink-l)) 0 100%/100% 3px no-repeat;padding-bottom:2px}
+.cr-app.cr-arcade.cr-race.is-boss .cr-prompt{color:var(--cr-ivory);text-shadow:var(--cr-ol-2)}
 
-/* friend question: name tags keep their colours, softer drop */
-.cr-arcade .cr-tag{filter:drop-shadow(0 4px 0 rgba(58,52,70,.25))}
-.cr-arcade .cr-tag-body{background:var(--ink)}
-.cr-arcade .cr-tag-hole{background:var(--paper)}
-.cr-arcade.cr-race.is-vote .cr-backdrop{background:var(--blue)}
-.cr-arcade .cr-stage-vote .cr-cab-marquee{background-color:var(--pink);--edge:0 3px 0 var(--pink-d)}
-.cr-arcade .cr-stage-vote .cr-task-name{background:var(--navy);color:var(--pink)}
+/* ================================================================ challenges: answers on the room, framed only where play needs it */
+/* faces */
+.cr-app.cr-arcade .cr-face-cell{border-radius:0}
+.cr-app.cr-arcade .cr-face-cell .cr-face{filter:drop-shadow(0 3px 0 var(--cr-charcoal-a))}
+.cr-app.cr-arcade .cr-face-cell:active .cr-face{transform:scale(.88)}
+.cr-app.cr-arcade .cr-face-grid.is-boss{padding:0;border:0;background:none;box-shadow:none}
 
-/* final boss: the room dims to evening lavender (never black); the screen keeps its light */
-.cr-arcade.cr-race.is-boss .cr-backdrop{background:var(--lav)}
-.cr-arcade.cr-race.is-boss .cr-room{filter:none;opacity:.55}
-.cr-arcade.cr-race.is-boss .cr-room-light{background:#7d6fa8;opacity:.35;animation:none}
-.cr-arcade.cr-race.is-boss .cr-stage{color:var(--ink)}
-.cr-arcade.cr-race.is-boss .cr-prompt{color:var(--ink);text-shadow:2px 2px 0 var(--pink)}
-.cr-arcade.cr-race.is-boss .cr-count{background:var(--paper)}
-.cr-arcade .cr-stage-boss .cr-cab-marquee{background-color:var(--coral);--edge:0 3px 0 var(--coral-d)}
-.cr-arcade .cr-boss-stamp{background:var(--navy);color:var(--yellow);border:0;border-radius:4px;transform:none}
-.cr-arcade .cr-face-grid.is-boss{background:transparent;border:0;box-shadow:none;padding:0}
+/* stroop: the word's ink is the puzzle, so it sits on a light key (the one place a light surface is needed) */
+.cr-app.cr-arcade .cr-stroop{gap:12px}
+.cr-app.cr-arcade .cr-stroop-card{min-height:88px;padding:4px 4px 12px;border:0;background:var(--cr-paper);clip-path:var(--cr-step);
+  box-shadow:inset 0 -6px 0 var(--cr-paper-d),inset 0 3px 0 #fff;font-family:var(--cr-pixel);font-weight:800;font-size:clamp(40px,11vw,50px);line-height:1;transition:transform .06s steps(2)}
+.cr-app.cr-arcade .cr-stroop-card[lang=en]{font-family:var(--cr-press);font-weight:400;font-size:clamp(15px,4.6vw,20px);letter-spacing:0;padding-bottom:8px}
+.cr-app.cr-arcade .cr-stroop-card:active{transform:translateY(3px);box-shadow:inset 0 -2px 0 var(--cr-paper-d)}
 
-/* ---------------------------------------------------------------- overlays */
-/* countdown: the room, and one small monitor with the number (opaque, so the first task stays hidden) */
-.cr-arcade .cr-countdown{background:var(--blue) var(--arc-room) center 22%/cover no-repeat}
-.cr-arcade .cr-countdown span{width:160px;height:150px;border-radius:26px/30px;background:#F7F1E3;color:var(--ink);font-size:92px;
-  --edge:0 0 0 14px var(--pink),0 0 0 16px var(--ink),0 18px 0 14px var(--pink-d);animation:arc-count .9s ease-out both}
-.cr-arcade .cr-countdown.is-go span{background:var(--pist);color:var(--ink);-webkit-text-stroke:0;font-size:58px;width:auto;padding:0 30px;animation:cr-go .7s ease-out forwards}
-@keyframes arc-count{0%{opacity:0;filter:brightness(1.7)}20%{opacity:1;filter:none}85%{opacity:1}100%{opacity:.25}}
+/* geography: ivory map silhouettes standing on the room, the name printed under each */
+.cr-app.cr-arcade .cr-geo{gap:14px 12px}
+.cr-app.cr-arcade .cr-geo-card{padding:4px 4px 2px;border:0;background:none;box-shadow:none;transition:transform .06s steps(2)}
+.cr-app.cr-arcade .cr-geo-card:active{transform:scale(.93)}
+.cr-app.cr-arcade .cr-geo-art path:first-child{fill:var(--cr-charcoal);opacity:.7}
+.cr-app.cr-arcade .cr-geo-art path:last-child{fill:var(--cr-ivory)}
+.cr-app.cr-arcade .cr-geo-name{margin-top:4px;padding:0;border:0;background:none;font-size:23px;font-weight:700}
 
-.cr-arcade .cr-toast{background:var(--yellow);--edge:0 4px 0 var(--yellow-d);border-radius:8px;color:var(--ink)}
-.cr-arcade .cr-toast.is-word{background:var(--pist);color:var(--ink);-webkit-text-stroke:0;--edge:0 4px 0 var(--pist-d)}
-.cr-arcade .cr-sad{background:rgba(70,84,116,.35)}
-.cr-arcade .cr-sad-face{background:#F7F1E3;border-radius:22px/26px;--edge:0 0 0 12px var(--pink),0 0 0 14px var(--ink),0 14px 0 12px var(--pink-d)}
+/* lonely sock: socks straight on the room, generous spacing, each cell still a full tap target */
+.cr-app.cr-arcade .cr-socks{gap:14px 10px}
+.cr-app.cr-arcade .cr-sock-cell,.cr-app.cr-arcade .cr-sock-cell:nth-child(odd){padding:4% 12%;border:0;background:none;box-shadow:none;transition:transform .06s steps(2)}
+.cr-app.cr-arcade .cr-sock{filter:drop-shadow(2px 0 0 var(--cr-ivory)) drop-shadow(-2px 0 0 var(--cr-ivory)) drop-shadow(0 2px 0 var(--cr-ivory)) drop-shadow(0 -2px 0 var(--cr-ivory)) drop-shadow(0 4px 0 var(--cr-charcoal-a))}
+.cr-app.cr-arcade .cr-sock-cell:active{transform:scale(.9) rotate(-3deg)}
 
-/* ---------------------------------------------------------------- results: a vintage arcade victory screen */
-.cr-arcade .cr-finish{background:rgba(70,84,116,.42)}
-.cr-arcade .cr-finish-card{background-color:#F7F1E3;border-radius:20px;padding:0 16px 14px;gap:10px;overflow:visible;
-  --edge:0 0 0 12px var(--pink),0 0 0 14px var(--ink),0 16px 0 12px var(--pink-d);animation:arc-finish .5s cubic-bezier(.2,.9,.3,1.15) both;margin:14px 0}
-.cr-arcade .cr-finish-card::after{inset:-6px}
-/* the marquee: a yellow sign with lamps that light up one after another, then stay lit */
-.cr-arcade .cr-finish-kicker{align-self:stretch;margin:0 -16px 2px;padding:9px 12px 16px;border-radius:18px 18px 0 0;background:var(--yellow) var(--paint);background-blend-mode:multiply;
-  color:var(--ink);font-family:'Baloo Bhaijaan 2',sans-serif;font-weight:800;font-size:22px;position:relative;box-shadow:inset 0 -2px 0 var(--yellow-d)}
-.cr-arcade .cr-finish-kicker:before{content:'';position:absolute;left:14px;right:14px;bottom:5px;height:6px;
-  background:radial-gradient(circle,var(--coral) 0 2.4px,transparent 3px) 0 50%/16px 6px repeat-x;animation:arc-marquee 1.4s steps(8) .2s both}
-@keyframes arc-marquee{from{clip-path:inset(0 100% 0 0)}to{clip-path:inset(0)}}
-.cr-arcade .cr-finish-card h2{color:var(--ink);text-shadow:2px 2px 0 var(--pink)}
-.cr-arcade .cr-results{counter-reset:rank;gap:7px}
-.cr-arcade .cr-results li{counter-increment:rank;background-color:#fffdf8;border-radius:8px;--edge:0 3px 0 rgba(58,52,70,.14);animation:arc-row .35s ease-out both}
-.cr-arcade .cr-results li:before{content:counter(rank);flex:none;width:24px;height:24px;display:grid;place-items:center;border-radius:50%;background:var(--navy);color:var(--yellow);
-  font-family:'Archivo Black',sans-serif;font-size:12px}
-.cr-arcade .cr-results li:first-child{background-color:var(--yellow);animation:arc-row .35s ease-out both,arc-win 1s ease-in-out 1.2s 2}
-.cr-arcade .cr-results li:first-child:before{background:var(--coral);color:#fff}
-.cr-arcade .cr-results li.is-me{outline:2px solid var(--ink);outline-offset:2px}
-.cr-arcade .cr-results li:nth-child(2){animation-delay:.12s}.cr-arcade .cr-results li:nth-child(3){animation-delay:.24s}
-.cr-arcade .cr-results li:nth-child(4){animation-delay:.36s}.cr-arcade .cr-results li:nth-child(n+5){animation-delay:.48s}
-@keyframes arc-finish{0%{transform:translateY(24px);opacity:0}100%{transform:none;opacity:1}}
+/* memory: the grid is the game, so it stays a grid: ivory cells, charcoal joins, letters in pixel type */
+.cr-app.cr-arcade .cr-memory{gap:14px}
+.cr-app.cr-arcade .cr-memory .cr-prompt{margin-bottom:0}
+.cr-app.cr-arcade .cr-memory-grid{gap:4px;padding:4px;border:0;background:var(--cr-charcoal);box-shadow:none;clip-path:var(--cr-step);--lilac:#EADFF6;--powder:#F8EDC0;--blend:#F7F0E2}
+.cr-app.cr-arcade .cr-memory-grid span{background:var(--cr-paper)}
+.cr-app.cr-arcade .cr-memory-grid b{color:var(--cr-charcoal);font-family:var(--cr-press);font-weight:400;font-size:clamp(30px,10vw,44px);padding:0}
+.cr-app.cr-arcade .cr-memory-grid[lang=ar] b{font-family:var(--cr-pixel);font-weight:800;font-size:clamp(52px,16vw,70px);padding-bottom:6px}
+.cr-app.cr-arcade .cr-memory-q{font-family:var(--cr-pixel);font-weight:700;font-size:var(--cr-fs-q);text-shadow:var(--cr-ol-2)}
+.cr-app.cr-arcade .cr-memory-next{width:min(100%,312px)}
+
+/* friend vote: the coloured name tags are the answers; only the lettering changes */
+.cr-app.cr-arcade .cr-vote-hint{font-size:var(--cr-fs-meta);font-weight:600;opacity:1;color:var(--cr-gray)}
+.cr-app.cr-arcade .cr-tag{filter:drop-shadow(0 4px 0 var(--cr-charcoal-a))}
+.cr-app.cr-arcade .cr-tag-body{background:var(--tag)}
+.cr-app.cr-arcade .cr-tag-body:before{inset:0;background:linear-gradient(180deg,rgba(255,255,255,.22) 0 30%,transparent 30%)}
+.cr-app.cr-arcade .cr-tag-hole{border:0;background:var(--cr-paper)}
+.cr-app.cr-arcade .cr-tag-name{font-family:var(--cr-pixel);font-weight:800;font-size:30px;color:var(--cr-ivory);text-shadow:var(--cr-ol-1)}
+.cr-app.cr-arcade .cr-vote.is-many .cr-tag-name{font-size:24px}
+.cr-app.cr-arcade .cr-tag small{border:0;background:none;color:var(--cr-ivory);font-size:15px}
+
+/* word rush: the letters are pink keys, the field is a paper slip */
+.cr-app.cr-arcade .cr-word-prompt{font-family:var(--cr-pixel);font-weight:700;font-size:clamp(26px,7.4vw,32px);text-shadow:var(--cr-ol-2)}
+.cr-app.cr-arcade .cr-word-prompt b{min-width:54px;height:54px;padding:0 8px 6px;border:0;background:var(--cr-pink);clip-path:var(--cr-step);
+  box-shadow:inset 0 -5px 0 var(--cr-pink-d);font-family:var(--cr-pixel);font-weight:800;font-size:38px;color:var(--cr-ivory);text-shadow:var(--cr-ol-1)}
+.cr-app.cr-arcade .cr-word-input{text-transform:uppercase;letter-spacing:.04em}
+.cr-app.cr-arcade .cr-word-input.is-ar{text-transform:none;letter-spacing:0;font-size:32px}
+.cr-app.cr-arcade .cr-word-go{min-width:82px;border:0;background:var(--cr-mint);color:var(--cr-charcoal);clip-path:var(--cr-step);
+  box-shadow:inset 0 -5px 0 var(--cr-mint-d),inset 0 3px 0 rgba(255,255,255,.4);font-family:var(--cr-pixel);font-weight:800;font-size:28px;padding-bottom:6px}
+.cr-app.cr-arcade .cr-word-go:active{transform:translateY(3px);box-shadow:inset 0 -2px 0 var(--cr-mint-d)}
+.cr-app.cr-arcade .cr-word-note{font-size:var(--cr-fs-meta);font-weight:600;opacity:1;color:var(--cr-gray)}
+.cr-app.cr-arcade .cr-stage-word .cr-word{gap:10px}
+
+/* heaviest: each group is one row on the room, a dotted pixel rule between rows */
+.cr-app.cr-arcade .cr-scale{gap:0}
+.cr-app.cr-arcade .cr-scale-card{min-height:70px;padding:6px 4px 8px;border:0;background:none;box-shadow:none;
+  background:linear-gradient(90deg,var(--cr-ivory) 50%,transparent 0) 0 100%/6px 2px repeat-x;transition:transform .06s steps(2)}
+.cr-app.cr-arcade .cr-scale-card:last-child{background:none}
+.cr-app.cr-arcade .cr-scale-card:active{transform:translateX(3px)}
+.cr-app.cr-arcade .cr-scale-name{width:70px;font-size:24px;font-weight:700}
+.cr-app.cr-arcade .cr-bag{filter:drop-shadow(0 2px 0 var(--cr-charcoal-a))}
+
+/* wallet: the wallet is the drawing, kept; stepped corners instead of a box shadow */
+.cr-app.cr-arcade .cr-wallets{gap:12px}
+.cr-app.cr-arcade .cr-wallet{clip-path:var(--cr-step);box-shadow:inset 0 -5px 0 #5E4433}
+.cr-app.cr-arcade .cr-wallet:active{transform:translateY(3px)}
+.cr-app.cr-arcade .cr-note{font-family:var(--cr-pixel);font-weight:800;font-size:20px;clip-path:var(--cr-step-sm)}
+.cr-app.cr-arcade .cr-coin b{font-family:var(--cr-pixel);font-size:15px}
+
+/* shadow match: the toy and four shadows on the room */
+.cr-app.cr-arcade .cr-shadow{gap:16px}
+.cr-app.cr-arcade .cr-shadow-toy{filter:drop-shadow(0 4px 0 var(--cr-charcoal-a))}
+.cr-app.cr-arcade .cr-shadow-opts{gap:14px}
+.cr-app.cr-arcade .cr-shadow-card{padding:12%;border:0;background:none;box-shadow:none;transition:transform .06s steps(2)}
+.cr-app.cr-arcade .cr-shadow-card .cr-blocks{filter:drop-shadow(2px 0 0 var(--cr-ivory-lo)) drop-shadow(-2px 0 0 var(--cr-ivory-lo)) drop-shadow(0 2px 0 var(--cr-ivory-lo)) drop-shadow(0 -2px 0 var(--cr-ivory-lo))}
+.cr-app.cr-arcade .cr-shadow-card:active{transform:scale(.9)}
+
+/* missing tile: the picture and its pieces, stepped corners, no frames */
+.cr-app.cr-arcade .cr-tile-pic{clip-path:var(--cr-step);box-shadow:none}
+.cr-app.cr-arcade .cr-tile-hole{border:0;background:var(--cr-charcoal);color:var(--cr-ivory);font-family:var(--cr-press);font-size:clamp(18px,6vw,26px);animation:arc-blink 1s steps(1) infinite}
+.cr-app.cr-arcade .cr-tile-card{clip-path:var(--cr-step-sm);box-shadow:none}
+.cr-app.cr-arcade .cr-tile-card:active{transform:translateY(3px)}
+
+/* don't tap: coloured shapes on the room with an ivory rim, so every colour reads on teal */
+.cr-app.cr-arcade .cr-avoid{gap:12px}
+.cr-app.cr-arcade .cr-avoid-cell{padding:14%;border:0;background:none;box-shadow:none;transition:transform .06s steps(2)}
+.cr-app.cr-arcade .cr-avoid-cell svg{filter:drop-shadow(2px 0 0 var(--cr-ivory)) drop-shadow(-2px 0 0 var(--cr-ivory)) drop-shadow(0 2px 0 var(--cr-ivory)) drop-shadow(0 -2px 0 var(--cr-ivory)) drop-shadow(0 4px 0 var(--cr-charcoal-a))}
+.cr-app.cr-arcade .cr-avoid-cell:active{transform:scale(.88)}
+
+/* picture questions: the paintings stand on the room; layouts still differ by arrangement */
+.cr-app.cr-arcade .cr-pic-art{filter:drop-shadow(0 4px 0 var(--cr-charcoal-a))}
+.cr-app.cr-arcade .cr-pic-name{padding:0 2px;background:none;font-family:var(--cr-pixel);font-weight:700;font-size:clamp(20px,5.8vw,24px)}
+.cr-app.cr-arcade .cr-vs{background:none;box-shadow:none;padding:0 2px;font-family:var(--cr-press);font-size:22px;color:var(--cr-pink-l);text-shadow:var(--cr-ol-2)}
+.cr-app.cr-arcade .cr-pics.is-panels{padding:0;background:none;gap:10px}
+.cr-app.cr-arcade .cr-pics.is-panels .cr-pic{background:none;padding:4px;clip-path:none}
+.cr-app.cr-arcade .cr-pics.is-panels .cr-pic:nth-child(1) .cr-pic-art{transform:rotate(-2deg)}
+.cr-app.cr-arcade .cr-pics.is-panels .cr-pic:nth-child(2) .cr-pic-art{transform:rotate(2.5deg)}
+.cr-app.cr-arcade .cr-pics.is-board{padding:4px 0;background:none;gap:14px 12px}
+.cr-app.cr-arcade .cr-pics.is-board .cr-pic{background:none;box-shadow:none;padding:2px}
+.cr-app.cr-arcade .cr-pics.is-board .cr-pic-name{font-size:clamp(19px,5.4vw,22px)}
+.cr-app.cr-arcade .cr-pics.is-table{padding:4px 0 8px;background:none;box-shadow:none;gap:10px 14px}
+.cr-app.cr-arcade .cr-pics.is-table .cr-pic-num{border-radius:0;background:none;color:var(--cr-powder);font-family:var(--cr-press);font-size:13px;text-shadow:var(--cr-ol-1);transform:none}
+.cr-app.cr-arcade .cr-pics.is-table .cr-pic-name{background:none;font-size:clamp(19px,5.4vw,22px)}
+
+/* ================================================================ overlays */
+/* countdown: the room, one huge printed number per second, ticking in pixel steps */
+.cr-app.cr-arcade .cr-countdown{background:var(--cr-teal-d) var(--arc-room) center 30%/cover no-repeat}
+.cr-app.cr-arcade .cr-countdown:before{content:'';position:absolute;inset:0;background:rgba(46,110,111,.55)}
+.cr-app.cr-arcade .cr-countdown span{position:relative;width:auto;height:auto;border:0;background:none;box-shadow:none;font-family:var(--cr-press);font-size:110px;line-height:1;color:var(--cr-ivory);
+  text-shadow:5px 0 0 var(--cr-charcoal),-5px 0 0 var(--cr-charcoal),0 5px 0 var(--cr-charcoal),0 -5px 0 var(--cr-charcoal),5px 5px 0 var(--cr-charcoal),-5px 5px 0 var(--cr-charcoal),5px -5px 0 var(--cr-charcoal),-5px -5px 0 var(--cr-charcoal),0 12px 0 var(--cr-pink-d);
+  animation:arc-count .9s steps(6) both}
+.cr-app.cr-arcade .cr-countdown.is-go{background:none}
+.cr-app.cr-arcade .cr-countdown.is-go:before{display:none}
+.cr-app.cr-arcade .cr-countdown.is-go span{font-family:var(--cr-pixel);font-weight:800;font-size:96px;color:var(--cr-pink-l);-webkit-text-stroke:0;animation:arc-go .7s steps(5) forwards}
+@keyframes arc-count{0%{transform:scale(1.4);opacity:0}25%{transform:none;opacity:1}85%{opacity:1}100%{opacity:.3;transform:scale(.9)}}
+@keyframes arc-go{0%{transform:scale(.6);opacity:0}30%{transform:scale(1.1);opacity:1}100%{transform:scale(1.3);opacity:0}}
+
+/* reactions: printed words that pop and float, no plate */
+.cr-app.cr-arcade .cr-toast{padding:0;border:0;background:none;box-shadow:none;font-family:var(--cr-pixel);font-weight:800;font-size:40px;color:var(--cr-powder);text-shadow:var(--cr-ol-2)}
+.cr-app.cr-arcade .cr-toast.is-word{color:var(--cr-mint);font-family:var(--cr-pixel);letter-spacing:.04em;-webkit-text-stroke:0}
+
+/* wrong answer: the room dims, a big sad face shudders */
+.cr-app.cr-arcade .cr-sad{background:rgba(42,38,48,.42)}
+.cr-app.cr-arcade .cr-sad-face{width:168px;height:168px;padding:0;border:0;background:none;box-shadow:none;filter:drop-shadow(0 6px 0 var(--cr-charcoal-a));animation:arc-shudder .36s steps(6)}
+@keyframes arc-shudder{20%{transform:translateX(-8px)}40%{transform:translateX(7px)}60%{transform:translateX(-5px)}80%{transform:translateX(3px)}}
+
+/* third heart gone: your clock, wearing the sad face, winds back to 0, then the hearts relight */
+.cr-app.cr-arcade .cr-sad.is-reset{background:rgba(42,38,48,.58)}
+.cr-reset{display:flex;flex-direction:column;align-items:center;gap:14px;text-align:center;animation:arc-shudder .36s steps(6)}
+.cr-reset-clock{width:min(58vw,220px);height:auto;overflow:visible;filter:drop-shadow(0 6px 0 rgba(42,38,48,.6))}
+.cr-reset-lamp{animation:arc-lamp-off .01s steps(1) both}
+@keyframes arc-lamp-off{to{opacity:0}}
+.cr-reset-wedge{stroke-dashoffset:var(--from-off);animation:arc-wedge var(--drain) linear .12s forwards}
+@keyframes arc-wedge{from{stroke-dashoffset:var(--from-off)}to{stroke-dashoffset:var(--to-off)}}
+.cr-reset-hand{transform-origin:50px 50px;transform:rotate(var(--from-deg));animation:arc-hand var(--drain) linear .12s forwards}
+@keyframes arc-hand{from{transform:rotate(var(--from-deg))}to{transform:rotate(0deg)}}
+.cr-reset .cr-hearts{margin:0}
+.cr-reset .cr-heart{width:34px;height:30px;opacity:0;animation:arc-heart-in .22s steps(3) both}
+.cr-reset .cr-heart:nth-child(1){animation-delay:1.06s}.cr-reset .cr-heart:nth-child(2){animation-delay:1.2s}.cr-reset .cr-heart:nth-child(3){animation-delay:1.34s}
+@keyframes arc-heart-in{0%{opacity:0;transform:scale(.3)}60%{opacity:1;transform:scale(1.3)}100%{opacity:1;transform:none}}
+.cr-app.cr-arcade .cr-reset-caption{font-family:var(--cr-pixel);font-weight:800;font-size:44px;line-height:1;text-shadow:var(--cr-ol-2)}
+
+/* results: the room dims; the winner's clock, the name in print, a plain ranked list */
+.cr-app.cr-arcade .cr-finish{background:rgba(42,38,48,.66);padding:20px 22px}
+.cr-app.cr-arcade .cr-finish-card{max-width:400px;padding:0;border:0;background:none;box-shadow:none;gap:10px;animation:arc-finish .4s steps(5) both}
+.cr-app.cr-arcade .cr-finish-kicker{padding:0;background:none;color:var(--cr-pink-l);font-family:var(--cr-pixel);font-weight:800;font-size:26px;text-shadow:var(--cr-ol-1);letter-spacing:.04em}
+.cr-app.cr-arcade[lang=en] .cr-finish-kicker{font-size:14px;line-height:1.6}
+.cr-app.cr-arcade .cr-finish-card .cr-dial{filter:drop-shadow(0 4px 0 rgba(0,0,0,.35))}
+.cr-app.cr-arcade .cr-finish-card h2{font-family:var(--cr-pixel);font-weight:800;font-size:var(--cr-fs-h1);line-height:1;text-shadow:var(--cr-ol-2);color:var(--cr-ivory)}
+.cr-app.cr-arcade .cr-results{counter-reset:rank;gap:0;margin:6px 0 8px;max-height:36vh}
+.cr-app.cr-arcade .cr-results li{counter-increment:rank;gap:10px;padding:8px 2px 9px;border:0;background:linear-gradient(90deg,rgba(247,238,219,.5) 50%,transparent 0) 0 100%/6px 2px repeat-x;
+  box-shadow:none;font-size:24px;font-weight:700;animation:arc-row .3s steps(3) both}
+.cr-app.cr-arcade .cr-results li:last-child{background:none}
+.cr-app.cr-arcade .cr-results li:before{content:counter(rank);flex:none;width:22px;font-family:var(--cr-press);font-size:13px;color:var(--cr-gray);text-align:center}
+.cr-app.cr-arcade .cr-results li:first-child:before{color:var(--cr-powder)}
+.cr-app.cr-arcade .cr-results li.is-me{background-color:transparent;color:var(--cr-pink-l)}
+.cr-app.cr-arcade .cr-results li i{width:12px;height:12px;border:0;border-radius:0;clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%)}
+.cr-app.cr-arcade .cr-results li em{font-size:18px;font-weight:600;color:var(--cr-gray);opacity:1}
+.cr-app.cr-arcade .cr-results li b{font-family:var(--cr-press);font-size:13px;font-weight:400}
+.cr-app.cr-arcade .cr-results li:nth-child(2){animation-delay:.1s}.cr-app.cr-arcade .cr-results li:nth-child(3){animation-delay:.2s}
+.cr-app.cr-arcade .cr-results li:nth-child(4){animation-delay:.3s}.cr-app.cr-arcade .cr-results li:nth-child(n+5){animation-delay:.4s}
+.cr-app.cr-arcade .cr-finish-card .cr-link{margin-top:2px}
+@keyframes arc-finish{from{transform:translateY(16px);opacity:0}}
 @keyframes arc-row{from{opacity:0;transform:translateY(6px)}}
-@keyframes arc-win{50%{background-color:#FBEBB4}}
 
-/* TEST99 chip */
-.cr-arcade .cr-dev-toggle{background:var(--pist);border-radius:4px}
+/* stars on a right answer */
+.cr-app.cr-arcade .cr-stars svg{filter:drop-shadow(0 2px 0 var(--cr-charcoal-a))}
 
+/* TEST99 chip (test rooms only) */
+.cr-app.cr-arcade .cr-dev-toggle{border:0;background:var(--cr-mint);color:var(--cr-charcoal);clip-path:var(--cr-step-sm)}
+.cr-app.cr-arcade .cr-dev-body{color:var(--cr-charcoal);text-shadow:none}
+
+@media (max-height:700px){
+  .cr-app.cr-arcade.cr-race{--cr-chrome:70px}
+  .cr-app.cr-arcade .cr-prompt{margin-bottom:10px}
+}
 @media (prefers-reduced-motion:reduce){
-  .cr-arcade .cr-room-light,.cr-cab-marquee:before{animation:none}
-  .cr-cab-screen{animation:none}
+  .cr-app.cr-arcade :is(.cr-room-light,.cr-primary:before,.cr-intent.is-on:before,.cr-waiting:after,.cr-spectate:after,.cr-tile-hole){animation:none}
 }
 
-/* ---------------------------------------------------------------- Oct 31: flat and sharp
-   No outlines anywhere (no drawn ink frame, no inset lines, no rings), no rounded corners (true circles
-   stay circles), no pink cabinet frame and no decorative control panel. The teal screen stays. */
-.cr-arcade *,.cr-arcade *::before,.cr-arcade *::after{border-radius:0!important}
-.cr-arcade :is(.cr-rules li,.cr-guests li i,.cr-results li i,.cr-results li,.cr-dial-pop,.cr-tag-hole)::before,
-.cr-arcade :is(.cr-guests li i,.cr-results li i,.cr-dial-pop,.cr-tag-hole){border-radius:50%!important}
-.cr-arcade *::after{border-image:none!important}
-.cr-arcade :is(.cr-choice,.cr-stroop-card,.cr-geo-card,.cr-sock-cell,.cr-primary,.cr-intent,.cr-card,.cr-ghost,.cr-square-btn,.cr-rules li,
-  .cr-guests li,.cr-word-go,.cr-word-prompt b,.cr-count,.cr-task-name,.cr-lang,.cr-app .pt-code-box,.cr-results li,
-  .cr-waiting,.cr-spectate,.cr-error,.cr-notice,.cr-toast,.cr-memory-grid,.cr-cab-marquee,.cr-sad-face,.cr-countdown span,.cr-finish-card,.cr-qr,.cr-dev-toggle)::after{content:none!important}
-.cr-arcade :is(.cr-word-input,.cr-form>input){box-shadow:inset 0 4px 0 rgba(58,52,70,.08)!important}
-.cr-arcade *{outline:none!important;border-color:transparent!important}
-.cr-arcade :focus-visible{box-shadow:0 0 0 3px var(--blue-d)!important}
-.cr-arcade .cr-rules li:before{border:0}
-.cr-arcade .cr-memory-grid{background:var(--ivory-d)}
-.cr-arcade .cr-dial-seat.is-me .cr-dial-name{box-shadow:none}
-.cr-arcade .cr-results li.is-me{background-color:#FFF1C4}
-.cr-arcade .cr-tag-body{background:var(--tag)}
-.cr-arcade .cr-tag-body:before{inset:0}
-.cr-arcade .cr-tag small{border:0}
-.cr-arcade .cr-countdown span{--edge:0 0 0 14px var(--pink),0 18px 0 14px var(--pink-d)}
-.cr-arcade .cr-sad-face{--edge:0 0 0 12px var(--pink),0 14px 0 12px var(--pink-d)}
-.cr-arcade .cr-finish-card{--edge:0 0 0 12px var(--pink),0 16px 0 12px var(--pink-d)}
-
-/* the cabinet: no pink frame, no glass, no control panel; the teal screen sits on its own */
-.cr-cab-shell{border:0!important;border-image:none!important}
-.cr-cab-screen{box-shadow:none}
-.cr-cab-glass,.cr-cab-panel{display:none!important}
-.cr-cab-marquee{margin:0 0 8px}
-.cr-arcade .cr-task-name{display:none}
-
-/* ---------------------------------------------------------------- v4 challenges in the cabinet: sharp, no ink lines */
-.cr-arcade :is(.cr-scale-card,.cr-shadow-card){border:0;border-radius:0;background-color:#FFFCF4;box-shadow:0 5px 0 var(--ivory-d)}
-.cr-arcade :is(.cr-wallet,.cr-tile-card){border-radius:0;box-shadow:0 5px 0 rgba(58,52,70,.25)}
-.cr-arcade :is(.cr-scale-card,.cr-shadow-card,.cr-wallet,.cr-tile-card):active{transform:translateY(3px);box-shadow:0 1px 0 rgba(58,52,70,.3)}
-.cr-arcade .cr-scale-name{color:var(--ink)}
+/* while the results are up, the last challenge behind them steps away */
+.cr-app.cr-arcade.cr-race:has(.cr-finish) :is(.cr-open,.cr-top){visibility:hidden}
+.cr-app.cr-arcade .cr-bag text{font-family:var(--cr-pixel);font-weight:800}
+.cr-app.cr-arcade .cr-primary:not(:has(.cr-letter)){text-shadow:var(--cr-ol-1)}

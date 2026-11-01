@@ -319,3 +319,110 @@
 .cr-arcade :is(.cr-wallet,.cr-tile-card){border-radius:0;box-shadow:0 5px 0 rgba(58,52,70,.25)}
 .cr-arcade :is(.cr-scale-card,.cr-shadow-card,.cr-wallet,.cr-tile-card):active{transform:translateY(3px);box-shadow:0 1px 0 rgba(58,52,70,.3)}
 .cr-arcade .cr-scale-name{color:var(--ink)}
+
+/* ================================================================ Nov 1: quiet 90s Japanese game menu
+   Fewer elements, more room. Two fonts only: Baloo Bhaijaan 2 (display) and Cairo (everything functional).
+   Lettering is warm ivory fading to a cool pale grey in its lower third, with a thin, slightly uneven
+   charcoal line around it, like the printed type on a 1994 cartridge label. Buttons come in a small family:
+   painted capsules (main actions), paper tabs (secondary), plain text with a cursor (choices). */
+.cr-app.cr-arcade{--charcoal:#2E2A33;--cotton:#EFA9C0;--cotton-d:#D98AA5;--powder:#F3E3A2;--powder-d:#DCC982;--lav:#CBBFE6;--peach:#F2C2A8;--teal-wash:#5FAFAA}
+
+/* one display face, one text face (Archivo Black retired in this look) */
+.cr-arcade :is(.pt-code-box,.cr-code-card strong,.cr-guests-head span,.cr-count,.cr-word-prompt b,.cr-word-input,.cr-countdown span,.cr-toast.is-word,
+  .cr-results li b,.cr-results li:before,.cr-stroop-card[lang=en],.cr-memory-grid b,.cr-memory.is-ask .cr-choice,.cr-vs){
+  font-family:'Baloo Bhaijaan 2','Cairo',sans-serif!important;font-weight:800}
+
+/* the printed lettering */
+.cr-arcade .cr-letter{display:inline-block;color:transparent;padding:.04em .1em .12em;line-height:1.15;
+  background:linear-gradient(180deg,#FCF5E4 0%,#F6EBD3 58%,#E4E2DA 74%,#CDD2D3 100%);-webkit-background-clip:text;background-clip:text;
+  filter:drop-shadow(1.2px 0 0 var(--charcoal)) drop-shadow(-1px 0 0 var(--charcoal)) drop-shadow(0 1.2px 0 var(--charcoal)) drop-shadow(0 -.8px 0 var(--charcoal))}
+
+/* ---------------------------------------------------------------- the room, uncovered */
+.cr-arcade .cr-room{background-position:center 30%}
+.cr-arcade .cr-room-light{opacity:.08;animation:none}
+.cr-arcade .cr-fg{display:none}
+
+/* top bar: a small round tab and the title in print, no plates */
+.cr-arcade .cr-bar{padding-top:calc(12px + env(safe-area-inset-top))}
+.cr-arcade .cr-wordmark{background:none;box-shadow:none;padding:0;font-size:21px;opacity:.95}
+.cr-arcade .cr-bar .cr-square-btn{width:38px;height:38px;border-radius:50%!important;background:var(--ivory) var(--paint);background-blend-mode:multiply;
+  color:var(--charcoal);box-shadow:inset 0 -3px 0 var(--ivory-d)!important}
+
+/* ---------------------------------------------------------------- entry */
+.cr-arcade .cr-entry-body{padding:4px 22px 40px;display:flex;flex-direction:column;min-height:calc(100dvh - 70px)}
+.cr-arcade .cr-hero{padding:6px 0 0}
+.cr-arcade .cr-hero-clock.is-arcade{width:96px;height:96px;margin:0 auto 2px;opacity:.95}
+.cr-arcade .cr-hero-clock.is-arcade svg{width:100%;height:100%}
+.cr-arcade .cr-hero h1{display:block;background:none;box-shadow:none;padding:0;text-shadow:none;font-size:54px;line-height:1}
+.cr-arcade .cr-hero p{display:block;background:none;padding:0;margin-top:2px!important;font-family:'Cairo',sans-serif;font-weight:800;font-size:16px;opacity:1}
+
+/* language: two words, the chosen one gets a small cursor; no box */
+.cr-arcade .cr-lang{display:flex;justify-content:center;gap:22px;background:none;box-shadow:none!important;border:0;margin:2px auto 0;max-width:none}
+.cr-arcade .cr-lang button{position:relative;min-height:36px;padding:0 4px;background:none!important;color:#FBF3E1;font-family:'Baloo Bhaijaan 2',sans-serif;font-weight:800;font-size:16px;
+  opacity:.62;filter:drop-shadow(1px 0 0 var(--charcoal)) drop-shadow(-1px 0 0 var(--charcoal)) drop-shadow(0 1px 0 var(--charcoal)) drop-shadow(0 -1px 0 var(--charcoal));transition:opacity .15s}
+.cr-arcade .cr-lang button.is-on{opacity:1;color:#FBF3E1}
+.cr-arcade .cr-lang button.is-on:after{content:''!important;position:absolute;left:50%;bottom:2px;width:7px;height:7px;margin-left:-3.5px;background:var(--cotton);transform:rotate(45deg)}
+
+/* the two main actions: lower on the screen, side by side, clearly the thing to press */
+.cr-arcade .cr-intents{margin:auto 0 0;padding-top:40px;gap:14px}
+.cr-arcade .cr-entry .cr-intent{position:relative;min-height:66px;padding:12px 10px 13px;font-size:24px;
+  border-radius:30px 26px 32px 24px / 28px 32px 26px 30px!important;box-shadow:inset 0 -4px 0 var(--btn-edge),inset 0 2px 0 #ffffff40!important;
+  background-color:var(--cotton);--btn-edge:var(--cotton-d);transition:transform .09s ease-out,opacity .2s}
+/* join: a paper label, slightly askew corners, same weight so both read as main buttons */
+.cr-arcade .cr-entry .cr-intent.is-join{background-color:var(--powder);--btn-edge:var(--powder-d);
+  border-radius:8px 14px 10px 16px / 12px 8px 16px 10px!important}
+.cr-arcade .cr-intent small{display:none}
+.cr-arcade .cr-entry .cr-intent:active{transform:translateY(2px) rotate(-.5deg)}
+.cr-arcade .cr-entry .cr-intent.is-on{transform:none;outline:0!important}
+.cr-arcade .cr-intents:has(.is-on) .cr-intent:not(.is-on){opacity:.6}
+/* the selection cursor: a small ivory triangle that nudges toward the chosen action, like a console menu */
+.cr-arcade .cr-entry .cr-intent.is-on:before{content:'';position:absolute;top:50%;inset-inline-start:-15px;width:11px;height:14px;margin-top:-7px;background:#FBF3E1;
+  clip-path:polygon(0 0,100% 50%,0 100%);filter:drop-shadow(1px 0 0 var(--charcoal));animation:arc-cursor 1.6s ease-in-out infinite}
+.cr-arcade[dir=rtl] .cr-entry .cr-intent.is-on:before{clip-path:polygon(100% 0,0 50%,100% 100%)}
+@keyframes arc-cursor{50%{translate:3px 0}}
+.cr-arcade[dir=rtl] .cr-entry .cr-intent.is-on:before{animation-name:arc-cursor-rtl}
+@keyframes arc-cursor-rtl{50%{translate:-3px 0}}
+
+/* the name form: one sheet of paper, no frame, no shadow */
+.cr-arcade .cr-entry .cr-form{margin-top:16px;padding:16px 18px 18px;background-color:#FBF5E8EB;--edge:none;box-shadow:none!important;
+  border-radius:4px 10px 6px 12px / 10px 4px 12px 6px!important}
+.cr-arcade .cr-form label{font-size:13px;color:var(--charcoal);opacity:.8}
+.cr-arcade :is(.cr-form>input,.pt-code-box){background:#FFFDF6!important;box-shadow:inset 0 -2px 0 var(--charcoal)!important;color:var(--charcoal)}
+.cr-arcade .pt-code-box.is-active{background:#FFF6D6!important;box-shadow:inset 0 -3px 0 var(--cotton-d)!important}
+
+/* ---------------------------------------------------------------- primary action: the pink capsule, everywhere */
+.cr-arcade .cr-primary{min-height:60px;font-size:24px;background-color:var(--cotton);--btn-edge:var(--cotton-d);text-shadow:none;
+  border-radius:30px 26px 32px 24px / 28px 32px 26px 30px!important;box-shadow:inset 0 -4px 0 var(--btn-edge),inset 0 2px 0 #ffffff40!important;transition:transform .09s ease-out}
+.cr-arcade .cr-primary:active:not(:disabled){transform:translateY(2px) rotate(-.4deg)!important;box-shadow:inset 0 -2px 0 var(--btn-edge)!important}
+.cr-arcade .cr-start{min-height:68px;font-size:27px}
+
+/* secondary: small paper tabs */
+.cr-arcade .cr-ghost:not(.cr-link){background-color:var(--ivory);color:var(--charcoal);padding:8px 16px;font-size:14px;
+  border-radius:4px 9px 5px 10px / 9px 4px 10px 5px!important;box-shadow:inset 0 -3px 0 var(--ivory-d)!important}
+.cr-arcade .cr-ghost:not(.cr-link):active{transform:translateY(2px)}
+.cr-arcade .cr-link{color:var(--charcoal);text-decoration:none;font-weight:800;opacity:.75}
+
+/* ---------------------------------------------------------------- lobby: the room stays visible */
+.cr-arcade .cr-lobby-body{gap:18px;padding-inline:22px}
+.cr-arcade .cr-lobby-body h1{background:none;box-shadow:none;padding:0;font-size:38px;align-self:center}
+.cr-arcade .cr-code-card{background-color:var(--powder);--edge:none;box-shadow:none!important;border-radius:6px 12px 8px 14px / 12px 6px 14px 8px!important;padding:14px 16px}
+.cr-arcade .cr-code-card>span{font-size:12px;opacity:.7;color:var(--charcoal)}
+.cr-arcade .cr-code-card strong{color:var(--charcoal);font-size:50px;letter-spacing:6px}
+.cr-arcade .cr-code-card .cr-ghost:not(.cr-link){background-color:#FBF5E8}
+.cr-arcade .cr-guests{background:#FBF5E8D9!important;--edge:none;box-shadow:none!important;border-radius:10px 4px 12px 6px / 4px 10px 6px 12px!important;padding:12px 14px 12px}
+.cr-arcade .cr-guests-head{border-bottom:0;padding-bottom:4px}
+.cr-arcade .cr-guests li{background:none!important;box-shadow:none!important;padding:4px 6px 4px 2px}
+.cr-arcade .cr-guests li small{border-radius:3px!important}
+.cr-arcade .cr-fine{background:none;padding:0;color:#FBF3E1;opacity:1;font-weight:800;
+  filter:drop-shadow(1px 0 0 var(--charcoal)) drop-shadow(-1px 0 0 var(--charcoal)) drop-shadow(0 1px 0 var(--charcoal)) drop-shadow(0 -1px 0 var(--charcoal))}
+.cr-arcade .cr-waiting{background:#FBF5E8D9;border-radius:6px 12px 8px 14px / 12px 6px 14px 8px!important;color:var(--charcoal)}
+
+/* results: the again button keeps the capsule; the winner line in print */
+.cr-arcade .cr-finish-card h2{text-shadow:none;color:var(--charcoal)}
+.cr-arcade .cr-finish-kicker{font-size:21px}
+
+@media (prefers-reduced-motion:reduce){
+  .cr-arcade .cr-entry .cr-intent.is-on:before{animation:none}
+  .cr-arcade :is(.cr-intent,.cr-primary,.cr-ghost,.cr-lang button){transition:none}
+}
+.cr-arcade .cr-entry-body:has(.cr-form) .cr-intents{margin-top:22px;padding-top:0}

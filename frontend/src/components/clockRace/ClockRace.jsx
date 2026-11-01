@@ -369,7 +369,7 @@ export default function ClockRace({onContinue}) {
   </section> : <section className={`cr-stage ${cls}`}>{head}{body}</section>;
   const bar = <header className="cr-bar">
     <button className="cr-square-btn" onClick={exit} aria-label={t.back}><Arrow dir={t.dir}/></button>
-    <span className="cr-wordmark">{t.title}</span>
+    <span className="cr-wordmark"><span className="cr-letter">{t.title}</span></span>
     {devPanel}
   </header>;
 
@@ -383,10 +383,10 @@ export default function ClockRace({onContinue}) {
           <button type="button" className={pickedLang === 'ar' ? 'is-on' : ''} aria-pressed={pickedLang === 'ar'} lang="ar" onClick={() => setPickedLang('ar')}>عربي</button>
           <button type="button" className={pickedLang === 'en' ? 'is-on' : ''} aria-pressed={pickedLang === 'en'} lang="en" onClick={() => setPickedLang('en')}>English</button>
         </div>}
-        <div className="cr-hero"><BigClock/><h1>{t.title}</h1><p>{t.tagline}</p></div>
+        <div className="cr-hero"><BigClock/><h1><span className="cr-letter">{t.title}</span></h1><p><span className="cr-letter">{t.tagline}</span></p></div>
         {!linkJoin && <div className="cr-intents">
-          <button type="button" className={`cr-intent ${intent === 'create' ? 'is-on' : ''}`} onClick={() => { setIntent('create'); setError(''); setTimeout(() => nickRef.current?.focus()); }}>{t.create}<small>{t.createSmall}</small></button>
-          <button type="button" className={`cr-intent is-join ${intent === 'join' ? 'is-on' : ''}`} onClick={() => { setIntent('join'); setError(''); setTimeout(() => nickRef.current?.focus()); }}>{t.join}<small>{t.joinSmall}</small></button>
+          <button type="button" className={`cr-intent ${intent === 'create' ? 'is-on' : ''}`} onClick={() => { setIntent('create'); setError(''); setTimeout(() => nickRef.current?.focus()); }}><span className="cr-letter">{t.create}</span><small>{t.createSmall}</small></button>
+          <button type="button" className={`cr-intent is-join ${intent === 'join' ? 'is-on' : ''}`} onClick={() => { setIntent('join'); setError(''); setTimeout(() => nickRef.current?.focus()); }}><span className="cr-letter">{t.join}</span><small>{t.joinSmall}</small></button>
         </div>}
         {intent ? <form className="cr-card cr-form" onSubmit={enter} noValidate>
           <label htmlFor="cr-nick">{t.nick}</label>
@@ -398,8 +398,8 @@ export default function ClockRace({onContinue}) {
               onChange={v => { setJoinCode(v); if (validRoomCode(v)) setCodeError(false); }}/>
             <small id="cr-code-hint" className={codeError ? 'is-error' : ''}>{codeError ? t.codeIncomplete(5 - joinCode.length) : t.codeHint}</small>
           </>}
-          <button className="cr-primary" disabled={busy || !name.trim()}>{busy ? t.opening : intent === 'create' ? t.openRoom : t.enterRoom}</button>
-        </form> : <ul className="cr-rules">{t.rules.map(r => <li key={r}>{r}</li>)}</ul>}
+          <button className="cr-primary" disabled={busy || !name.trim()}><span className="cr-letter">{busy ? t.opening : intent === 'create' ? t.openRoom : t.enterRoom}</span></button>
+        </form> : !ARCADE && <ul className="cr-rules">{t.rules.map(r => <li key={r}>{r}</li>)}</ul>}
         {error && <p className="cr-error" role="alert">{error}</p>}
       </section>}
     </>);
@@ -409,7 +409,7 @@ export default function ClockRace({onContinue}) {
     return shell('cr-page cr-lobby', <>
       <Backdrop/>{bar}
       <section className="cr-lobby-body">
-        <h1>{t.lobbyTitle}</h1>
+        <h1><span className="cr-letter">{t.lobbyTitle}</span></h1>
         <div className="cr-card cr-code-card">
           <span>{t.yourCode}</span><strong dir="ltr">{code}</strong>
           {isHost && <div className="cr-qr"><RoomQR url={inviteUrl} label={code}/></div>}
@@ -423,7 +423,7 @@ export default function ClockRace({onContinue}) {
           <ul>{game.players.map(p => <li key={p.id}><i style={{background: PLAYER_COLORS[p.color % PLAYER_COLORS.length]}}/><span dir="auto">{p.name}</span>
             {p.id === game.host && <small>{t.host}</small>}{p.sim && <small className="is-bot">{t.bot}</small>}{p.id === me && <small className="is-me">{t.you}</small>}</li>)}</ul>
         </div>
-        {isHost ? <><button className="cr-primary cr-start" disabled={busy} onClick={start}>{t.start}</button>
+        {isHost ? <><button className="cr-primary cr-start" disabled={busy} onClick={start}><span className="cr-letter">{t.start}</span></button>
           {game.dev ? <p className="cr-fine">{t.testRoom}</p> : game.players.length < 2 && <p className="cr-fine">{t.soloOk}</p>}</>
           : <p className="cr-waiting">{t.waitHost(hostName)}</p>}
         {error && <p className="cr-error" role="alert">{error}</p>}
@@ -471,7 +471,7 @@ export default function ClockRace({onContinue}) {
         <ol className="cr-results">{[...players].filter(p => p.racing).sort((a, b) => (b.id === game.winner) - (a.id === game.winner) || b.done - a.done || (b.right || 0) - (a.right || 0)).map(p =>
           <li key={p.id} className={p.id === me ? 'is-me' : ''}><i style={{background: PLAYER_COLORS[p.color % PLAYER_COLORS.length]}}/><span dir="auto">{p.name}</span>
             <em>{t.rightOf(p.right || 0, p.done)}</em><b dir="ltr">{Math.round(p.done / TOTAL * 100)}%</b></li>)}</ol>
-        {isHost ? <button className="cr-primary" disabled={busy} onClick={start}>{t.again}</button> : <p className="cr-waiting">{t.waitAgain(hostName)}</p>}
+        {isHost ? <button className="cr-primary" disabled={busy} onClick={start}><span className="cr-letter">{t.again}</span></button> : <p className="cr-waiting">{t.waitAgain(hostName)}</p>}
         <button className="cr-ghost cr-link" onClick={exit}>{t.exit}</button>
       </div>
     </div>}

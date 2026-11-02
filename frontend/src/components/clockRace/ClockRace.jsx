@@ -339,7 +339,17 @@ export default function ClockRace({onContinue}) {
     const right = !!localCheck(task, value, g.roster.map(p => p.id));
     enqueue({round: g.round.id, task: i, answer: value, epoch: m.epoch});
     if (right && task.type === 'vote') say(t.reactions[Math.floor(Math.random() * t.reactions.length)]);
-    settle(g.round.id, i, right);
+    if (task.type === 'price') {
+      locked.current = true;
+      setTimeout(() => {
+        locked.current = false;
+        const current = mineRef.current;
+        if (current.round === g.round.id && current.done === i && current.epoch === m.epoch) {
+          settle(g.round.id, i, right);
+        }
+      }, 1200);
+    } else settle(g.round.id, i, right);
+    return true;
   }, [enqueue, say, settle, t]);
 
   const word = useCallback(async text => {

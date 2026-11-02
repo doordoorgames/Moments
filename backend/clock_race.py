@@ -40,7 +40,7 @@ RESET_DELAY = 1.6  # the heartbreak screen holds the player this long before tas
 GRACE = 0.25     # network slack on the server-side waits
 NAME_MAX = 24
 # 30 tasks = 16 picture comparisons + 14 of the original challenges (boss included, vote when 3+ people).
-PICTURE_MIX = {'belong': 5, 'older': 4, 'compare': 4, 'which': 3}
+PICTURE_MIX = {'belong': 5, 'older': 4, 'compare': 1, 'price': 3, 'which': 3}
 ORDINARY_MIX = {'odd': 1, 'stroop': 1, 'geo': 1, 'sock': 1, 'memory': 1, 'avoid': 1,
                 'alphabet': 1, 'scale': 1, 'shadow': 1, 'tile': 1, 'animal': 1}
 EXTRA_POOL = ['odd', 'stroop', 'avoid', 'sock', 'geo']  # fills the slots the vote or a 2nd Word Rush doesn't take  # 17; one fewer with 2 Word Rush
@@ -523,8 +523,6 @@ def plan_types(rng, vote=True):
     and no face task right before the face boss."""
     mix = dict(ORDINARY_MIX)
     mix.update(PICTURE_MIX)
-    mix['price'] = min(3, len(PRICE_BANK))
-    mix['compare'] -= mix['price']
     room = (TASKS - 1 - (1 if vote else 0)) - sum(mix.values())
     words = rng.choice([1, min(2, room)])
     mix['word'] = words
@@ -591,7 +589,8 @@ def gen_round(roster, lang='ar', avoid_question=None, rng=None, avoid=(), seen_q
                 q = rng.choice([q for q in pool if last.get(q['id'], -1) == oldest])
                 opts = rng.sample(q['options'], len(q['options']))
                 answer = max(range(len(opts)), key=lambda i: opts[i]['unit_usd'] * opts[i]['quantity'])
-                t = dict(type='price', qid=q['id'], options=opts, answer=answer)
+                public = [{k: o[k] for k in ('key', 'ar', 'en', 'unit_usd', 'quantity')} for o in opts]
+                t = dict(type='price', qid=q['id'], options=public, answer=answer)
             elif kind in K.KINDS:
                 t = gen_picture(rng, kind, {x.get('qid') for x in tasks}, seen_q)
             elif kind == 'avoid':

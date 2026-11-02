@@ -1,6 +1,6 @@
 # Clock Race image credits
 
-Each adapted image retains its listed license.
+Each adapted image retains its listed license. [Price comparison photos and sources](prices/index.html).
 
 - **africa** — Natural Earth. [Public domain](https://www.naturalearthdata.com/about/terms-of-use/). Projected map, cropped and highlighted. [Source](https://github.com/nvkelso/natural-earth-vector/blob/master/geojson/ne_10m_geography_regions_polys.geojson)
 - **amazon** — Natural Earth. [Public domain](https://www.naturalearthdata.com/about/terms-of-use/). Projected map, cropped and highlighted. [Source](https://github.com/nvkelso/natural-earth-vector/blob/master/geojson/ne_10m_geography_regions_polys.geojson)

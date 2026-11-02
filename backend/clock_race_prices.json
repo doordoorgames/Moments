@@ -36,5 +36,395 @@
         "checked": "2026-11-02"
       }
     ]
+  },
+  {
+    "id": "price_jetour_chiron",
+    "options": [
+      {
+        "key": "jetour_t2",
+        "en": "2026 Jetour T2",
+        "ar": "جيتور تي ٢ موديل ٢٠٢٦",
+        "unit_usd": 35126,
+        "quantity": 7,
+        "price_basis": "UAE base price AED 129,000 at 3.6725 AED/USD, rounded",
+        "source": "https://carprices.ae/brands/jetour/2026/t2/price",
+        "checked": "2026-11-02"
+      },
+      {
+        "key": "chiron",
+        "en": "Bugatti Chiron",
+        "ar": "بوغاتي شيرون",
+        "unit_usd": 3075000,
+        "quantity": 1,
+        "price_basis": "Median of eight reported auction sales, latest August 2026",
+        "source": "https://driveindex.com/cars/bugatti/chiron/auction-results",
+        "checked": "2026-11-02"
+      }
+    ]
+  },
+  {
+    "id": "price_chirons_penthouse",
+    "options": [
+      {
+        "key": "chiron",
+        "en": "Bugatti Chiron",
+        "ar": "بوغاتي شيرون",
+        "unit_usd": 3075000,
+        "quantity": 10,
+        "price_basis": "Median of eight reported auction sales, latest August 2026",
+        "source": "https://driveindex.com/cars/bugatti/chiron/auction-results",
+        "checked": "2026-11-02"
+      },
+      {
+        "key": "aman_penthouse",
+        "en": "Aman New York penthouse (2024 sale)",
+        "ar": "بنتهاوس أمان نيويورك (بيع ٢٠٢٤)",
+        "unit_usd": 135000000,
+        "quantity": 1,
+        "price_basis": "Closed sale, July 2024. Photo shows the tower crown housing the penthouse.",
+        "source": "https://www.wsj.com/real-estate/luxury-homes/vladislav-doronin-aman-new-york-21b7fd22",
+        "checked": "2026-11-02"
+      }
+    ]
+  },
+  {
+    "id": "price_sf90_suvs",
+    "options": [
+      {
+        "key": "sf90",
+        "en": "Ferrari SF90 Stradale",
+        "ar": "فيراري إس إف ٩٠ سترادالي",
+        "unit_usd": 489000,
+        "quantity": 1,
+        "price_basis": "Median of 37 reported auction sales through August 2026",
+        "source": "https://driveindex.com/cars/ferrari/sf90-stradale/auction-results",
+        "checked": "2026-11-02"
+      },
+      {
+        "key": "g63",
+        "en": "Mercedes-AMG G 63",
+        "ar": "مرسيدس إيه إم جي جي ٦٣",
+        "unit_usd": 198750,
+        "quantity": 1,
+        "price_basis": "2026 US base MSRP",
+        "source": "https://www.mbusa.com/en/vehicles/build/g-class/suv",
+        "checked": "2026-11-02"
+      },
+      {
+        "key": "range_sv",
+        "en": "Range Rover SV LWB P615",
+        "ar": "رينج روفر إس في طويلة القاعدة P615",
+        "unit_usd": 245700,
+        "quantity": 1,
+        "price_basis": "2026 US base MSRP",
+        "source": "https://www.cars.com/research/land_rover-range_rover-2026/specs/",
+        "checked": "2026-11-02"
+      }
+    ]
+  },
+  {
+    "id": "price_birkins_urus",
+    "options": [
+      {
+        "key": "croc_birkin",
+        "en": "Hermès crocodile Birkin 30",
+        "ar": "هيرميس بيركن ٣٠ من جلد التمساح",
+        "unit_usd": 62500,
+        "quantity": 3,
+        "price_basis": "September 2026 reported market price, Niloticus crocodile Birkin 30",
+        "source": "https://birkinbagstock.com/blog/monthly-market-report-2026-09",
+        "checked": "2026-11-02"
+      },
+      {
+        "key": "urus",
+        "en": "Lamborghini Urus SE",
+        "ar": "لامبورغيني أوروس إس إي",
+        "unit_usd": 252007,
+        "quantity": 1,
+        "price_basis": "2026 US MSRP",
+        "source": "https://www.caranddriver.com/lamborghini/urus/specs",
+        "checked": "2026-11-02"
+      }
+    ]
+  },
+  {
+    "id": "price_devices",
+    "options": [
+      {
+        "key": "iphone_18_pro_max",
+        "en": "iPhone 18 Pro Max",
+        "ar": "آيفون ١٨ برو ماكس",
+        "unit_usd": 1299,
+        "quantity": 1,
+        "price_basis": "US starting price, 256 GB",
+        "source": "https://www.apple.com/newsroom/2026/09/apple-debuts-iphone-18-pro-and-iphone-18-pro-max/",
+        "checked": "2026-11-02"
+      },
+      {
+        "key": "vision_pro",
+        "en": "Apple Vision Pro",
+        "ar": "آبل فيجن برو",
+        "unit_usd": 3499,
+        "quantity": 1,
+        "price_basis": "US starting price, 256 GB",
+        "source": "https://www.apple.com/newsroom/2025/10/apple-vision-pro-upgraded-with-the-m5-chip-and-dual-knit-band/",
+        "checked": "2026-11-02"
+      },
+      {
+        "key": "z_fold8",
+        "en": "Galaxy Z Fold8",
+        "ar": "جالاكسي زد فولد ٨",
+        "unit_usd": 1899.99,
+        "quantity": 1,
+        "price_basis": "Samsung US listed starting price before trade-in",
+        "source": "https://www.samsung.com/us/smartphones/galaxy-z-fold8/",
+        "checked": "2026-11-02"
+      }
+    ]
+  },
+  {
+    "id": "price_fashion",
+    "options": [
+      {
+        "key": "louboutin_kate",
+        "en": "Christian Louboutin Kate 100",
+        "ar": "كريستيان لوبوتان كيت ١٠٠",
+        "unit_usd": 945,
+        "quantity": 1,
+        "price_basis": "US retail price for patent leather pumps",
+        "source": "https://us.christianlouboutin.com/us_en/kate-black-3191411bk01.html",
+        "checked": "2026-11-02"
+      },
+      {
+        "key": "chanel_flap",
+        "en": "Chanel Medium Classic Flap",
+        "ar": "شانيل كلاسيك فلاب المتوسطة",
+        "unit_usd": 11700,
+        "quantity": 1,
+        "price_basis": "September 2026 US retail",
+        "source": "https://themonogram.co/editorial/chanel-price-increase-history",
+        "checked": "2026-11-02"
+      },
+      {
+        "key": "lady_dior",
+        "en": "Medium Lady Dior",
+        "ar": "ليدي ديور المتوسطة",
+        "quantity": 1,
+        "unit_usd": 6700,
+        "price_basis": "October 2026 US retail",
+        "source": "https://casadi.co/prices/dior-lady-dior-medium",
+        "checked": "2026-11-02"
+      }
+    ]
+  },
+  {
+    "id": "price_truck_watch",
+    "options": [
+      {
+        "key": "cybertruck",
+        "en": "Used Tesla Cybertruck Foundation AWD",
+        "ar": "تسلا سايبرترك فاونديشن مستعملة",
+        "unit_usd": 55500,
+        "quantity": 1,
+        "price_basis": "Dealer asking price on October 28, 2026",
+        "source": "https://carnexu.com/en/car/2024-tesla-cybertruck-awd-foundation-series-houston-tx-mvimlam96q56w",
+        "checked": "2026-11-02"
+      },
+      {
+        "key": "nautilus",
+        "en": "Patek Philippe Nautilus 5711 steel",
+        "ar": "باتيك فيليب نوتيلوس ٥٧١١ فولاذ",
+        "unit_usd": 114429,
+        "quantity": 1,
+        "price_basis": "November 2026 market estimate",
+        "source": "https://watchcharts.com/watches/brand/patek%20philippe/nautilus",
+        "checked": "2026-11-02"
+      }
+    ]
+  },
+  {
+    "id": "price_jewellery",
+    "options": [
+      {
+        "key": "cartier_love",
+        "en": "Cartier LOVE classic gold bracelet",
+        "ar": "سوار كارتييه لوف الذهبي الكلاسيكي",
+        "unit_usd": 7950,
+        "quantity": 1,
+        "price_basis": "US October 2026 list price",
+        "source": "https://casadi.co/prices/cartier-love-bracelet-classic",
+        "checked": "2026-11-02"
+      },
+      {
+        "key": "panthere",
+        "en": "Cartier Panthère, two-tone medium",
+        "ar": "كارتييه بانتير المتوسطة بلونين",
+        "unit_usd": 11400,
+        "quantity": 1,
+        "price_basis": "US retail, medium W2PN0019",
+        "source": "https://watchmydiamonds.com/brand-watches/cartier/panthere/two-tone.html",
+        "checked": "2026-11-02"
+      }
+    ]
+  },
+  {
+    "id": "price_suite_flight",
+    "options": [
+      {
+        "key": "burj_suite",
+        "en": "Burj Al Arab Royal Suite · 1 night (2015 rate)",
+        "ar": "جناح برج العرب الملكي · ليلة بسعر ٢٠١٥",
+        "unit_usd": 24000,
+        "quantity": 1,
+        "price_basis": "Historical Royal Suite nightly rate from June 2015; image depicts a suite at the hotel.",
+        "source": "https://www.bjtonline.com/business-jet-news/looking-for-an-inexpensive-hotel-skip-this-article",
+        "checked": "2026-11-02"
+      },
+      {
+        "key": "emirates_first",
+        "en": "Emirates First · Dubai–New York return (Oct 2026)",
+        "ar": "طيران الإمارات الأولى · دبي–نيويورك ذهاب وعودة (أكتوبر ٢٠٢٦)",
+        "unit_usd": 16443,
+        "quantity": 1,
+        "price_basis": "Return fare sampled August 6 for October 15, 2026",
+        "source": "https://blog.wego.com/emirates-first-business-class-ticket-price/",
+        "checked": "2026-11-02"
+      }
+    ]
+  },
+  {
+    "id": "price_final_tickets",
+    "options": [
+      {
+        "key": "world_cup",
+        "en": "2026 World Cup final · Category 1 (May offer)",
+        "ar": "نهائي كأس العالم ٢٠٢٦ · الفئة الأولى (عرض مايو)",
+        "unit_usd": 32970,
+        "quantity": 1,
+        "price_basis": "FIFA May 7 primary-market offer. Photo shows the tournament venue.",
+        "source": "https://www.theguardian.com/football/2026/may/08/world-cup-final-ticket-prices-tripled-fifa",
+        "checked": "2026-11-02"
+      },
+      {
+        "key": "super_bowl",
+        "en": "Super Bowl LX · average ticket (Feb 2)",
+        "ar": "السوبر بول ٦٠ · متوسط سعر التذكرة (٢ فبراير)",
+        "unit_usd": 8016,
+        "quantity": 1,
+        "price_basis": "TickPick average paid on February 2. Photo shows fans with tickets at an earlier Super Bowl.",
+        "source": "https://www.axios.com/2026/02/03/super-bowl-lx-ticket-price-trends-tick-pick",
+        "checked": "2026-11-02"
+      }
+    ]
+  },
+  {
+    "id": "price_playstations",
+    "options": [
+      {
+        "key": "ps1",
+        "en": "Original PlayStation · new collector unit",
+        "ar": "بلايستيشن الأصلي · نسخة جديدة لهواة الجمع",
+        "unit_usd": 1799.99,
+        "quantity": 4,
+        "price_basis": "Reported eBay sale for a new VGA 80 US launch model SCPH-1001. Photo shows the console outside its packaging.",
+        "source": "https://www.pricecharting.com/game/playstation/playstation-system",
+        "checked": "2026-11-02"
+      },
+      {
+        "key": "ps5_pro",
+        "en": "PlayStation 5 Pro",
+        "ar": "بلايستيشن ٥ برو",
+        "unit_usd": 899.99,
+        "quantity": 1,
+        "price_basis": "US recommended retail price effective April 2, 2026",
+        "source": "https://blog.playstation.com/2026/03/27/new-price-changes-for-ps5-ps5-pro-and-playstation-portal-remote-player/",
+        "checked": "2026-11-02"
+      }
+    ]
+  },
+  {
+    "id": "price_collectors",
+    "options": [
+      {
+        "key": "nautilus",
+        "en": "Patek Philippe Nautilus 5711 steel",
+        "ar": "باتيك فيليب نوتيلوس ٥٧١١ فولاذ",
+        "unit_usd": 114429,
+        "quantity": 1,
+        "price_basis": "November 2026 market estimate",
+        "source": "https://watchcharts.com/watches/brand/patek%20philippe/nautilus",
+        "checked": "2026-11-02"
+      },
+      {
+        "key": "croc_birkin",
+        "en": "Hermès crocodile Birkin 30",
+        "ar": "هيرميس بيركن ٣٠ من جلد التمساح",
+        "unit_usd": 62500,
+        "quantity": 1,
+        "price_basis": "September 2026 reported market price, Niloticus crocodile Birkin 30",
+        "source": "https://birkinbagstock.com/blog/monthly-market-report-2026-09",
+        "checked": "2026-11-02"
+      }
+    ]
+  },
+  {
+    "id": "price_gifts",
+    "options": [
+      {
+        "key": "louboutin_kate",
+        "en": "Christian Louboutin Kate 100",
+        "ar": "كريستيان لوبوتان كيت ١٠٠",
+        "unit_usd": 945,
+        "quantity": 1,
+        "price_basis": "US retail price for patent leather pumps",
+        "source": "https://us.christianlouboutin.com/us_en/kate-black-3191411bk01.html",
+        "checked": "2026-11-02"
+      },
+      {
+        "key": "chanel_no5",
+        "en": "Chanel Nº5 eau de parfum · 100 ml",
+        "ar": "شانيل رقم ٥ أو دو بارفان · ١٠٠ مل",
+        "unit_usd": 190,
+        "quantity": 1,
+        "price_basis": "US suggested retail for 3.4 fl oz",
+        "source": "https://www.chanel.com/us/fragrance/p/125530/n5-eau-de-parfum-spray/",
+        "checked": "2026-11-02"
+      },
+      {
+        "key": "cartier_love",
+        "en": "Cartier LOVE classic gold bracelet",
+        "ar": "سوار كارتييه لوف الذهبي الكلاسيكي",
+        "unit_usd": 7950,
+        "quantity": 1,
+        "price_basis": "US October 2026 list price",
+        "source": "https://casadi.co/prices/cartier-love-bracelet-classic",
+        "checked": "2026-11-02"
+      }
+    ]
+  },
+  {
+    "id": "price_watch_and_bag",
+    "options": [
+      {
+        "key": "croc_birkin",
+        "en": "Hermès crocodile Birkin 30",
+        "ar": "هيرميس بيركن ٣٠ من جلد التمساح",
+        "unit_usd": 62500,
+        "quantity": 1,
+        "price_basis": "September 2026 reported market price, Niloticus crocodile Birkin 30",
+        "source": "https://birkinbagstock.com/blog/monthly-market-report-2026-09",
+        "checked": "2026-11-02"
+      },
+      {
+        "key": "panthere",
+        "en": "Cartier Panthère, two-tone medium",
+        "ar": "كارتييه بانتير المتوسطة بلونين",
+        "unit_usd": 11400,
+        "quantity": 1,
+        "price_basis": "US retail, medium W2PN0019",
+        "source": "https://watchmydiamonds.com/brand-watches/cartier/panthere/two-tone.html",
+        "checked": "2026-11-02"
+      }
+    ]
   }
 ]

@@ -25,5 +25,231 @@
     "license": "CC BY-SA 4.0",
     "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
     "changes": "Resized and converted to WebP."
+  },
+  "jetour_t2": {
+    "key": "jetour_t2",
+    "source": "https://commons.wikimedia.org/wiki/File:Jetour_T2_2.0T_Beyond_XWD_Gobi_Beige_02.jpg",
+    "original": "https://upload.wikimedia.org/wikipedia/commons/c/c9/Jetour_T2_2.0T_Beyond_XWD_Gobi_Beige_02.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "creator": "Ethan Llamas",
+    "license": "CC BY-SA 4.0",
+    "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
+    "changes": "Resized and converted to WebP."
+  },
+  "chiron": {
+    "key": "chiron",
+    "source": "https://commons.wikimedia.org/wiki/File:Bugatti_Chiron,_IAA_2017,_Frankfurt_(1Y7A2855).jpg",
+    "original": "https://upload.wikimedia.org/wikipedia/commons/8/8c/Bugatti_Chiron%2C_IAA_2017%2C_Frankfurt_%281Y7A2855%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "creator": "Matti Blume",
+    "license": "CC BY-SA 4.0",
+    "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
+    "changes": "Resized and converted to WebP."
+  },
+  "aman_penthouse": {
+    "key": "aman_penthouse",
+    "source": "https://commons.wikimedia.org/wiki/File:Top_of_the_Crown_Building_in_front_of_712_Fifth_Avenue,_New_York,_2007.jpg",
+    "original": "https://upload.wikimedia.org/wikipedia/commons/9/97/Top_of_the_Crown_Building_in_front_of_712_Fifth_Avenue%2C_New_York%2C_2007.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "creator": "DimiTalen",
+    "license": "CC0",
+    "license_url": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
+    "changes": "Resized and converted to WebP."
+  },
+  "sf90": {
+    "key": "sf90",
+    "source": "https://commons.wikimedia.org/wiki/File:Ferrari_SF90,_BAS_24,_Brussels_(P1170486-RR).jpg",
+    "original": "https://upload.wikimedia.org/wikipedia/commons/4/45/Ferrari_SF90%2C_BAS_24%2C_Brussels_%28P1170486-RR%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "creator": "Matti Blume",
+    "license": "CC BY-SA 4.0",
+    "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
+    "changes": "Resized and converted to WebP."
+  },
+  "g63": {
+    "key": "g63",
+    "source": "https://commons.wikimedia.org/wiki/File:Mercedes-AMG_G_63_W465_(54904411961).jpg",
+    "original": "https://upload.wikimedia.org/wikipedia/commons/a/a3/Mercedes-AMG_G_63_W465_%2854904411961%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "creator": "Alexandre Prevot from Nancy, France",
+    "license": "CC BY-SA 4.0",
+    "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
+    "changes": "Resized and converted to WebP."
+  },
+  "range_sv": {
+    "key": "range_sv",
+    "source": "https://commons.wikimedia.org/wiki/File:Land_Rover_Range_Rover_SV_L_P615_SV_Serenity_Exterior_L460_Belgravia_Green_(4).jpg",
+    "original": "https://upload.wikimedia.org/wikipedia/commons/2/25/Land_Rover_Range_Rover_SV_L_P615_SV_Serenity_Exterior_L460_Belgravia_Green_%284%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "creator": "Damian B Oh",
+    "license": "CC BY-SA 4.0",
+    "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
+    "changes": "Resized and converted to WebP."
+  },
+  "croc_birkin": {
+    "key": "croc_birkin",
+    "source": "https://commons.wikimedia.org/wiki/File:Croc_Birkin_bag.jpg",
+    "original": "https://upload.wikimedia.org/wikipedia/commons/2/2e/Croc_Birkin_bag.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "creator": "Ohconfucius",
+    "license": "CC BY 3.0",
+    "license_url": "https://creativecommons.org/licenses/by/3.0",
+    "changes": "Resized and converted to WebP."
+  },
+  "urus": {
+    "key": "urus",
+    "source": "https://commons.wikimedia.org/wiki/File:Lamborghini_Urus_SE_DSC_8524.jpg",
+    "original": "https://upload.wikimedia.org/wikipedia/commons/f/f1/Lamborghini_Urus_SE_DSC_8524.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "creator": "Alexander Migl",
+    "license": "CC BY-SA 4.0",
+    "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
+    "changes": "Resized and converted to WebP."
+  },
+  "iphone_18_pro_max": {
+    "key": "iphone_18_pro_max",
+    "source": "https://commons.wikimedia.org/wiki/File:IPhone_18_Pro_Max_(burgundy_model)_-_3.jpg",
+    "original": "https://upload.wikimedia.org/wikipedia/commons/c/cd/IPhone_18_Pro_Max_%28burgundy_model%29_-_3.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "creator": "Kyu3a",
+    "license": "CC BY-SA 4.0",
+    "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
+    "changes": "Resized and converted to WebP."
+  },
+  "vision_pro": {
+    "key": "vision_pro",
+    "source": "https://commons.wikimedia.org/wiki/File:Apple_Vision_Pro_with_charger_(cropped).jpg",
+    "original": "https://upload.wikimedia.org/wikipedia/commons/8/8b/Apple_Vision_Pro_with_charger_%28cropped%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "creator": "Miyako Fujimiya",
+    "license": "CC BY-SA 4.0",
+    "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
+    "changes": "Resized and converted to WebP."
+  },
+  "z_fold8": {
+    "key": "z_fold8",
+    "source": "https://commons.wikimedia.org/wiki/File:Galaxy_Z_Fold8_-_4.jpg",
+    "original": "https://upload.wikimedia.org/wikipedia/commons/5/53/Galaxy_Z_Fold8_-_4.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "creator": "Kyu3a",
+    "license": "CC BY-SA 4.0",
+    "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
+    "changes": "Resized and converted to WebP."
+  },
+  "louboutin_kate": {
+    "key": "louboutin_kate",
+    "source": "https://commons.wikimedia.org/wiki/File:KATE_100_PATENT.jpg",
+    "original": "https://upload.wikimedia.org/wikipedia/commons/5/5a/KATE_100_PATENT.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "creator": "Jean Rouseau",
+    "license": "CC BY-SA 4.0",
+    "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
+    "changes": "Resized and converted to WebP."
+  },
+  "chanel_flap": {
+    "key": "chanel_flap",
+    "source": "https://commons.wikimedia.org/wiki/File:Chanel_CLASSIC_Double_Flap_2.55_.jpg",
+    "original": "https://upload.wikimedia.org/wikipedia/commons/1/19/Chanel_CLASSIC_Double_Flap_2.55_.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "creator": "Stylehouseofbonadeaseo",
+    "license": "CC BY-SA 4.0",
+    "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
+    "changes": "Resized and converted to WebP."
+  },
+  "lady_dior": {
+    "key": "lady_dior",
+    "source": "https://unsplash.com/photos/riVNAuPEI-Y",
+    "original": "https://images.unsplash.com/photo-1670834420771-dc6cd571741c",
+    "creator": "Karen Poniman",
+    "license": "Unsplash License",
+    "license_url": "https://unsplash.com/license",
+    "changes": "Resized and converted to WebP."
+  },
+  "panthere": {
+    "key": "panthere",
+    "source": "https://commons.wikimedia.org/wiki/File:Cartier_Panthere_lady%27s_2_tone_watch.jpg",
+    "original": "https://upload.wikimedia.org/wikipedia/commons/1/19/Cartier_Panthere_lady%27s_2_tone_watch.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "creator": "Gisling",
+    "license": "CC BY-SA 3.0",
+    "license_url": "http://creativecommons.org/licenses/by-sa/3.0/",
+    "changes": "Resized and converted to WebP."
+  },
+  "nautilus": {
+    "key": "nautilus",
+    "source": "https://commons.wikimedia.org/wiki/File:Patek-Philippe-Nautilus-5711.jpg",
+    "original": "https://upload.wikimedia.org/wikipedia/commons/7/74/Patek-Philippe-Nautilus-5711.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "creator": "Patek Philippe SA",
+    "license": "CC BY-SA 4.0",
+    "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
+    "changes": "Resized and converted to WebP."
+  },
+  "cybertruck": {
+    "key": "cybertruck",
+    "source": "https://commons.wikimedia.org/wiki/File:2024_Tesla_Cybertruck_Foundation_Series_IMG_0634_(cropped).jpg",
+    "original": "https://upload.wikimedia.org/wikipedia/commons/e/e9/2024_Tesla_Cybertruck_Foundation_Series_IMG_0634_%28cropped%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "creator": "Alexander-93",
+    "license": "CC BY-SA 4.0",
+    "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
+    "changes": "Resized and converted to WebP."
+  },
+  "cartier_love": {
+    "key": "cartier_love",
+    "source": "https://commons.wikimedia.org/wiki/File:Cartier_love_collection_re_launched.jpg",
+    "original": "https://upload.wikimedia.org/wikipedia/commons/f/fa/Cartier_love_collection_re_launched.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "creator": "Reresse",
+    "license": "CC BY-SA 3.0",
+    "license_url": "https://creativecommons.org/licenses/by-sa/3.0",
+    "changes": "Resized and converted to WebP."
+  },
+  "burj_suite": {
+    "key": "burj_suite",
+    "source": "https://commons.wikimedia.org/wiki/File:Burj_Al_Arab_5-Dubai_UAE-Andres_Larin.jpg",
+    "original": "https://upload.wikimedia.org/wikipedia/commons/0/0f/Burj_Al_Arab_5-Dubai_UAE-Andres_Larin.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "creator": "Saaremees",
+    "license": "CC BY-SA 4.0",
+    "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
+    "changes": "Resized and converted to WebP."
+  },
+  "emirates_first": {
+    "key": "emirates_first",
+    "source": "https://commons.wikimedia.org/wiki/File:Emirates_A380_First_Class_Suite_ITB_2017_(4).JPG",
+    "original": "https://upload.wikimedia.org/wikipedia/commons/0/08/Emirates_A380_First_Class_Suite_ITB_2017_%284%29.JPG?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "creator": "Travelarz",
+    "license": "CC BY-SA 3.0 pl",
+    "license_url": "https://creativecommons.org/licenses/by-sa/3.0/pl/deed.en",
+    "changes": "Resized and converted to WebP."
+  },
+  "world_cup": {
+    "key": "world_cup",
+    "source": "https://commons.wikimedia.org/wiki/File:MetLife_Stadium_Exterior,_2026_FIFA_World_Cup_(June_20,_2026).jpg",
+    "original": "https://upload.wikimedia.org/wikipedia/commons/2/2a/MetLife_Stadium_Exterior%2C_2026_FIFA_World_Cup_%28June_20%2C_2026%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "creator": "MiracleMiles",
+    "license": "CC BY 4.0",
+    "license_url": "https://creativecommons.org/licenses/by/4.0",
+    "changes": "Resized and converted to WebP."
+  },
+  "super_bowl": {
+    "key": "super_bowl",
+    "source": "https://commons.wikimedia.org/wiki/File:Three_fans_with_tickets_at_Super_Bowl_LI.jpg",
+    "original": "https://upload.wikimedia.org/wikipedia/commons/7/71/Three_fans_with_tickets_at_Super_Bowl_LI.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "creator": "Brian Allen/Voice of America",
+    "license": "Public domain",
+    "license_url": "https://creativecommons.org/publicdomain/mark/1.0/",
+    "changes": "Resized and converted to WebP."
+  },
+  "ps5_pro": {
+    "key": "ps5_pro",
+    "source": "https://commons.wikimedia.org/wiki/File:PlayStation_5_Pro_no_disc_drive.jpg",
+    "original": "https://upload.wikimedia.org/wikipedia/commons/8/82/PlayStation_5_Pro_no_disc_drive.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "creator": "BeatEmUps",
+    "license": "CC BY 3.0",
+    "license_url": "https://creativecommons.org/licenses/by/3.0",
+    "changes": "Resized and converted to WebP."
+  },
+  "ps1": {
+    "key": "ps1",
+    "source": "https://commons.wikimedia.org/wiki/File:PSX-Console-wController.png",
+    "original": "https://upload.wikimedia.org/wikipedia/commons/9/95/PSX-Console-wController.png?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "creator": "Evan-Amos",
+    "license": "Public domain",
+    "license_url": "https://creativecommons.org/publicdomain/mark/1.0/",
+    "description": "File:PSX-Console-wController.png",
+    "changes": "Resized and converted to WebP."
+  },
+  "chanel_no5": {
+    "key": "chanel_no5",
+    "source": "https://commons.wikimedia.org/wiki/File:CHANEL_No5_parfum_(cropped).jpg",
+    "original": "https://upload.wikimedia.org/wikipedia/commons/c/c0/CHANEL_No5_parfum_%28cropped%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "creator": "arz",
+    "license": "Public domain",
+    "license_url": "https://creativecommons.org/publicdomain/mark/1.0/",
+    "changes": "Resized and converted to WebP."
   }
 }

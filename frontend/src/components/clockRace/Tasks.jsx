@@ -1,4 +1,4 @@
-import React, {memo, useEffect, useRef, useMemo, useState} from 'react';
+import React, {memo, useMemo, useState} from 'react';
 import Face from './Face';
 import Sock from './Sock';
 import {PLAYER_COLORS} from './Dials';
@@ -143,18 +143,14 @@ export function FinalBoss({task, onPick}) {
 
 function PriceQuiz({task, onPick, lang}) {
   const [revealed, reveal] = useState(false);
-  const timer = useRef(null);
-  useEffect(() => () => clearTimeout(timer.current), []);
   const choose = i => {
-    if (timer.current !== null) return;
-    reveal(true);
-    timer.current = setTimeout(() => onPick(i), 1200);
+    if (!revealed && onPick(i)) reveal(true);
   };
   const money = new Intl.NumberFormat(lang === 'ar' ? 'ar-KW' : 'en-US', {
-    style: 'currency', currency: 'USD', maximumFractionDigits: 0
+    style: 'currency', currency: 'USD', minimumFractionDigits: 0, maximumFractionDigits: 2
   });
   return <div className="cr-price-options">{task.options.map((o, i) =>
-    <button type="button" key={o.key} disabled={revealed} onClick={() => choose(i)}>
+    <button type="button" key={o.key} disabled={revealed} aria-label={o.quantity > 1 ? o.quantity + " × " + o[lang] : o[lang]} onClick={() => choose(i)}>
       <span className="cr-price-stack">{Array.from({length: o.quantity}, (_, j) =>
         <img key={j} alt="" src={`/clock-race/art/prices/${o.key}.webp`} style={{transform: `translate(${j * 2}px, ${-j * 2}px)`}}/>)}
         {o.quantity > 1 && <b dir="ltr">×{o.quantity}</b>}

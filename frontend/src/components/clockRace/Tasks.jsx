@@ -4,7 +4,7 @@ import Sock from './Sock';
 import {PLAYER_COLORS} from './Dials';
 import {GEO, STROOP} from './content';
 import {GEO_SHAPES} from './geoShapes';
-import {Heaviest, Wallet, Shadow, MissingTile, DontTap} from './NewTasks';
+import {Heaviest, Shadow, MissingTile, DontTap} from './NewTasks';
 import {PictureQuiz} from './PictureTasks';
 import {frameVariant} from './frames';
 import {PixelFrame} from './PixelFrame';
@@ -141,5 +141,5 @@ export function FinalBoss({task, onPick}) {
 
 export const TASK_VIEWS = {odd: OddFace, stroop: Stroop, geo: Geography, sock: LonelySock, memory: Memory,
   vote: FriendVote, word: WordRush, boss: FinalBoss,
-  scale: Heaviest, wallet: Wallet, shadow: Shadow, tile: MissingTile, avoid: DontTap,
+  scale: Heaviest, shadow: Shadow, tile: MissingTile, avoid: DontTap,
   belong: PictureQuiz, older: PictureQuiz, compare: PictureQuiz, which: PictureQuiz, animal: PictureQuiz};

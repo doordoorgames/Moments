@@ -8,7 +8,6 @@ export function localCheck(task, value, rosterIds = []) {
     case 'geo':
     case 'sock':
     case 'scale':
-    case 'wallet':
     case 'shadow':
     case 'tile':
     case 'belong':

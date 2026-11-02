@@ -10,8 +10,10 @@ Round shape: task 11 is always the friend question and task 20 the final boss (t
 face). The other 18 mix the sad face, Stroop colours, geography maps, the lonely sock and the
 letter memory grid with 1-2 Word Rush tasks, spread so no type comes back within three tasks.
 """
+import collections
 import random
 import secrets
+import threading
 import time
 import unicodedata
 import uuid
@@ -35,7 +37,7 @@ NAME_MAX = 24
 # 30 tasks = 16 picture comparisons + 14 of the original challenges (boss included, vote when 3+ people).
 PICTURE_MIX = {'belong': 5, 'older': 4, 'compare': 4, 'which': 3}
 ORDINARY_MIX = {'odd': 1, 'stroop': 1, 'geo': 1, 'sock': 1, 'memory': 1, 'avoid': 1,
-                'scale': 1, 'wallet': 1, 'shadow': 1, 'tile': 1, 'animal': 1}
+                'scale': 1, 'shadow': 1, 'tile': 1, 'animal': 1}
 EXTRA_POOL = ['odd', 'stroop', 'avoid', 'sock', 'geo']  # fills the slots the vote or a 2nd Word Rush doesn't take  # 17; one fewer with 2 Word Rush
 # The memory grid is the only letter challenge: 1 or 2 a round (half of v2's ~3 letter tasks).
 WORD_VARIANTS = ('pair', 'country', 'fruit')
@@ -45,7 +47,7 @@ BOT_NAMES = ['نورة', 'سارة', 'فهد', 'دانة', 'عبدالله', 'ش
 # Simulated players: typical seconds per task type (measured feel: taps ~2-3s, typing ~7s,
 # memory = 12s of grid + the answer). Each task varies 0.7x-1.35x and ~12% are "wrong" (+1s).
 BOT_SECONDS = {'odd': 2.4, 'stroop': 2.2, 'geo': 2.6, 'sock': 3.4, 'memory': 7.0,
-               'word': 7.5, 'vote': 2.0, 'boss': 5.5, 'scale': 4.5, 'wallet': 4.5, 'shadow': 3.0, 'tile': 3.0, 'avoid': 2.3,
+               'word': 7.5, 'vote': 2.0, 'boss': 5.5, 'scale': 4.5, 'shadow': 3.0, 'tile': 3.0, 'avoid': 2.3,
                'belong': 3.8, 'older': 3.4, 'compare': 3.0, 'which': 3.4, 'animal': 2.2}
 BOT_WRONG = 0.12
 
@@ -262,7 +264,7 @@ def gen_boss(rng):
     return dict(type='boss', rows=rows, cols=cols, faces=faces, answer=twin)
 
 
-# ------------------------------------------------------------------ v4: heaviest, richest wallet, shadow, missing tile
+# ------------------------------------------------------------------ v4: heaviest, shadow, missing tile
 
 SCALE_STUFF = ['feathers', 'cotton', 'wood', 'sand', 'rice', 'stones', 'iron']
 SCALE_EACH = [0.25, 0.5, 0.75, 1, 1.5, 2, 3]
@@ -278,26 +280,6 @@ def gen_scale(rng, lang):
         top = sorted(totals, reverse=True)
         if len(set(totals)) == 3 and 0.25 <= top[0] - top[1] <= 2 and top[0] <= 12:
             return dict(type='scale', groups=groups, answer=totals.index(top[0]))
-
-
-NOTES = [20000, 10000, 5000, 1000, 500, 250]   # Kuwaiti dinar notes, in fils
-COINS = [100, 50, 20, 10, 5]
-
-
-def gen_wallet(rng, lang):
-    """Three wallets of notes and coins (fils). Tap the one holding the most money. A wallet of
-    many coins sits next to one with a single note, so counting pieces is the trap."""
-    while True:
-        wallets = []
-        for _ in range(3):
-            n = rng.randint(2, 5)
-            notes = rng.randint(0, min(2, n))
-            items = sorted([rng.choice(NOTES[1:]) for _ in range(notes)] + [rng.choice(COINS) for _ in range(n - notes)], reverse=True)
-            wallets.append(items)
-        totals = [sum(w) for w in wallets]
-        top = sorted(totals, reverse=True)
-        if len(set(totals)) == 3 and top[0] - top[1] <= max(250, top[0] * 0.45):
-            return dict(type='wallet', wallets=wallets, answer=totals.index(top[0]))
 
 
 def _norm(cells):
@@ -378,10 +360,30 @@ TILE_SET = {
 }
 
 
+# Server-wide deck of puzzle pictures: every picture comes up once before any comes back, in a fresh
+# random order each time round, and never the same picture twice in a row (across rooms and rounds).
+_TILE_DECK = []
+_TILE_LAST = [None]
+_LOCK = threading.Lock()
+
+
+def _draw_tile(rng):
+    with _LOCK:
+        if not _TILE_DECK:
+            deck = sorted(TILE_SET)
+            rng.shuffle(deck)
+            if deck[-1] == _TILE_LAST[0]:  # the deck is popped from the end
+                deck[0], deck[-1] = deck[-1], deck[0]
+            _TILE_DECK.extend(deck)
+        pic = _TILE_DECK.pop()
+        _TILE_LAST[0] = pic
+        return pic
+
+
 def gen_tile(rng, lang):
     """A picture with its bottom-right corner missing and four copies of that piece to pick from:
     the real one turned, three mirrored and turned. The options are shuffled on every draw."""
-    pic = rng.choice(sorted(TILE_SET))
+    pic = _draw_tile(rng)
     opts = [list(o) for o in TILE_SET[pic]]
     rng.shuffle(opts)
     return dict(type='tile', pic=pic, opts=opts, answer=next(i for i, o in enumerate(opts) if o[0] == 'none'))
@@ -391,7 +393,7 @@ def signature(t):
     keys = {'odd': ('rows', 'cols', 'odd', 'base', 'mood'), 'stroop': ('mode', 'target', 'choices'),
             'geo': ('variant', 'items'), 'sock': ('socks',), 'memory': ('grid',),
             'word': ('variant', 'first', 'last', 'letter'), 'vote': ('question',), 'boss': ('faces',),
-            'scale': ('groups',), 'wallet': ('wallets',), 'shadow': ('cells',), 'tile': ('pic',), 'avoid': ('rule', 'target', 'items'),
+            'scale': ('groups',), 'shadow': ('cells',), 'tile': ('pic',), 'avoid': ('rule', 'target', 'items'),
             'belong': ('qid',), 'older': ('qid',), 'compare': ('qid',), 'which': ('qid',), 'animal': ('options',)}[t['type']]
     return repr((t['type'],) + tuple(repr(t.get(k)) for k in keys))
 
@@ -430,9 +432,15 @@ FOUR_LAYOUTS = ['board', 'table']
 def gen_picture(rng, kind, used=(), seen=()):
     """One question from the bank: never twice in a round, and not one from recent rounds while
     fresh ones are left. Answer positions are shuffled; the fact stays on the server."""
-    pool = [x for x in K.BY_KIND[kind] if x['id'] not in used]
-    fresh = [x for x in pool if x['id'] not in seen]
-    x = rng.choice(fresh or pool or K.BY_KIND[kind])
+    pool = [x for x in K.BY_KIND[kind] if x['id'] not in used] or list(K.BY_KIND[kind])
+    last = {q: i for i, q in enumerate(seen)}  # seen is oldest first
+    fresh = [x for x in pool if x['id'] not in last]
+    if fresh:
+        x = rng.choice(fresh)
+    else:
+        # everything has been seen lately: take one of the longest-unseen quarter, never a recent one
+        pool.sort(key=lambda q: last[q['id']])
+        x = rng.choice(pool[:max(1, len(pool) // 4)])
     options = [list(o) for o in x['options']]
     right = options[0][0]
     rng.shuffle(options)
@@ -450,8 +458,11 @@ def gen_animal(rng, lang):
                 answer=picks.index(target), layout=rng.choice(FOUR_LAYOUTS))
 
 
-NEW_GENS = {'animal': gen_animal, 'avoid': gen_avoid, 'scale': gen_scale, 'wallet': gen_wallet, 'shadow': gen_shadow, 'tile': gen_tile}
-ANSWER_KINDS = ('stroop', 'geo', 'sock', 'scale', 'wallet', 'shadow', 'tile', 'animal') + K.KINDS
+# Picture questions served lately on this server, any room: a new room doesn't start from scratch.
+_RECENT_Q = collections.deque(maxlen=80)
+
+NEW_GENS = {'animal': gen_animal, 'avoid': gen_avoid, 'scale': gen_scale, 'shadow': gen_shadow, 'tile': gen_tile}
+ANSWER_KINDS = ('stroop', 'geo', 'sock', 'scale', 'shadow', 'tile', 'animal') + K.KINDS
 
 SPREAD = 3      # a type never comes back within 3 tasks
 OPENING = 5     # the first five tasks are five different challenges
@@ -661,8 +672,16 @@ def start(g, round_id, now=None, rng=None):
     if round_id != current or g['status'] == 'racing':
         return False
     roster = [dict(id=p['id'], name=p['name'], sim=bool(p['sim'])) for p in g['players']]
-    tasks = gen_round(roster, g['lang'], g['last_question'], rng, g.get('seen', []), g.get('seen_q', []))
-    g['seen_q'] = (g.get('seen_q', []) + [t['qid'] for t in tasks if t.get('qid')])[-90:]
+    with _LOCK:
+        recent_q = list(_RECENT_Q)
+    room_q = g.get('seen_q', [])
+    # the server's recent questions (any room) first, then this room's own, so the room's count as newest
+    seen_q = [q for q in recent_q if q not in set(room_q)] + room_q
+    tasks = gen_round(roster, g['lang'], g['last_question'], rng, g.get('seen', []), seen_q)
+    new_q = [t['qid'] for t in tasks if t.get('qid')]
+    g['seen_q'] = (room_q + new_q)[-110:]
+    with _LOCK:
+        _RECENT_Q.extend(new_q)
     g['seen'] = (g.get('seen', []) + [signature(t) for t in tasks if t['type'] in ('memory', 'avoid') + ANSWER_KINDS])[-120:]
     if tasks[VOTE_AT]['type'] == 'vote':
         g['last_question'] = tasks[VOTE_AT]['question']

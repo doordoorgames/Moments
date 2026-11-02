@@ -328,12 +328,6 @@
 .cr-app.cr-arcade .cr-scale-name{width:70px;font-size:24px;font-weight:700}
 .cr-app.cr-arcade .cr-bag{filter:drop-shadow(0 2px 0 var(--cr-charcoal-a))}
 
-/* wallet: the wallet is the drawing, kept; stepped corners instead of a box shadow */
-.cr-app.cr-arcade .cr-wallets{gap:12px}
-.cr-app.cr-arcade .cr-wallet{clip-path:var(--cr-step);box-shadow:inset 0 -5px 0 #5E4433}
-.cr-app.cr-arcade .cr-wallet:active{transform:translateY(3px)}
-.cr-app.cr-arcade .cr-note{font-family:var(--cr-pixel);font-weight:800;font-size:20px;clip-path:var(--cr-step-sm)}
-.cr-app.cr-arcade .cr-coin b{font-family:var(--cr-pixel);font-size:15px}
 
 /* shadow match: the toy and four shadows on the room */
 .cr-app.cr-arcade .cr-shadow{gap:16px}

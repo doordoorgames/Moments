@@ -2,7 +2,7 @@ import React, {memo} from 'react';
 import {frameVariant} from './frames';
 import {PixelFrame} from './PixelFrame';
 
-// v4 challenges: heaviest group, richest wallet, shadow match, missing tile. The first three are drawn
+// v4 challenges: heaviest group, shadow match, missing tile. The first two are drawn
 // from the task data (generated on the server each round); the missing tile uses ten hand-picked pictures.
 
 const tap = fn => ({
@@ -44,26 +44,6 @@ export function Heaviest({task, onPick, lang}) {
         </span>
       </button>;
     })}
-  </div>;
-}
-
-// ------------------------------------------------------------------ المحفظة
-const NOTE_COLORS = {20000: '#E8927C', 10000: '#7DBF9E', 5000: '#C4B8E0', 1000: '#ACCAE2', 500: '#E8A8B6', 250: '#F4DE96'};
-function noteLabel(fils, lang) {
-  const kd = {250: '¼', 500: '½'}[fils] || String(fils / 1000);
-  return lang === 'ar' ? `${kd} د.ك` : `KD ${kd}`;
-}
-
-export function Wallet({task, onPick, lang}) {
-  return <div className="cr-wallets">
-    {task.wallets.map((w, i) => <button key={i} type="button" className="cr-wallet" {...tap(() => onPick(i))}>
-      <span className="cr-wallet-flap"/>
-      <span className="cr-wallet-money" dir="ltr">
-        {w.map((v, k) => v >= 250
-          ? <span key={k} className="cr-note" style={{'--note': NOTE_COLORS[v]}} dir={lang === 'ar' ? 'rtl' : 'ltr'}>{noteLabel(v, lang)}</span>
-          : <span key={k} className={`cr-coin ${v >= 50 ? 'is-big' : ''}`}><b>{v}</b><small>{lang === 'ar' ? 'فلس' : 'fils'}</small></span>)}
-      </span>
-    </button>)}
   </div>;
 }
 

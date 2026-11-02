@@ -288,7 +288,7 @@ def play(g, pid, now, right=True):
 def wrong_value(t):
     return {'odd': -1, 'memory': 'x', 'stroop': -1, 'geo': -1, 'sock': -1,
             'word': 'zzzzz', 'vote': 'stranger', 'boss': -1,
-            'scale': -1, 'wallet': -1, 'shadow': -1, 'tile': -1, 'avoid': -1,
+            'scale': -1, 'shadow': -1, 'tile': -1, 'avoid': -1,
             'belong': -1, 'older': -1, 'compare': -1, 'which': -1, 'animal': -1}[t['type']]
 
 
@@ -485,13 +485,6 @@ def test_scale_has_one_heaviest():
     for s in range(300):
         t = E.gen_scale(random.Random(s), 'ar')
         totals = [g['count'] * g['each'] for g in t['groups']]
-        assert max(totals) == totals[t['answer']] and totals.count(max(totals)) == 1
-
-
-def test_wallet_has_one_richest():
-    for s in range(300):
-        t = E.gen_wallet(random.Random(s), 'ar')
-        totals = [sum(w) for w in t['wallets']]
         assert max(totals) == totals[t['answer']] and totals.count(max(totals)) == 1
 
 

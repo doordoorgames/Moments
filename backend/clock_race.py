@@ -11,6 +11,7 @@ face). The other 18 mix the sad face, Stroop colours, geography maps, the lonely
 letter memory grid with 1-2 Word Rush tasks, spread so no type comes back within three tasks.
 """
 import collections
+import colorsys
 import random
 import secrets
 import threading
@@ -323,9 +324,32 @@ def _nudge(rng, cells, grid=4):
     return None
 
 
+def _rot(cells, k):
+    """Turn a shape a quarter-turn clockwise k times (normalised to the top-left corner)."""
+    out = [tuple(c) for c in cells]
+    for _ in range(k % 4):
+        out = [(-y, x) for x, y in out]
+    return _norm(out)
+
+
+def _turns(cells):
+    """Every way the shape can be turned, as normalised shapes."""
+    return {tuple(_rot(cells, k)) for k in range(4)}
+
+
+def _dark_teal(rng):
+    """A dark teal for a shadow: random depth, hue nudged a little bluer or a little yellower."""
+    hue = (176 + rng.uniform(-16, 18)) / 360   # below 176 leans yellow-green, above leans blue
+    light = rng.uniform(0.15, 0.27)
+    sat = rng.uniform(0.32, 0.58)
+    r, g, b = colorsys.hls_to_rgb(hue, light, sat)
+    return '#%02X%02X%02X' % (round(r * 255), round(g * 255), round(b * 255))
+
+
 def gen_shadow(rng, lang):
-    """A block toy in colour and four black shadows: its own, its mirror image, and two with one
-    block moved. Every shape is new each round."""
+    """A block toy in colour and four dark shadows: its own, its mirror image, and two with one block
+    moved. Every shadow is turned (90, 180 or 270 degrees), the right one included, so matching takes
+    a mental turn; no wrong shadow can be turned into the toy. Every shape is new each round."""
     while True:
         cells = _blob(rng, rng.choice([6, 7]))
         mirror = sorted((3 - x, y) for x, y in cells)
@@ -333,13 +357,27 @@ def gen_shadow(rng, lang):
         if not a or not b:
             continue
         options = [cells, mirror, a, b]
-        if len({tuple(_norm(o)) for o in options}) < 4:
+        families = [_turns(o) for o in options]
+        # the wrong shadows must not be a turned copy of the toy, or of each other
+        if any(families[i] & families[j] for i in range(4) for j in range(i + 1, 4)):
+            continue
+        toy = tuple(_norm(cells))
+        turned = []
+        for o in options:
+            ks = [k for k in (1, 2, 3) if tuple(_rot(o, k)) != toy]
+            turned.append(_rot(o, rng.choice(ks)))
+        if tuple(turned[0]) == toy:  # fully symmetric shape: every turn looks the same, draw again
             continue
         colors = [rng.randrange(5) for _ in cells]
+        shades = []
+        while len(shades) < 4:
+            c = _dark_teal(rng)
+            if c not in shades:
+                shades.append(c)
         order = list(range(4))
         rng.shuffle(order)
-        return dict(type='shadow', cells=[list(c) for c in cells], colors=colors,
-                    options=[[list(c) for c in options[i]] for i in order], answer=order.index(0))
+        return dict(type='shadow', cells=[list(c) for c in cells], colors=colors, shades=shades,
+                    options=[[list(c) for c in turned[i]] for i in order], answer=order.index(0))
 
 
 # Ten hand-picked pictures, each squared, its bottom-right third missing (public/clock-race/tiles/).

@@ -491,9 +491,13 @@ def test_scale_has_one_heaviest():
 def test_shadow_options_all_differ_and_one_is_right():
     for s in range(300):
         t = E.gen_shadow(random.Random(s), 'en')
+        toy = tuple(E._norm([tuple(c) for c in t['cells']]))
         shapes = [tuple(E._norm([tuple(c) for c in o])) for o in t['options']]
         assert len(set(shapes)) == 4
-        assert shapes[t['answer']] == tuple(E._norm([tuple(c) for c in t['cells']]))
+        assert toy not in shapes  # every shadow is turned, the right one included
+        assert toy in E._turns(t['options'][t['answer']])
+        assert all(toy not in E._turns(o) for i, o in enumerate(t['options']) if i != t['answer'])
+        assert len(set(t['shades'])) == 4
 
 
 def test_tile_has_one_unmirrored_turned_piece():

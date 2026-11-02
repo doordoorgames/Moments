@@ -452,7 +452,7 @@ export default function ClockRace({onContinue}) {
             <small id="cr-code-hint" className={codeError ? 'is-error' : ''}>{codeError ? t.codeIncomplete(5 - joinCode.length) : t.codeHint}</small>
           </>}
           {ARCADE
-            ? <PixelFrame as="button" outline color={PX.green} className="cr-px-btn" disabled={busy || !name.trim()}><span className="cr-letter">{busy ? t.opening : intent === 'create' ? t.openRoom : t.enterRoom}</span></PixelFrame>
+            ? <PixelFrame as="button" outline color={PX.green} className={`cr-px-btn ${busy ? 'is-busy' : ''}`} disabled={busy || !name.trim()}><span className="cr-letter">{busy ? t.opening : intent === 'create' ? t.openRoom : t.enterRoom}</span></PixelFrame>
             : <button className="cr-primary" disabled={busy || !name.trim()}><span className="cr-letter">{busy ? t.opening : intent === 'create' ? t.openRoom : t.enterRoom}</span></button>}
         </form> : !ARCADE && <ul className="cr-rules">{t.rules.map(r => <li key={r}>{r}</li>)}</ul>}
         <a href="/clock-race/art/CREDITS.html" target="_blank" rel="noreferrer"><span className="cr-letter">{pickedLang === 'ar' ? 'مصادر الصور' : 'Image credits'}</span></a>

@@ -474,3 +474,6 @@
 /* lobby QR: dark maroon modules on light warm gray, inside a dark maroon stepped frame */
 .cr-app.cr-arcade .cr-qr-frame{width:148px;margin:14px auto 4px}
 .cr-app.cr-arcade .cr-qr-frame svg{display:block;width:100%;height:auto}
+/* while the room is opening, just the words: no frame */
+.cr-app.cr-arcade .cr-px-btn.is-busy > .px-frame-ring{display:none}
+.cr-app.cr-arcade .cr-px-btn.is-busy:disabled{opacity:1}

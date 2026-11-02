@@ -49,14 +49,14 @@ export function Heaviest({task, onPick, lang}) {
 
 // ------------------------------------------------------------------ الظل
 const TOY = ['#E8927C', '#7EC4BE', '#F4DE96', '#C4B8E0', '#E8A8B6'];
-function Blocks({cells, colors, shadow}) {
+function Blocks({cells, colors, shadow, shade = '#2B2733'}) {
   const xs = cells.map(c => c[0]), ys = cells.map(c => c[1]);
   const mx = Math.min(...xs), my = Math.min(...ys), w = Math.max(...xs) - mx + 1, h = Math.max(...ys) - my + 1;
   const size = Math.max(w, h);
   const ox = (size - w) / 2 - mx, oy = (size - h) / 2 - my;
   return <svg viewBox={`-0.15 -0.15 ${size + 0.3} ${size + 0.3}`} className="cr-blocks" aria-hidden="true">
     {cells.map(([x, y], i) => shadow
-      ? <rect key={i} x={x + ox - 0.01} y={y + oy - 0.01} width="1.02" height="1.02" fill="#2B2733"/>
+      ? <rect key={i} x={x + ox - 0.01} y={y + oy - 0.01} width="1.02" height="1.02" fill={shade}/>
       : <g key={i}>
         <rect x={x + ox} y={y + oy} width="1" height="1" fill={TOY[colors[i] % TOY.length]}/>
         <rect x={x + ox} y={y + oy} width="1" height="0.16" fill="#FFFFFF66"/>
@@ -70,7 +70,7 @@ export function Shadow({task, onPick}) {
     <div className="cr-shadow-toy"><Blocks cells={task.cells} colors={task.colors}/></div>
     <div className="cr-shadow-opts">
       {task.options.map((o, i) => <button key={i} type="button" className="cr-shadow-card" aria-label={`shadow ${i + 1}`} {...tap(() => onPick(i))}>
-        <Blocks cells={o} shadow/>
+        <Blocks cells={o} shadow shade={task.shades?.[i]}/>
       </button>)}
     </div>
   </div>;

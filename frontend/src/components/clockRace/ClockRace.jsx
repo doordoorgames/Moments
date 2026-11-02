@@ -458,7 +458,7 @@ export default function ClockRace({onContinue}) {
             <small id="cr-code-hint" className={codeError ? 'is-error' : ''}>{codeError ? t.codeIncomplete(5 - joinCode.length) : t.codeHint}</small>
           </>}
           {ARCADE
-            ? <PixelFrame as="button" outline color={PX.green} className={`cr-px-btn ${busy ? 'is-busy' : ''}`} disabled={busy || !name.trim()}><span className="cr-letter">{busy ? t.opening : intent === 'create' ? t.openRoom : t.enterRoom}</span></PixelFrame>
+            ? <button className="cr-arrow-btn" disabled={busy || !name.trim()}>{!busy && <i className="cr-next-arrow" aria-hidden="true"/>}<span className="cr-letter">{busy ? t.opening : intent === 'create' ? t.openRoom : t.enterRoom}</span></button>
             : <button className="cr-primary" disabled={busy || !name.trim()}><span className="cr-letter">{busy ? t.opening : intent === 'create' ? t.openRoom : t.enterRoom}</span></button>}
         </form> : !ARCADE && <ul className="cr-rules">{t.rules.map(r => <li key={r}>{r}</li>)}</ul>}
         <a href="/clock-race/art/CREDITS.html" target="_blank" rel="noreferrer"><span className="cr-letter">{pickedLang === 'ar' ? 'مصادر الصور' : 'Image credits'}</span></a>
@@ -489,7 +489,7 @@ export default function ClockRace({onContinue}) {
             {p.id === game.host && <small>{t.host}</small>}{p.sim && <small className="is-bot">{t.bot}</small>}{p.id === me && <small className="is-me">{t.you}</small>}</li>)}</ul>
         </div>
         {isHost ? <>{ARCADE
-          ? <PixelFrame as="button" outline className="cr-px-btn cr-start" disabled={busy} onClick={start}><span className="cr-letter">{t.start}</span></PixelFrame>
+          ? <button className="cr-arrow-btn cr-start" disabled={busy} onClick={start}><i className="cr-next-arrow" aria-hidden="true"/><span className="cr-letter">{t.start}</span></button>
           : <button className="cr-primary cr-start" disabled={busy} onClick={start}><span className="cr-letter">{t.start}</span></button>}
           {game.dev ? <p className="cr-fine">{t.testRoom}</p> : game.players.length < 2 && <p className="cr-fine">{t.soloOk}</p>}</>
           : <p className="cr-waiting">{t.waitHost(hostName)}</p>}
@@ -526,7 +526,7 @@ export default function ClockRace({onContinue}) {
             </AppErrorBoundary>
           </div>
         </div>)
-      : cabinet('', null, <div className="cr-done-wait"><Dial done={TOTAL} color={PLAYER_COLORS[(game.players.find(p => p.id === me)?.color || 0) % 12]} size={120} big/></div>)}
+      : cabinet('', null, <div className="cr-done-wait">{ARCADE ? <PixelClock size={96} className="cr-finish-clock"/> : <Dial done={TOTAL} color={PLAYER_COLORS[(game.players.find(p => p.id === me)?.color || 0) % 12]} size={120} big/>}</div>)}
     {counting && <div className="cr-countdown" aria-live="assertive"><span key={seconds}>{seconds}</span></div>}
     {!counting && game.status === 'racing' && clock - startsAt < 700 && inRace && pos === 0 && <div className="cr-countdown is-go"><span>{t.go}</span></div>}
     {stars && <Stars key={`s${stars.id}`} x={stars.x} y={stars.y}/>}
@@ -538,7 +538,7 @@ export default function ClockRace({onContinue}) {
     {game.status === 'finished' && <div className="cr-finish" role="dialog" aria-modal="true" aria-labelledby="cr-finish-title">
       <div className="cr-finish-card">
         <span className="cr-finish-kicker">{t.winnerTitle}</span>
-        {winner && <Dial done={TOTAL} color={PLAYER_COLORS[winner.color % PLAYER_COLORS.length]} size={124} big/>}
+        {winner && (ARCADE ? <PixelClock size={96} className="cr-finish-clock"/> : <Dial done={TOTAL} color={PLAYER_COLORS[winner.color % PLAYER_COLORS.length]} size={124} big/>)}
         <h2 id="cr-finish-title" dir="auto">{winner?.id === me ? t.youWon : t.won(winner?.name || '')}</h2>
         <ol className="cr-results">{[...players].filter(p => p.racing).sort((a, b) => (b.id === game.winner) - (a.id === game.winner) || b.done - a.done || (b.right || 0) - (a.right || 0)).map(p =>
           <li key={p.id} className={p.id === me ? 'is-me' : ''}><i style={{background: PLAYER_COLORS[p.color % PLAYER_COLORS.length]}}/><span dir="auto">{p.name}</span>

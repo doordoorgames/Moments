@@ -120,7 +120,7 @@
 .px-frame--outline > .px-frame-shadow{clip-path:var(--px-outline)}
 
 /* a picture still on its way: the frame keeps a plain dark-teal square (never an empty or broken box) */
-.px-frame > .px-frame-body{background:var(--px-lo,#367674)}
+.px-frame:not(.px-frame--outline) > .px-frame-body{background:var(--px-lo,#367674)}
 .cr-app .cr-pic-art > .px-frame.is-loading{--ph:calc(min(100cqw - var(--pixel-frame-shadow-x), 100cqh - var(--pixel-frame-shadow-y)) * .82);width:var(--ph);height:var(--ph)}
 .cr-app .cr-pic-art > .px-frame.is-loading > .px-frame-body{width:100%;height:100%}
 .cr-app .cr-pic-art > .px-frame.is-loading .cr-art{position:absolute;inset:0;opacity:0}

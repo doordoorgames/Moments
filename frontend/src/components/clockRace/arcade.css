@@ -476,26 +476,11 @@
 .cr-app.cr-arcade .cr-nick::placeholder{color:rgba(207,198,183,.45);text-shadow:none;font-weight:600;text-transform:none;letter-spacing:.02em}
 .cr-app.cr-arcade .cr-nick-frame:focus-within{--pixel-outline-color:var(--cr-pink-l)}
 
-/* CREATE / START: the word inside a stepped outline, sized to the word */
-.cr-app.cr-arcade .cr-px-btn{display:block;width:fit-content;min-width:132px;max-width:100%;margin:18px auto 0;
-  background:none;border:0;border-radius:0;box-shadow:none;cursor:pointer;color:var(--cr-ivory);touch-action:manipulation;-webkit-tap-highlight-color:transparent;
-  font-family:var(--cr-pixel);font-weight:800;font-size:30px;line-height:1;transition:transform .06s steps(2)}
-.cr-app.cr-arcade .cr-px-btn > .px-frame-body{display:flex;align-items:center;justify-content:center;min-height:44px;padding:4px 26px 8px;box-sizing:border-box}
-.cr-app.cr-arcade[lang=en] .cr-px-btn{font-family:var(--cr-press);font-weight:400;font-size:18px;letter-spacing:.04em}
-.cr-app.cr-arcade[lang=en] .cr-px-btn > .px-frame-body{padding:10px 24px 12px}
-.cr-app.cr-arcade .cr-px-btn .cr-letter{filter:drop-shadow(1px 0 0 var(--cr-charcoal)) drop-shadow(-1px 0 0 var(--cr-charcoal)) drop-shadow(0 1px 0 var(--cr-charcoal)) drop-shadow(0 -1px 0 var(--cr-charcoal)) drop-shadow(0 2px 0 var(--cr-charcoal))}
-.cr-app.cr-arcade .cr-px-btn:active:not(:disabled){transform:translateY(2px)}
-.cr-app.cr-arcade .cr-px-btn:disabled{opacity:.45;cursor:default}
-.cr-app.cr-arcade .cr-px-btn:focus-visible{outline:none;--pixel-outline-color:var(--cr-pink-l)}
-.cr-app.cr-arcade .cr-form .cr-px-btn{margin-top:18px}
 .cr-app.cr-arcade .cr-lobby-body>.cr-start{margin-top:26px}
 
 /* lobby QR: dark maroon modules on light warm gray, inside a dark maroon stepped frame */
 .cr-app.cr-arcade .cr-qr-frame{width:148px;margin:14px auto 4px}
 .cr-app.cr-arcade .cr-qr-frame svg{display:block;width:100%;height:auto}
-/* while the room is opening, just the words: no frame */
-.cr-app.cr-arcade .cr-px-btn.is-busy > .px-frame-ring{display:none}
-.cr-app.cr-arcade .cr-px-btn.is-busy:disabled{opacity:1}
 /* results: "Next round" is just the word, pink, blinking like an arcade prompt; no button box */
 .cr-app.cr-arcade .cr-next-word{display:block;margin:20px auto 0;min-height:48px;padding:6px 18px;border:0;background:none;box-shadow:none;cursor:pointer;
   font-family:var(--cr-pixel);font-weight:800;font-size:34px;line-height:1;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
@@ -534,3 +519,19 @@
   .cr-logo.is-animated .cr-logo-col{opacity:1;animation:none}
   .cr-logo.is-animated .cr-logo-glint{display:none}
 }
+
+/* CREATE / START / JOIN: just the word with the blinking pixel arrow before it; no frame, no fill.
+   The invisible touch area stays generous. */
+.cr-app.cr-arcade .cr-arrow-btn{display:flex;align-items:center;justify-content:center;gap:12px;width:fit-content;max-width:100%;min-height:52px;margin:18px auto 0;padding:4px 22px 8px;
+  border:0;border-radius:0;background:none;box-shadow:none;cursor:pointer;color:var(--cr-ivory);touch-action:manipulation;-webkit-tap-highlight-color:transparent;
+  font-family:var(--cr-pixel);font-weight:800;font-size:34px;line-height:1}
+.cr-app.cr-arcade[lang=en] .cr-arrow-btn{font-family:var(--cr-press);font-weight:400;font-size:20px;letter-spacing:.04em}
+.cr-app.cr-arcade .cr-arrow-btn .cr-letter{filter:drop-shadow(1px 0 0 var(--cr-charcoal)) drop-shadow(-1px 0 0 var(--cr-charcoal)) drop-shadow(0 1px 0 var(--cr-charcoal)) drop-shadow(0 -1px 0 var(--cr-charcoal)) drop-shadow(0 2px 0 var(--cr-charcoal))}
+.cr-app.cr-arcade .cr-arrow-btn:active:not(:disabled) .cr-letter{transform:translateY(2px)}
+.cr-app.cr-arcade .cr-arrow-btn:disabled{cursor:default}
+.cr-app.cr-arcade .cr-arrow-btn:disabled .cr-next-arrow{display:none}
+.cr-app.cr-arcade .cr-arrow-btn:disabled .cr-letter{opacity:.5}
+.cr-app.cr-arcade .cr-arrow-btn:focus-visible{outline:2px dashed var(--cr-pink-l);outline-offset:2px}
+.cr-app.cr-arcade .cr-arrow-btn .cr-next-arrow{width:12px;height:17px}
+/* results / waiting: the pixel clock */
+.cr-app.cr-arcade .cr-finish-clock{display:block;margin:10px auto}

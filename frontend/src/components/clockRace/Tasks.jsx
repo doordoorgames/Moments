@@ -1,4 +1,4 @@
-import React, {memo, useMemo, useState} from 'react';
+import React, {memo, useEffect, useRef, useMemo, useState} from 'react';
 import Face from './Face';
 import Sock from './Sock';
 import {PLAYER_COLORS} from './Dials';
@@ -141,13 +141,36 @@ export function FinalBoss({task, onPick}) {
   </div>;
 }
 
+function PriceQuiz({task, onPick, lang}) {
+  const [revealed, reveal] = useState(false);
+  const timer = useRef(null);
+  useEffect(() => () => clearTimeout(timer.current), []);
+  const choose = i => {
+    if (timer.current !== null) return;
+    reveal(true);
+    timer.current = setTimeout(() => onPick(i), 1200);
+  };
+  const money = new Intl.NumberFormat(lang === 'ar' ? 'ar-KW' : 'en-US', {
+    style: 'currency', currency: 'USD', maximumFractionDigits: 0
+  });
+  return <div className="cr-price-options">{task.options.map((o, i) =>
+    <button type="button" key={o.key} disabled={revealed} onClick={() => choose(i)}>
+      <span className="cr-price-stack">{Array.from({length: o.quantity}, (_, j) =>
+        <img key={j} alt="" src={`/clock-race/art/prices/${o.key}.webp`} style={{transform: `translate(${j * 2}px, ${-j * 2}px)`}}/>)}
+        {o.quantity > 1 && <b dir="ltr">×{o.quantity}</b>}
+      </span>
+      <span>{o[lang]}</span>
+      {revealed && <strong>{money.format(o.unit_usd * o.quantity)}</strong>}
+    </button>)}</div>;
+}
+
 function Alphabet({task, onPick}) {
   return <div className="cr-alphabet">{task.letters.map((letter, i) =>
     <button key={letter} type="button" {...tap(() => onPick(i))}>{letter}</button>
   )}</div>;
 }
 
-export const TASK_VIEWS = {alphabet: Alphabet, odd: OddFace, stroop: Stroop, geo: Geography, sock: LonelySock, memory: Memory,
+export const TASK_VIEWS = {price: PriceQuiz, alphabet: Alphabet, odd: OddFace, stroop: Stroop, geo: Geography, sock: LonelySock, memory: Memory,
   vote: FriendVote, word: WordRush, boss: FinalBoss,
   scale: Heaviest, shadow: Shadow, tile: MissingTile, avoid: DontTap,
   belong: PictureQuiz, older: PictureQuiz, compare: PictureQuiz, which: PictureQuiz, animal: PictureQuiz};

@@ -12,6 +12,8 @@ letter memory grid with 1-2 Word Rush tasks, spread so no type comes back within
 """
 import collections
 import colorsys
+import json
+from pathlib import Path
 import random
 import secrets
 import threading
@@ -22,6 +24,8 @@ import uuid
 import clock_race_ar as AR
 import clock_race_data as D
 import clock_race_bank as K
+
+PRICE_BANK = json.loads(Path(__file__).with_name('clock_race_prices.json').read_text(encoding='utf-8'))
 
 VERSION = 7
 MAX_PLAYERS = 12
@@ -47,7 +51,7 @@ TEST_BOT = 'Test Bot'
 BOT_NAMES = ['نورة', 'سارة', 'فهد', 'دانة', 'عبدالله', 'شوق', 'يوسف', 'مريم', 'Noor', 'Hamad', 'لولوة', 'بدر']
 # Simulated players: typical seconds per task type (measured feel: taps ~2-3s, typing ~7s,
 # memory = 12s of grid + the answer). Each task varies 0.7x-1.35x and ~12% are "wrong" (+1s).
-BOT_SECONDS = {'alphabet': 2.2, 'odd': 2.4, 'stroop': 2.2, 'geo': 2.6, 'sock': 3.4, 'memory': 7.0,
+BOT_SECONDS = {'price': 4.0, 'alphabet': 2.2, 'odd': 2.4, 'stroop': 2.2, 'geo': 2.6, 'sock': 3.4, 'memory': 7.0,
                'word': 7.5, 'vote': 2.0, 'boss': 5.5, 'scale': 4.5, 'shadow': 3.0, 'tile': 3.0, 'avoid': 2.3,
                'belong': 3.8, 'older': 3.4, 'compare': 3.0, 'which': 3.4, 'animal': 2.2}
 BOT_WRONG = 0.12
@@ -428,7 +432,7 @@ def gen_tile(rng, lang):
 
 
 def signature(t):
-    keys = {'alphabet': ('letters',), 'odd': ('rows', 'cols', 'odd', 'base', 'mood'), 'stroop': ('mode', 'target', 'choices'),
+    keys = {'price': ('qid',), 'alphabet': ('letters',), 'odd': ('rows', 'cols', 'odd', 'base', 'mood'), 'stroop': ('mode', 'target', 'choices'),
             'geo': ('variant', 'items'), 'sock': ('socks',), 'memory': ('grid',),
             'word': ('variant', 'first', 'last', 'letter'), 'vote': ('question',), 'boss': ('faces',),
             'scale': ('groups',), 'shadow': ('cells',), 'tile': ('pic',), 'avoid': ('rule', 'target', 'items'),
@@ -506,7 +510,7 @@ def gen_alphabet(rng, lang):
 
 
 NEW_GENS = {'alphabet': gen_alphabet, 'animal': gen_animal, 'avoid': gen_avoid, 'scale': gen_scale, 'shadow': gen_shadow, 'tile': gen_tile}
-ANSWER_KINDS = ('alphabet', 'stroop', 'geo', 'sock', 'scale', 'shadow', 'tile', 'animal') + K.KINDS
+ANSWER_KINDS = ('price', 'alphabet', 'stroop', 'geo', 'sock', 'scale', 'shadow', 'tile', 'animal') + K.KINDS
 
 SPREAD = 3      # a type never comes back within 3 tasks
 OPENING = 5     # the first five tasks are five different challenges
@@ -519,6 +523,8 @@ def plan_types(rng, vote=True):
     and no face task right before the face boss."""
     mix = dict(ORDINARY_MIX)
     mix.update(PICTURE_MIX)
+    mix['price'] = min(3, len(PRICE_BANK))
+    mix['compare'] -= mix['price']
     room = (TASKS - 1 - (1 if vote else 0)) - sum(mix.values())
     words = rng.choice([1, min(2, room)])
     mix['word'] = words
@@ -577,6 +583,15 @@ def gen_round(roster, lang='ar', avoid_question=None, rng=None, avoid=(), seen_q
                 t = gen_sock(rng, lang)
             elif kind == 'memory':
                 t = gen_memory(rng, lang)
+            elif kind == 'price':
+                used = {task.get('qid') for task in tasks}
+                pool = [q for q in PRICE_BANK if q['id'] not in used]
+                last = {qid: i for i, qid in enumerate(seen_q)}
+                oldest = min(last.get(q['id'], -1) for q in pool)
+                q = rng.choice([q for q in pool if last.get(q['id'], -1) == oldest])
+                opts = rng.sample(q['options'], len(q['options']))
+                answer = max(range(len(opts)), key=lambda i: opts[i]['unit_usd'] * opts[i]['quantity'])
+                t = dict(type='price', qid=q['id'], options=opts, answer=answer)
             elif kind in K.KINDS:
                 t = gen_picture(rng, kind, {x.get('qid') for x in tasks}, seen_q)
             elif kind == 'avoid':

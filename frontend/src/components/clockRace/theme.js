@@ -16,7 +16,7 @@ export const ARCADE = pick();
 // (see public/clock-race/arcade/README.md for sizes).
 export const ARCADE_ASSETS = '/clock-race/arcade/';
 const art = file => `url(${ARCADE_ASSETS}${file})`;
-export const ARCADE_VARS = {'--arc-room': art('a-room.jpg'), '--arc-paint': art('d-paint-texture.png')};
+export const ARCADE_VARS = {'--arc-room': art('a-room-2.jpg'), '--arc-paint': art('d-paint-texture.png')};
 
 // The two pixel faces, self-hosted in public/fonts/clock-race/ (OFL, licences alongside):
 //   Handjet        every word players read, Arabic and English (a real pixel-grid Arabic)

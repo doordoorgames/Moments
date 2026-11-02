@@ -141,7 +141,13 @@ export function FinalBoss({task, onPick}) {
   </div>;
 }
 
-export const TASK_VIEWS = {odd: OddFace, stroop: Stroop, geo: Geography, sock: LonelySock, memory: Memory,
+function Alphabet({task, onPick}) {
+  return <div className="cr-alphabet">{task.letters.map((letter, i) =>
+    <button key={letter} type="button" {...tap(() => onPick(i))}>{letter}</button>
+  )}</div>;
+}
+
+export const TASK_VIEWS = {alphabet: Alphabet, odd: OddFace, stroop: Stroop, geo: Geography, sock: LonelySock, memory: Memory,
   vote: FriendVote, word: WordRush, boss: FinalBoss,
   scale: Heaviest, shadow: Shadow, tile: MissingTile, avoid: DontTap,
   belong: PictureQuiz, older: PictureQuiz, compare: PictureQuiz, which: PictureQuiz, animal: PictureQuiz};

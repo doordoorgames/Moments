@@ -383,3 +383,6 @@ html.cr-doc,html.cr-doc body{overscroll-behavior-y:none}
 html.cr-doc body{min-height:calc(100vh + 1px)}
 @supports (height:100lvh){html.cr-doc body{min-height:calc(100lvh + 1px)}}
 .cr-app{padding-left:env(safe-area-inset-left);padding-right:env(safe-area-inset-right)}
+
+.cr-alphabet { display: flex; gap: 1rem; justify-content: center; }
+.cr-alphabet button { border: 0; border-radius: 0; background: #234e51; color: ivory; font: inherit; font-size: clamp(2.5rem, 12vw, 5rem); width: min(34vw, 9rem); aspect-ratio: 1; }

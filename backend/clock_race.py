@@ -38,7 +38,7 @@ NAME_MAX = 24
 # 30 tasks = 16 picture comparisons + 14 of the original challenges (boss included, vote when 3+ people).
 PICTURE_MIX = {'belong': 5, 'older': 4, 'compare': 4, 'which': 3}
 ORDINARY_MIX = {'odd': 1, 'stroop': 1, 'geo': 1, 'sock': 1, 'memory': 1, 'avoid': 1,
-                'scale': 1, 'shadow': 1, 'tile': 1, 'animal': 1}
+                'alphabet': 1, 'scale': 1, 'shadow': 1, 'tile': 1, 'animal': 1}
 EXTRA_POOL = ['odd', 'stroop', 'avoid', 'sock', 'geo']  # fills the slots the vote or a 2nd Word Rush doesn't take  # 17; one fewer with 2 Word Rush
 # The memory grid is the only letter challenge: 1 or 2 a round (half of v2's ~3 letter tasks).
 WORD_VARIANTS = ('pair', 'country', 'fruit')
@@ -47,7 +47,7 @@ TEST_BOT = 'Test Bot'
 BOT_NAMES = ['نورة', 'سارة', 'فهد', 'دانة', 'عبدالله', 'شوق', 'يوسف', 'مريم', 'Noor', 'Hamad', 'لولوة', 'بدر']
 # Simulated players: typical seconds per task type (measured feel: taps ~2-3s, typing ~7s,
 # memory = 12s of grid + the answer). Each task varies 0.7x-1.35x and ~12% are "wrong" (+1s).
-BOT_SECONDS = {'odd': 2.4, 'stroop': 2.2, 'geo': 2.6, 'sock': 3.4, 'memory': 7.0,
+BOT_SECONDS = {'alphabet': 2.2, 'odd': 2.4, 'stroop': 2.2, 'geo': 2.6, 'sock': 3.4, 'memory': 7.0,
                'word': 7.5, 'vote': 2.0, 'boss': 5.5, 'scale': 4.5, 'shadow': 3.0, 'tile': 3.0, 'avoid': 2.3,
                'belong': 3.8, 'older': 3.4, 'compare': 3.0, 'which': 3.4, 'animal': 2.2}
 BOT_WRONG = 0.12
@@ -428,7 +428,7 @@ def gen_tile(rng, lang):
 
 
 def signature(t):
-    keys = {'odd': ('rows', 'cols', 'odd', 'base', 'mood'), 'stroop': ('mode', 'target', 'choices'),
+    keys = {'alphabet': ('letters',), 'odd': ('rows', 'cols', 'odd', 'base', 'mood'), 'stroop': ('mode', 'target', 'choices'),
             'geo': ('variant', 'items'), 'sock': ('socks',), 'memory': ('grid',),
             'word': ('variant', 'first', 'last', 'letter'), 'vote': ('question',), 'boss': ('faces',),
             'scale': ('groups',), 'shadow': ('cells',), 'tile': ('pic',), 'avoid': ('rule', 'target', 'items'),
@@ -499,8 +499,14 @@ def gen_animal(rng, lang):
 # Picture questions served lately on this server, any room: a new room doesn't start from scratch.
 _RECENT_Q = collections.deque(maxlen=80)
 
-NEW_GENS = {'animal': gen_animal, 'avoid': gen_avoid, 'scale': gen_scale, 'shadow': gen_shadow, 'tile': gen_tile}
-ANSWER_KINDS = ('stroop', 'geo', 'sock', 'scale', 'shadow', 'tile', 'animal') + K.KINDS
+def gen_alphabet(rng, lang):
+    alphabet = 'أبتثجحخدذرزسشصضطظعغفقكلمنهوي' if lang == 'ar' else 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+    positions = rng.sample(range(len(alphabet)), 2)
+    return dict(type='alphabet', letters=[alphabet[i] for i in positions], answer=positions.index(max(positions)))
+
+
+NEW_GENS = {'alphabet': gen_alphabet, 'animal': gen_animal, 'avoid': gen_avoid, 'scale': gen_scale, 'shadow': gen_shadow, 'tile': gen_tile}
+ANSWER_KINDS = ('alphabet', 'stroop', 'geo', 'sock', 'scale', 'shadow', 'tile', 'animal') + K.KINDS
 
 SPREAD = 3      # a type never comes back within 3 tasks
 OPENING = 5     # the first five tasks are five different challenges

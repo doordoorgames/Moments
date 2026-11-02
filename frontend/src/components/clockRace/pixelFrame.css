@@ -92,3 +92,29 @@
 .cr-app .cr-tile-card.px-frame{padding:var(--pixel-frame-thickness);border:0;background:none}
 /* four pictures to a screen: slightly smaller shadow so the grid stays tidy */
 .cr-app .cr-pics.is-n4 .px-frame{--pixel-frame-shadow-x:5px;--pixel-frame-shadow-y:5px}
+
+/* ================================================================ OUTLINE MODE (controls on the room)
+   A stepped pixel ring with a transparent inside: buttons, the name field, the QR. One polygon cut
+   with evenodd, so the ring is exact at any size and the room shows through the middle. */
+:root{
+  --pixel-outline-width:3px;
+  --pixel-outline-color:#F7EEDB;
+  --pixel-outline-keyline:#2A2630;   /* thin dark pixel line around the ring for contrast */
+  --pixel-outline-fill:transparent;
+  --pixel-outline-pad-x:22px;
+  --pixel-outline-pad-y:6px;
+}
+.px-frame--outline{
+  --w:var(--pixel-outline-width);
+  --pixel-frame-block:3px;
+  padding:var(--w);
+  --px-ring:polygon(evenodd, var(--s2) 0, calc(100% - var(--s2)) 0, calc(100% - var(--s2)) var(--s), calc(100% - var(--s)) var(--s), calc(100% - var(--s)) var(--s2), 100% var(--s2), 100% calc(100% - var(--s2)), calc(100% - var(--s)) calc(100% - var(--s2)), calc(100% - var(--s)) calc(100% - var(--s)), calc(100% - var(--s2)) calc(100% - var(--s)), calc(100% - var(--s2)) 100%, var(--s2) 100%, var(--s2) calc(100% - var(--s)), var(--s) calc(100% - var(--s)), var(--s) calc(100% - var(--s2)), 0 calc(100% - var(--s2)), 0 var(--s2), var(--s) var(--s2), var(--s) var(--s), var(--s2) var(--s), var(--s2) 0, calc(var(--w) + var(--s2)) var(--w), calc(100% - var(--w) - var(--s2)) var(--w), calc(100% - var(--w) - var(--s2)) calc(var(--w) + var(--s)), calc(100% - var(--w) - var(--s)) calc(var(--w) + var(--s)), calc(100% - var(--w) - var(--s)) calc(var(--w) + var(--s2)), calc(100% - var(--w)) calc(var(--w) + var(--s2)), calc(100% - var(--w)) calc(100% - var(--w) - var(--s2)), calc(100% - var(--w) - var(--s)) calc(100% - var(--w) - var(--s2)), calc(100% - var(--w) - var(--s)) calc(100% - var(--w) - var(--s)), calc(100% - var(--w) - var(--s2)) calc(100% - var(--w) - var(--s)), calc(100% - var(--w) - var(--s2)) calc(100% - var(--w)), calc(var(--w) + var(--s2)) calc(100% - var(--w)), calc(var(--w) + var(--s2)) calc(100% - var(--w) - var(--s)), calc(var(--w) + var(--s)) calc(100% - var(--w) - var(--s)), calc(var(--w) + var(--s)) calc(100% - var(--w) - var(--s2)), var(--w) calc(100% - var(--w) - var(--s2)), var(--w) calc(var(--w) + var(--s2)), calc(var(--w) + var(--s)) calc(var(--w) + var(--s2)), calc(var(--w) + var(--s)) calc(var(--w) + var(--s)), calc(var(--w) + var(--s2)) calc(var(--w) + var(--s)), calc(var(--w) + var(--s2)) var(--w));
+}
+.px-frame--outline > .px-frame-ring{position:absolute;inset:0;z-index:0;display:block;pointer-events:none;
+  filter:drop-shadow(1px 0 0 var(--pixel-outline-keyline)) drop-shadow(-1px 0 0 var(--pixel-outline-keyline)) drop-shadow(0 1px 0 var(--pixel-outline-keyline)) drop-shadow(0 -1px 0 var(--pixel-outline-keyline))}
+/* the keyline is drawn on the wrapper so the clip below doesn't cut it off */
+.px-frame--outline > .px-frame-ring > i{position:absolute;inset:0;display:block;background:var(--pixel-outline-color);clip-path:var(--px-ring)}
+/* inside: transparent by default, or the fill colour, cut to the same stepped shape */
+.px-frame--outline > .px-frame-body{overflow:visible;background:var(--pixel-outline-fill);
+  clip-path:polygon(var(--s2) 0, calc(100% - var(--s2)) 0, calc(100% - var(--s2)) var(--s), calc(100% - var(--s)) var(--s), calc(100% - var(--s)) var(--s2), 100% var(--s2), 100% calc(100% - var(--s2)), calc(100% - var(--s)) calc(100% - var(--s2)), calc(100% - var(--s)) calc(100% - var(--s)), calc(100% - var(--s2)) calc(100% - var(--s)), calc(100% - var(--s2)) 100%, var(--s2) 100%, var(--s2) calc(100% - var(--s)), var(--s) calc(100% - var(--s)), var(--s) calc(100% - var(--s2)), 0 calc(100% - var(--s2)), 0 var(--s2), var(--s) var(--s2), var(--s) var(--s), var(--s2) var(--s))}
+.px-frame--outline > .px-frame-shadow{clip-path:var(--px-outline)}

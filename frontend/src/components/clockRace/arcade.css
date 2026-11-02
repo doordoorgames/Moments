@@ -92,7 +92,6 @@
 .cr-app.cr-arcade .cr-primary:not(:disabled):before{content:'';position:absolute;top:50%;inset-inline-start:14px;width:9px;height:12px;margin-top:-8px;background:var(--cr-ivory);
   clip-path:polygon(0 0,33% 0,33% 17%,66% 17%,66% 33%,100% 33%,100% 66%,66% 66%,66% 83%,33% 83%,33% 100%,0 100%);animation:arc-blink 1s steps(1) infinite}
 .cr-app.cr-arcade[dir=rtl] .cr-primary:not(:disabled):before{transform:scaleX(-1)}
-.cr-app.cr-arcade .cr-start{min-height:76px;font-size:calc(var(--cr-fs-btn) + 4px)}
 @keyframes arc-blink{50%{opacity:0}}
 
 /* 2. paper tag (copy code, small secondary actions): ivory label with a clipped corner, charcoal text */
@@ -178,9 +177,9 @@
 .cr-app.cr-arcade .cr-form label{font-size:var(--cr-fs-label);font-weight:700;margin-top:8px}
 .cr-app.cr-arcade .cr-form small{font-size:var(--cr-fs-meta);font-weight:600;opacity:1;color:var(--cr-gray)}
 .cr-app.cr-arcade .cr-form small.is-error{color:var(--cr-pink-l)}
-.cr-app.cr-arcade :is(.cr-form>input,.cr-word-input){min-height:58px;padding:6px 16px 10px;border:0;background:var(--cr-paper);color:var(--cr-charcoal);clip-path:var(--cr-step);
+.cr-app.cr-arcade .cr-word-input{min-height:58px;padding:6px 16px 10px;border:0;background:var(--cr-paper);color:var(--cr-charcoal);clip-path:var(--cr-step);
   box-shadow:inset 0 4px 0 rgba(42,38,48,.12),inset 0 -3px 0 #fff;font-family:var(--cr-pixel);font-weight:600;font-size:28px;line-height:1}
-.cr-app.cr-arcade :is(.cr-form>input,.cr-word-input)::placeholder{color:#2A263070}
+.cr-app.cr-arcade .cr-word-input::placeholder{color:#2A263070}
 .cr-app.cr-arcade .cr-form .cr-primary{margin-top:16px}
 .cr-app.cr-arcade .pt-code-boxes{gap:8px}
 .cr-app.cr-arcade .pt-code-box{height:60px;border:0;background:var(--cr-paper);color:var(--cr-charcoal);clip-path:var(--cr-step);box-shadow:inset 0 4px 0 rgba(42,38,48,.12);
@@ -193,12 +192,9 @@
 .cr-app.cr-arcade .cr-lobby-title{margin:4px 0 0;text-align:center;font-family:var(--cr-pixel);font-weight:800;font-size:var(--cr-fs-h1);line-height:1}
 .cr-app.cr-arcade[lang=en] .cr-lobby-title{font-size:clamp(18px,5.4vw,22px);line-height:1.5}
 .cr-app.cr-arcade .cr-room-code{display:flex;flex-direction:column;align-items:center;margin-top:20px;text-align:center}
-.cr-app.cr-arcade .cr-room-code strong{display:block;margin:6px 0 2px;font-family:var(--cr-press);font-weight:400;font-size:clamp(36px,11.5vw,46px);letter-spacing:.06em;line-height:1.1;
+.cr-app.cr-arcade .cr-room-code strong{display:block;margin:6px 0 2px;font-family:var(--cr-press);font-weight:400;font-size:clamp(18px,5.75vw,23px);letter-spacing:.06em;line-height:1.3;
   color:var(--cr-ivory);padding-inline-start:.06em;
-  text-shadow:3px 0 0 var(--cr-charcoal),-3px 0 0 var(--cr-charcoal),0 3px 0 var(--cr-charcoal),0 -3px 0 var(--cr-charcoal),3px 3px 0 var(--cr-charcoal),-3px 3px 0 var(--cr-charcoal),3px -3px 0 var(--cr-charcoal),-3px -3px 0 var(--cr-charcoal),0 7px 0 var(--cr-pink-d)}
-/* the QR floats on the room with only the white quiet zone it needs to scan */
-.cr-app.cr-arcade .cr-qr{width:136px;margin:14px auto 4px;padding:8px;border:0;background:#fff;box-shadow:none}
-.cr-app.cr-arcade .cr-qr svg{display:block;width:100%;height:auto}
+  text-shadow:2px 0 0 var(--cr-charcoal),-2px 0 0 var(--cr-charcoal),0 2px 0 var(--cr-charcoal),0 -2px 0 var(--cr-charcoal),2px 2px 0 var(--cr-charcoal),-2px 2px 0 var(--cr-charcoal),2px -2px 0 var(--cr-charcoal),-2px -2px 0 var(--cr-charcoal),0 4px 0 var(--cr-pink-d)}
 .cr-app.cr-arcade .cr-code-actions{display:flex;align-items:center;justify-content:center;gap:22px;margin-top:12px}
 
 /* players: a light roll call, a pixel diamond in each player's colour */
@@ -213,7 +209,6 @@
 .cr-app.cr-arcade .cr-guests li small{padding:0;border:0;background:none;color:var(--cr-gray);font-size:19px;font-weight:600;text-shadow:var(--cr-ol-1)}
 .cr-app.cr-arcade .cr-guests li small.is-me{color:var(--cr-pink-l)}
 .cr-app.cr-arcade .cr-guests li small.is-bot{color:var(--cr-mint)}
-.cr-app.cr-arcade .cr-lobby-body>.cr-start{margin-top:30px}
 .cr-app.cr-arcade .cr-lobby-body>.cr-waiting{margin-top:26px}
 
 /* ================================================================ race: dials over the ceiling, the challenge on the room */
@@ -448,3 +443,34 @@
 .cr-app.cr-arcade.cr-race:has(.cr-finish) :is(.cr-open,.cr-top){visibility:hidden}
 .cr-app.cr-arcade .cr-bag text{font-family:var(--cr-pixel);font-weight:800}
 .cr-app.cr-arcade .cr-primary:not(:has(.cr-letter)){text-shadow:var(--cr-ol-1)}
+
+/* ================================================================ create room + lobby: pixel-outlined controls
+   Text and small stepped frames floating on the room (PixelFrame outline mode). No fills, no panels. */
+.cr-app .cr-sr{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+
+/* name field: transparent, ivory stepped ring, ivory pixel type */
+.cr-app.cr-arcade .cr-nick-frame{width:100%;max-width:300px;margin:6px auto 0}
+.cr-app.cr-arcade .cr-nick-body{display:block}
+.cr-app.cr-arcade .cr-nick{display:block;width:100%;min-height:52px;margin:0;padding:4px 18px 8px;box-sizing:border-box;border:0;border-radius:0;outline:none;
+  background:transparent;box-shadow:none;-webkit-appearance:none;appearance:none;
+  font-family:var(--cr-pixel);font-weight:700;font-size:26px;line-height:1.2;color:var(--cr-ivory);text-shadow:var(--cr-ol-1);text-align:center;caret-color:var(--cr-ivory)}
+.cr-app.cr-arcade .cr-nick::placeholder{color:rgba(207,198,183,.45);text-shadow:none;font-weight:600;text-transform:none;letter-spacing:.02em}
+.cr-app.cr-arcade .cr-nick-frame:focus-within{--pixel-outline-color:var(--cr-pink-l)}
+
+/* CREATE / START: the word inside a stepped outline, sized to the word */
+.cr-app.cr-arcade .cr-px-btn{display:block;width:fit-content;min-width:132px;max-width:100%;margin:18px auto 0;
+  background:none;border:0;border-radius:0;box-shadow:none;cursor:pointer;color:var(--cr-ivory);touch-action:manipulation;-webkit-tap-highlight-color:transparent;
+  font-family:var(--cr-pixel);font-weight:800;font-size:30px;line-height:1;transition:transform .06s steps(2)}
+.cr-app.cr-arcade .cr-px-btn > .px-frame-body{display:flex;align-items:center;justify-content:center;min-height:44px;padding:4px 26px 8px;box-sizing:border-box}
+.cr-app.cr-arcade[lang=en] .cr-px-btn{font-family:var(--cr-press);font-weight:400;font-size:18px;letter-spacing:.04em}
+.cr-app.cr-arcade[lang=en] .cr-px-btn > .px-frame-body{padding:10px 24px 12px}
+.cr-app.cr-arcade .cr-px-btn .cr-letter{filter:drop-shadow(1px 0 0 var(--cr-charcoal)) drop-shadow(-1px 0 0 var(--cr-charcoal)) drop-shadow(0 1px 0 var(--cr-charcoal)) drop-shadow(0 -1px 0 var(--cr-charcoal)) drop-shadow(0 2px 0 var(--cr-charcoal))}
+.cr-app.cr-arcade .cr-px-btn:active:not(:disabled){transform:translateY(2px)}
+.cr-app.cr-arcade .cr-px-btn:disabled{opacity:.45;cursor:default}
+.cr-app.cr-arcade .cr-px-btn:focus-visible{outline:none;--pixel-outline-color:var(--cr-pink-l)}
+.cr-app.cr-arcade .cr-form .cr-px-btn{margin-top:18px}
+.cr-app.cr-arcade .cr-lobby-body>.cr-start{margin-top:26px}
+
+/* lobby QR: dark maroon modules on light warm gray, inside a dark maroon stepped frame */
+.cr-app.cr-arcade .cr-qr-frame{width:148px;margin:14px auto 4px}
+.cr-app.cr-arcade .cr-qr-frame svg{display:block;width:100%;height:auto}

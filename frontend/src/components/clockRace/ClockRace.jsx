@@ -4,6 +4,12 @@ import {useNavigate, useParams} from 'react-router-dom';
 import {BACKEND_URL} from '@/lib/api';
 import RoomCodeInput from '../plotTwist/RoomCodeInput';
 import RoomQR from '../plotTwist/RoomQR';
+import {PixelFrame} from './PixelFrame';
+
+// Colours for the pixel-outlined controls on the create-room and lobby screens.
+const PX = {green: '#36C25A', maroon: '#3A0E1C', qrPaper: '#ECE9E6'};
+// Keep the focused field (and the button under it) above the phone keyboard.
+const keepInView = e => { const el = e.currentTarget; setTimeout(() => el.scrollIntoView?.({block: 'center', behavior: 'smooth'}), 300); };
 import {normalizeCode, validRoomCode} from '../plotTwist/roomCode';
 import Dials, {Dial, PLAYER_COLORS} from './Dials';
 import Face from './Face';
@@ -432,16 +438,22 @@ export default function ClockRace({onContinue}) {
           <button type="button" className={`cr-intent is-join ${intent === 'join' ? 'is-on' : ''}`} onClick={() => { setIntent('join'); setError(''); setTimeout(() => nickRef.current?.focus()); }}><span className="cr-letter">{t.join}</span><small>{t.joinSmall}</small></button>
         </div>}
         {intent ? <form className="cr-card cr-form" onSubmit={enter} noValidate>
-          <label htmlFor="cr-nick">{t.nick}</label>
-          <input id="cr-nick" ref={nickRef} value={name} onChange={e => setName(e.target.value)} maxLength={24} placeholder={t.nickPlaceholder} autoComplete="nickname" dir="auto" enterKeyHint={intent === 'join' ? 'next' : 'go'}
-            onKeyDown={e => { if (e.key === 'Enter' && intent === 'join') { e.preventDefault(); codeRef.current?.focus(); } }}/>
+          <label htmlFor="cr-nick" className={ARCADE ? 'cr-sr' : undefined}>{t.nick}</label>
+          {(() => {
+            const field = <input id="cr-nick" ref={nickRef} value={name} onChange={e => setName(e.target.value)} maxLength={24} placeholder={t.nickPlaceholder} autoComplete="nickname" dir="auto" enterKeyHint={intent === 'join' ? 'next' : 'go'}
+              className={ARCADE ? 'cr-nick' : undefined} onFocus={keepInView}
+              onKeyDown={e => { if (e.key === 'Enter' && intent === 'join') { e.preventDefault(); codeRef.current?.focus(); } }}/>;
+            return ARCADE ? <PixelFrame outline className="cr-nick-frame" bodyClassName="cr-nick-body">{field}</PixelFrame> : field;
+          })()}
           {intent === 'join' && <>
             <label htmlFor="cr-code">{t.code}</label>
             <RoomCodeInput id="cr-code" ref={codeRef} value={joinCode} invalid={codeError} describedBy="cr-code-hint" onEnter={() => enter()}
               onChange={v => { setJoinCode(v); if (validRoomCode(v)) setCodeError(false); }}/>
             <small id="cr-code-hint" className={codeError ? 'is-error' : ''}>{codeError ? t.codeIncomplete(5 - joinCode.length) : t.codeHint}</small>
           </>}
-          <button className="cr-primary" disabled={busy || !name.trim()}><span className="cr-letter">{busy ? t.opening : intent === 'create' ? t.openRoom : t.enterRoom}</span></button>
+          {ARCADE
+            ? <PixelFrame as="button" outline color={PX.green} className="cr-px-btn" disabled={busy || !name.trim()}><span className="cr-letter">{busy ? t.opening : intent === 'create' ? t.openRoom : t.enterRoom}</span></PixelFrame>
+            : <button className="cr-primary" disabled={busy || !name.trim()}><span className="cr-letter">{busy ? t.opening : intent === 'create' ? t.openRoom : t.enterRoom}</span></button>}
         </form> : !ARCADE && <ul className="cr-rules">{t.rules.map(r => <li key={r}>{r}</li>)}</ul>}
         <a href="/clock-race/art/CREDITS.html" target="_blank" rel="noreferrer"><span className="cr-letter">{pickedLang === 'ar' ? 'مصادر الصور' : 'Image credits'}</span></a>
         {error && <p className="cr-error" role="alert">{error}</p>}
@@ -457,7 +469,9 @@ export default function ClockRace({onContinue}) {
         {/* Arcade: nothing boxed. The code reads straight off the room, the QR floats with only its quiet zone. */}
         <div className={ARCADE ? 'cr-room-code' : 'cr-card cr-code-card'}>
           <span className="cr-meta">{t.yourCode}</span><strong dir="ltr">{code}</strong>
-          {isHost && <div className="cr-qr"><RoomQR url={inviteUrl} label={code}/></div>}
+          {isHost && (ARCADE
+            ? <PixelFrame outline className="cr-qr-frame" color={PX.maroon} fill={PX.qrPaper} keyline="none" thickness="4px" block="4px"><RoomQR url={inviteUrl} label={code} fg={PX.maroon} bg={PX.qrPaper}/></PixelFrame>
+            : <div className="cr-qr"><RoomQR url={inviteUrl} label={code}/></div>)}
           <div className="cr-code-actions">
             <button type="button" className="cr-ghost cr-tab" onClick={async () => { try { await navigator.clipboard.writeText(code); setNotice(t.copied); } catch { setNotice(code); } }}>{t.copyCode}</button>
             <button type="button" className="cr-ghost cr-textbtn" onClick={share}><span>{t.share}</span><Arrow dir={t.dir === 'rtl' ? 'ltr' : 'rtl'}/></button>
@@ -468,7 +482,9 @@ export default function ClockRace({onContinue}) {
           <ul>{game.players.map(p => <li key={p.id}><i style={{background: PLAYER_COLORS[p.color % PLAYER_COLORS.length]}}/><span dir="auto">{p.name}</span>
             {p.id === game.host && <small>{t.host}</small>}{p.sim && <small className="is-bot">{t.bot}</small>}{p.id === me && <small className="is-me">{t.you}</small>}</li>)}</ul>
         </div>
-        {isHost ? <><button className="cr-primary cr-start" disabled={busy} onClick={start}><span className="cr-letter">{t.start}</span></button>
+        {isHost ? <>{ARCADE
+          ? <PixelFrame as="button" outline className="cr-px-btn cr-start" disabled={busy} onClick={start}><span className="cr-letter">{t.start}</span></PixelFrame>
+          : <button className="cr-primary cr-start" disabled={busy} onClick={start}><span className="cr-letter">{t.start}</span></button>}
           {game.dev ? <p className="cr-fine">{t.testRoom}</p> : game.players.length < 2 && <p className="cr-fine">{t.soloOk}</p>}</>
           : <p className="cr-waiting">{t.waitHost(hostName)}</p>}
         {error && <p className="cr-error" role="alert">{error}</p>}

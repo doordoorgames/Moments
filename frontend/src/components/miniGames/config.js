@@ -1,4 +1,4 @@
-import { lazy } from "react";
+import { lazyRetry as lazy } from "@/lib/lazyRetry";
 import BaccaratHunt from "./BaccaratHunt";
 import PackingChallenge from "../shoug2/PackingChallenge";
 

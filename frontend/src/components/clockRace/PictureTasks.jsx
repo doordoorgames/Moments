@@ -1,4 +1,5 @@
-import React, {memo} from 'react';
+import React, {memo, useEffect, useState} from 'react';
+import {isReady, whenReady} from './preload';
 import {ART, ART_BASE} from './artManifest';
 import {frameVariant} from './frames';
 import {PixelFrame} from './PixelFrame';
@@ -14,10 +15,17 @@ const tap = fn => ({
 });
 
 // Every picture wears the shared pixel frame (PixelFrame.jsx); `seed` picks its teal variant.
+// Until the picture has downloaded, the frame holds a plain dark-teal square instead of an empty box.
 export const Art = memo(function Art({k, seed = [0, 0]}) {
-  const file = ART[k];
-  return <PixelFrame variant={frameVariant(...seed)}>
-    <img className="cr-art" src={`${ART_BASE}${file}`} alt="" loading="eager" decoding="async" draggable="false"/>
+  const url = `${ART_BASE}${ART[k]}`;
+  const [ready, setReady] = useState(() => isReady(url));
+  useEffect(() => {
+    if (isReady(url)) { setReady(true); return undefined; }
+    setReady(false);
+    return whenReady(url, () => setReady(true));
+  }, [url]);
+  return <PixelFrame variant={frameVariant(...seed)} className={ready ? '' : 'is-loading'}>
+    <img className="cr-art" src={url} alt="" loading="eager" decoding="async" draggable="false" onLoad={() => setReady(true)}/>
   </PixelFrame>;
 });
 

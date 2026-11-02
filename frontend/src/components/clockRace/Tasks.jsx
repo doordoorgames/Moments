@@ -75,7 +75,9 @@ export function Memory({task, t, onPick, lang}) {
     <div className="cr-memory-grid" dir={lang === 'ar' ? 'rtl' : 'ltr'} lang={lang}>
       {task.grid.map((s, i) => <span key={i} className={(i % 2) ? 'is-b' : 'is-a'}><b>{s}</b></span>)}
     </div>
-    <button type="button" className="cr-primary cr-memory-next" {...tap(() => setAsking(true))}>{t.memoryNext}</button>
+    <button type="button" className="cr-memory-next" {...tap(() => setAsking(true))}>
+      <i className="cr-next-arrow" aria-hidden="true"/><span>{t.memoryNext}</span>
+    </button>
   </div>;
   return <div className="cr-memory is-ask">
     <p className="cr-memory-q">{t.memoryAsk}</p>
@@ -117,7 +119,7 @@ export function WordRush({task, t, onWord, inputRef}) {
   return <form className="cr-word" onSubmit={submit} noValidate>
     <div className="cr-word-prompt">
       {task.variant === 'pair'
-        ? <><span>{t.wordPair[0]}</span><b dir="auto">{letters[0]}</b><span>{t.wordPair[1]}</span><b dir="auto">{letters[1]}</b></>
+        ? <><span className="cr-word-part"><span>{t.wordPair[0]}</span><b dir="auto">{letters[0]}</b></span><span className="cr-word-part"><span>{t.wordPair[1]}</span><b dir="auto">{letters[1]}</b></span></>
         : <><span>{task.variant === 'country' ? t.wordCountry : t.wordFruit}</span><b dir="auto">{letters[0]}</b></>}
     </div>
     <div className="cr-word-row">

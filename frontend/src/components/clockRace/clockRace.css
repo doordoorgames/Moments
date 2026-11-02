@@ -262,7 +262,7 @@
 /* Remember this: white grid, big black letters, 12 seconds. Slow, soft tint waves (one every 2s) that glide
    white -> lilac -> pale blend -> powder yellow -> white; neighbouring cells start on opposite colours.
    Background colour and a tiny lift only: cheap on phones, letters stay black and sharp throughout. */
-.cr-memory-grid{--lilac:#E3D6FF;--powder:#FFF3BC;--blend:#F6F0EC;display:grid;grid-template-columns:repeat(3,1fr);width:min(100%,312px);border:3px solid var(--ink);background:var(--ink);gap:3px;box-shadow:var(--shadow-lg);animation:cr-swap .16s ease-out}
+.cr-memory-grid{--lilac:#FFF3BC;--powder:#FFF3BC;--blend:#F6F0EC;display:grid;grid-template-columns:repeat(3,1fr);width:min(100%,312px);border:3px solid var(--ink);background:var(--ink);gap:3px;box-shadow:var(--shadow-lg);animation:cr-swap .16s ease-out}
 .cr-memory-grid span{--c1:var(--lilac);--c2:var(--powder);aspect-ratio:1;display:grid;place-items:center;background:#fff;animation:cr-mem-blink 4s cubic-bezier(.45,0,.55,1) .2s 3 both}
 .cr-memory-grid span.is-b{--c1:var(--powder);--c2:var(--lilac)}
 .cr-memory-grid b{display:block;color:#0B0B0B;font-family:'Archivo Black','Baloo Bhaijaan 2',sans-serif;font-weight:900;font-size:clamp(40px,13vw,60px);line-height:1;padding-bottom:4px;animation:cr-mem-lift 2s cubic-bezier(.45,0,.55,1) .2s 6 both}
@@ -355,7 +355,7 @@
 .cr-pics.is-pair .cr-pic:nth-child(1) .cr-pic-art{transform:rotate(-1.2deg)}
 /* E: facing each other with a VS stamp */
 .cr-pics.is-vs{grid-template-columns:1fr auto 1fr;align-items:center;gap:4px}
-.cr-vs{font-family:'Archivo Black','Baloo Bhaijaan 2',sans-serif;font-size:26px;color:#FBF5E8;background:#E2504A;padding:6px 8px 4px;transform:rotate(-8deg);box-shadow:3px 4px 0 #3A344655;letter-spacing:1px}
+.cr-vs{font-family:'Archivo Black','Baloo Bhaijaan 2',sans-serif;font-size:26px;color:#FBF5E8;background:#E2504A;padding:6px 8px 4px;transform:none;box-shadow:3px 4px 0 #3A344655;letter-spacing:1px}
 /* C: two uneven manga panels */
 .cr-pics.is-panels{grid-template-columns:1.12fr .88fr;gap:6px;padding:6px;background:#3A3446}
 .cr-pics.is-panels .cr-pic{background:#FBF5E8;padding:10px 6px 8px;clip-path:polygon(0 0,100% 3%,97% 100%,2% 96%)}
@@ -373,3 +373,13 @@
 .cr-pics.is-table .cr-pic-num{position:absolute;top:2px;left:4px;width:24px;height:24px;display:grid;place-items:center;border-radius:50%;background:#FBF5E8;color:#3A3446;font-size:13px;transform:rotate(-6deg)}
 .cr-pics.is-table .cr-pic-name{background:#FBF5E8;font-size:clamp(13px,3.6vw,15px)}
 @media (prefers-reduced-motion:reduce){.cr-pic,.cr-pic:active{transition:none}}
+
+/* ---------------------------------------------------------------- page / mobile browser chrome
+   - no pull-to-refresh or rubber-band reload while playing
+   - the page is 1px taller than the largest viewport, so a natural scroll lets Android Chrome and iOS Safari
+     collapse their address bar (the browser decides; nothing is forced). Layouts follow the visible viewport
+     (dvh / visualViewport), so they grow when the bar tucks away. */
+html.cr-doc,html.cr-doc body{overscroll-behavior-y:none}
+html.cr-doc body{min-height:calc(100vh + 1px)}
+@supports (height:100lvh){html.cr-doc body{min-height:calc(100lvh + 1px)}}
+.cr-app{padding-left:env(safe-area-inset-left);padding-right:env(safe-area-inset-right)}

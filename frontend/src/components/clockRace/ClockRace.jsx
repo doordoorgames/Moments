@@ -15,7 +15,9 @@ import Dials, {Dial, PLAYER_COLORS} from './Dials';
 import Face from './Face';
 import {TASK_VIEWS, stroopPrompt} from './Tasks';
 import {picturePrompt} from './PictureTasks';
-import {ART, ART_BASE} from './artManifest';
+import {preloadFrom} from './preload';
+import AppErrorBoundary from '../AppErrorBoundary';
+import {PixelClock, ClockRaceLogo} from './Brand';
 import {GEO} from './content';
 import {TOTAL, localCheck} from './localCheck';
 import {TEXT} from './text';
@@ -69,7 +71,7 @@ async function request(path, body, auth, t) {
 }
 
 function BigClock() {
-  if (ARCADE) return <span className="cr-hero-clock is-arcade"><Dial done={13} color={PLAYER_COLORS[0]} size={150} big/></span>;
+  if (ARCADE) return <span className="cr-hero-clock is-arcade"><PixelClock size={84}/></span>;
   return <svg className="cr-hero-clock" viewBox="0 0 200 200" aria-hidden="true">
     <circle cx="100" cy="108" r="86" fill="#0B0B0B"/>
     <circle cx="100" cy="100" r="86" fill="#FFFDF7" stroke="#0B0B0B" strokeWidth="8"/>
@@ -213,6 +215,15 @@ export default function ClockRace({onContinue}) {
     window.addEventListener('online', wake); window.addEventListener('focus', wake);
     return () => { stopped = true; clearInterval(poll); clearInterval(beat); clearTimeout(retry); socket?.close(); window.removeEventListener('online', wake); window.removeEventListener('focus', wake); };
   }, [code, auth, refresh, applyRace]);
+
+  // Whole-page settings while Clock Race is open: no pull-to-refresh (a downward swipe on a question used
+  // to reload the page), and a page just taller than the screen so the browser's address bar can
+  // tuck away when the player scrolls (see .cr-doc in clockRace.css). Nothing scrolls by itself.
+  useEffect(() => {
+    const root = document.documentElement;
+    root.classList.add('cr-doc');
+    return () => root.classList.remove('cr-doc');
+  }, []);
 
   // Race screen follows the visible viewport (the phone keyboard in Word Rush shrinks it and may scroll it).
   useEffect(() => {
@@ -396,15 +407,8 @@ export default function ClockRace({onContinue}) {
   const pos = round && mine.round === round.id ? mine.done : 0;
   const players = useMemo(() => (game?.players || []).map(p => p.id === me && round && mine.round === round.id ? {...p, done: mine.done} : p), [game?.players, me, round, mine]);
   const task = round && pos < TOTAL ? round.tasks[pos] : null;
-  const nextPictureKeys = (Array.isArray(round?.tasks[pos + 1]?.options) ? round.tasks[pos + 1].options : []).filter(Array.isArray).map(option => option[0]).filter(key => ART[key]).join(' ') || '';
-  useEffect(() => {
-    if (!nextPictureKeys) return;
-    for (const key of nextPictureKeys.split(' ')) {
-      const img = new Image();
-      img.fetchPriority = 'low';
-      img.src = ART_BASE + ART[key];
-    }
-  }, [nextPictureKeys]);
+  // this challenge's pictures now, the next three challenges' behind them (see preload.js)
+  useEffect(() => { if (round?.tasks) preloadFrom(round.tasks, pos); }, [round?.tasks, pos]);
   const winner = game?.players.find(p => p.id === game.winner);
   const View = task ? TASK_VIEWS[task.type] : null;
   const seconds = Math.max(1, Math.ceil((startsAt - clock) / 1000));
@@ -418,7 +422,7 @@ export default function ClockRace({onContinue}) {
   </section> : <section className={`cr-stage ${cls}`}>{head}{body}</section>;
   const bar = <header className="cr-bar">
     <button className="cr-square-btn" onClick={exit} aria-label={t.back}><Arrow dir={t.dir}/></button>
-    <span className="cr-wordmark"><span className="cr-letter">{t.title}</span></span>
+    {ARCADE ? <span className="cr-wordmark is-logo"><ClockRaceLogo label={t.title} animate={false}/></span> : <span className="cr-wordmark"><span className="cr-letter">{t.title}</span></span>}
     {devPanel}
   </header>;
 
@@ -432,7 +436,9 @@ export default function ClockRace({onContinue}) {
           <button type="button" className={pickedLang === 'ar' ? 'is-on' : ''} aria-pressed={pickedLang === 'ar'} lang="ar" onClick={() => setPickedLang('ar')}>عربي</button>
           <button type="button" className={pickedLang === 'en' ? 'is-on' : ''} aria-pressed={pickedLang === 'en'} lang="en" onClick={() => setPickedLang('en')}>English</button>
         </div>}
-        <div className="cr-hero"><BigClock/><h1><span className="cr-letter">{t.title}</span></h1><p><span className="cr-letter">{t.tagline}</span></p></div>
+        <div className="cr-hero"><BigClock/>{ARCADE
+          ? <h1 className="cr-hero-logo"><ClockRaceLogo label={t.title}/>{lang === 'ar' && <span className="cr-hero-ar"><span className="cr-letter">{t.title}</span></span>}</h1>
+          : <h1><span className="cr-letter">{t.title}</span></h1>}<p><span className="cr-letter">{t.tagline}</span></p></div>
         {!linkJoin && <div className="cr-intents">
           <button type="button" className={`cr-intent ${intent === 'create' ? 'is-on' : ''}`} onClick={() => { setIntent('create'); setError(''); setTimeout(() => nickRef.current?.focus()); }}><span className="cr-letter">{t.create}</span><small>{t.createSmall}</small></button>
           <button type="button" className={`cr-intent is-join ${intent === 'join' ? 'is-on' : ''}`} onClick={() => { setIntent('join'); setError(''); setTimeout(() => nickRef.current?.focus()); }}><span className="cr-letter">{t.join}</span><small>{t.joinSmall}</small></button>
@@ -515,7 +521,9 @@ export default function ClockRace({onContinue}) {
         <div className="cr-play" key={`${round.id}-${mine.epoch}-${pos}`}>
           {prompt && <h2 className="cr-prompt" dir="auto">{prompt}</h2>}
           <div className="cr-task-body">
-            <View task={task} t={t} lang={lang} onPick={pick} onWord={word} inputRef={wordInput} roster={game.roster} players={game.players} me={me} index={pos}/>
+            <AppErrorBoundary compact resetKey={`${round.id}-${pos}`}>
+              <View task={task} t={t} lang={lang} onPick={pick} onWord={word} inputRef={wordInput} roster={game.roster} players={game.players} me={me} index={pos}/>
+            </AppErrorBoundary>
           </div>
         </div>)
       : cabinet('', null, <div className="cr-done-wait"><Dial done={TOTAL} color={PLAYER_COLORS[(game.players.find(p => p.id === me)?.color || 0) % 12]} size={120} big/></div>)}

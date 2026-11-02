@@ -828,3 +828,11 @@ code {
         display: contents !important;
     }
 }
+
+/* AppErrorBoundary: a crashed screen shows a way out, never a blank page */
+.app-crash{position:fixed;inset:0;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:24px;
+  background:#1F3F40;color:#F7EEDB;text-align:center;font:600 18px/1.4 system-ui,sans-serif}
+.app-crash p{margin:0}
+.app-crash button{display:inline-flex;flex-direction:column;gap:2px;margin-top:14px;min-height:48px;padding:10px 22px;border:3px solid #F7EEDB;border-radius:0;background:transparent;color:#F7EEDB;font:700 17px/1.2 system-ui,sans-serif;cursor:pointer}
+.app-crash.is-compact{position:static;inset:auto;z-index:auto;background:none;padding:28px 12px;font-size:16px}
+.app-crash.is-compact button{flex-direction:row;font-size:15px}

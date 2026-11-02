@@ -229,11 +229,16 @@
   animation:arc-blink .5s steps(1) 4}
 /* never clip a question: if it is taller than the room (keyboard open, short phones) the area scrolls;
    centring only applies while everything fits */
-.cr-app.cr-arcade .cr-open-body{position:relative;flex:1;min-height:0;display:flex;flex-direction:column;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:none;padding:2px 0 6px}
+.cr-app.cr-arcade .cr-open-body{position:relative;flex:1;min-height:0;display:flex;flex-direction:column;overflow-y:auto;overscroll-behavior-y:auto;scrollbar-width:none;padding:2px 0 6px}
 .cr-app.cr-arcade .cr-open-body::-webkit-scrollbar{display:none}
 .cr-app.cr-arcade .cr-open-body>*{flex:none}
-.cr-app.cr-arcade .cr-open-body>:first-child{margin-top:auto}
+/* one layout rule for every challenge: the question sits in the top third, answers follow it;
+   whatever room is left stays at the bottom (no vertical centring) */
+.cr-app.cr-arcade .cr-open-body>:first-child{margin-top:clamp(4px,calc(var(--cr-h,100dvh) * .025),22px)}
 .cr-app.cr-arcade .cr-open-body>:last-child{margin-bottom:auto}
+.cr-app.cr-arcade .cr-play,.cr-app.cr-arcade .cr-task-body,.cr-app.cr-arcade .cr-word{justify-content:flex-start}
+/* waiting screens (finished, spectating) are not questions: they stay centred */
+.cr-app.cr-arcade .cr-open-body>:is(.cr-done-wait,.cr-spectate):first-child{margin-top:auto}
 .cr-app.cr-arcade .cr-play{padding-bottom:2vh;justify-content:flex-start}
 .cr-app.cr-arcade .cr-task-body{animation:arc-swap .16s steps(3)}
 @keyframes arc-swap{from{opacity:0;transform:translateY(4px)}}
@@ -285,12 +290,24 @@
 /* memory: the grid is the game, so it stays a grid: ivory cells, charcoal joins, letters in pixel type */
 .cr-app.cr-arcade .cr-memory{gap:14px}
 .cr-app.cr-arcade .cr-memory .cr-prompt{margin-bottom:0}
-.cr-app.cr-arcade .cr-memory-grid{gap:4px;padding:4px;border:0;background:var(--cr-charcoal);box-shadow:none;clip-path:var(--cr-step);--lilac:#EADFF6;--powder:#F8EDC0;--blend:#F7F0E2}
+.cr-app.cr-arcade .cr-memory-grid{gap:4px;padding:4px;border:0;background:var(--cr-charcoal);box-shadow:none;clip-path:var(--cr-step);--lilac:#F8EDC0;--powder:#F8EDC0;--blend:#F7F0E2}
 .cr-app.cr-arcade .cr-memory-grid span{background:var(--cr-paper)}
 .cr-app.cr-arcade .cr-memory-grid b{color:var(--cr-charcoal);font-family:var(--cr-press);font-weight:400;font-size:clamp(30px,10vw,44px);padding:0}
 .cr-app.cr-arcade .cr-memory-grid[lang=ar] b{font-family:var(--cr-pixel);font-weight:800;font-size:clamp(52px,16vw,70px);padding-bottom:6px}
 .cr-app.cr-arcade .cr-memory-q{font-family:var(--cr-pixel);font-weight:700;font-size:var(--cr-fs-q);text-shadow:var(--cr-ol-2)}
-.cr-app.cr-arcade .cr-memory-next{width:min(100%,312px)}
+/* Next: just the word with a blinking pixel arrow before it; a big invisible touch area around it */
+.cr-app.cr-arcade .cr-memory-next{display:inline-flex;align-items:center;justify-content:center;gap:10px;align-self:center;width:auto;min-width:120px;min-height:52px;margin-top:6px;padding:4px 20px 8px;
+  border:0;background:none;box-shadow:none;clip-path:none;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent;
+  font-family:var(--cr-pixel);font-weight:800;font-size:34px;line-height:1;color:var(--cr-ivory);text-shadow:var(--cr-ol-1)}
+.cr-app.cr-arcade[lang=en] .cr-memory-next{font-family:var(--cr-press);font-weight:400;font-size:18px;letter-spacing:.04em}
+.cr-app.cr-arcade .cr-memory-next:active span{transform:translateY(2px)}
+.cr-app.cr-arcade .cr-memory-next:focus-visible{outline:2px dashed var(--cr-pink-l);outline-offset:2px}
+.cr-app.cr-arcade .cr-next-arrow{flex:none;display:block;width:10px;height:14px;background:var(--cr-pink-l);filter:drop-shadow(0 2px 0 var(--cr-charcoal));
+  clip-path:polygon(0 0,40% 0,40% 14.28%,60% 14.28%,60% 28.57%,80% 28.57%,80% 42.85%,100% 42.85%,100% 57.14%,80% 57.14%,80% 71.42%,60% 71.42%,60% 85.71%,40% 85.71%,40% 100%,0 100%);
+  animation:arc-arrow 1s steps(1) infinite}
+.cr-app.cr-arcade[dir=rtl] .cr-next-arrow{transform:scaleX(-1)}
+@keyframes arc-arrow{50%{opacity:.15}}
+@media (prefers-reduced-motion:reduce){.cr-app.cr-arcade .cr-next-arrow{animation:none}}
 
 /* friend vote: the coloured name tags are the answers; only the lettering changes */
 .cr-app.cr-arcade .cr-vote-hint{font-size:var(--cr-fs-meta);font-weight:600;opacity:1;color:var(--cr-gray)}
@@ -303,9 +320,11 @@
 .cr-app.cr-arcade .cr-tag small{border:0;background:none;color:var(--cr-ivory);font-size:15px}
 
 /* word rush: the letters are pink keys, the field is a paper slip */
-.cr-app.cr-arcade .cr-word-prompt{font-family:var(--cr-pixel);font-weight:700;font-size:clamp(26px,7.4vw,32px);text-shadow:var(--cr-ol-2)}
-.cr-app.cr-arcade .cr-word-prompt b{min-width:54px;height:54px;padding:0 8px 6px;border:0;background:var(--cr-pink);clip-path:var(--cr-step);
-  box-shadow:inset 0 -5px 0 var(--cr-pink-d);font-family:var(--cr-pixel);font-weight:800;font-size:38px;color:var(--cr-ivory);text-shadow:var(--cr-ol-1)}
+.cr-app.cr-arcade .cr-word-prompt{gap:4px 8px;font-family:var(--cr-pixel);font-weight:700;font-size:clamp(19px,5.3vw,23px);line-height:1.15;text-shadow:var(--cr-ol-1)}
+/* a clue and its letter never split across lines */
+.cr-app.cr-arcade .cr-word-part{display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.cr-app.cr-arcade .cr-word-prompt b{min-width:32px;height:32px;padding:0 5px 3px;border:0;background:var(--cr-pink);clip-path:var(--cr-step);
+  box-shadow:inset 0 -4px 0 var(--cr-pink-d);font-family:var(--cr-pixel);font-weight:800;font-size:24px;color:var(--cr-ivory);text-shadow:var(--cr-ol-1)}
 .cr-app.cr-arcade .cr-word-input{text-transform:uppercase;letter-spacing:.04em}
 .cr-app.cr-arcade .cr-word-input.is-ar{text-transform:none;letter-spacing:0;font-size:32px}
 .cr-app.cr-arcade .cr-word-go{min-width:82px;border:0;background:var(--cr-mint);color:var(--cr-charcoal);clip-path:var(--cr-step);
@@ -345,7 +364,7 @@
 
 /* picture questions: framed photographs standing on the room; layouts still differ by arrangement */
 .cr-app.cr-arcade .cr-pic-name{padding:0 2px;background:none;font-family:var(--cr-pixel);font-weight:700;font-size:clamp(20px,5.8vw,24px)}
-.cr-app.cr-arcade .cr-vs{background:none;box-shadow:none;padding:0 2px;font-family:var(--cr-press);font-size:22px;color:var(--cr-pink-l);text-shadow:var(--cr-ol-2)}
+.cr-app.cr-arcade .cr-vs{transform:none;animation:none;white-space:nowrap;align-self:center;background:none;box-shadow:none;padding:0 2px;font-family:var(--cr-press);font-size:22px;color:var(--cr-pink-l);text-shadow:var(--cr-ol-2)}
 /* photos are never mirrored or tilted: a tilted pixel frame stops being pixel-crisp */
 .cr-app.cr-arcade .cr-pics :is(.cr-pic,.cr-pic-art),.cr-app.cr-arcade .cr-pics.is-vs .is-right .cr-pic-art{transform:none}
 .cr-app.cr-arcade .cr-pics.is-panels{padding:0;background:none;gap:10px}
@@ -487,3 +506,31 @@
 .cr-app.cr-arcade .cr-next-word:active .cr-letter{transform:translateY(2px)}
 .cr-app.cr-arcade .cr-next-word:disabled .cr-letter{animation:none;opacity:.5}
 @media (prefers-reduced-motion:reduce){.cr-app.cr-arcade .cr-next-word .cr-letter{animation:none}}
+
+/* ================================================================ branding: pixel clock + Clock Race logo (Brand.jsx) */
+.cr-app.cr-arcade .cr-hero-clock.is-arcade{display:block;width:fit-content;height:auto;margin:0 auto 10px;filter:none}
+.cr-app.cr-arcade .cr-hero-clock.is-arcade svg.cr-pixel-clock{width:80px;height:80px}
+.cr-app.cr-arcade .cr-pixel-clock{display:block;margin:0 auto;image-rendering:pixelated}
+.cr-app.cr-arcade .cr-hero h1.cr-hero-logo{display:flex;flex-direction:column;align-items:center;gap:8px;margin:0;font-size:inherit}
+/* whole-pixel scaling only (56 x 12 logo units), so every logo pixel lands on exact screen pixels */
+.cr-app.cr-arcade .cr-logo{display:block;width:280px;height:60px;overflow:visible}
+@media (min-width:400px){.cr-app.cr-arcade .cr-logo{width:336px;height:72px}}
+@media (max-width:300px){.cr-app.cr-arcade .cr-logo{width:224px;height:48px}}
+.cr-app.cr-arcade .cr-hero-ar{font-family:var(--cr-pixel);font-weight:800;font-size:clamp(30px,9vw,38px);line-height:1}
+.cr-app.cr-arcade .cr-hero-ar .cr-letter{background:none;color:#F4F4F4}
+/* small static logo in the top bar (hidden on the entry screen, where the big one is) */
+.cr-app.cr-arcade .cr-wordmark.is-logo{display:block;line-height:0}
+.cr-app.cr-arcade .cr-wordmark.is-logo .cr-logo{width:112px;height:24px}
+.cr-app.cr-arcade.cr-entry .cr-wordmark.is-logo{visibility:hidden}
+
+/* title animation: builds pixel column by pixel column (~0.8s), then one highlight slides along the top
+   edges and it holds still. Plays once per visit. */
+.cr-logo.is-animated .cr-logo-col{opacity:0;animation:crl-col .01s steps(1) forwards;animation-delay:calc(120ms + var(--c) * 16ms)}
+.cr-logo.is-animated .cr-logo-glint{animation:crl-glint 1.1s steps(28) 1.05s 1 both}
+.cr-logo:not(.is-animated) .cr-logo-glint{display:none}
+@keyframes crl-col{to{opacity:1}}
+@keyframes crl-glint{from{transform:translateX(0)}to{transform:translateX(62px)}}
+@media (prefers-reduced-motion:reduce){
+  .cr-logo.is-animated .cr-logo-col{opacity:1;animation:none}
+  .cr-logo.is-animated .cr-logo-glint{display:none}
+}

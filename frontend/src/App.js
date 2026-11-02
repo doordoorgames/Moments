@@ -1,8 +1,11 @@
 import "@/App.css";
-import { lazy, Suspense, useEffect } from "react";
+import { Suspense, useEffect } from "react";
 import MomentsTypography from "@/components/typography/MomentsTypography";
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { Toaster } from "@/components/ui/sonner";
+import AppErrorBoundary from "@/components/AppErrorBoundary";
+import { applyPendingUpdate } from "@/lib/appUpdate";
+import { lazyRetry } from "@/lib/lazyRetry";
 
 import Landing from "@/pages/Landing";
 import PlayJoin from "@/pages/PlayJoin";
@@ -15,17 +18,30 @@ import ShougVillagePrototype from "@/pages/ShougVillagePrototype";
 
 import SoloMiniGame from "@/components/miniGames/MiniGames";
 
-const PlotTwist = lazy(() => import("@/components/plotTwist/PlotTwist"));
-const EmojiRooftop = lazy(() => import("@/components/emojiRooftop/EmojiRooftop"));
-const LetterTV = lazy(() => import("@/components/letterTv/LetterTV"));
-const ClockRace = lazy(() => import("@/components/clockRace/ClockRace"));
+const PlotTwist = lazyRetry(() => import("@/components/plotTwist/PlotTwist"));
+const EmojiRooftop = lazyRetry(() => import("@/components/emojiRooftop/EmojiRooftop"));
+const LetterTV = lazyRetry(() => import("@/components/letterTv/LetterTV"));
+const ClockRace = lazyRetry(() => import("@/components/clockRace/ClockRace"));
 
-const BaccaratAdventureRoom = lazy(() => import("@/components/baccaratAdventure/BaccaratAdventureRoom"));
+const BaccaratAdventureRoom = lazyRetry(() => import("@/components/baccaratAdventure/BaccaratAdventureRoom"));
 
 function AdminGate({ children }) {
     const token = localStorage.getItem("admin_token");
     if (!token) return <Navigate to="/admin" replace />;
     return children;
+}
+
+// A new deployment waits until the player leaves a game (lib/appUpdate.js); every route change checks.
+function UpdateGate() {
+    const location = useLocation();
+    useEffect(() => { applyPendingUpdate(location.pathname); }, [location.pathname]);
+    return null;
+}
+
+// One error boundary per screen: a crash shows a way out instead of a blank page.
+function RouteBoundary({ children }) {
+    const location = useLocation();
+    return <AppErrorBoundary resetKey={location.pathname}>{children}</AppErrorBoundary>;
 }
 
 function StatusBarTheme() {
@@ -60,6 +76,8 @@ function App() {
         <MomentsTypography><div className="App">
             <BrowserRouter>
                 <StatusBarTheme />
+                <UpdateGate />
+                <RouteBoundary>
                 <Routes>
                     <Route path="/" element={<Landing />} />
                     <Route path="/mini-games/baccarat-hunt/room/:code" element={<Suspense fallback={null}><BaccaratAdventureRoom /></Suspense>} />
@@ -100,6 +118,7 @@ function App() {
                     />
                     <Route path="*" element={<Navigate to="/" replace />} />
                 </Routes>
+                </RouteBoundary>
             </BrowserRouter>
             <Toaster position="top-center" richColors />
         </div></MomentsTypography>

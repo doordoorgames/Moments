@@ -81,19 +81,11 @@ export function Shadow({task, onPick}) {
 // pNN-piece.webp is that piece. Every option shows the same piece: [flip, deg] from the server, where
 // flip is 'none', 'H' (left-right) or 'V' (top-bottom), applied before the clockwise turn.
 const TILE_BASE = '/clock-race/tiles/';
-const TILE_PICS = ['p01', 'p02', 'p03', 'p04', 'p05', 'p06', 'p07', 'p08', 'p09', 'p10'];
-let tilesWarm = false;
-function warmTiles() {
-  if (tilesWarm || typeof Image === 'undefined') return;
-  tilesWarm = true;
-  TILE_PICS.forEach(p => { new Image().src = `${TILE_BASE}${p}.webp`; new Image().src = `${TILE_BASE}${p}-piece.webp`; });
-}
-if (typeof window !== 'undefined') setTimeout(warmTiles, 1500);
+// Pictures load through preload.js (this task's first, then the next three), not all ten up front.
 
 const pieceLook = ([flip, deg]) => `rotate(${deg}deg)${flip === 'H' ? ' scaleX(-1)' : flip === 'V' ? ' scaleY(-1)' : ''}`;
 
 export function MissingTile({task, onPick, index = 0}) {
-  warmTiles();
   return <div className="cr-tile">
     <PixelFrame as="div" className="cr-tile-pic" variant={frameVariant(index, 0)}>
       <img src={`${TILE_BASE}${task.pic}.webp`} alt="" draggable="false"/>

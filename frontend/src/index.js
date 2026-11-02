@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import "@/index.css";
 import App from "@/App";
 import { BUILD_VERSION } from "@/buildVersion";
+import { requestReload } from "@/lib/appUpdate";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -15,18 +16,11 @@ const queryClient = new QueryClient({
 });
 
 if ("serviceWorker" in navigator && process.env.NODE_ENV === "production") {
-  let reloadingForUpdate = false;
-  navigator.serviceWorker.addEventListener("controllerchange", () => {
-    if (reloadingForUpdate) return;
-    reloadingForUpdate = true;
-    window.location.reload();
-  });
+  // A new build never reloads a game in progress: see lib/appUpdate.js.
+  navigator.serviceWorker.addEventListener("controllerchange", () => requestReload());
 
   navigator.serviceWorker.addEventListener("message", event => {
-    if (event.data?.type === "MOMENTS_BUILD_UPDATED" && !reloadingForUpdate) {
-      reloadingForUpdate = true;
-      window.location.reload();
-    }
+    if (event.data?.type === "MOMENTS_BUILD_UPDATED") requestReload();
   });
   window.addEventListener("load", () => {
     navigator.serviceWorker.register("/service-worker.js", { updateViaCache: "none" })
@@ -37,10 +31,7 @@ if ("serviceWorker" in navigator && process.env.NODE_ENV === "production") {
             const response = await fetch("/build-version.json", {cache:"no-store"});
             if (!response.ok) return;
             const {version} = await response.json();
-            if (version && version !== BUILD_VERSION && !reloadingForUpdate) {
-              reloadingForUpdate = true;
-              window.location.reload();
-            }
+            if (version && version !== BUILD_VERSION) requestReload();
           } catch (_) { /* offline: keep app running */ }
         };
         checkVersion();

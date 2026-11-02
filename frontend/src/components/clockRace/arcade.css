@@ -477,3 +477,13 @@
 /* while the room is opening, just the words: no frame */
 .cr-app.cr-arcade .cr-px-btn.is-busy > .px-frame-ring{display:none}
 .cr-app.cr-arcade .cr-px-btn.is-busy:disabled{opacity:1}
+/* results: "Next round" is just the word, pink, blinking like an arcade prompt; no button box */
+.cr-app.cr-arcade .cr-next-word{display:block;margin:20px auto 0;min-height:48px;padding:6px 18px;border:0;background:none;box-shadow:none;cursor:pointer;
+  font-family:var(--cr-pixel);font-weight:800;font-size:34px;line-height:1;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+.cr-app.cr-arcade[lang=en] .cr-next-word{font-family:var(--cr-press);font-weight:400;font-size:18px;letter-spacing:.04em}
+.cr-app.cr-arcade .cr-next-word .cr-letter{background:none;color:var(--cr-pink-l);-webkit-background-clip:border-box;background-clip:border-box;
+  filter:drop-shadow(1px 0 0 var(--cr-charcoal)) drop-shadow(-1px 0 0 var(--cr-charcoal)) drop-shadow(0 1px 0 var(--cr-charcoal)) drop-shadow(0 -1px 0 var(--cr-charcoal)) drop-shadow(0 2px 0 var(--cr-charcoal));
+  animation:arc-blink 1.1s steps(1) infinite}
+.cr-app.cr-arcade .cr-next-word:active .cr-letter{transform:translateY(2px)}
+.cr-app.cr-arcade .cr-next-word:disabled .cr-letter{animation:none;opacity:.5}
+@media (prefers-reduced-motion:reduce){.cr-app.cr-arcade .cr-next-word .cr-letter{animation:none}}

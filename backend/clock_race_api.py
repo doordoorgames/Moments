@@ -16,11 +16,17 @@ from collections import defaultdict
 from datetime import datetime, timezone
 from typing import Any, Literal, Optional
 
+
 from cryptography.fernet import Fernet, InvalidToken
 from fastapi import APIRouter, Header, HTTPException, Response, WebSocket, WebSocketDisconnect
 from pydantic import BaseModel, Field
 
 import clock_race as engine
+
+
+class Conflict(HTTPException):
+    """The room changed between read and write (optimistic lock lost). Safe to retry."""
+
 
 PREFIX = 'clock_race_v1:'
 ROOM_CODE_RE = re.compile(r'^\d{5}$')
@@ -83,7 +89,8 @@ def router(db, query):
         result = await query(lambda: db().table('rooms').update({'flags': pack(g), 'wheel_winner_choice_id': secrets.token_hex(16)})
                              .eq('code', code).eq('wheel_winner_choice_id', old).execute())
         if not result.data:
-            raise HTTPException(409, 'الغرفة تغيرت. جرب مرة ثانية.')
+            # someone else wrote the room between our read and our write: retryable, not a rejection
+            raise Conflict(503, 'الغرفة تغيرت. جرب مرة ثانية.')
         payload = message or {'type': 'refresh'}
         await asyncio.gather(*(notify(ws, payload) for ws in list(sockets[code])))
 
@@ -170,18 +177,30 @@ def router(db, query):
     async def answer(code: str, body: Answer, response: Response, authorization: str = Header(default='')):
         response.headers['Cache-Control'] = 'private, no-store'
         async with locks[code]:
-            g, old = await load(code)
-            me = auth(g, authorization)
-            moved = engine.sync_bots(g)
-            try:
-                result = engine.answer(g, me['id'], body.round, body.task, body.answer, epoch=body.epoch)
-            except engine.GameError as e:
-                if moved:
-                    await save(code, g, old)
-                raise HTTPException(409, str(e))
-            if result['changed'] or moved:
-                ended = g['status'] == 'finished'
-                await save(code, g, old, None if ended else {'type': 'progress', **engine.progress(g)})
+            # Another write can land between our read and our write (two players answering at once).
+            # Re-read and re-apply instead of bouncing the answer back to the phone.
+            for attempt in range(6):
+                g, old = await load(code)
+                me = auth(g, authorization)
+                moved = engine.sync_bots(g)
+                try:
+                    result = engine.answer(g, me['id'], body.round, body.task, body.answer, epoch=body.epoch)
+                except engine.GameError as e:
+                    if moved:
+                        try:
+                            await save(code, g, old)
+                        except Conflict:
+                            pass
+                    raise HTTPException(409, str(e))
+                try:
+                    if result['changed'] or moved:
+                        ended = g['status'] == 'finished'
+                        await save(code, g, old, None if ended else {'type': 'progress', **engine.progress(g)})
+                    break
+                except Conflict:
+                    if attempt == 5:
+                        raise
+                    await asyncio.sleep(0.05 * (attempt + 1))
             out = {k: v for k, v in result.items() if k != 'changed'}
             out['race'] = engine.progress(g)
             if g['status'] == 'finished':

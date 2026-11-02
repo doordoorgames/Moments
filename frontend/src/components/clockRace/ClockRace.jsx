@@ -535,7 +535,7 @@ export default function ClockRace({onContinue}) {
         <ol className="cr-results">{[...players].filter(p => p.racing).sort((a, b) => (b.id === game.winner) - (a.id === game.winner) || b.done - a.done || (b.right || 0) - (a.right || 0)).map(p =>
           <li key={p.id} className={p.id === me ? 'is-me' : ''}><i style={{background: PLAYER_COLORS[p.color % PLAYER_COLORS.length]}}/><span dir="auto">{p.name}</span>
             <em>{t.rightOf(p.right || 0, p.done)}</em><b dir="ltr">{Math.round(p.done / TOTAL * 100)}%</b></li>)}</ol>
-        {isHost ? <button className="cr-primary" disabled={busy} onClick={start}><span className="cr-letter">{t.again}</span></button> : <p className="cr-waiting">{t.waitAgain(hostName)}</p>}
+        {isHost ? <button className={ARCADE ? 'cr-next-word' : 'cr-primary'} disabled={busy} onClick={start}><span className="cr-letter">{t.again}</span></button> : <p className="cr-waiting">{t.waitAgain(hostName)}</p>}
         <button className="cr-ghost cr-link" onClick={exit}>{t.exit}</button>
       </div>
     </div>}

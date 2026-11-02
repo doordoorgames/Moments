@@ -1,0 +1,40 @@
+[
+  {
+    "id": "price_hypercars",
+    "options": [
+      {
+        "key": "tourbillon",
+        "en": "Bugatti Tourbillon",
+        "ar": "بوغاتي توربيون",
+        "unit_usd": 4600000,
+        "quantity": 1,
+        "price_basis": "Estimated US starting price",
+        "model_year": 2026,
+        "source": "https://www.caranddriver.com/bugatti/tourbillon",
+        "checked": "2026-11-02"
+      },
+      {
+        "key": "cullinan",
+        "en": "Rolls-Royce Cullinan",
+        "ar": "رولز رويس كولينان",
+        "unit_usd": 441350,
+        "quantity": 1,
+        "price_basis": "Base US MSRP",
+        "model_year": 2026,
+        "source": "https://www.caranddriver.com/rolls-royce/cullinan",
+        "checked": "2026-11-02"
+      },
+      {
+        "key": "revuelto",
+        "en": "Lamborghini Revuelto",
+        "ar": "لامبورغيني ريفويلتو",
+        "unit_usd": 608358,
+        "quantity": 1,
+        "price_basis": "Base US MSRP",
+        "model_year": 2026,
+        "source": "https://www.caranddriver.com/lamborghini/revuelto/specs",
+        "checked": "2026-11-02"
+      }
+    ]
+  }
+]

@@ -1,0 +1,29 @@
+{
+  "tourbillon": {
+    "key": "tourbillon",
+    "source": "https://commons.wikimedia.org/wiki/File:Bugatti_Tourbillon.jpg",
+    "original": "https://upload.wikimedia.org/wikipedia/commons/5/51/Bugatti_Tourbillon.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "creator": "MrWalkr",
+    "license": "CC BY-SA 4.0",
+    "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
+    "changes": "Resized and converted to WebP."
+  },
+  "cullinan": {
+    "key": "cullinan",
+    "source": "https://commons.wikimedia.org/wiki/File:Rolls-Royce_Cullinan_001.jpg",
+    "original": "https://upload.wikimedia.org/wikipedia/commons/9/9c/Rolls-Royce_Cullinan_001.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "creator": "Jengtingchen",
+    "license": "CC BY-SA 4.0",
+    "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
+    "changes": "Resized and converted to WebP."
+  },
+  "revuelto": {
+    "key": "revuelto",
+    "source": "https://commons.wikimedia.org/wiki/File:Lamborghini_Revuelto_DSC_6987.jpg",
+    "original": "https://upload.wikimedia.org/wikipedia/commons/0/0a/Lamborghini_Revuelto_DSC_6987.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+    "creator": "Alexander Migl",
+    "license": "CC BY-SA 4.0",
+    "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
+    "changes": "Resized and converted to WebP."
+  }
+}

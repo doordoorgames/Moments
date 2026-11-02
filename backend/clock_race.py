@@ -12,6 +12,8 @@ letter memory grid with 1-2 Word Rush tasks, spread so no type comes back within
 """
 import collections
 import colorsys
+import json
+from pathlib import Path
 import random
 import secrets
 import threading
@@ -22,6 +24,8 @@ import uuid
 import clock_race_ar as AR
 import clock_race_data as D
 import clock_race_bank as K
+
+PRICE_BANK = json.loads(Path(__file__).with_name('clock_race_prices.json').read_text(encoding='utf-8'))
 
 VERSION = 7
 MAX_PLAYERS = 12
@@ -36,9 +40,9 @@ RESET_DELAY = 1.6  # the heartbreak screen holds the player this long before tas
 GRACE = 0.25     # network slack on the server-side waits
 NAME_MAX = 24
 # 30 tasks = 16 picture comparisons + 14 of the original challenges (boss included, vote when 3+ people).
-PICTURE_MIX = {'belong': 5, 'older': 4, 'compare': 4, 'which': 3}
+PICTURE_MIX = {'belong': 5, 'older': 4, 'compare': 1, 'price': 3, 'which': 3}
 ORDINARY_MIX = {'odd': 1, 'stroop': 1, 'geo': 1, 'sock': 1, 'memory': 1, 'avoid': 1,
-                'scale': 1, 'shadow': 1, 'tile': 1, 'animal': 1}
+                'alphabet': 1, 'scale': 1, 'shadow': 1, 'tile': 1, 'animal': 1}
 EXTRA_POOL = ['odd', 'stroop', 'avoid', 'sock', 'geo']  # fills the slots the vote or a 2nd Word Rush doesn't take  # 17; one fewer with 2 Word Rush
 # The memory grid is the only letter challenge: 1 or 2 a round (half of v2's ~3 letter tasks).
 WORD_VARIANTS = ('pair', 'country', 'fruit')
@@ -47,7 +51,7 @@ TEST_BOT = 'Test Bot'
 BOT_NAMES = ['نورة', 'سارة', 'فهد', 'دانة', 'عبدالله', 'شوق', 'يوسف', 'مريم', 'Noor', 'Hamad', 'لولوة', 'بدر']
 # Simulated players: typical seconds per task type (measured feel: taps ~2-3s, typing ~7s,
 # memory = 12s of grid + the answer). Each task varies 0.7x-1.35x and ~12% are "wrong" (+1s).
-BOT_SECONDS = {'odd': 2.4, 'stroop': 2.2, 'geo': 2.6, 'sock': 3.4, 'memory': 7.0,
+BOT_SECONDS = {'price': 4.0, 'alphabet': 2.2, 'odd': 2.4, 'stroop': 2.2, 'geo': 2.6, 'sock': 3.4, 'memory': 7.0,
                'word': 7.5, 'vote': 2.0, 'boss': 5.5, 'scale': 4.5, 'shadow': 3.0, 'tile': 3.0, 'avoid': 2.3,
                'belong': 3.8, 'older': 3.4, 'compare': 3.0, 'which': 3.4, 'animal': 2.2}
 BOT_WRONG = 0.12
@@ -428,7 +432,7 @@ def gen_tile(rng, lang):
 
 
 def signature(t):
-    keys = {'odd': ('rows', 'cols', 'odd', 'base', 'mood'), 'stroop': ('mode', 'target', 'choices'),
+    keys = {'price': ('qid',), 'alphabet': ('letters',), 'odd': ('rows', 'cols', 'odd', 'base', 'mood'), 'stroop': ('mode', 'target', 'choices'),
             'geo': ('variant', 'items'), 'sock': ('socks',), 'memory': ('grid',),
             'word': ('variant', 'first', 'last', 'letter'), 'vote': ('question',), 'boss': ('faces',),
             'scale': ('groups',), 'shadow': ('cells',), 'tile': ('pic',), 'avoid': ('rule', 'target', 'items'),
@@ -499,8 +503,14 @@ def gen_animal(rng, lang):
 # Picture questions served lately on this server, any room: a new room doesn't start from scratch.
 _RECENT_Q = collections.deque(maxlen=80)
 
-NEW_GENS = {'animal': gen_animal, 'avoid': gen_avoid, 'scale': gen_scale, 'shadow': gen_shadow, 'tile': gen_tile}
-ANSWER_KINDS = ('stroop', 'geo', 'sock', 'scale', 'shadow', 'tile', 'animal') + K.KINDS
+def gen_alphabet(rng, lang):
+    alphabet = 'أبتثجحخدذرزسشصضطظعغفقكلمنهوي' if lang == 'ar' else 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+    positions = rng.sample(range(len(alphabet)), 2)
+    return dict(type='alphabet', letters=[alphabet[i] for i in positions], answer=positions.index(max(positions)))
+
+
+NEW_GENS = {'alphabet': gen_alphabet, 'animal': gen_animal, 'avoid': gen_avoid, 'scale': gen_scale, 'shadow': gen_shadow, 'tile': gen_tile}
+ANSWER_KINDS = ('price', 'alphabet', 'stroop', 'geo', 'sock', 'scale', 'shadow', 'tile', 'animal') + K.KINDS
 
 SPREAD = 3      # a type never comes back within 3 tasks
 OPENING = 5     # the first five tasks are five different challenges
@@ -571,6 +581,16 @@ def gen_round(roster, lang='ar', avoid_question=None, rng=None, avoid=(), seen_q
                 t = gen_sock(rng, lang)
             elif kind == 'memory':
                 t = gen_memory(rng, lang)
+            elif kind == 'price':
+                used = {task.get('qid') for task in tasks}
+                pool = [q for q in PRICE_BANK if q['id'] not in used]
+                last = {qid: i for i, qid in enumerate(seen_q)}
+                oldest = min(last.get(q['id'], -1) for q in pool)
+                q = rng.choice([q for q in pool if last.get(q['id'], -1) == oldest])
+                opts = rng.sample(q['options'], len(q['options']))
+                answer = max(range(len(opts)), key=lambda i: opts[i]['unit_usd'] * opts[i]['quantity'])
+                public = [{k: o[k] for k in ('key', 'ar', 'en', 'unit_usd', 'quantity')} for o in opts]
+                t = dict(type='price', qid=q['id'], options=public, answer=answer)
             elif kind in K.KINDS:
                 t = gen_picture(rng, kind, {x.get('qid') for x in tasks}, seen_q)
             elif kind == 'avoid':

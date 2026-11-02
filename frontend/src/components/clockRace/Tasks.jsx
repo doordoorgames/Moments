@@ -141,7 +141,32 @@ export function FinalBoss({task, onPick}) {
   </div>;
 }
 
-export const TASK_VIEWS = {odd: OddFace, stroop: Stroop, geo: Geography, sock: LonelySock, memory: Memory,
+function PriceQuiz({task, onPick, lang}) {
+  const [revealed, reveal] = useState(false);
+  const choose = i => {
+    if (!revealed && onPick(i)) reveal(true);
+  };
+  const money = new Intl.NumberFormat(lang === 'ar' ? 'ar-KW' : 'en-US', {
+    style: 'currency', currency: 'USD', minimumFractionDigits: 0, maximumFractionDigits: 2
+  });
+  return <div className="cr-price-options">{task.options.map((o, i) =>
+    <button type="button" key={o.key} disabled={revealed} aria-label={o.quantity > 1 ? o.quantity + " × " + o[lang] : o[lang]} onClick={() => choose(i)}>
+      <span className="cr-price-stack">{Array.from({length: o.quantity}, (_, j) =>
+        <img key={j} alt="" src={`/clock-race/art/prices/${o.key}.webp`} style={{transform: `translate(${j * 2}px, ${-j * 2}px)`}}/>)}
+        {o.quantity > 1 && <b dir="ltr">×{o.quantity}</b>}
+      </span>
+      <span>{o[lang]}</span>
+      {revealed && <strong>{money.format(o.unit_usd * o.quantity)}</strong>}
+    </button>)}</div>;
+}
+
+function Alphabet({task, onPick}) {
+  return <div className="cr-alphabet">{task.letters.map((letter, i) =>
+    <button key={letter} type="button" {...tap(() => onPick(i))}>{letter}</button>
+  )}</div>;
+}
+
+export const TASK_VIEWS = {price: PriceQuiz, alphabet: Alphabet, odd: OddFace, stroop: Stroop, geo: Geography, sock: LonelySock, memory: Memory,
   vote: FriendVote, word: WordRush, boss: FinalBoss,
   scale: Heaviest, shadow: Shadow, tile: MissingTile, avoid: DontTap,
   belong: PictureQuiz, older: PictureQuiz, compare: PictureQuiz, which: PictureQuiz, animal: PictureQuiz};

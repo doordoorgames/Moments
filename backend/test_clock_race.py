@@ -26,7 +26,9 @@ def test_round_shape(seed):
         assert kinds[15] == 'vote' and kinds.count('vote') == 1
     else:
         assert 'vote' not in kinds                                  # the friend question needs 3+ people
-    assert sum(kinds.count(k) for k in ('belong', 'older', 'compare', 'which')) >= 15
+    assert sum(kinds.count(k) for k in ('belong', 'older', 'compare', 'which', 'price')) >= 15
+    assert kinds.count('price') == 3
+    assert kinds.count('alphabet') == 1
     assert kinds.count('word') in (1, 2)
     for i in range(30):                                             # a type never returns within 3 tasks
         if kinds[i] not in ('vote', 'boss'):
@@ -55,6 +57,23 @@ def test_picture_answers_move_around_and_bank_rotates():
     for _ in range(6):
         seen += [t['qid'] for t in E.gen_round(roster(1), rng=rng, seen_q=seen[-90:]) if t.get('qid')]
     assert len(set(seen[:64])) == 64                                # four rounds without a repeat
+
+
+def test_price_bank_rotates_and_scores_totals():
+    assert len(E.PRICE_BANK) == 15
+    seen = []
+    rng = random.Random(41)
+    for _ in range(5):
+        for task in E.gen_round(roster(3), rng=rng, seen_q=seen):
+            if task['type'] != 'price':
+                continue
+            options = task['options']
+            assert len(options) in (2, 3)
+            totals = [o['unit_usd'] * o['quantity'] for o in options]
+            assert totals.count(max(totals)) == 1
+            assert E.correct(task, totals.index(max(totals)), [])[0]
+            seen.append(task['qid'])
+    assert len(set(seen)) == 15
 
 
 def test_bank_counts_and_answers():
@@ -286,7 +305,7 @@ def play(g, pid, now, right=True):
 
 
 def wrong_value(t):
-    return {'odd': -1, 'memory': 'x', 'stroop': -1, 'geo': -1, 'sock': -1,
+    return {'alphabet': -1, 'price': -1, 'odd': -1, 'memory': 'x', 'stroop': -1, 'geo': -1, 'sock': -1,
             'word': 'zzzzz', 'vote': 'stranger', 'boss': -1,
             'scale': -1, 'shadow': -1, 'tile': -1, 'avoid': -1,
             'belong': -1, 'older': -1, 'compare': -1, 'which': -1, 'animal': -1}[t['type']]

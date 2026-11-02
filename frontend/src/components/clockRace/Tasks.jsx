@@ -6,7 +6,8 @@ import {GEO, STROOP} from './content';
 import {GEO_SHAPES} from './geoShapes';
 import {Heaviest, Wallet, Shadow, MissingTile, DontTap} from './NewTasks';
 import {PictureQuiz} from './PictureTasks';
-import {frame} from './frames';
+import {frameVariant} from './frames';
+import {PixelFrame} from './PixelFrame';
 
 // Taps count on finger-down (no wait for release); keyboard Enter/Space still works through click.
 const tap = fn => ({
@@ -51,7 +52,7 @@ export const GeoPic = memo(function GeoPic({id}) {
 export function Geography({task, onPick, lang, index = 0}) {
   return <div className="cr-geo">
     {task.items.map((id, i) => <button key={id} type="button" className="cr-geo-card" {...tap(() => onPick(i))}>
-      <span className="cr-geo-frame cr-frame" style={frame(index, i)}><GeoPic id={id}/></span>
+      <PixelFrame className="cr-geo-frame" bodyClassName="cr-geo-body" variant={frameVariant(index, i)}><GeoPic id={id}/></PixelFrame>
       <span className="cr-geo-name" dir="auto">{GEO[id][lang]}</span>
     </button>)}
   </div>;

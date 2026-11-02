@@ -1,5 +1,6 @@
 import React, {memo} from 'react';
-import {frame} from './frames';
+import {frameVariant} from './frames';
+import {PixelFrame} from './PixelFrame';
 
 // v4 challenges: heaviest group, richest wallet, shadow match, missing tile. The first three are drawn
 // from the task data (generated on the server each round); the missing tile uses ten hand-picked pictures.
@@ -114,14 +115,14 @@ const pieceLook = ([flip, deg]) => `rotate(${deg}deg)${flip === 'H' ? ' scaleX(-
 export function MissingTile({task, onPick, index = 0}) {
   warmTiles();
   return <div className="cr-tile">
-    <div className="cr-tile-pic cr-frame" style={frame(index, 0)}>
+    <PixelFrame as="div" className="cr-tile-pic" variant={frameVariant(index, 0)}>
       <img src={`${TILE_BASE}${task.pic}.webp`} alt="" draggable="false"/>
       <span className="cr-tile-hole" aria-hidden="true">?</span>
-    </div>
+    </PixelFrame>
     <div className="cr-tile-opts">
-      {(task.opts || []).map((o, i) => <button key={i} type="button" className="cr-tile-card cr-frame" style={frame(index, i + 1)} aria-label={`piece ${i + 1}`} {...tap(() => onPick(i))}>
+      {(task.opts || []).map((o, i) => <PixelFrame as="button" key={i} type="button" size="sm" className="cr-tile-card" variant={frameVariant(index, i + 1)} aria-label={`piece ${i + 1}`} {...tap(() => onPick(i))}>
         <img src={`${TILE_BASE}${task.pic}-piece.webp`} alt="" draggable="false" style={{transform: pieceLook(o)}}/>
-      </button>)}
+      </PixelFrame>)}
     </div>
   </div>;
 }

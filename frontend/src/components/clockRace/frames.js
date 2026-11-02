@@ -1,27 +1,21 @@
-// Pixel photo frames for every image in Clock Race (photos, maps, the missing-piece puzzle and its pieces).
-// One shared utility: frame(seed) returns the style for a `cr-frame` element. The frame is a crisp 3px
-// border in one of eight colours; the shadow is always the same dusty pink, offset bottom-right, hard-edged.
-// Only the frame and shadow are styled: the picture inside keeps its own colours, untouched.
-//
-// Colours: six teals derived from the room's teal (--cr-teal #4F9E9B), plus ivory and near-black as accents.
-// The order spreads the families so neighbours never match and ivory/black come up only now and then.
-export const FRAME_COLORS = [
-  '#4F9E9B', // 1 the room's teal
-  '#4A92A6', // 4 a little bluer
-  '#F7EEDB', // 7 ivory (accent)
-  '#3A8380', // 2 a little darker
-  '#5BA68D', // 5 a little greener
-  '#76B9B4', // 3 a little lighter
-  '#2A2630', // 8 near-black (accent)
-  '#6E9794', // 6 muted, dusty
+// Colour variants for the pixel frames (PixelFrame.jsx) that wrap every picture in Clock Race.
+// Six teals built around the room's teal (#4F9E9B). Each variant carries its own face colour plus the
+// lighter and darker pixel rows that make the 16-bit bevel, so nothing is blended or computed at runtime.
+export const FRAME_VARIANTS = [
+  {name: 'teal',      face: '#4F9E9B', hi: '#86CBC5', lo: '#367674'}, // 1 the room's teal
+  {name: 'darker',    face: '#3A8380', hi: '#66AFAA', lo: '#28605E'}, // 2 slightly darker
+  {name: 'lighter',   face: '#76B9B4', hi: '#A9DCD7', lo: '#559791'}, // 3 slightly lighter
+  {name: 'bluer',     face: '#4A92A6', hi: '#7DBDCF', lo: '#336F81'}, // 4 slightly bluer
+  {name: 'deep',      face: '#2F6B6A', hi: '#55908E', lo: '#1F4C4B'}, // 5 muted deep teal
+  {name: 'turquoise', face: '#9ED8D0', hi: '#D0F1EC', lo: '#76B8AF'}, // 6 pale turquoise
 ];
-export const FRAME_SHADOW = '#D592AA';
 
-// Stable for a given task (its place in the round) and picture (its place on the screen), so a re-render
-// never changes a colour. Consecutive pictures always differ; the next task starts further round the cycle.
-export function frameColor(taskIndex = 0, i = 0) {
-  const n = FRAME_COLORS.length;
-  return FRAME_COLORS[(((taskIndex * 3 + i) % n) + n) % n];
+// Order the variants are handed out in, spread so neighbours never look alike.
+const ORDER = [0, 3, 2, 4, 5, 1];
+
+// Stable for a given task (its place in the round) and picture (its place on the screen): a re-render never
+// changes a colour, neighbouring pictures always differ, and each new task starts further round the cycle.
+export function frameVariant(taskIndex = 0, i = 0) {
+  const n = ORDER.length;
+  return ORDER[(((taskIndex * 2 + i) % n) + n) % n];
 }
-
-export const frame = (taskIndex, i) => ({'--frame': frameColor(taskIndex, i)});

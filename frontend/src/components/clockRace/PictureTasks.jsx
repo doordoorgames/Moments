@@ -1,6 +1,7 @@
 import React, {memo} from 'react';
 import {ART, ART_BASE} from './artManifest';
-import {frame} from './frames';
+import {frameVariant} from './frames';
+import {PixelFrame} from './PixelFrame';
 
 // Picture comparisons (أي واحد مختلف؟ / أيهم أقدم؟ / أيهم أثقل؟ / أيهم؟) and the animal finder.
 // Questions come from the server's bank (backend/clock_race_bank.py); this file only draws them.
@@ -12,10 +13,12 @@ const tap = fn => ({
   onClick: e => {if (e.detail === 0) fn();},
 });
 
-// Every picture wears a pixel frame (see frames.js); `seed` picks its colour.
+// Every picture wears the shared pixel frame (PixelFrame.jsx); `seed` picks its teal variant.
 export const Art = memo(function Art({k, seed = [0, 0]}) {
   const file = ART[k];
-  return <img className="cr-art cr-frame" style={frame(...seed)} src={`${ART_BASE}${file}`} alt="" loading="eager" decoding="async" draggable="false"/>;
+  return <PixelFrame variant={frameVariant(...seed)}>
+    <img className="cr-art" src={`${ART_BASE}${file}`} alt="" loading="eager" decoding="async" draggable="false"/>
+  </PixelFrame>;
 });
 
 function Option({o, i, onPick, lang, cls = '', num, index}) {

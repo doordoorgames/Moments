@@ -1,0 +1,94 @@
+/* ================================================================ PIXEL FRAME (PixelFrame.jsx)
+   Global settings: change any of these to retune every frame in Clock Race at once.
+   Keep thickness = edge + face, and face >= 2 blocks, so the pixel grid stays even. */
+:root{
+  --pixel-frame-thickness:6px;      /* total border: dark edge + teal face */
+  --pixel-frame-block:2px;          /* one "pixel" of the frame: corner steps, bevel rows, glint */
+  --pixel-frame-edge:2px;           /* dark outline row */
+  --pixel-frame-edge-color:#17393A;
+  --pixel-frame-shadow-x:6px;
+  --pixel-frame-shadow-y:6px;
+  --pixel-frame-shadow-color:#D98BAE;
+  --pixel-frame-glint:#EFFFFC;
+}
+/* small thumbnails and puzzle pieces: thinner border, finer pixels, same construction */
+.px-frame--sm{
+  --pixel-frame-thickness:4px;
+  --pixel-frame-block:1px;
+  --pixel-frame-edge:1px;
+  --pixel-frame-shadow-x:4px;
+  --pixel-frame-shadow-y:4px;
+}
+@media (min-width:700px){
+  :root{--pixel-frame-thickness:8px;--pixel-frame-edge:2px;--pixel-frame-shadow-x:8px;--pixel-frame-shadow-y:8px}
+}
+
+.px-frame{
+  --s:var(--pixel-frame-block);
+  --s2:calc(var(--pixel-frame-block) * 2);
+  /* outer outline: two-step pixel staircase at every corner, in absolute units so it never stretches */
+  --px-outline:polygon(
+    var(--s2) 0, calc(100% - var(--s2)) 0, calc(100% - var(--s2)) var(--s), calc(100% - var(--s)) var(--s),
+    calc(100% - var(--s)) var(--s2), 100% var(--s2), 100% calc(100% - var(--s2)), calc(100% - var(--s)) calc(100% - var(--s2)),
+    calc(100% - var(--s)) calc(100% - var(--s)), calc(100% - var(--s2)) calc(100% - var(--s)), calc(100% - var(--s2)) 100%,
+    var(--s2) 100%, var(--s2) calc(100% - var(--s)), var(--s) calc(100% - var(--s)), var(--s) calc(100% - var(--s2)),
+    0 calc(100% - var(--s2)), 0 var(--s2), var(--s) var(--s2), var(--s) var(--s), var(--s2) var(--s));
+  position:relative;display:block;box-sizing:border-box;isolation:isolate;
+  padding:var(--pixel-frame-thickness);
+  border:0;border-radius:0;background:none;box-shadow:none;filter:none;outline:none;
+  image-rendering:pixelated;-webkit-tap-highlight-color:transparent;
+}
+.px-frame > .px-frame-shadow,
+.px-frame > .px-frame-edge,
+.px-frame > .px-frame-face,
+.px-frame > .px-frame-glint{position:absolute;display:block;pointer-events:none;border-radius:0}
+
+/* hard pink shadow: the same stepped outline, shifted; never blurred */
+.px-frame > .px-frame-shadow{inset:0;z-index:-1;background:var(--pixel-frame-shadow-color);clip-path:var(--px-outline);
+  transform:translate(var(--pixel-frame-shadow-x),var(--pixel-frame-shadow-y))}
+/* dark pixel outline */
+.px-frame > .px-frame-edge{inset:0;z-index:0;background:var(--pixel-frame-edge-color);clip-path:var(--px-outline)}
+/* teal face with a one-block bevel: light rows top + left, dark rows bottom + right (hard inset shadows) */
+.px-frame > .px-frame-face{inset:var(--pixel-frame-edge);z-index:0;background:var(--px-face,#4F9E9B);clip-path:var(--px-outline);
+  box-shadow:inset var(--s) var(--s) 0 0 var(--px-hi,#86CBC5),inset calc(var(--s) * -1) calc(var(--s) * -1) 0 0 var(--px-lo,#367674)}
+/* one short highlight run on the top rail, just after the corner step */
+.px-frame > .px-frame-glint{z-index:2;top:var(--pixel-frame-edge);left:calc(var(--pixel-frame-edge) + var(--s2) + var(--s));
+  width:calc(var(--s) * 3);height:var(--s);background:var(--pixel-frame-glint);opacity:.85}
+.px-frame--sm > .px-frame-glint{width:calc(var(--s) * 2)}
+
+/* the picture: untouched, corners stepped in by one block so the frame's corner pixel sits on it */
+.px-frame > .px-frame-body{position:relative;z-index:1;display:block;width:100%;height:100%;overflow:hidden;
+  clip-path:polygon(var(--s) 0, calc(100% - var(--s)) 0, calc(100% - var(--s)) var(--s), 100% var(--s), 100% calc(100% - var(--s)),
+    calc(100% - var(--s)) calc(100% - var(--s)), calc(100% - var(--s)) 100%, var(--s) 100%, var(--s) calc(100% - var(--s)),
+    0 calc(100% - var(--s)), 0 var(--s), var(--s) var(--s))}
+.px-frame > .px-frame-body img{display:block;filter:none;image-rendering:auto;user-select:none;-webkit-user-drag:none}
+
+/* ================================================================ where Clock Race uses it */
+
+/* picture questions: the slot is a size container; the frame shrinks to the photo's own shape
+   (square, portrait or landscape) and sits centred in the slot, leaving room for the shadow */
+.cr-app .cr-pic-art{position:relative;container-type:size}
+.cr-app .cr-pic-art > .px-frame{position:absolute;inset:0 var(--pixel-frame-shadow-x) var(--pixel-frame-shadow-y) 0;margin:auto;
+  width:fit-content;height:fit-content}
+.cr-app .cr-pic-art > .px-frame > .px-frame-body{width:auto;height:auto}
+.cr-app .cr-pic-art .cr-art{display:block;width:auto;height:auto;object-fit:contain;
+  max-width:calc(100cqw - var(--pixel-frame-shadow-x) - var(--pixel-frame-thickness) * 2);
+  max-height:calc(100cqh - var(--pixel-frame-shadow-y) - var(--pixel-frame-thickness) * 2)}
+/* pixel frames never tilt: a rotated pixel edge stops being crisp */
+.cr-app .cr-pics .cr-pic .cr-pic-art.cr-pic-art.cr-pic-art{transform:none;filter:none}
+
+/* maps and silhouettes */
+.cr-app .cr-geo-frame{margin:0 auto;width:calc(100% - var(--pixel-frame-shadow-x))}
+.cr-app .cr-geo-body{padding:6%;box-sizing:border-box}
+.cr-app .cr-geo-body .cr-geo-art{display:block;width:100%}
+
+/* missing-piece puzzle: the picture box stays exactly the same size; the frame is added around it */
+.cr-app .cr-tile-pic.px-frame{box-sizing:content-box;box-shadow:none;overflow:visible;margin-right:var(--pixel-frame-shadow-x)}
+.cr-app .cr-tile-pic .px-frame-body img{width:100%;height:100%}
+.cr-app .cr-tile-opts{padding:0 var(--pixel-frame-shadow-x) var(--pixel-frame-shadow-y) 0}
+.cr-app .cr-tile-card.px-frame{overflow:visible;box-shadow:none;cursor:pointer}
+.cr-app .cr-tile-card .px-frame-body img{width:100%;height:100%}
+.cr-app .cr-tile-card.px-frame:active{transform:translate(2px,2px);box-shadow:none}
+.cr-app .cr-tile-card.px-frame{padding:var(--pixel-frame-thickness);border:0;background:none}
+/* four pictures to a screen: slightly smaller shadow so the grid stays tidy */
+.cr-app .cr-pics.is-n4 .px-frame{--pixel-frame-shadow-x:5px;--pixel-frame-shadow-y:5px}

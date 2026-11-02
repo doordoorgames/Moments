@@ -5,7 +5,7 @@ import {PLAYER_COLORS} from './Dials';
 import {GEO, STROOP} from './content';
 import {GEO_SHAPES} from './geoShapes';
 import {Heaviest, Shadow, MissingTile, DontTap} from './NewTasks';
-import {PictureQuiz} from './PictureTasks';
+import {PictureQuiz, FramedPic} from './PictureTasks';
 import {frameVariant} from './frames';
 import {PixelFrame} from './PixelFrame';
 
@@ -141,7 +141,7 @@ export function FinalBoss({task, onPick}) {
   </div>;
 }
 
-function PriceQuiz({task, onPick, lang}) {
+function PriceQuiz({task, onPick, lang, index = 0}) {
   const [revealed, reveal] = useState(false);
   const choose = i => {
     if (!revealed && onPick(i)) reveal(true);
@@ -149,13 +149,10 @@ function PriceQuiz({task, onPick, lang}) {
   const money = new Intl.NumberFormat(lang === 'ar' ? 'ar-KW' : 'en-US', {
     style: 'currency', currency: 'USD', minimumFractionDigits: 0, maximumFractionDigits: 2
   });
-  return <div className="cr-price-options">{task.options.map((o, i) =>
+  return <div className="cr-price-options" style={{"--n": task.options.length}}>{task.options.map((o, i) =>
     <button type="button" key={o.key} disabled={revealed} aria-label={o.quantity > 1 ? o.quantity + " × " + o[lang] : o[lang]} onClick={() => choose(i)}>
-      <span className="cr-price-stack">{Array.from({length: o.quantity}, (_, j) =>
-        <img key={j} alt="" src={`/clock-race/art/prices/${o.key}.webp`} style={{transform: `translate(${j * 2}px, ${-j * 2}px)`}}/>)}
-        {o.quantity > 1 && <b dir="ltr">×{o.quantity}</b>}
-      </span>
-      <span>{o[lang]}</span>
+      <span className="cr-pic-art cr-price-art"><FramedPic url={`/clock-race/art/prices/${o.key}.webp`} seed={[index, i]}/></span>
+      <span className="cr-pic-name cr-price-name">{o.quantity > 1 && <b dir="ltr">×{o.quantity} </b>}{o[lang]}</span>
       {revealed && <strong>{money.format(o.unit_usd * o.quantity)}</strong>}
     </button>)}</div>;
 }

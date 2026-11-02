@@ -535,3 +535,7 @@
 .cr-app.cr-arcade .cr-arrow-btn .cr-next-arrow{width:12px;height:17px}
 /* results / waiting: the pixel clock */
 .cr-app.cr-arcade .cr-finish-clock{display:block;margin:10px auto}
+/* which is more expensive: framed pictures like every other picture question; price shown after the pick */
+.cr-app.cr-arcade .cr-price-options strong{font-family:var(--cr-press);font-weight:400;font-size:12px;color:var(--cr-powder);text-shadow:var(--cr-ol-1)}
+.cr-app.cr-arcade .cr-price-options .cr-pic-name{font-size:clamp(17px,4.8vw,21px)}
+.cr-app.cr-arcade .cr-price-options button:active:not(:disabled){transform:translate(2px,2px)}

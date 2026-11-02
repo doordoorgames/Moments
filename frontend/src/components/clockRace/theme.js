@@ -25,14 +25,14 @@ export const ARCADE_VARS = {'--arc-room': art('a-room-2.jpg'), '--arc-paint': ar
 // Declared from here, not from the stylesheet, so the build never tries to bundle the files.
 // font-display: block, so a phone never flashes a generic system font first.
 const FONTS = `
-@font-face{font-family:'CR Handjet';src:url(/fonts/clock-race/handjet.woff) format('woff');font-weight:400 900;font-display:block}
+@font-face{font-family:'CR Handjet';src:url(/fonts/clock-race/handjet.woff?v=2) format('woff');font-weight:400 900;font-display:block}
 @font-face{font-family:'CR Press Start';src:url(/fonts/clock-race/press-start-2p.woff) format('woff');font-weight:400;font-display:block}`;
 if (ARCADE && typeof document !== 'undefined' && !document.getElementById('cr-fonts')) {
   const style = document.createElement('style');
   style.id = 'cr-fonts';
   style.textContent = FONTS;
   document.head.appendChild(style);
-  ['handjet.woff', 'press-start-2p.woff'].forEach(file => {
+  ['handjet.woff?v=2', 'press-start-2p.woff'].forEach(file => {
     const link = document.createElement('link');
     Object.assign(link, {rel: 'preload', as: 'font', type: 'font/woff', href: `/fonts/clock-race/${file}`, crossOrigin: 'anonymous'});
     document.head.appendChild(link);

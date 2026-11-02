@@ -17,7 +17,12 @@ const tap = fn => ({
 // Every picture wears the shared pixel frame (PixelFrame.jsx); `seed` picks its teal variant.
 // Until the picture has downloaded, the frame holds a plain dark-teal square instead of an empty box.
 export const Art = memo(function Art({k, seed = [0, 0]}) {
-  const url = `${ART_BASE}${ART[k]}`;
+  return <FramedPic url={`${ART_BASE}${ART[k]}`} seed={seed}/>;
+});
+
+// Any picture in the shared pixel frame, at its own shape (square, portrait or landscape: no bars).
+// Sits in a .cr-pic-art slot, which sizes it.
+export const FramedPic = memo(function FramedPic({url, seed = [0, 0]}) {
   const [ready, setReady] = useState(() => isReady(url));
   useEffect(() => {
     if (isReady(url)) { setReady(true); return undefined; }

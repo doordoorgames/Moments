@@ -1,7 +1,7 @@
 import React, {useCallback, useEffect, useRef, useState} from 'react';
 import {useNavigate, useParams, useSearchParams} from 'react-router-dom';
 import {flushSync} from 'react-dom';
-import {ArrowLeft, ArrowRight, BookOpen, Check, Copy, Eye, Link as LinkIcon, Lock, LogIn, Plus, RefreshCw, Send, Sparkles, X} from 'lucide-react';
+import {ArrowLeft, ArrowRight, BookOpen, Check, Copy, Eye, Link as LinkIcon, LogIn, Palette, Plus, RefreshCw, Send, Sparkles, X} from 'lucide-react';
 import {BACKEND_URL} from '@/lib/api';
 import Rooftop from './Rooftop';
 import RoomCodeInput from './RoomCodeInput';
@@ -11,6 +11,7 @@ import './plotTwist.css';
 
 import {wordCount} from './words';
 import {TEXT} from './i18n';
+import {INKS, HIGHLIGHTS, inkColor, markColor} from './colors';
 const key = code => `plot-twist-session:${code}`;
 function session(code) { try {return JSON.parse(localStorage.getItem(key(code)) || 'null');} catch {return null;} }
 // Story Time: exactly 5 words a turn, set rounds. Word Trap: 5 to 15 words a turn, no rounds, no clock.
@@ -42,6 +43,7 @@ export default function PlotTwist({onContinue}) {
   const [swapping,setSwapping] = useState(false);
   const [swapError,setSwapError] = useState('');
   const [trap,setTrap] = useState(null);
+  const [picker,setPicker] = useState(false);
   const [asPlayer,setAsPlayer] = useState('');
   const nickRef = useRef(null), codeRef = useRef(null), inputRef = useRef(null), storyRef = useRef(null), pending = useRef(false), swapPending = useRef(false);
   const current = useRef(null), latestRequest = useRef(0), seenRun = useRef(''), seenTraps = useRef(new Set());
@@ -149,13 +151,20 @@ export default function PlotTwist({onContinue}) {
     }catch(e){setError(e.message);refresh();}finally{pending.current=false;setBusy(false);}
   }
   // Word Trap: swap the secret word. The server owns the allowance; a failed swap keeps the word and the count.
-  async function swapWord() {
+  async function swapWord(word) {
     if(swapPending.current||!game?.target||game.rerolls_used>=game.rerolls_max)return;
     swapPending.current=true;setSwapping(true);setSwapError('');
     try {
-      const result=await request(`/rooms/${code}/action`,{action:'reroll',run:game.run,secret:game.secret_id||'',used:game.rerolls_used,request_id:crypto.randomUUID(),as_player:asPlayer},auth);
+      const result=await request(`/rooms/${code}/action`,{action:'reroll',run:game.run,secret:game.secret_id||'',used:game.rerolls_used,request_id:crypto.randomUUID(),as_player:asPlayer,word},auth);
       ++latestRequest.current;accept(result);
     }catch(e){setSwapError(e.message);refresh();}finally{swapPending.current=false;setSwapping(false);}
+  }
+  // Each player picks their own ink and highlight, as often as they like. The font never changes.
+  async function pickStyle(ink,mark) {
+    try {
+      const result=await request(`/rooms/${code}/action`,{action:'style',ink,mark,as_player:asPlayer},auth);
+      ++latestRequest.current;accept(result);
+    }catch(e){setError(e.message);refresh();}
   }
   async function share() {
     const url=inviteUrl;
@@ -165,6 +174,9 @@ export default function PlotTwist({onContinue}) {
   // Arrived from a scanned code or shared link: only the nickname is left to fill.
   const linkJoin=!!routeCode&&!auth;
   const playerName=id=>game?.players.find(p=>p.id===id)?.name || t.aFriend;
+  const styleOf=id=>{const i=game?.players.findIndex(p=>p.id===id)??0;return game?.players[i]?.style||{ink:INKS[Math.max(i,0)%INKS.length],mark:'none'};};
+  const myStyle=styleOf(me);
+  const myWords=game?.words||(game?.target?[game.target]:[]);
   const playing=screen==='room'&&game&&game.status!=='lobby';
   const trapMood=(screen==='room'?game?.mode:screen==='connect'?mode:null)==='trap';
   // One line only: Enter never adds a new line (pasted line breaks become spaces).
@@ -218,13 +230,15 @@ export default function PlotTwist({onContinue}) {
             {host&&game.mode==='trap'&&game.status==='active'&&<button className="pt-end" disabled={busy} onClick={endStory}>{t.endStory}</button>}
             <button className="pt-code-tag" dir="ltr" onClick={share} aria-label={t.shareInvite}><LinkIcon size={13}/>{code}</button>
           </div>
-          {game.mode==='trap'&&game.status==='active'&&<button className="pt-secret-chip" onClick={()=>setReveal(true)} aria-label={t.showSecret}>
-            <Eye size={15}/><span>{t.secretWord}</span><strong>{t.peek}</strong>
+          {game.mode==='trap'&&game.status==='active'&&<button className="pt-secret-board" onClick={()=>setReveal(true)} aria-label={t.showSecret}>
+            {game.category&&<span className="pt-secret-cat">{t.categoryLine}<b>{game.category.name}</b></span>}
+            <span className="pt-secret-words"><i>{t.yourWords(myWords.length)}</i>{myWords.map(w=><strong key={w}>{w}</strong>)}<Eye size={14}/></span>
+            <small>{t.secretGoal(myWords.length)}</small>
           </button>}
           <div className={`pt-page ${myTurn?'is-mine':''}`} onClick={()=>{if(myTurn)inputRef.current?.focus();}}>
-            <span className="pt-page-label">{t.soFar}</span>
+            <div className="pt-page-head"><span className="pt-page-label">{t.soFar}</span><button type="button" className="pt-colors-button" onClick={e=>{e.stopPropagation();setPicker(true);}}><span className="pt-colors-dot" style={{color:inkColor(myStyle.ink),background:markColor(myStyle.mark)}}>A</span>{t.colours}<Palette size={14}/></button></div>
             <div className="pt-page-story" ref={storyRef} aria-live="polite" aria-relevant="additions">
-              {game.contributions.length?game.contributions.map((c,i)=><span className={`pt-contribution pt-ink-${game.players.findIndex(p=>p.id===c.player)%4}`} key={`${game.run}-${i}`}>{c.text}{' '}</span>):!myTurn&&<span className="pt-page-empty">{t.firstLine}</span>}
+              {game.contributions.length?game.contributions.map((c,i)=>{const st=styleOf(c.player);const same=i>0&&game.contributions[i-1].player===c.player;return <p className={`pt-line ${same?'is-same':''}`} key={`${game.run}-${i}`}>{!same&&<small className="pt-line-name" style={{color:inkColor(st.ink)}}>{playerName(c.player)}</small>}<span className="pt-line-text" style={{color:inkColor(st.ink),background:markColor(st.mark)}}>{c.text}</span></p>;}):!myTurn&&<span className="pt-page-empty">{t.firstLine}</span>}
               {myTurn&&<textarea ref={inputRef} className="pt-page-input" value={draft} onChange={e=>typeDraft(e.target.value)} maxLength={350} rows={1}
                 dir="auto" aria-label={t.ariaLine(lo,hi)} placeholder={game.mode==='trap'?t.placeholderTrap:t.placeholderStory}
                 enterKeyHint="send" spellCheck autoCorrect="on" autoCapitalize="sentences"
@@ -249,12 +263,19 @@ export default function PlotTwist({onContinue}) {
       {!playing&&<footer className="pt-site-footer">PLOT TWIST <span>{t.footer[0]}</span><span>{t.footer[1]}</span></footer>}
     </div>
     {reveal&&game?.target&&<div className="pt-modal" role="dialog" aria-modal="true" aria-labelledby="pt-reveal-title"><div className="pt-reveal-card"><span className="pt-small-label">{t.revealLabel}</span><Sparkles size={38}/><h2 id="pt-reveal-title">{t.revealTitle}</h2>
-      <div className="pt-reveal-word"><strong aria-live="polite">{game.target.toUpperCase()}</strong>
-        {game.status==='active'&&game.mode==='trap'&&(()=>{const used=game.rerolls_used??0,max=game.rerolls_max??3,locked=used>=max;return <button type="button" className={`pt-reroll ${locked?'is-locked':''} ${swapping?'is-busy':''}`} disabled={locked||swapping} aria-busy={swapping||undefined} onClick={swapWord} aria-label={locked?t.rerollLocked(max):t.rerollLabel(used,max)}>{locked?<Lock size={16}/>:<RefreshCw size={17}/>}<span className="pt-reroll-count" dir="ltr">{used}/{max}</span></button>;})()}
-      </div>
+      {game.category&&<p className="pt-reveal-cat">{t.categoryLine}<b>{game.category.name}</b></p>}
+      <div className="pt-reveal-list" aria-live="polite">{myWords.map(w=>{const canSwap=game.status==='active'&&game.mode==='trap'&&(game.rerolls_used??0)<(game.rerolls_max??1);return <div className="pt-reveal-word" key={w}><strong>{w.toUpperCase()}</strong>
+        {canSwap&&<button type="button" className={`pt-reroll ${swapping?'is-busy':''}`} disabled={swapping} aria-busy={swapping||undefined} onClick={()=>swapWord(w)} aria-label={t.swapLabel(w)}><RefreshCw size={16}/><span className="pt-reroll-count">{t.swap}</span></button>}
+      </div>;})}</div>
+      {game.mode==='trap'&&<p className="pt-reroll-note">{(game.rerolls_used??0)>=(game.rerolls_max??1)?t.swapUsed:t.swapNote}</p>}
       {swapError&&<p className="pt-reroll-error" role="alert">{swapError}</p>}
       <p>{t.revealText}</p><button className="pt-primary" autoFocus onClick={()=>{setReveal(false);inputRef.current?.focus();}}>{t.sealed} <Check size={18}/></button></div></div>}
     {trap&&<div className="pt-modal pt-trap-modal" role="dialog" aria-modal="true" aria-labelledby="pt-trap-title"><div className="pt-trap-card"><span className="pt-small-label">{t.trapLabel}</span><h2 id="pt-trap-title">{t.trapTitle}</h2>{trap.map(x=><div key={x.id}><strong>“{x.word.toUpperCase()}”</strong><p>{t.saidWord(playerName(x.writer))}<br/><b>{t.scores(playerName(x.owner))}</b></p></div>)}<p className="pt-fine">{t.freshWords}</p><button className="pt-primary" autoFocus onClick={()=>setTrap(null)}>{t.backToStory} <ArrowRight size={18}/></button></div></div>}
+    {picker&&game&&<div className="pt-modal" role="dialog" aria-modal="true" aria-labelledby="pt-colors-title" onClick={()=>setPicker(false)}><div className="pt-reveal-card pt-colors-card" onClick={e=>e.stopPropagation()}><span className="pt-small-label">{t.coloursLabel}</span><h2 id="pt-colors-title">{t.coloursTitle}</h2>
+      <p className="pt-colors-preview"><span style={{color:inkColor(myStyle.ink),background:markColor(myStyle.mark)}}>{t.coloursPreview}</span></p>
+      <div className="pt-swatch-group"><span>{t.inkLabel}</span><div className="pt-swatches">{INKS.map(id=><button type="button" key={id} className={`pt-swatch ${myStyle.ink===id?'is-on':''}`} aria-pressed={myStyle.ink===id} aria-label={id} style={{background:inkColor(id)}} onClick={()=>pickStyle(id,myStyle.mark)}/>)}</div></div>
+      <div className="pt-swatch-group"><span>{t.markLabel}</span><div className="pt-swatches">{HIGHLIGHTS.map(id=><button type="button" key={id} className={`pt-swatch pt-swatch-mark ${id==='none'?'is-none':''} ${myStyle.mark===id?'is-on':''}`} aria-pressed={myStyle.mark===id} aria-label={id==='none'?t.noHighlight:id} style={{background:id==='none'?'transparent':markColor(id)}} onClick={()=>pickStyle(myStyle.ink,id)}/>)}</div></div>
+      <button className="pt-primary" autoFocus onClick={()=>setPicker(false)}>{t.gotIt} <Check size={18}/></button></div></div>}
     {langNote&&game&&!reveal&&<div className="pt-modal" role="dialog" aria-modal="true" aria-labelledby="pt-lang-title"><div className="pt-reveal-card"><span className="pt-small-label">{t.langNoteLabel}</span><h2 id="pt-lang-title">{t.langNoteTitle}</h2><p>{t.langNoteText}</p><button className="pt-primary" autoFocus onClick={()=>setLangNote(false)}>{t.gotIt} <Check size={18}/></button></div></div>}
   </main>;
 }

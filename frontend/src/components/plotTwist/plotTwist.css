@@ -173,3 +173,46 @@
 .pt-lobby .pt-invite .pt-invite-qr{display:flex;align-items:center;gap:14px;margin:12px 0 4px}
 .pt-qr{width:132px;height:132px;flex-shrink:0;border-radius:8px;background:#fff;box-shadow:0 0 0 4px #fff2d9}
 .pt-lobby .pt-invite .pt-invite-qr span{font-size:12px;line-height:1.55;color:#f8dfde}
+
+/* Word Trap: the room's theme and your secret words sit on top of the page. */
+.pt-app .pt-secret-board{display:flex;flex-direction:column;align-items:flex-start;gap:4px;flex-shrink:0;max-height:30%;overflow-y:auto;width:100%;text-align:start;border:1px solid #c995ad80;background:#2f1e3bcc;color:#ffe8c7;border-radius:12px;padding:10px 14px}
+.pt-secret-cat{font-size:12px;color:#f0cfd6}
+.pt-secret-cat b{color:#ffd799;font-weight:800}
+.pt-secret-words{display:flex;flex-wrap:wrap;align-items:center;gap:6px;font-size:12px}
+.pt-secret-words i{font-style:normal;opacity:.75}
+.pt-secret-words strong{font:600 16px/1.2 'Playfair Display',Georgia,serif;letter-spacing:.5px;color:#40263c;background:#ffd799;border-radius:6px;padding:3px 9px;text-transform:capitalize}
+.pt-secret-words svg{opacity:.6}
+.pt-secret-board small{font-size:11px;color:#e4bfcd;opacity:.85}
+.pt-app.pt-rtl .pt-secret-words strong{font-family:'Cairo',system-ui,sans-serif;font-weight:800}
+
+/* Story so far: every line on its own row, in the writer's ink and highlight. */
+.pt-page-head{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-shrink:0}
+.pt-app .pt-colors-button{display:inline-flex;align-items:center;gap:6px;border:1px solid #d9bfc6;background:#fffaf2;color:#6b4a62;border-radius:999px;padding:5px 11px 5px 5px;font-size:12px!important;font-weight:800!important}
+.pt-colors-dot{display:grid;place-items:center;width:22px;height:22px;border-radius:50%;border:1px solid #e3cfbe;font:700 13px/1 'Playfair Display',Georgia,serif}
+.pt-app .pt-line{margin:0 0 10px;font-size:inherit;line-height:1.55}
+.pt-app .pt-line.is-same{margin-top:-4px}
+.pt-line-name{display:block;font:800 10px/1.4 'DM Sans',sans-serif;letter-spacing:1.4px;text-transform:uppercase;opacity:.8;margin-bottom:2px}
+.pt-line-text{padding:1px 6px;border-radius:5px;-webkit-box-decoration-break:clone;box-decoration-break:clone;animation:pt-line-in .3s ease-out}
+.pt-page-story .pt-page-input{margin-top:8px}
+
+/* Reveal: the theme, then every word you hold. One swap per game. */
+.pt-reveal-cat{margin:0 0 14px!important;font-size:13px!important;color:#f0cfd6!important}
+.pt-reveal-cat b{color:#ffd798}
+.pt-reveal-list{display:flex;flex-direction:column;max-height:40vh;overflow-y:auto}
+.pt-reveal-list .pt-reveal-word{padding:12px 0;border-bottom:0}
+.pt-reveal-list .pt-reveal-word+.pt-reveal-word{border-top:0}
+.pt-reveal-list .pt-reveal-word:last-child{border-bottom:1px solid #a0768b}
+.pt-reveal-list .pt-reveal-word strong{font-size:clamp(22px,6vw,36px)}
+.pt-reveal-card .pt-reroll-note{margin:12px 0 0!important;font-size:12px!important}
+
+/* Colour picker: font colour and highlight only. */
+.pt-colors-preview{margin:6px 0 18px!important;font:600 20px/1.6 'Playfair Display',Georgia,serif!important;background:var(--pt-paper);border-radius:8px;padding:14px}
+.pt-colors-preview span{padding:1px 6px;border-radius:5px;-webkit-box-decoration-break:clone;box-decoration-break:clone}
+.pt-app.pt-rtl .pt-colors-preview{font-family:'Cairo',system-ui,sans-serif!important}
+.pt-swatch-group{margin-bottom:16px;text-align:start}
+.pt-swatch-group>span{display:block;font-size:10px;letter-spacing:1.6px;font-weight:800;color:#f0cfd6;margin-bottom:8px}
+.pt-swatches{display:grid;grid-template-columns:repeat(8,1fr);gap:8px}
+.pt-app .pt-swatch{aspect-ratio:1;width:100%;min-height:30px;border-radius:50%;border:2px solid #fff2d966;padding:0}
+.pt-app .pt-swatch.is-on{border-color:#fff2d9;box-shadow:0 0 0 3px #ffd799}
+.pt-swatch.is-none{background:linear-gradient(135deg,transparent 45%,#fff2d9aa 46%,#fff2d9aa 54%,transparent 55%)!important}
+@media(max-width:420px){.pt-swatches{grid-template-columns:repeat(4,1fr)}}

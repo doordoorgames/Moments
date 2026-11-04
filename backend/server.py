@@ -2436,7 +2436,7 @@ app.include_router(clock_race_router(lambda: supa, _q))
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,
-    allow_origins=list(dict.fromkeys([origin.strip() for origin in os.environ.get("CORS_ORIGINS", "*").split(",") if origin.strip()] + ["https://moments-ten-psi.vercel.app"])),
+    allow_origins=list(dict.fromkeys([origin.strip() for origin in os.environ.get("CORS_ORIGINS", "*").split(",") if origin.strip()] + ["https://moments-ten-psi.vercel.app", "https://splash.devs.surf"])),
     # Only this Moments project's Vercel aliases/previews; unrelated Vercel sites stay blocked.
     allow_origin_regex=r"https://moments(?:-[a-z0-9-]+)?-doordoorgames-projects\.vercel\.app",
     allow_methods=["*"],

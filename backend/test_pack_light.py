@@ -109,7 +109,11 @@ def test_auth_classic_scope_and_no_gameplay_regression(game):
 def test_cors_approved_previews_and_production():
     from fastapi.testclient import TestClient
     client=TestClient(server.app);headers={'Access-Control-Request-Method':'POST','Access-Control-Request-Headers':'content-type'}
-    for origin in ['https://moments-kyd3rfsjj-doordoorgames-projects.vercel.app','https://moments-git-feature-shoug-2-presentation-doordoorgames-projects.vercel.app','https://moments-ten-psi.vercel.app']:
+    for origin in ['https://moments-kyd3rfsjj-doordoorgames-projects.vercel.app','https://moments-git-feature-shoug-2-presentation-doordoorgames-projects.vercel.app','https://moments-ten-psi.vercel.app','https://splash.devs.surf']:
         response=client.options('/api/rooms',headers={**headers,'Origin':origin})
         assert response.status_code==200 and response.headers['access-control-allow-origin']==origin
+    for path in ['/api/rooms','/api/clock-race/rooms','/api/plot-twist/rooms','/api/emoji-rooftop/rooms','/api/letter-tv/rooms']:
+        response=client.options(path,headers={**headers,'Origin':'https://splash.devs.surf'})
+        assert response.status_code==200 and response.headers['access-control-allow-origin']=='https://splash.devs.surf'
     assert client.options('/api/rooms',headers={**headers,'Origin':'https://other-project.vercel.app'}).status_code==400
+    assert client.options('/api/rooms',headers={**headers,'Origin':'https://evil.devs.surf'}).status_code==400

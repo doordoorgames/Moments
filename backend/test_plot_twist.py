@@ -53,53 +53,87 @@ def test_wrong_turn_stale_and_duplicate():
 
 def test_whole_word_self_simultaneous_fresh():
     g=game('trap',3,3);a,b,c=[p['id'] for p in g['players']]
-    g['targets']={a:'pancake',b:'ice',c:'cake'};g['used']=list(set(g['used']+['pancake','ice','cake','piano']))
+    g['targets']={a:['pancake'],b:['ice'],c:['cake']};g['used']=list(set(g['used']+['pancake','ice','cake','piano']))
     send(g,'Pancake pancakes nice icing cupcake cakes iceman')
     assert not g['traps']
-    g['targets']={a:'pancake',b:'piano',c:'ice'}
+    g['targets']={a:['pancake'],b:['piano'],c:['ice']}
     send(g,'She said “PANCAKE!” then grabbed some ICE.')
     assert g['players'][0]['score']==1 and g['players'][2]['score']==1
     assert len(g['traps'])==2
-    assert g['targets'][a] not in ('pancake','ice','piano') and g['targets'][c]!=g['targets'][a]
+    assert 'pancake' not in g['targets'][a] and 'ice' not in g['targets'][c]
+    assert len(set(E.live(g)))==sum(len(E.held(g,p)) for p in (a,b,c))
 
 @pytest.mark.parametrize('n',[5,9,15])
 def test_trap_range(n):
     g=game('trap');send(g,' '.join(['word']*n));assert g['turn']==1
 
 @pytest.mark.parametrize('lang',['en','ar'])
-def test_pool_recycles_in_open_story(lang):
+def test_category_words_grow_and_never_clash(lang):
     g,_=E.new_game('Host','trap',1,lang=lang)
     for i in range(1,8):E.add_player(g,f'Friend {i}')
-    E.start(g);size=len(E.pool(g))
-    for _ in range(size):
-        writer=g['players'][g['turn']%8]['id']
-        targets=[w for p,w in g['targets'].items() if p!=writer][:15]
-        send(g,' '.join(targets+['x']*(5-len(targets))))
-        live=list(g['targets'].values())
-        assert len(g['targets'])==8 and len(set(live))==8
+    E.start(g);cat=E.CATS.BY_ID[g['category']][lang]['words']
+    assert all(len(E.held(g,p['id']))==1 for p in g['players'])
+    for n in range(40):
+        writer=g['players'][g['turn']%8]['id'];before=len(E.held(g,writer))
+        send(g,'x x x x x')
+        held=[w for p in g['players'] for w in E.held(g,p['id'])]
+        assert len(held)==len(set(held)) and all(w in cat for w in held)
+        if n<8:assert len(E.held(g,writer))==before+1
     assert g['status']=='active'
+
+def test_category_shared_words_private_replay_new_category():
+    g=game('trap',3);a,b,c=[p['id'] for p in g['players']]
+    v=E.view(g,a);name=E.CATS.BY_ID[g['category']]['en']['name']
+    assert v['category']=={'id':g['category'],'name':name} and E.view(g,b)['category']==v['category']
+    assert v['words']==E.held(g,a)
+    raw=json.dumps(E.view(g,b))
+    assert all(w not in raw for w in E.held(g,a))
+    first=g['category'];E.end(g);E.start(g);assert g['category']!=first
+    assert E.view(game('story'),a)['category'] is None
+
+def test_writer_gains_word_and_trap_scores_any_held_word():
+    g=game('trap',2);a,b=[p['id'] for p in g['players']]
+    send(g,'one two three four five');assert len(E.held(g,a))==2
+    second=E.held(g,a)[1]
+    send(g,f'one two three four {second}')
+    assert g['players'][0]['score']==1 and second not in E.held(g,a) and len(E.held(g,a))==2
+    assert len(E.held(g,b))==2
+
+def test_styles():
+    g=game('trap',2);a,b=[p['id'] for p in g['players']]
+    assert E.view(g,a)['players'][1]['style']=={'ink':E.INKS[1],'mark':'none'}
+    E.set_style(g,b,'teal','mint');E.set_style(g,b,'rose','butter')
+    assert E.view(g,a)['players'][1]['style']=={'ink':'rose','mark':'butter'}
+    with pytest.raises(E.GameError):E.set_style(g,a,'gold','mint')
+    with pytest.raises(E.GameError):E.set_style(g,a,'rose','glitter')
 
 def test_arabic_matching_and_language():
     g,_=E.new_game('خالد','trap',1,lang='ar');E.add_player(g,'سعود');E.start(g)
     a,b=[p['id'] for p in g['players']]
     assert E.view(g,a)['lang']=='ar' and E.view(g,a)['min_words']==5 and E.view(g,a)['max_words']==15
-    assert all(w in E.AR_POOL for w in g['targets'].values())
-    g['targets'][b]='قطة'
+    assert E.view(g,a)['category']['name']==E.CATS.BY_ID[g['category']]['ar']['name']
+    g['targets'][b]=['قطة']
     send(g,'وفجأة طلعت القطّة من الشباك وركضت')
     assert g['players'][1]['score']==1
-    g['targets'][a]='مكيف'
+    g['targets'][a]=['مكيف']
     send(g,'شغلوا المكيفات لأن الجو حر')
     assert g['players'][0]['score']==0
     with pytest.raises(E.GameError) as e:send(g,'كلمة')
     assert e.value.text('ar').startswith('اكتب')
     with pytest.raises(E.GameError):E.new_game('x','trap',1,lang='fr')
 
+def test_legacy_string_target_room():
+    g=game('trap',2);a,b=[p['id'] for p in g['players']]
+    g['targets'][b]='piano';g['category']=None;g['secrets']={}
+    send(g,'one two three four piano')
+    assert g['players'][1]['score']==1 and 'piano' not in E.held(g,b)
+
 def test_views_capacity():
     g=game('trap',8);pid=g['players'][0]['id'];v=E.view(g,pid);raw=json.dumps(v)
-    assert v['target']==g['targets'][pid] and 'targets' not in v and 'used' not in v
+    assert v['target']==E.held(g,pid)[0] and 'targets' not in v and 'used' not in v
     for p in g['players']:
         assert p['token'] not in raw
-        if p['id']!=pid:assert g['targets'][p['id']] not in raw
+        if p['id']!=pid:assert all(w not in raw for w in E.held(g,p['id']))
     with pytest.raises(E.GameError):E.add_player(g,'ninth')
     g,p=E.new_game('Host','story',1)
     with pytest.raises(E.GameError):E.start(g)
@@ -181,103 +215,85 @@ def test_host_language_wins_for_joiners(client):
 
 # ------------------------------------------------------------------ Word Trap rerolls
 
-def swap(g,pid,request=None,used=None,secret=None):
+def swap(g,pid,request=None,used=None,secret=None,word=''):
     v=E.view(g,pid)
-    E.reroll(g,pid,v['secret_id'] if secret is None else secret,v['rerolls_used'] if used is None else used,request or f"r{v['rerolls_used']}:{v['target']}")
+    E.reroll(g,pid,v['secret_id'] if secret is None else secret,v['rerolls_used'] if used is None else used,request or f"r{v['rerolls_used']}:{v['target']}",word)
 
 @pytest.mark.parametrize('lang',['en','ar'])
-def test_reroll_three_then_locked(lang):
+def test_reroll_once_then_locked(lang):
     g,_=E.new_game('Host','trap',0,lang=lang);E.add_player(g,'Guest');E.start(g)
-    a,b=[p['id'] for p in g['players']];other=g['targets'][b]
-    assert E.view(g,a)['rerolls_used']==0 and E.view(g,a)['rerolls_max']==3
-    seen=[g['targets'][a]]
-    for n in (1,2,3):
-        swap(g,a);v=E.view(g,a)
-        assert v['rerolls_used']==n and v['target'] not in seen and v['target']!=other
-        assert v['target'] in E.pool(g)
-        seen.append(v['target'])
+    a,b=[p['id'] for p in g['players']];other=E.held(g,b)
+    first=E.held(g,a)[0]
+    assert E.view(g,a)['rerolls_used']==0 and E.view(g,a)['rerolls_max']==1
+    swap(g,a);v=E.view(g,a)
+    assert v['rerolls_used']==1 and v['target']!=first and v['target'] not in other and v['target'] in E.pool(g)
     before=copy.deepcopy(g)
     with pytest.raises(E.GameError):swap(g,a)
     assert g==before
-    # The other player's word and allowance never moved.
-    assert g['targets'][b]==other and E.view(g,b)['rerolls_used']==0
-    swap(g,b);assert E.view(g,b)['rerolls_used']==1 and E.view(g,a)['rerolls_used']==3
+    assert E.held(g,b)==other and E.view(g,b)['rerolls_used']==0
+    swap(g,b);assert E.view(g,b)['rerolls_used']==1
+
+def test_reroll_picks_word_and_stays_spent_after_trap():
+    g=game('trap',2);a,b=[p['id'] for p in g['players']]
+    send(g,'one two three four five');second=E.held(g,a)[1]
+    send(g,'one two three four five')
+    swap(g,a,word=second);assert second not in E.held(g,a) and len(E.held(g,a))==2
+    with pytest.raises(E.GameError):swap(g,b,word='notmine')
+    assert E.view(g,b)['rerolls_used']==0
+    send(g,'one two three four five')
+    send(g,f'one two three four {E.held(g,a)[0]}')
+    assert g['players'][0]['score']==1 and E.view(g,a)['rerolls_used']==1
 
 def test_reroll_duplicate_and_double_tap():
     g=game('trap');a=g['players'][0]['id']
     v=E.view(g,a)
-    E.reroll(g,a,v['secret_id'],0,'tap-1');word=g['targets'][a];version=g['version']
-    # Same request retried: nothing spent, word kept.
+    E.reroll(g,a,v['secret_id'],0,'tap-1');words=E.held(g,a);version=g['version']
     E.reroll(g,a,v['secret_id'],0,'tap-1')
-    assert g['targets'][a]==word and E.view(g,a)['rerolls_used']==1 and g['version']==version
-    # A second tap sent before the first came back (still says 0 used) is refused.
+    assert E.held(g,a)==words and E.view(g,a)['rerolls_used']==1 and g['version']==version
     with pytest.raises(E.GameError):E.reroll(g,a,v['secret_id'],0,'tap-2')
-    assert g['targets'][a]==word and E.view(g,a)['rerolls_used']==1
+    assert E.held(g,a)==words
 
 def test_reroll_failure_keeps_word_and_count():
-    g=game('trap');a=g['players'][0]['id'];word=g['targets'][a]
+    g=game('trap');a=g['players'][0]['id'];words=E.held(g,a)
     with pytest.raises(E.GameError):E.reroll(g,a,'not-this-assignment',0,'x')
     with pytest.raises(E.GameError):E.reroll(g,a,E.view(g,a)['secret_id'],0,'')
-    assert g['targets'][a]==word and E.view(g,a)['rerolls_used']==0
-
-def test_reroll_scores_against_replacement_and_trap_gives_fresh_allowance():
-    g=game('trap',2,1);a,b=[p['id'] for p in g['players']]
-    old=g['targets'][b];swap(g,b);new=g['targets'][b]
-    assert E.view(g,b)['rerolls_used']==1
-    send(g,f'one two three four {old}')  # host writes the replaced word: no score
-    assert g['players'][1]['score']==0
-    send(g,'one two three four five')     # guest's turn
-    send(g,f'one two three four {new}')   # host writes the replacement: guest scores
-    assert g['players'][1]['score']==1 and g['targets'][b] not in (old,new)
-    v=E.view(g,b);assert v['rerolls_used']==0 and v['secret_id']
-    # A swap aimed at the word that was just trapped is refused, not spent.
-    with pytest.raises(E.GameError):E.reroll(g,b,'stale-id',1,'late')
-    assert E.view(g,b)['rerolls_used']==0
+    assert E.held(g,a)==words and E.view(g,a)['rerolls_used']==0
 
 def test_reroll_only_during_active_trap_and_replay_resets():
     g=game('story');a=g['players'][0]['id']
     with pytest.raises(E.GameError):E.reroll(g,a,'',0,'s')
     g=game('trap');a=g['players'][0]['id']
-    for _ in range(3):swap(g,a)
-    E.end(g)
+    swap(g,a);E.end(g)
     with pytest.raises(E.GameError):swap(g,a)
     E.start(g);assert E.view(g,a)['rerolls_used']==0
 
 def test_reroll_view_is_private():
     g=game('trap',3);a,b,c=[p['id'] for p in g['players']]
-    first=g['targets'][a];swap(g,a);swap(g,a)
+    first=E.held(g,a)[0];swap(g,a)
     for pid in (b,c):
         raw=json.dumps(E.view(g,pid))
-        assert first not in raw and g['targets'][a] not in raw and 'secrets' not in raw and 'seen' not in raw
+        assert first not in raw and E.held(g,a)[0] not in raw and 'secrets' not in raw and 'seen' not in raw
 
 def test_reroll_legacy_room_without_allowances():
     g=game('trap');a=g['players'][0]['id'];del g['secrets']
     v=E.view(g,a);assert v['rerolls_used']==0
     E.reroll(g,a,v['secret_id'],0,'legacy');assert E.view(g,a)['rerolls_used']==1
 
-def test_http_reroll_lifecycle(client):
+def test_http_reroll_and_style(client):
     c,db=client;a=create(c);url='/api/plot-twist/rooms/'+a['code'];b=c.post(url+'/join',json={'nickname':'Guest'}).json()
     av=c.post(url+'/action',json={'action':'start'},headers=headers(a)).json();bv=c.get(url,headers=headers(b)).json()
+    assert av['category'] and av['category']==bv['category']
     def go(p,v,rid,**kw):
         return c.post(url+'/action',headers=headers(p),json=dict(action='reroll',run=v['run'],secret=v['secret_id'],used=v['rerolls_used'],request_id=rid,**kw))
-    words=[av['target']]
-    for n in (1,2,3):
-        r=go(a,av,f'a{n}');assert r.status_code==200
-        av=r.json();assert av['rerolls_used']==n and av['target'] not in words;words.append(av['target'])
-        assert all(w not in json.dumps(av['players']) for w in words)
-    r=go(a,av,'a4');assert r.status_code==400
-    # Refresh and reconnect keep the word and the count.
-    again=c.get(url,headers=headers(a)).json();assert again['target']==av['target'] and again['rerolls_used']==3
+    old=av['target'];r=go(a,av,'a1',word=old);assert r.status_code==200
+    av=r.json();assert av['rerolls_used']==1 and old not in av['words']
+    assert go(a,av,'a2').status_code==400
+    again=c.get(url,headers=headers(a)).json();assert again['words']==av['words']
     assert av['target'] not in json.dumps(db.rows)
-    # The guest still has a full allowance, and never sees the host's words.
-    bv=c.get(url,headers=headers(b)).json();assert bv['rerolls_used']==0
-    assert all(w not in json.dumps(bv) for w in words)
-    r=go(b,bv,'b1');assert r.status_code==200 and r.json()['rerolls_used']==1
-    # Duplicate retry is harmless; a stale double tap is refused; a stale run is refused.
-    assert go(b,bv,'b1').json()['rerolls_used']==1
-    assert go(b,bv,'b2').status_code==400
-    assert c.post(url+'/action',headers=headers(b),json=dict(action='reroll',run='old',secret=bv['secret_id'],used=1,request_id='b3')).status_code==400
-    assert c.get(url,headers=headers(b)).json()['rerolls_used']==1
+    bv=c.get(url,headers=headers(b)).json();assert bv['rerolls_used']==0 and av['target'] not in json.dumps(bv)
+    r=c.post(url+'/action',headers=headers(b),json=dict(action='style',ink='teal',mark='mint'))
+    assert r.status_code==200 and r.json()['players'][1]['style']=={'ink':'teal','mark':'mint'}
+    assert c.post(url+'/action',headers=headers(b),json=dict(action='style',ink='x',mark='mint')).status_code==400
     assert c.post(url+'/action',headers={'Authorization':'Bearer x:y'},json=dict(action='reroll',run=bv['run'],request_id='z')).status_code==403
 
 def test_http_reroll_developer_seat(client):

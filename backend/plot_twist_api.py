@@ -29,7 +29,7 @@ class Create(BaseModel):
 class Join(BaseModel):
     nickname: str = Field(min_length=1, max_length=100)
 class Action(BaseModel):
-    action: Literal['start','replay','submit','add_test','end','reroll']
+    action: Literal['start','replay','submit','add_test','end','reroll','style']
     text: str = Field(default='', max_length=350)
     turn: int = 0
     run: str = ''
@@ -37,7 +37,11 @@ class Action(BaseModel):
     as_player: str = ''
     # Word Trap rerolls: the assignment and swap count the player is looking at.
     secret: str = Field(default='', max_length=80)
-    used: int = Field(default=-1, ge=-1, le=engine.REROLLS)
+    used: int = Field(default=-1, ge=-1, le=10)
+    word: str = Field(default='', max_length=40)
+    # Ink and highlight a player picks for their own lines.
+    ink: str = Field(default='', max_length=20)
+    mark: str = Field(default='', max_length=20)
 
 
 def say(g, en, ar):
@@ -141,7 +145,8 @@ def router(db, query):
                 if body.action == 'submit': engine.submit(g,pid,body.text,body.turn,body.run,body.request_id)
                 elif body.action == 'reroll':
                     if body.run != g['run']: raise engine.GameError('The story changed. Your word has been refreshed.','السالفة تغيرت. حدّثنا لك كلمتك.')
-                    engine.reroll(g,pid,body.secret,body.used,body.request_id)
+                    engine.reroll(g,pid,body.secret,body.used,body.request_id,body.word)
+                elif body.action == 'style': engine.set_style(g,pid,body.ink,body.mark)
                 else:
                     if p['id'] != g['host']: raise HTTPException(403,say(g,'Only the host can do that.','بس المضيف يقدر يسوي هالشي.'))
                     if body.action == 'end':

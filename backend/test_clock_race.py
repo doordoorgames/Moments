@@ -308,7 +308,7 @@ def wrong_value(t):
     return {'alphabet': -1, 'price': -1, 'odd': -1, 'memory': 'x', 'stroop': -1, 'geo': -1, 'sock': -1,
             'word': 'zzzzz', 'vote': 'stranger', 'boss': -1,
             'scale': -1, 'shadow': -1, 'tile': -1, 'avoid': -1,
-            'belong': -1, 'older': -1, 'compare': -1, 'which': -1, 'animal': -1}[t['type']]
+            'belong': -1, 'older': -1, 'compare': -1, 'which': -1, 'animal': -1, 'photo': -1}[t['type']]
 
 
 def walk(g, pid, now, right=True):
@@ -551,3 +551,49 @@ def test_photo_questions():
             right = next(q for q in E.PHOTO_BANK if q['id'] == t['qid'])['options'][0]
             assert t['options'][t['answer']] == right
             assert E.correct(t, t['answer'], [])[0]
+
+
+def test_landmark_answers_assets_and_shuffle():
+    import json
+    from pathlib import Path
+    from clock_race_landmarks import LANDMARK_BANK
+    expected = ['France', 'China', 'United States', 'Germany', 'Brazil', 'Italy',
+                'India', 'United Kingdom', 'Italy', 'Australia']
+    root = Path(__file__).resolve().parents[1] / 'frontend/public/clock-race/photos'
+    credits = json.loads((root / 'landmarks/credits.json').read_text())
+    assert len(LANDMARK_BANK) == len(credits) == 10
+    for q, country, credit in zip(LANDMARK_BANK, expected, credits):
+        assert q['ar'] == 'أين يقع هذا المعلم؟' and q['mode'] == 'ask'
+        assert q['options'][0][1] == country == credit['country']
+        assert len(q['options']) == len({o[0] for o in q['options']}) == 4
+        assert credit['photographer'] and credit['source_url'].startswith('https://commons.wikimedia.org/')
+        assert credit['license'] and credit['license_url'].startswith('https://creativecommons.org/')
+        asset = root / (q['pic'] + '.webp')
+        data = asset.read_bytes()
+        assert data[:4] == b'RIFF' and data[8:12] == b'WEBP'
+        assert 5000 < len(data) < 300000
+        # Select each question through the actual generator, with every other ID used.
+        used = {x['id'] for x in E.PHOTO_BANK if x['id'] != q['id']
+                and x.get('landmark') != q['landmark']}
+        # The legacy Big Ben variant shares an identity, so prefer the new question via recency.
+        seen = ['photo_bigben'] if q['landmark'] == 'bigben' else []
+        positions = set()
+        for seed in range(60):
+            task = E.gen_photo(random.Random(seed), used, seen)
+            assert task['qid'] == q['id']
+            positions.add(task['answer'])
+            for i in range(4):
+                assert E.correct(task, i, [])[0] == (task['options'][i][1] == country)
+        assert positions == {0, 1, 2, 3}
+
+
+def test_photo_landmarks_never_repeat_in_round():
+    by_id = {q['id']: q for q in E.PHOTO_BANK}
+    for seed in range(300):
+        tasks = E.gen_round(roster(3), rng=random.Random(seed))
+        landmarks = [by_id[t['qid']]['landmark'] for t in tasks
+                     if t['type'] == 'photo' and by_id[t['qid']].get('landmark')]
+        assert len(landmarks) == len(set(landmarks))
+    for used in ({'photo_bigben'}, {'landmark_bigben'}):
+        for seed in range(30):
+            assert by_id[E.gen_photo(random.Random(seed), used)['qid']].get('landmark') != 'bigben'

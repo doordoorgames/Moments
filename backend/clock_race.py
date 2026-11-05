@@ -24,6 +24,7 @@ import uuid
 import clock_race_ar as AR
 import clock_race_data as D
 import clock_race_bank as K
+from clock_race_landmarks import LANDMARK_BANK
 
 PRICE_BANK = json.loads(Path(__file__).with_name('clock_race_prices.json').read_text(encoding='utf-8'))
 
@@ -504,7 +505,7 @@ def gen_animal(rng, lang):
 # Real photos. "ask": the photo and the question together. "recall": the photo alone (remember it,
 # tap Next), then the question with the photo gone. The first option is the right one.
 PHOTO_BANK = [
-    dict(id='photo_bigben', pic='bigben', mode='ask',
+    dict(id='photo_bigben', pic='bigben', mode='ask', landmark='bigben',
          ar='في أي دولة هذه الساعة؟', en='In what country is this clock?',
          options=[['إنجلترا', 'England'], ['ألمانيا', 'Germany'], ['أمريكا', 'America'], ['الإمارات', 'United Arab Emirates']]),
     dict(id='photo_car', pic='car', mode='recall',
@@ -514,11 +515,17 @@ PHOTO_BANK = [
          ar='ما لون الكرسي؟', en='What color was the chair?',
          options=[['أخضر', 'Green'], ['أسود', 'Black'], ['أبيض', 'White'], ['أصفر', 'Yellow']]),
 ]
+PHOTO_BANK.extend(LANDMARK_BANK)
 
 
 def gen_photo(rng, used=(), seen=()):
     """One photo question, never twice in a round, preferring ones not seen lately."""
-    pool = [q for q in PHOTO_BANK if q['id'] not in used] or list(PHOTO_BANK)
+    # The older Big Ben question and the landmark variant depict the same place.
+    used_landmarks = {q.get('landmark') for q in PHOTO_BANK if q['id'] in used} - {None}
+    pool = [q for q in PHOTO_BANK if q['id'] not in used
+            and q.get('landmark') not in used_landmarks]
+    if not pool:
+        raise ValueError('Photo question bank exhausted for this round')
     last = {qid: i for i, qid in enumerate(seen)}
     oldest = min(last.get(q['id'], -1) for q in pool)
     q = rng.choice([q for q in pool if last.get(q['id'], -1) == oldest])

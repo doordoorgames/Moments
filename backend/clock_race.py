@@ -24,6 +24,7 @@ import uuid
 import clock_race_ar as AR
 import clock_race_data as D
 import clock_race_bank as K
+import clock_race_content as C
 from clock_race_landmarks import LANDMARK_BANK
 
 PRICE_BANK = json.loads(Path(__file__).with_name('clock_race_prices.json').read_text(encoding='utf-8'))
@@ -242,10 +243,12 @@ def gen_word(rng, lang, variant):
 
 def gen_vote(rng, roster, avoid=None):
     """The friend question: every person racing (no test bots); each phone hides its own name."""
-    options = [i for i in range(len(D.QUESTIONS)) if i != avoid] or list(range(len(D.QUESTIONS)))
+    bank = C.vote_list() or [(f'v{i + 1:02d}', ar, en) for i, (ar, en) in enumerate(D.QUESTIONS)]
+    options = [q for q in bank if q[0] != avoid] or bank
     order = [p['id'] for p in roster if not p.get('sim')]
     rng.shuffle(order)
-    return dict(type='vote', question=rng.choice(options), order=order)
+    qid, ar, en = rng.choice(options)
+    return dict(type='vote', question=qid, text=[ar, en], order=order)
 
 
 def _faces(rng, count):
@@ -410,10 +413,13 @@ _TILE_LAST = [None]
 _LOCK = threading.Lock()
 
 
-def _draw_tile(rng):
+def _draw_tile(rng, tiles=None):
+    tiles = tiles if tiles is not None else TILE_SET
     with _LOCK:
+        # pictures taken out of the live set (rejected in the studio) never come up again
+        _TILE_DECK[:] = [p for p in _TILE_DECK if p in tiles]
         if not _TILE_DECK:
-            deck = sorted(TILE_SET)
+            deck = sorted(tiles)
             rng.shuffle(deck)
             if deck[-1] == _TILE_LAST[0]:  # the deck is popped from the end
                 deck[0], deck[-1] = deck[-1], deck[0]
@@ -426,10 +432,17 @@ def _draw_tile(rng):
 def gen_tile(rng, lang):
     """A picture with its bottom-right corner missing and four copies of that piece to pick from:
     the real one turned, three mirrored and turned. The options are shuffled on every draw."""
-    pic = _draw_tile(rng)
-    opts = [list(o) for o in TILE_SET[pic]]
+    tiles = C.tile_set() or {p: dict(pic=p, opts=o, img=None, piece=None) for p, o in TILE_SET.items()}
+    tid = _draw_tile(rng, tiles)
+    tile = tiles[tid]
+    opts = [list(o) for o in tile['opts']]
     rng.shuffle(opts)
-    return dict(type='tile', pic=pic, opts=opts, answer=next(i for i, o in enumerate(opts) if o[0] == 'none'))
+    task = dict(type='tile', pic=tile['pic'], opts=opts, answer=next(i for i, o in enumerate(opts) if o[0] == 'none'))
+    if tile.get('img'):  # made in the studio: the game loads these urls instead of /clock-race/tiles/
+        task.update(img=tile['img'], piece=tile['piece'])
+        if tile.get('grid') == 2:
+            task['grid'] = 2  # a quarter missing instead of a third
+    return task
 
 
 def signature(t):
@@ -475,7 +488,8 @@ FOUR_LAYOUTS = ['board', 'table']
 def gen_picture(rng, kind, used=(), seen=()):
     """One question from the bank: never twice in a round, and not one from recent rounds while
     fresh ones are left. Answer positions are shuffled; the fact stays on the server."""
-    pool = [x for x in K.BY_KIND[kind] if x['id'] not in used] or list(K.BY_KIND[kind])
+    bank = C.picture_bank(kind)
+    pool = [x for x in bank if x['id'] not in used] or list(bank)
     last = {q: i for i, q in enumerate(seen)}  # seen is oldest first
     fresh = [x for x in pool if x['id'] not in last]
     if fresh:
@@ -494,7 +508,8 @@ def gen_picture(rng, kind, used=(), seen=()):
 
 def gen_animal(rng, lang):
     """Four painted animals; tap the one named."""
-    picks = rng.sample(K.ANIMALS, 4)
+    animals = C.animal_list()
+    picks = rng.sample(animals if len(animals) >= 4 else K.ANIMALS, 4)
     target = picks[0]
     rng.shuffle(picks)
     return dict(type='animal', target=list(target), options=[list(a) for a in picks],
@@ -521,8 +536,9 @@ PHOTO_BANK.extend(LANDMARK_BANK)
 def gen_photo(rng, used=(), seen=()):
     """One photo question, never twice in a round, preferring ones not seen lately."""
     # The older Big Ben question and the landmark variant depict the same place.
-    used_landmarks = {q.get('landmark') for q in PHOTO_BANK if q['id'] in used} - {None}
-    pool = [q for q in PHOTO_BANK if q['id'] not in used
+    bank = C.photo_bank() or PHOTO_BANK
+    used_landmarks = {q.get('landmark') for q in bank if q['id'] in used} - {None}
+    pool = [q for q in bank if q['id'] not in used
             and q.get('landmark') not in used_landmarks]
     if not pool:
         raise ValueError('Photo question bank exhausted for this round')
@@ -619,13 +635,14 @@ def gen_round(roster, lang='ar', avoid_question=None, rng=None, avoid=(), seen_q
                 t = gen_memory(rng, lang)
             elif kind == 'price':
                 used = {task.get('qid') for task in tasks}
-                pool = [q for q in PRICE_BANK if q['id'] not in used]
+                bank = C.price_bank() or PRICE_BANK
+                pool = [q for q in bank if q['id'] not in used] or bank
                 last = {qid: i for i, qid in enumerate(seen_q)}
                 oldest = min(last.get(q['id'], -1) for q in pool)
                 q = rng.choice([q for q in pool if last.get(q['id'], -1) == oldest])
                 opts = rng.sample(q['options'], len(q['options']))
                 answer = max(range(len(opts)), key=lambda i: opts[i]['unit_usd'] * opts[i]['quantity'])
-                public = [{k: o[k] for k in ('key', 'ar', 'en', 'unit_usd', 'quantity')} for o in opts]
+                public = [{k: o[k] for k in ('key', 'ar', 'en', 'unit_usd', 'quantity', 'img') if k in o} for o in opts]
                 t = dict(type='price', qid=q['id'], options=public, answer=answer)
             elif kind in K.KINDS:
                 t = gen_picture(rng, kind, {x.get('qid') for x in tasks}, seen_q)
@@ -757,6 +774,14 @@ def bot_schedule(tasks, rng):
         if not ok:
             t += WRONG_DELAY
     return out
+
+
+def vote_text(task, lang_i):
+    """The friend question's text: carried by the task (studio era) or an index into D.QUESTIONS (older rounds)."""
+    if task.get('text'):
+        return task['text'][lang_i]
+    q = task.get('question')
+    return D.QUESTIONS[q][lang_i] if isinstance(q, int) and 0 <= q < len(D.QUESTIONS) else ''
 
 
 def start(g, round_id, now=None, rng=None):
@@ -919,7 +944,7 @@ def view(g, pid, now=None):
                       epoch=g.get('lives', {}).get(p['id'], {}).get('epoch', 0)) for p in g['players']],
         lives=LIVES,
         round=dict(id=r['id'], starts_at=r['starts_at'], tasks=r['tasks'],
-                   question=D.QUESTIONS[r['tasks'][VOTE_AT]['question']][lang_i] if r['tasks'][VOTE_AT]['type'] == 'vote' else None) if r else None,
+                   question=vote_text(r['tasks'][VOTE_AT], lang_i) if r['tasks'][VOTE_AT]['type'] == 'vote' else None) if r else None,
         roster=g['roster'],
         # bot finish times (seconds after the start), so every phone can move the bot's clock smoothly
         bots={b: [t for t, _ in plan] for b, plan in g.get('bots', {}).items()} if r else {},

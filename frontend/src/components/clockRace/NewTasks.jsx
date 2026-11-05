@@ -1,6 +1,7 @@
 import React, {memo} from 'react';
 import {frameVariant} from './frames';
 import {PixelFrame} from './PixelFrame';
+import {tileUrls} from './assetUrls';
 
 // v4 challenges: heaviest group, shadow match, missing tile. The first two are drawn
 // from the task data (generated on the server each round); the missing tile uses ten hand-picked pictures.
@@ -80,20 +81,20 @@ export function Shadow({task, onPick}) {
 // public/clock-race/tiles/pNN.webp is the squared picture with its bottom-right third blanked out,
 // pNN-piece.webp is that piece. Every option shows the same piece: [flip, deg] from the server, where
 // flip is 'none', 'H' (left-right) or 'V' (top-bottom), applied before the clockwise turn.
-const TILE_BASE = '/clock-race/tiles/';
 // Pictures load through preload.js (this task's first, then the next three), not all ten up front.
 
 const pieceLook = ([flip, deg]) => `rotate(${deg}deg)${flip === 'H' ? ' scaleX(-1)' : flip === 'V' ? ' scaleY(-1)' : ''}`;
 
 export function MissingTile({task, onPick, index = 0}) {
+  const [picUrl, pieceUrl] = tileUrls(task);
   return <div className="cr-tile">
     <PixelFrame as="div" className="cr-tile-pic" variant={frameVariant(index, 0)}>
-      <img src={`${TILE_BASE}${task.pic}.webp`} alt="" draggable="false"/>
-      <span className="cr-tile-hole" aria-hidden="true">?</span>
+      <img src={picUrl} alt="" draggable="false"/>
+      <span className="cr-tile-hole" aria-hidden="true" style={task.grid === 2 ? {left: '50%', top: '50%', width: '50%', height: '50%'} : undefined}>?</span>
     </PixelFrame>
     <div className="cr-tile-opts">
       {(task.opts || []).map((o, i) => <PixelFrame as="button" key={i} type="button" size="sm" className="cr-tile-card" variant={frameVariant(index, i + 1)} aria-label={`piece ${i + 1}`} {...tap(() => onPick(i))}>
-        <img src={`${TILE_BASE}${task.pic}-piece.webp`} alt="" draggable="false" style={{transform: pieceLook(o)}}/>
+        <img src={pieceUrl} alt="" draggable="false" style={{transform: pieceLook(o)}}/>
       </PixelFrame>)}
     </div>
   </div>;

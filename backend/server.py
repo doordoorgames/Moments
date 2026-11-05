@@ -2433,6 +2433,12 @@ app.include_router(letter_tv_router(lambda: supa, _q))
 from clock_race_api import router as clock_race_router
 app.include_router(clock_race_router(lambda: supa, _q))
 
+# Clock Race studio (/admin/clock-race): review, edit, approve and publish questions and pictures.
+from clock_race_admin_api import router as clock_race_studio_router
+_studio_api, _studio_public = clock_race_studio_router(lambda: supa, _q)
+app.include_router(_studio_api)
+app.include_router(_studio_public)
+
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,

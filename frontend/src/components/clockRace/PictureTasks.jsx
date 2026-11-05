@@ -1,6 +1,6 @@
 import React, {memo, useEffect, useState} from 'react';
 import {isReady, whenReady} from './preload';
-import {ART, ART_BASE} from './artManifest';
+import {artUrl} from './assetUrls';
 import {frameVariant} from './frames';
 import {PixelFrame} from './PixelFrame';
 
@@ -17,7 +17,7 @@ const tap = fn => ({
 // Every picture wears the shared pixel frame (PixelFrame.jsx); `seed` picks its teal variant.
 // Until the picture has downloaded, the frame holds a plain dark-teal square instead of an empty box.
 export const Art = memo(function Art({k, seed = [0, 0]}) {
-  return <FramedPic url={`${ART_BASE}${ART[k]}`} seed={seed}/>;
+  return <FramedPic url={artUrl(k)} seed={seed}/>;
 });
 
 // Any picture in the shared pixel frame, at its own shape (square, portrait or landscape: no bars).

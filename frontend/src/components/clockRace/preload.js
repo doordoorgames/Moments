@@ -6,9 +6,7 @@
 // - At most MAX_ACTIVE downloads at once, so slow connections aren't swamped.
 // - Every picture is fetched once and the decoded Image is kept, so the <img> on screen reuses it.
 // - When the player moves on, pictures that are no longer wanted and haven't started are dropped.
-import {ART, ART_BASE} from './artManifest';
-
-const TILE_BASE = '/clock-race/tiles/';
+import {artUrl, photoUrl, priceUrl, tileUrls} from './assetUrls';
 const MAX_ACTIVE = 3;
 const LOOKAHEAD = 3;
 
@@ -19,11 +17,11 @@ let active = 0;
 /** The picture urls a task shows. */
 export function taskImages(task) {
   if (!task) return [];
-  if (task.type === 'photo' && task.pic) return [`/clock-race/photos/${task.pic}.webp`];
-  if (task.type === 'price') return task.options.map(o => ART_BASE + 'prices/' + o.key + '.webp');
-  if (task.type === 'tile' && task.pic) return [`${TILE_BASE}${task.pic}.webp`, `${TILE_BASE}${task.pic}-piece.webp`];
+  if (task.type === 'photo' && task.pic) return [photoUrl(task.pic)];
+  if (task.type === 'price') return task.options.map(priceUrl);
+  if (task.type === 'tile' && (task.pic || task.img)) return tileUrls(task);
   if (Array.isArray(task.options)) {
-    return task.options.filter(Array.isArray).map(o => o[0]).filter(k => typeof k === 'string' && ART[k]).map(k => ART_BASE + ART[k]);
+    return task.options.filter(Array.isArray).map(o => o[0]).filter(k => typeof k === 'string').map(artUrl).filter(Boolean);
   }
   return [];
 }

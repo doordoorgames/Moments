@@ -22,6 +22,7 @@ const PlotTwist = lazyRetry(() => import("@/components/plotTwist/PlotTwist"));
 const EmojiRooftop = lazyRetry(() => import("@/components/emojiRooftop/EmojiRooftop"));
 const LetterTV = lazyRetry(() => import("@/components/letterTv/LetterTV"));
 const ClockRace = lazyRetry(() => import("@/components/clockRace/ClockRace"));
+const AdminClockRace = lazyRetry(() => import("@/pages/AdminClockRace"));
 
 const BaccaratAdventureRoom = lazyRetry(() => import("@/components/baccaratAdventure/BaccaratAdventureRoom"));
 
@@ -92,6 +93,8 @@ function App() {
                     <Route path="/play" element={<PlayJoin />} />
                     <Route path="/play/:code" element={<PlayRoom />} />
                     <Route path="/admin" element={<AdminLogin />} />
+                    {/* Clock Race studio: its own server-checked sign-in, separate from the story CMS */}
+                    <Route path="/admin/clock-race" element={<Suspense fallback={null}><AdminClockRace /></Suspense>} />
                     <Route
                         path="/admin/stories"
                         element={

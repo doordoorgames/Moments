@@ -19,6 +19,7 @@ let active = 0;
 /** The picture urls a task shows. */
 export function taskImages(task) {
   if (!task) return [];
+  if (task.type === 'photo' && task.pic) return [`/clock-race/photos/${task.pic}.webp`];
   if (task.type === 'price') return task.options.map(o => ART_BASE + 'prices/' + o.key + '.webp');
   if (task.type === 'tile' && task.pic) return [`${TILE_BASE}${task.pic}.webp`, `${TILE_BASE}${task.pic}-piece.webp`];
   if (Array.isArray(task.options)) {

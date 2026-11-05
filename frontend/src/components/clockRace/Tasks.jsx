@@ -85,6 +85,27 @@ export function Memory({task, t, onPick, lang}) {
   </div>;
 }
 
+// ------------------------------------------------------------------ صورة: a real photo. "ask" shows it with the question;
+// "recall" shows it alone (remember it, tap Next), then the question with the photo gone.
+export function PhotoTask({task, t, onPick, lang, index = 0}) {
+  const [asking, setAsking] = useState(task.mode === 'ask');
+  const pic = <span className="cr-photo-art"><FramedPic url={`/clock-race/photos/${task.pic}.webp`} seed={[index, 0]}/></span>;
+  const question = lang === 'ar' ? task.ar : task.en;
+  if (!asking) return <div className="cr-memory cr-photo">
+    <h2 className="cr-prompt">{t.photoIntro}</h2>
+    {pic}
+    <button type="button" className="cr-memory-next" {...tap(() => setAsking(true))}>
+      <i className="cr-next-arrow" aria-hidden="true"/><span>{t.memoryNext}</span>
+    </button>
+  </div>;
+  return <div className={`cr-memory is-ask cr-photo ${task.mode === 'ask' ? 'is-with-pic' : ''}`}>
+    <p className="cr-memory-q" dir="auto">{question}</p>
+    {task.mode === 'ask' && pic}
+    <div className="cr-photo-choices" dir={lang === 'ar' ? 'rtl' : 'ltr'}>{task.options.map((o, i) =>
+      <button key={o[1]} type="button" className="cr-choice cr-photo-choice" dir="auto" {...tap(() => onPick(i))}>{lang === 'ar' ? o[0] : o[1]}</button>)}</div>
+  </div>;
+}
+
 // ------------------------------------------------------------------ سؤال الربع
 const TILTS = [-2.5, 2, -1.5, 2.5, -2, 1.5];
 export function FriendVote({task, roster, players, me, t, onPick}) {
@@ -166,4 +187,4 @@ function Alphabet({task, onPick}) {
 export const TASK_VIEWS = {price: PriceQuiz, alphabet: Alphabet, odd: OddFace, stroop: Stroop, geo: Geography, sock: LonelySock, memory: Memory,
   vote: FriendVote, word: WordRush, boss: FinalBoss,
   scale: Heaviest, shadow: Shadow, tile: MissingTile, avoid: DontTap,
-  belong: PictureQuiz, older: PictureQuiz, compare: PictureQuiz, which: PictureQuiz, animal: PictureQuiz};
+  belong: PictureQuiz, older: PictureQuiz, compare: PictureQuiz, which: PictureQuiz, animal: PictureQuiz, photo: PhotoTask};

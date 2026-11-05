@@ -393,3 +393,10 @@ html.cr-doc body{min-height:calc(100vh + 1px)}
 /* the picture keeps its own shape inside a square slot, framed like every other picture (no bars) */
 .cr-price-art { width: 100%; aspect-ratio: 1; max-height: calc((var(--cr-h,100dvh) - 380px - var(--cr-chrome,0px)) * .6); }
 .cr-price-name { display: block; text-align: center; line-height: 1.15; }
+
+/* photo questions */
+.cr-photo-art{display:block;width:min(100%,320px);max-height:calc((var(--cr-h,100dvh) - 300px - var(--cr-chrome,0px)) * .8)}
+.cr-photo-art .cr-art{width:100%;height:100%;object-fit:contain}
+.cr-photo.is-with-pic .cr-photo-art{max-height:calc((var(--cr-h,100dvh) - 420px - var(--cr-chrome,0px)) * .9)}
+.cr-photo-choices{display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%}
+.cr-app .cr-photo-choices .cr-photo-choice,.cr-app.cr-arcade .cr-photo-choices .cr-photo-choice{font-family:'Baloo Bhaijaan 2',sans-serif;font-size:clamp(17px,4.8vw,22px);font-weight:800;min-height:60px;padding:6px 8px 10px;line-height:1.15}

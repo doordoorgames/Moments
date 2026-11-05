@@ -26,7 +26,7 @@ def test_round_shape(seed):
         assert kinds[15] == 'vote' and kinds.count('vote') == 1
     else:
         assert 'vote' not in kinds                                  # the friend question needs 3+ people
-    assert sum(kinds.count(k) for k in ('belong', 'older', 'compare', 'which', 'price')) >= 15
+    assert sum(kinds.count(k) for k in ('belong', 'older', 'compare', 'which', 'price', 'photo')) >= 15
     assert kinds.count('price') == 3
     assert kinds.count('alphabet') == 1
     assert kinds.count('word') in (1, 2)
@@ -55,8 +55,8 @@ def test_picture_answers_move_around_and_bank_rotates():
     assert set(spots) == {0, 1, 2, 3}
     seen = []
     for _ in range(6):
-        seen += [t['qid'] for t in E.gen_round(roster(1), rng=rng, seen_q=seen[-90:]) if t.get('qid')]
-    assert len(set(seen[:64])) == 64                                # four rounds without a repeat
+        seen += [t['qid'] for t in E.gen_round(roster(1), rng=rng, seen_q=seen[-90:]) if t.get('qid') and t['type'] != 'photo']
+    assert len(set(seen[:56])) == 56                                # four rounds without a repeat
 
 
 def test_price_bank_rotates_and_scores_totals():
@@ -538,3 +538,16 @@ def test_avoid_rule_has_safe_and_forbidden_buttons():
         for i, it in enumerate(t['items']):
             assert (it[key] != t['target']) == (i in t['safe'])
             assert E.correct(t, i, [])[0] == (i in t['safe'])
+
+
+def test_photo_questions():
+    rng = random.Random(5)
+    for _ in range(50):
+        tasks = E.gen_round(roster(1), rng=rng)
+        photos = [t for t in tasks if t['type'] == 'photo']
+        assert len(photos) == 2 and photos[0]['qid'] != photos[1]['qid']
+        for t in photos:
+            assert len(t['options']) == 4
+            right = next(q for q in E.PHOTO_BANK if q['id'] == t['qid'])['options'][0]
+            assert t['options'][t['answer']] == right
+            assert E.correct(t, t['answer'], [])[0]

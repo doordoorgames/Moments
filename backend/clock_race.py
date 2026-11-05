@@ -40,7 +40,7 @@ RESET_DELAY = 1.6  # the heartbreak screen holds the player this long before tas
 GRACE = 0.25     # network slack on the server-side waits
 NAME_MAX = 24
 # 30 tasks = 16 picture comparisons + 14 of the original challenges (boss included, vote when 3+ people).
-PICTURE_MIX = {'belong': 5, 'older': 4, 'compare': 1, 'price': 3, 'which': 3}
+PICTURE_MIX = {'belong': 4, 'older': 3, 'compare': 1, 'price': 3, 'which': 3, 'photo': 2}
 ORDINARY_MIX = {'odd': 1, 'stroop': 1, 'geo': 1, 'sock': 1, 'memory': 1, 'avoid': 1,
                 'alphabet': 1, 'scale': 1, 'shadow': 1, 'tile': 1, 'animal': 1}
 EXTRA_POOL = ['odd', 'stroop', 'avoid', 'sock', 'geo']  # fills the slots the vote or a 2nd Word Rush doesn't take  # 17; one fewer with 2 Word Rush
@@ -53,7 +53,7 @@ BOT_NAMES = ['نورة', 'سارة', 'فهد', 'دانة', 'عبدالله', 'ش
 # memory = 12s of grid + the answer). Each task varies 0.7x-1.35x and ~12% are "wrong" (+1s).
 BOT_SECONDS = {'price': 4.0, 'alphabet': 2.2, 'odd': 2.4, 'stroop': 2.2, 'geo': 2.6, 'sock': 3.4, 'memory': 7.0,
                'word': 7.5, 'vote': 2.0, 'boss': 5.5, 'scale': 4.5, 'shadow': 3.0, 'tile': 3.0, 'avoid': 2.3,
-               'belong': 3.8, 'older': 3.4, 'compare': 3.0, 'which': 3.4, 'animal': 2.2}
+               'belong': 3.8, 'older': 3.4, 'compare': 3.0, 'which': 3.4, 'animal': 2.2, 'photo': 4.5}
 BOT_WRONG = 0.12
 
 
@@ -436,7 +436,7 @@ def signature(t):
             'geo': ('variant', 'items'), 'sock': ('socks',), 'memory': ('grid',),
             'word': ('variant', 'first', 'last', 'letter'), 'vote': ('question',), 'boss': ('faces',),
             'scale': ('groups',), 'shadow': ('cells',), 'tile': ('pic',), 'avoid': ('rule', 'target', 'items'),
-            'belong': ('qid',), 'older': ('qid',), 'compare': ('qid',), 'which': ('qid',), 'animal': ('options',)}[t['type']]
+            'belong': ('qid',), 'older': ('qid',), 'compare': ('qid',), 'which': ('qid',), 'animal': ('options',), 'photo': ('qid',)}[t['type']]
     return repr((t['type'],) + tuple(repr(t.get(k)) for k in keys))
 
 
@@ -500,6 +500,35 @@ def gen_animal(rng, lang):
                 answer=picks.index(target), layout=rng.choice(FOUR_LAYOUTS))
 
 
+# ------------------------------------------------------------------ photo questions
+# Real photos. "ask": the photo and the question together. "recall": the photo alone (remember it,
+# tap Next), then the question with the photo gone. The first option is the right one.
+PHOTO_BANK = [
+    dict(id='photo_bigben', pic='bigben', mode='ask',
+         ar='في أي دولة هذه الساعة؟', en='In what country is this clock?',
+         options=[['إنجلترا', 'England'], ['ألمانيا', 'Germany'], ['أمريكا', 'America'], ['الإمارات', 'United Arab Emirates']]),
+    dict(id='photo_car', pic='car', mode='recall',
+         ar='ما لون السيارة؟', en='What color was the car?',
+         options=[['أزرق', 'Blue'], ['أحمر', 'Red'], ['بنفسجي', 'Purple'], ['برتقالي', 'Orange']]),
+    dict(id='photo_chair', pic='chair', mode='recall',
+         ar='ما لون الكرسي؟', en='What color was the chair?',
+         options=[['أخضر', 'Green'], ['أسود', 'Black'], ['أبيض', 'White'], ['أصفر', 'Yellow']]),
+]
+
+
+def gen_photo(rng, used=(), seen=()):
+    """One photo question, never twice in a round, preferring ones not seen lately."""
+    pool = [q for q in PHOTO_BANK if q['id'] not in used] or list(PHOTO_BANK)
+    last = {qid: i for i, qid in enumerate(seen)}
+    oldest = min(last.get(q['id'], -1) for q in pool)
+    q = rng.choice([q for q in pool if last.get(q['id'], -1) == oldest])
+    opts = [list(o) for o in q['options']]
+    right = opts[0]
+    rng.shuffle(opts)
+    return dict(type='photo', qid=q['id'], pic=q['pic'], mode=q['mode'], ar=q['ar'], en=q['en'],
+                options=opts, answer=opts.index(right))
+
+
 # Picture questions served lately on this server, any room: a new room doesn't start from scratch.
 _RECENT_Q = collections.deque(maxlen=80)
 
@@ -510,7 +539,7 @@ def gen_alphabet(rng, lang):
 
 
 NEW_GENS = {'alphabet': gen_alphabet, 'animal': gen_animal, 'avoid': gen_avoid, 'scale': gen_scale, 'shadow': gen_shadow, 'tile': gen_tile}
-ANSWER_KINDS = ('price', 'alphabet', 'stroop', 'geo', 'sock', 'scale', 'shadow', 'tile', 'animal') + K.KINDS
+ANSWER_KINDS = ('price', 'alphabet', 'stroop', 'geo', 'sock', 'scale', 'shadow', 'tile', 'animal', 'photo') + K.KINDS
 
 SPREAD = 3      # a type never comes back within 3 tasks
 OPENING = 5     # the first five tasks are five different challenges
@@ -593,6 +622,8 @@ def gen_round(roster, lang='ar', avoid_question=None, rng=None, avoid=(), seen_q
                 t = dict(type='price', qid=q['id'], options=public, answer=answer)
             elif kind in K.KINDS:
                 t = gen_picture(rng, kind, {x.get('qid') for x in tasks}, seen_q)
+            elif kind == 'photo':
+                t = gen_photo(rng, {x.get('qid') for x in tasks if x['type'] == 'photo'}, seen_q)
             elif kind == 'avoid':
                 t = gen_avoid(rng, lang, ['color', 'shape'][sum(x['type'] == 'avoid' for x in tasks) % 2])
             elif kind in NEW_GENS:

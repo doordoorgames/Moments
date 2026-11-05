@@ -16,6 +16,7 @@ export function localCheck(task, value, rosterIds = []) {
     case 'older':
     case 'compare':
     case 'which':
+    case 'photo':
     case 'animal': return value === task.answer;
     case 'avoid': return (task.safe || []).includes(value);
     case 'vote': return rosterIds.includes(value);

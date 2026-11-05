@@ -510,7 +510,7 @@ export default function ClockRace({onContinue}) {
   }
 
   const boss = task?.type === 'boss';
-  const prompt = !task ? null : task.type === 'vote' ? round.question : task.type === 'stroop' ? stroopPrompt(task, t, lang)
+  const prompt = !task || task.type === 'photo' ? null : task.type === 'vote' ? round.question : task.type === 'stroop' ? stroopPrompt(task, t, lang)
     : task.type === 'geo' ? t.geo[task.variant] : task.type === 'avoid' ? t.avoid(task)
     : ['belong', 'older', 'compare', 'which'].includes(task.type) ? picturePrompt(task, lang)
     : task.type === 'animal' ? t.animal(lang === 'ar' ? task.target[1] : task.target[2]) : t.prompts[task.type]; // Word Rush and memory draw their own headings

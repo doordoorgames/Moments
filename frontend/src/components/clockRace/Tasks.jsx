@@ -89,7 +89,7 @@ export function Memory({task, t, onPick, lang}) {
 // "recall" shows it alone (remember it, tap Next), then the question with the photo gone.
 export function PhotoTask({task, t, onPick, lang, index = 0}) {
   const [asking, setAsking] = useState(task.mode === 'ask');
-  const pic = <span className="cr-photo-art"><FramedPic url={`/clock-race/photos/${task.pic}.webp`} seed={[index, 0]}/></span>;
+  const pic = <span className="cr-photo-art cr-pic-art"><FramedPic url={`/clock-race/photos/${task.pic}.webp`} seed={[index, 0]}/></span>;
   const question = lang === 'ar' ? task.ar : task.en;
   if (!asking) return <div className="cr-memory cr-photo">
     <h2 className="cr-prompt">{t.photoIntro}</h2>

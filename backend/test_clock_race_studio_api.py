@@ -93,9 +93,9 @@ def test_everything_needs_a_signed_in_admin(client):
     c, _ = client
     for method, path in [('get', '/library'), ('get', '/items/b01'), ('put', '/items/b01'), ('post', '/publish'),
                          ('get', '/assets'), ('post', '/bulk-approve'), ('post', '/items/b01/status')]:
-        r = getattr(c, method)('/api/admin/clock-race' + path, json={}, headers={'Authorization': 'Bearer forged.token'})
+        r = c.request(method.upper(), '/api/admin/clock-race' + path, json={}, headers={'Authorization': 'Bearer forged.token'})
         assert r.status_code in (401, 422), (path, r.status_code)
-        r = getattr(c, method)('/api/admin/clock-race' + path, json={})
+        r = c.request(method.upper(), '/api/admin/clock-race' + path, json={})
         assert r.status_code in (401, 422), (path, r.status_code)
     assert c.post('/api/admin/clock-race/login', json={'password': 'admin123'}).status_code == 401
 

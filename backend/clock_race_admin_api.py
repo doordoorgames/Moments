@@ -365,9 +365,9 @@ def router(db, query):
                 raise HTTPException(400, 'Crop is too small; zoom out.')
             puzzle, piece, square = C.render_tile(src, crop, d.get('grid', 3))
             piece_img = piece
-            stamp = secrets.token_hex(10)
             for name, im in (('img', puzzle), ('piece', piece), ('full', square)):
-                rec = await A.save_rendered(store, f'{stamp}{name[:2]}', C.webp_bytes(im, 86), who, f'tile-{name}',
+                # asset ids are hex only: the reference pattern and the public file route both require it
+                rec = await A.save_rendered(store, secrets.token_hex(10), C.webp_bytes(im, 86), who, f'tile-{name}',
                                             C.now_iso(), *im.size)
                 new_assets[rec['id']] = rec
                 d.setdefault('rendered', {})

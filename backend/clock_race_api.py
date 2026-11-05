@@ -22,6 +22,7 @@ from fastapi import APIRouter, Header, HTTPException, Response, WebSocket, WebSo
 from pydantic import BaseModel, Field
 
 import clock_race as engine
+from clock_race_admin_api import refresh_live
 
 
 class Conflict(HTTPException):
@@ -164,6 +165,7 @@ def router(db, query):
     @api.post('/rooms/{code}/start')
     async def start(code: str, body: Start, response: Response, authorization: str = Header(default='')):
         response.headers['Cache-Control'] = 'private, no-store'
+        await refresh_live()  # new rounds draw from the studio's latest published questions
         async with locks[code]:
             g, old = await load(code)
             me = auth(g, authorization)

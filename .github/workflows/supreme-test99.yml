@@ -23,6 +23,22 @@ jobs:
       - run: python -m compileall -q server.py adventure_engine.py adventure_map.py adventure_config.py plot_twist.py plot_twist_api.py emoji_rooftop.py emoji_rooftop_api.py emoji_english.py emoji_arabic.py letter_tv.py letter_tv_api.py
       - run: python -m pytest -q test_supreme_mode.py test_solo_voting.py test_baccarat_adventure.py test_baccarat_server.py test_plot_twist.py test_emoji_rooftop.py test_letter_tv.py -n 0
 
+  clock-race-tests:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+          cache-dependency-path: backend/requirements.txt
+      - run: pip install -r requirements.txt pytest-xdist
+      - run: python -m compileall -q clock_race.py clock_race_api.py clock_race_content.py clock_race_admin_api.py clock_race_admin_auth.py clock_race_assets.py
+      - run: python -m pytest -q test_clock_race.py test_clock_race_ar.py test_clock_race_api.py test_clock_race_studio.py test_clock_race_studio_api.py -n 0
+
   frontend-build:
     runs-on: ubuntu-latest
     defaults:

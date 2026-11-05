@@ -7,6 +7,7 @@ import {GEO_SHAPES} from './geoShapes';
 import {Heaviest, Shadow, MissingTile, DontTap} from './NewTasks';
 import {PictureQuiz, FramedPic} from './PictureTasks';
 import {frameVariant} from './frames';
+import {photoUrl, priceUrl} from './assetUrls';
 import {PixelFrame} from './PixelFrame';
 
 // Taps count on finger-down (no wait for release); keyboard Enter/Space still works through click.
@@ -89,7 +90,7 @@ export function Memory({task, t, onPick, lang}) {
 // "recall" shows it alone (remember it, tap Next), then the question with the photo gone.
 export function PhotoTask({task, t, onPick, lang, index = 0}) {
   const [asking, setAsking] = useState(task.mode === 'ask');
-  const pic = <span className="cr-photo-art cr-pic-art"><FramedPic url={`/clock-race/photos/${task.pic}.webp`} seed={[index, 0]}/></span>;
+  const pic = <span className="cr-photo-art cr-pic-art"><FramedPic url={photoUrl(task.pic)} seed={[index, 0]}/></span>;
   const question = lang === 'ar' ? task.ar : task.en;
   if (!asking) return <div className="cr-memory cr-photo">
     <h2 className="cr-prompt">{t.photoIntro}</h2>
@@ -172,7 +173,7 @@ function PriceQuiz({task, onPick, lang, index = 0}) {
   });
   return <div className="cr-price-options" style={{"--n": task.options.length}}>{task.options.map((o, i) =>
     <button type="button" key={o.key} disabled={revealed} aria-label={o.quantity > 1 ? o.quantity + " × " + o[lang] : o[lang]} onClick={() => choose(i)}>
-      <span className="cr-pic-art cr-price-art"><FramedPic url={`/clock-race/art/prices/${o.key}.webp`} seed={[index, i]}/></span>
+      <span className="cr-pic-art cr-price-art"><FramedPic url={priceUrl(o)} seed={[index, i]}/></span>
       <span className="cr-pic-name cr-price-name">{o.quantity > 1 && <b dir="ltr">×{o.quantity} </b>}{o[lang]}</span>
       {revealed && <strong>{money.format(o.unit_usd * o.quantity)}</strong>}
     </button>)}</div>;

@@ -1,3 +1,4 @@
+import {createPortal} from 'react-dom';
 import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import axios from 'axios';
 import {BACKEND_URL, apiErrorMessage} from '@/lib/api';
@@ -491,7 +492,7 @@ function TileForm({data, setData, item, refs, busy, pick, tile}) {
   const changed = crop && !same(crop, data.crop);
 
   // The original square of a hand-made puzzle: the picture with its piece put back.
-  const useLegacyAsSource = async () => {
+  const rebuildLegacy = async (extra = {}) => {
     setMaking(true); setErr('');
     try {
       const load = src => new Promise((ok, no) => { const im = new Image(); im.crossOrigin = 'anonymous'; im.onload = () => ok(im); im.onerror = no; im.src = src; });
@@ -507,65 +508,81 @@ function TileForm({data, setData, item, refs, busy, pick, tile}) {
       form.append('note', `Original square of puzzle ${item.id}`);
       const up = await call('post', '/assets', form);
       if (!up.saved.length) throw new Error(up.failed[0]?.reason || 'Upload failed');
-      await tile({source: up.saved[0].ref, crop: {x: 0, y: 0, size: cv.width}});
+      await tile({source: up.saved[0].ref, crop: {x: 0, y: 0, size: cv.width}, ...extra});
     } catch (x) { setErr(apiErrorMessage(x, x?.message || 'Could not rebuild the original.')); }
     finally { setMaking(false); }
   };
   const right = (data.opts || []).findIndex(o => o[0] === 'none');
   const setOpt = (i, o) => tile({opts: data.opts.map((x, j) => (j === i ? o : x))});
+  const working = busy || making;
+  const [goingTo, setGoingTo] = useState(null);
+  // 4 or 9 works on every puzzle: an original one is rebuilt as its own source photo first, all in one tap.
+  const split = async g => {
+    if (g === grid || working) return;
+    setGoingTo(g);
+    try {
+      if (data.source) await tile({grid: g, crop: crop || undefined, regenerate: true});
+      else if (legacy) await rebuildLegacy({grid: g, regenerate: true});
+    } finally { setGoingTo(null); }
+  };
+  const [cropping, setCropping] = useState(false);
+  const startCrop = async () => {
+    if (!data.source && legacy) await rebuildLegacy();
+    setCropping(true);
+  };
 
   return <div className="crs-form crs-tile">
-    <div className="crs-row2">
-      <div>
+    <section className="crs-tile-top">
+      <div className="crs-tile-preview">
         <h3>Puzzle as players see it</h3>
         <div className="crs-tile-show">
-          {puzzleUrl ? <img src={puzzleUrl} alt=""/> : <span className="crs-thumb-none">Not cut yet</span>}
-          {puzzleUrl && <i className="crs-tile-hole" style={{'--g': grid}}/>}
+          {puzzleUrl ? <img src={puzzleUrl} alt=""/> : <span className="crs-thumb-none">Choose a photo below</span>}
+          {working && <span className="crs-tile-busy">Cutting…</span>}
         </div>
       </div>
-      <div>
-        <h3>The four pieces</h3>
-        <div className="crs-pieces">
-          {(data.opts || []).map((o, i) => <div key={i} className={`crs-piece ${i === right ? 'is-right' : ''}`}>
-            <span className="crs-piece-img">{pieceUrl && <img src={pieceUrl} alt="" style={{transform: pieceLook(o)}}/>}</span>
-            <span className="crs-option-tag">{i === right ? 'Correct' : 'Decoy'}</span>
-            <select value={o[0]} disabled={busy} onChange={e => setOpt(i, [e.target.value, o[1]])} aria-label="Mirror">
-              {FLIPS.map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select>
-            <button type="button" className="crs-btn is-small" disabled={busy} onClick={() => setOpt(i, [o[0], (o[1] + 90) % 360])}>Turned {o[1]}° · turn</button>
-          </div>)}
-        </div>
-        <button type="button" className="crs-btn" disabled={busy} onClick={() => tile({regenerate: true})}>Regenerate decoys</button>
-        <p className="crs-muted">Rule: the correct piece is the real corner, only turned. Decoys are the same corner mirrored and turned.</p>
+      <div className="crs-split" role="group" aria-label="Split the picture">
+        <h3>Split into</h3>
+        {[[2, '4 pieces', '2 × 2'], [3, '9 pieces', '3 × 3']].map(([g, name, sub]) =>
+          <button key={g} type="button" className={`crs-split-btn ${grid === g ? 'is-on' : ''}`} aria-pressed={grid === g}
+            disabled={working || (!data.source && !legacy)} onClick={() => split(g)}>
+            <i className="crs-split-icon" style={{'--g': g}} aria-hidden="true"/>
+            <span><b>{goingTo === g ? 'Cutting…' : name}</b><small>{sub} · bottom-right missing</small></span>
+          </button>)}
       </div>
+    </section>
+
+    <h3>The four pieces</h3>
+    <div className="crs-pieces">
+      {(data.opts || []).map((o, i) => <div key={i} className={`crs-piece ${i === right ? 'is-right' : ''}`}>
+        <span className="crs-piece-img">{pieceUrl && <img src={pieceUrl} alt="" style={{transform: pieceLook(o)}}/>}</span>
+        <span className="crs-option-tag">{i === right ? 'Correct piece' : 'Decoy'}</span>
+        <div className="crs-seg" role="group" aria-label="Mirror">
+          {FLIPS.map(([k, l]) => <button key={k} type="button" className={o[0] === k ? 'is-on' : ''} aria-pressed={o[0] === k}
+            disabled={working} onClick={() => o[0] !== k && setOpt(i, [k, o[1]])}>{{none: 'Normal', H: 'Flip ↔', V: 'Flip ↕'}[k] || l}</button>)}
+        </div>
+        <button type="button" className="crs-turn" disabled={working} onClick={() => setOpt(i, [o[0], (o[1] + 90) % 360])}>
+          <span aria-hidden="true">↻</span> Turn <small>{o[1]}°</small></button>
+      </div>)}
     </div>
+    <div className="crs-actions">
+      <button type="button" className="crs-btn" disabled={working} onClick={() => tile({regenerate: true})}>New decoys</button>
+    </div>
+    <p className="crs-muted">The correct piece is the real corner, only turned. Decoys are the same corner flipped and turned.</p>
 
     <Field label="Puzzle name (studio only)"><input value={data.title || ''} onChange={e => setData({...data, title: e.target.value})}/></Field>
 
-    <h3>Source photo and square crop</h3>
-    {!sourceUrl && legacy && <div className="crs-note">
-      This is one of the original hand-made puzzles; only its square is kept. To re-crop it, rebuild the square as a source photo, or replace the photo.
-      <div className="crs-actions"><button type="button" className="crs-btn" disabled={making || busy} onClick={useLegacyAsSource}>{making ? 'Rebuilding…' : 'Rebuild square as source'}</button></div>
-    </div>}
+    <h3>Photo and crop</h3>
     <div className="crs-actions">
-      <button type="button" className="crs-btn" disabled={busy} onClick={() => pick(ref => tile({source: ref, crop: null}))}>{sourceUrl ? 'Replace source photo' : 'Choose source photo'}</button>
-    </div>
-    <div className="crs-split" role="group" aria-label="Split the picture">
-      <span className="crs-split-label">Split the picture into</span>
-      {[[2, '4 pieces', '2 × 2'], [3, '9 pieces', '3 × 3']].map(([g, name, sub]) =>
-        <button key={g} type="button" className={`crs-split-btn ${grid === g ? 'is-on' : ''}`} aria-pressed={grid === g}
-          disabled={busy || !data.source || grid === g} onClick={() => tile({grid: g, crop: crop || undefined})}>
-          <i className="crs-split-icon" style={{'--g': g}} aria-hidden="true"/>
-          <b>{name}</b><small>{sub} · bottom-right missing</small>
-        </button>)}
-      {!data.source && <p className="crs-muted">Choose a source photo first to switch between 4 and 9.</p>}
+      <button type="button" className="crs-btn" disabled={working} onClick={() => pick(ref => tile({source: ref, crop: null}))}>{sourceUrl || legacy ? 'Use a different photo' : 'Choose photo'}</button>
+      {!cropping && (sourceUrl || legacy) && <button type="button" className="crs-btn" disabled={working} onClick={startCrop}>{making ? 'Getting the photo ready…' : 'Move or zoom the crop'}</button>}
     </div>
     {sourceInfo?.credit && Object.keys(sourceInfo.credit).length > 0 && <p className="crs-muted">Credit: {Object.values(sourceInfo.credit).join(' · ')}</p>}
-    {sourceUrl && <>
+    {cropping && sourceUrl && <>
       <CropBox url={sourceUrl} crop={crop} grid={grid} onCrop={setCrop} onSize={setNat}/>
       {nat && crop && <CropPreview url={sourceUrl} crop={crop} nat={nat} grid={grid}/>}
       <div className="crs-actions">
-        <button type="button" className="crs-btn is-primary" disabled={busy || !changed} onClick={() => tile({crop})}>Save crop and cut puzzle</button>
-        {changed && <button type="button" className="crs-btn is-ghost" onClick={() => setCrop(data.crop)}>Reset crop</button>}
+        <button type="button" className="crs-btn is-primary" disabled={working || !changed} onClick={async () => { await tile({crop}); setCropping(false); }}>Save crop</button>
+        <button type="button" className="crs-btn is-ghost" onClick={() => { setCrop(data.crop); setCropping(false); }}>Cancel</button>
       </div>
     </>}
     {err && <p className="crs-error">{err}</p>}
@@ -847,10 +864,10 @@ function Modal({title, children, onClose, wide}) {
     window.addEventListener('keydown', esc);
     return () => window.removeEventListener('keydown', esc);
   }, [onClose]);
-  return <div className="crs-modal-back" onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
+  return createPortal(<div className="crs crs-modal-back" onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
     <div className={`crs-modal ${wide ? 'is-wide' : ''}`} role="dialog" aria-modal="true" aria-label={title}>
       <div className="crs-modal-head"><h2>{title}</h2><button className="crs-btn is-ghost" onClick={onClose}>Close</button></div>
       {children}
     </div>
-  </div>;
+  </div>, document.body);
 }

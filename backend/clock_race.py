@@ -1,4 +1,4 @@
-"""Clock Race (سباق الساعة): 1-12 players race through the same 20 quick tasks.
+"""Clock Race (سباق الساعة): 1-12 players race through the same 20 quick tasks (TASKS).
 
 The server builds the whole round once, so every phone sees the same tasks in the same order,
 and it alone decides whether an answer is right and who reached 100% first.
@@ -29,23 +29,29 @@ from clock_race_landmarks import LANDMARK_BANK
 
 PRICE_BANK = json.loads(Path(__file__).with_name('clock_race_prices.json').read_text(encoding='utf-8'))
 
-VERSION = 7
+VERSION = 8  # 8: 20 tasks, extra-life request
 MAX_PLAYERS = 12
-TASKS = 30
-VOTE_AT = 15    # task 16 (0-based), only when 3+ people are racing
-BOSS_AT = 29    # task 30
+TASKS = 20
+VOTE_AT = 10    # task 11 (0-based), only when 3+ people are racing
+BOSS_AT = 19    # task 20
 VOTE_MIN_HUMANS = 3
 COUNTDOWN = 3.0  # seconds between START and the first tap counting, so every phone starts together
 WRONG_DELAY = 1.0  # a wrong answer holds the player this long before the next task
-LIVES = 3          # three hearts; losing the third sends the player's clock back to 0
+LIVES = 3          # three hearts; losing the last sends the player's clock back to 0 (unless a friend gives a life)
 RESET_DELAY = 1.6  # the heartbreak screen holds the player this long before task 1 again
 GRACE = 0.25     # network slack on the server-side waits
 NAME_MAX = 24
-# 30 tasks = 16 picture comparisons + 14 of the original challenges (boss included, vote when 3+ people).
-PICTURE_MIX = {'belong': 4, 'older': 3, 'compare': 1, 'price': 3, 'which': 3, 'photo': 2}
+# 20 tasks = 7 picture comparisons + 13 of the original challenges (boss included, vote when 3+ people).
+# Every question type still comes up each round; the bank itself is unchanged.
+PICTURE_MIX = {'belong': 1, 'older': 1, 'compare': 1, 'price': 2, 'which': 1, 'photo': 1}
+# "Tap the tiger" (type 'animal') is out of the rotation: too obvious. Its pictures stay in the studio.
 ORDINARY_MIX = {'odd': 1, 'stroop': 1, 'geo': 1, 'sock': 1, 'memory': 1, 'avoid': 1,
-                'alphabet': 1, 'scale': 1, 'shadow': 1, 'tile': 1, 'animal': 1}
-EXTRA_POOL = ['odd', 'stroop', 'avoid', 'sock', 'geo']  # fills the slots the vote or a 2nd Word Rush doesn't take  # 17; one fewer with 2 Word Rush
+                'alphabet': 1, 'scale': 1, 'shadow': 1, 'tile': 1}
+RETIRED_TYPES = ('animal',)
+# Extra-life request: a player out of hearts may ask the others once; the first YES gives both a heart.
+DECIDE_SECONDS = 8.0    # time to choose "ask for a life" or "start over" before the clock resets anyway
+HELP_SECONDS = 10.0     # how long the request stays open on the other phones
+EXTRA_POOL = ['odd', 'stroop', 'avoid', 'sock', 'geo']  # fills the slot the vote or a 2nd Word Rush doesn't take
 # The memory grid is the only letter challenge: 1 or 2 a round (half of v2's ~3 letter tasks).
 WORD_VARIANTS = ('pair', 'country', 'fruit')
 TYPO_MIN_LENGTH = 5  # one-typo forgiveness only for words this long or longer
@@ -569,13 +575,16 @@ OPENING = 5     # the first five tasks are five different challenges
 
 
 def plan_types(rng, vote=True):
-    """The 30 task types: 16 picture comparisons (PICTURE_MIX) and 14 of the originals: the boss at 30,
-    the friend vote at 16 when 3+ people race, 1-2 Word Rush, the rest from ORDINARY_MIX and EXTRA_POOL.
+    """The TASKS (20) task types: PICTURE_MIX and ORDINARY_MIX, the boss last, the friend vote at
+    VOTE_AT when 3+ people race, then 1-2 Word Rush and EXTRA_POOL fill what is left.
     Variety first: the opening five are all different, a type never repeats within SPREAD tasks,
     and no face task right before the face boss."""
     mix = dict(ORDINARY_MIX)
     mix.update(PICTURE_MIX)
+    for k in RETIRED_TYPES:
+        mix.pop(k, None)
     room = (TASKS - 1 - (1 if vote else 0)) - sum(mix.values())
+    assert room >= 1, 'the mixes leave no slot for Word Rush'
     words = rng.choice([1, min(2, room)])
     mix['word'] = words
     extra = room - words
@@ -809,7 +818,8 @@ def start(g, round_id, now=None, rng=None):
     g['round'] = dict(id=uuid.uuid4().hex[:12], tasks=tasks, starts_at=now + COUNTDOWN)
     g['roster'] = roster
     g['progress'] = {p['id']: [] for p in roster}  # per task: [seconds after start, right?]
-    g['lives'] = {p['id']: dict(misses=0, epoch=0, reset_at=0.0) for p in roster}
+    g['lives'] = {p['id']: _fresh_life() for p in roster}
+    g['thanks'] = None
     g['bots'] = {p['id']: bot_schedule(tasks, rng) for p in g['players'] if p['sim']}
     g['status'] = 'racing'
     g['winner'] = None
@@ -865,8 +875,115 @@ def vote_choices(g, task, pid):
     return [p['id'] for p in g['roster']]
 
 
+def _fresh_life():
+    # bonus: hearts given by the extra-life request (no cap); out: waiting on "ask for a life" / a friend
+    return dict(misses=0, epoch=0, reset_at=0.0, bonus=0, out=None)
+
+
 def lives(g, pid):
-    return g.setdefault('lives', {}).setdefault(pid, dict(misses=0, epoch=0, reset_at=0.0))
+    life = g.setdefault('lives', {}).setdefault(pid, _fresh_life())
+    life.setdefault('bonus', 0)
+    life.setdefault('out', None)
+    return life
+
+
+def max_hearts(life):
+    return LIVES + life.get('bonus', 0)
+
+
+def _reset(g, pid, now):
+    """Out of hearts with no rescue: the clock goes back to task 1 with three full hearts."""
+    life = lives(g, pid)
+    at = round(max(0.0, now - g['round']['starts_at']), 3)
+    g['progress'][pid].clear()
+    life.update(misses=0, bonus=0, out=None, epoch=life['epoch'] + 1, reset_at=at + RESET_DELAY)
+
+
+def helpers(g, pid):
+    """Who could give `pid` a life: the other people in the race (not test bots) who are not out themselves."""
+    return [p['id'] for p in g['roster']
+            if p['id'] != pid and not p.get('sim') and not lives(g, p['id']).get('out')
+            and len(g['progress'].get(p['id'], [])) < TASKS]
+
+
+def sync_help(g, now=None):
+    """Close what has run out of time: an unanswered choice or a request nobody accepted resets that
+    player's clock (the normal loss). Returns True if anything changed."""
+    now = time.time() if now is None else now
+    if g.get('status') != 'racing' or not g.get('round'):
+        return False
+    changed = False
+    for pid, life in list(g.get('lives', {}).items()):
+        out = life.get('out')
+        if not out:
+            continue
+        req = out.get('help')
+        deadline = req['expires'] if req else out['decide_by']
+        everyone_said_no = bool(req) and not [h for h in helpers(g, pid) if h not in req['declined']]
+        if now >= deadline or everyone_said_no or (not req and not helpers(g, pid)):
+            _reset(g, pid, now)
+            changed = True
+    return changed
+
+
+def life_action(g, pid, action, round_id, request_id=None, epoch=None, now=None):
+    """The extra-life request. action: 'ask' (the player who is out asks everyone once), 'restart'
+    (that player starts over now), 'accept' / 'decline' (another player answers request_id).
+    Every check happens here, on the room the server just read, and the room is written with an
+    optimistic lock, so of several near-simultaneous YES taps only the first one that lands counts.
+    Returns dict(ok, changed, reason?)."""
+    now = time.time() if now is None else now
+    sync_bots(g, now)
+    swept = sync_help(g, now)
+    no = lambda reason: dict(ok=False, changed=swept, reason=reason)  # noqa: E731
+    if g['status'] != 'racing' or not g['round'] or round_id != g['round']['id'] or pid not in g['progress']:
+        return no('over')
+    if action in ('ask', 'restart'):
+        life = lives(g, pid)
+        out = life.get('out')
+        if not out or (epoch is not None and epoch != life['epoch']):
+            return no('not_out')
+        if action == 'restart':
+            _reset(g, pid, now)
+            return dict(ok=True, changed=True)
+        if out.get('help'):
+            return no('already_asked')  # one request per lost life
+        if not helpers(g, pid):
+            _reset(g, pid, now)
+            return dict(ok=False, changed=True, reason='nobody')
+        out['help'] = dict(id=uuid.uuid4().hex[:12], expires=now + HELP_SECONDS, declined=[])
+        return dict(ok=True, changed=True)
+    # accept / decline: find the request
+    asker = next((who for who, life in g.get('lives', {}).items()
+                  if (life.get('out') or {}).get('help', {}) and life['out']['help']['id'] == request_id), None)
+    if asker is None:
+        return no('closed')  # already given by someone else, run out, or never existed
+    if asker == pid or pid not in helpers(g, asker):
+        return no('not_allowed')
+    req = lives(g, asker)['out']['help']
+    if now >= req['expires']:
+        return no('closed')
+    if action == 'decline':
+        if pid not in req['declined']:
+            req['declined'].append(pid)
+        sync_help(g, now)  # everyone said no: back to the normal loss now
+        return dict(ok=True, changed=True)
+    # first valid YES: one heart each, the asker carries on from the next task
+    life = lives(g, asker)
+    task_index, at = life['out']['task'], life['out']['at']
+    life['bonus'] += 1
+    life['out'] = None
+    done = g['progress'][asker]
+    if len(done) == task_index:
+        done.append([at, False])  # the missed task counts as answered wrong, like any other miss
+    giver = lives(g, pid)
+    giver['bonus'] += 1
+    names = {p['id']: p['name'] for p in g['players']}
+    g['thanks'] = dict(id=uuid.uuid4().hex[:12], by=pid, by_name=names.get(pid, ''), to=asker,
+                       to_name=names.get(asker, ''), at=now)
+    if len(done) == TASKS:
+        _finish(g, asker, now)
+    return dict(ok=True, changed=True)
 
 
 def answer(g, pid, round_id, index, value, now=None, epoch=None):
@@ -879,9 +996,12 @@ def answer(g, pid, round_id, index, value, now=None, epoch=None):
     done = g['progress'].get(pid)
     if g['round'] is None or round_id != g['round']['id'] or done is None:
         raise GameError('This round is over. · هالجولة خلصت.')
+    sync_help(g, now)
     count = len(done)
     life = lives(g, pid)
     same = dict(misses=life['misses'], epoch=life['epoch'])
+    if life.get('out'):
+        return dict(right=False, done=count, word=None, changed=False, out=True, **same)  # waiting on a life
     if epoch is not None and epoch != life['epoch']:
         return dict(right=False, done=count, word=None, changed=False, **same)  # from before a reset
     if index < count:
@@ -896,9 +1016,12 @@ def answer(g, pid, round_id, index, value, now=None, epoch=None):
     at = round(max(0.0, now - g['round']['starts_at']), 3)
     if not right and pid not in g.get('bots', {}):
         life['misses'] += 1
-        if life['misses'] >= LIVES:
-            done.clear()
-            life.update(misses=0, epoch=life['epoch'] + 1, reset_at=at + RESET_DELAY)
+        if life['misses'] >= max_hearts(life):
+            if helpers(g, pid):
+                # out of hearts: before the clock resets, this player may ask the others for a life
+                life['out'] = dict(task=index, at=at, decide_by=now + DECIDE_SECONDS, help=None)
+                return dict(right=False, done=count, word=word, changed=True, out=True, misses=life['misses'], epoch=life['epoch'])
+            _reset(g, pid, now)
             return dict(right=False, done=0, word=word, changed=True, reset=True, misses=0, epoch=life['epoch'])
     done.append([at, bool(right)])
     if len(done) == TASKS:
@@ -929,6 +1052,14 @@ def timing(g):
     return {k: dict(avg=round(sum(v) / len(v), 2), n=len(v)) for k, v in sorted(sums.items())}
 
 
+def _public_out(out):
+    """What every phone may know about a player who is out of hearts."""
+    if not out:
+        return None
+    req = out.get('help')
+    return dict(decide_by=out['decide_by'], help=dict(id=req['id'], expires=req['expires']) if req else None)
+
+
 def view(g, pid, now=None):
     now = time.time() if now is None else now
     r = g['round']
@@ -941,8 +1072,10 @@ def view(g, pid, now=None):
                       done=len(g['progress'].get(p['id'], [])),
                       right=sum(1 for _, ok in g['progress'].get(p['id'], []) if ok),
                       misses=g.get('lives', {}).get(p['id'], {}).get('misses', 0),
-                      epoch=g.get('lives', {}).get(p['id'], {}).get('epoch', 0)) for p in g['players']],
-        lives=LIVES,
+                      epoch=g.get('lives', {}).get(p['id'], {}).get('epoch', 0),
+                      hearts=LIVES + g.get('lives', {}).get(p['id'], {}).get('bonus', 0),
+                      out=_public_out(g.get('lives', {}).get(p['id'], {}).get('out'))) for p in g['players']],
+        lives=LIVES, thanks=g.get('thanks'),
         round=dict(id=r['id'], starts_at=r['starts_at'], tasks=r['tasks'],
                    question=vote_text(r['tasks'][VOTE_AT], lang_i) if r['tasks'][VOTE_AT]['type'] == 'vote' else None) if r else None,
         roster=g['roster'],

@@ -120,3 +120,30 @@ def test_bad_codes(client):
     c, _ = client
     assert c.get('/api/clock-race/rooms/12', headers={}).status_code == 400
     assert c.get('/api/clock-race/rooms/12345', headers={}).status_code == 404
+
+
+def test_extra_life_over_http(client):
+    c, _ = client
+    host = c.post('/api/clock-race/rooms', json={'nickname': 'Khaled', 'lang': 'en'}).json()
+    url = '/api/clock-race/rooms/' + host['code']
+    jasim = c.post(url + '/join', json={'nickname': 'Jasim'}).json()
+    yousef = c.post(url + '/join', json={'nickname': 'Yousef'}).json()
+    state = c.post(url + '/start', json={'round': ''}, headers=h(host)).json()
+    rid, tasks = state['round']['id'], state['round']['tasks']
+    for i in range(3):
+        wrong = 'zzzzqq' if tasks[i]['type'] == 'word' else -1
+        r = c.post(url + '/answer', json={'round': rid, 'task': i, 'answer': wrong}, headers=h(host)).json()
+    assert r.get('out') and r['done'] == 2
+    asked = c.post(url + '/life', json={'action': 'ask', 'round': rid}, headers=h(host)).json()
+    assert asked['ok']
+    seen = c.get(url, headers=h(jasim)).json()
+    req = [p for p in seen['players'] if p['id'] == host['player_id']][0]['out']['help']['id']
+    first = c.post(url + '/life', json={'action': 'accept', 'round': rid, 'request': req}, headers=h(jasim)).json()
+    second = c.post(url + '/life', json={'action': 'accept', 'round': rid, 'request': req}, headers=h(yousef)).json()
+    assert first['ok'] and not second['ok']
+    v = first['state']
+    by = {p['id']: p for p in v['players']}
+    assert by[host['player_id']]['hearts'] == 4 and by[host['player_id']]['out'] is None and by[host['player_id']]['done'] == 3
+    assert by[jasim['player_id']]['hearts'] == 4 and by[yousef['player_id']]['hearts'] == 3
+    assert v['thanks']['by_name'] == 'Jasim'
+    assert c.post(url + '/life', json={'action': 'accept', 'round': rid, 'request': req}, headers=h(host)).json()['ok'] is False

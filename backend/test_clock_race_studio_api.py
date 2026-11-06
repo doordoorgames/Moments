@@ -100,11 +100,12 @@ def test_everything_needs_a_signed_in_admin(client):
     assert c.post('/api/admin/clock-race/login', json={'password': 'admin123'}).status_code == 401
 
 
-def test_studio_closed_without_server_password(client, monkeypatch):
+def test_initial_password_when_no_server_password(client, monkeypatch):
     c, _ = client
     monkeypatch.delenv('CLOCK_RACE_ADMINS')
-    monkeypatch.setenv('ADMIN_PASSWORD', 'admin123')
-    assert c.post('/api/admin/clock-race/login', json={'password': 'admin123'}).status_code == 503
+    r = c.post('/api/admin/clock-race/login', json={'password': 'admin123'})
+    assert r.status_code == 200 and 'admin123' not in r.text
+    assert c.post('/api/admin/clock-race/login', json={'password': 'wrong'}).status_code == 401
 
 
 def test_library_lists_every_question(client):

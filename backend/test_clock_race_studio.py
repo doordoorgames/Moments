@@ -328,14 +328,23 @@ def test_rate_limit():
     assert e.value.status == 429
 
 
-def test_closed_without_a_real_password():
-    assert auth.admins({'ADMIN_PASSWORD': 'admin123'}) == {}
-    assert auth.admins({}) == {}
-    assert auth.admins({'CLOCK_RACE_ADMINS': 'k:short'}) == {}
+def test_initial_password_is_stored_only_as_a_hash():
+    assert 'admin123' not in open(auth.__file__).read()
+    assert auth.admins({}) == {'admin': auth.DEFAULT_HASH}
+    assert auth.login('admin123', 'x', auth.Limiter(), {'SUPABASE_KEY': 'k'})[0] == 'admin'
     with pytest.raises(auth.AuthError) as e:
-        auth.login('admin123', 'x', auth.Limiter(), {'ADMIN_PASSWORD': 'admin123', 'SUPABASE_KEY': 'k'})
-    assert e.value.status == 503
-    assert auth.admins({'ADMIN_PASSWORD': 'a-really-set-password'}) == {'admin': 'a-really-set-password'}
+        auth.login('admin1234', 'x', auth.Limiter(), {'SUPABASE_KEY': 'k'})
+    assert e.value.status == 401
+
+
+def test_server_variables_replace_the_initial_password():
+    env = {'SUPABASE_KEY': 'k', 'CLOCK_RACE_ADMIN_PASSWORD': 'new-pass'}
+    assert auth.login('new-pass', 'x', auth.Limiter(), env)[0] == 'admin'
+    with pytest.raises(auth.AuthError):
+        auth.login('admin123', 'x', auth.Limiter(), env)
+    hashed = {'SUPABASE_KEY': 'k', 'CLOCK_RACE_ADMIN_PASSWORD_HASH': auth.make_hash('hashed-pass')}
+    assert auth.login('hashed-pass', 'x', auth.Limiter(), hashed)[0] == 'admin'
+    assert auth.admins({'CLOCK_RACE_ADMINS': 'k:short'}) == {'admin': auth.DEFAULT_HASH}
 
 
 # ------------------------------------------------------------------ uploads

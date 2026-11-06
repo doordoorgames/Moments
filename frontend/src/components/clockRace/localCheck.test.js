@@ -17,11 +17,11 @@ test('tap tasks are checked on the phone', () => {
   expect(localCheck({type: 'swap', answer: [1, 2]}, [1, 2])).toBe(null); // removed task type
 });
 
-test('the clock fills over 30 tasks', () => {
-  expect(TOTAL).toBe(30);
+test('the race is 20 tasks', () => {
+  expect(TOTAL).toBe(20);
   expect(fraction(0)).toBe(0);
-  expect(fraction(15)).toBe(0.5);
-  expect(fraction(30)).toBe(1);
+  expect(fraction(10)).toBe(0.5);
+  expect(fraction(20)).toBe(1);
   expect(fraction(31)).toBe(1);
 });
 

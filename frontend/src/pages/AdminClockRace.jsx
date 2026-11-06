@@ -67,21 +67,28 @@ export default function AdminClockRace() {
 
 function Login({onIn}) {
   const [pw, setPw] = useState('');
+  const [show, setShow] = useState(false);
   const [err, setErr] = useState('');
   const [busy, setBusy] = useState(false);
   const submit = async e => {
     e.preventDefault();
+    if (!pw || busy) return;
     setBusy(true); setErr('');
     try { onIn((await call('post', '/login', {password: pw})).token); }
-    catch (x) { setErr(apiErrorMessage(x, 'Sign-in failed.')); }
+    catch (x) { setErr(x?.response?.status === 401 ? 'Wrong password.' : apiErrorMessage(x, 'Sign-in failed.')); }
     finally { setBusy(false); }
   };
   return <div className="crs crs-center">
-    <form className="crs-login" onSubmit={submit}>
+    <form className="crs-login" onSubmit={submit} autoComplete="off">
       <h1>Clock Race studio</h1>
-      <p className="crs-muted">Private. Sign in with the studio password set on the server.</p>
-      <input type="password" autoComplete="current-password" value={pw} onChange={e => setPw(e.target.value)} placeholder="Password" autoFocus/>
-      <button className="crs-btn is-primary" disabled={busy || !pw}>{busy ? 'Signing in…' : 'Sign in'}</button>
+      <label htmlFor="crs-password" className="crs-login-label">Admin Password</label>
+      <div className="crs-pw">
+        <input id="crs-password" name="password" type={show ? 'text' : 'password'} autoComplete="current-password"
+          value={pw} onChange={e => setPw(e.target.value)} autoFocus autoCapitalize="none" autoCorrect="off" spellCheck={false}/>
+        <button type="button" className="crs-pw-toggle" onClick={() => setShow(v => !v)} aria-pressed={show}
+          aria-label={show ? 'Hide password' : 'Show password'}>{show ? 'Hide' : 'Show'}</button>
+      </div>
+      <button type="submit" className="crs-btn is-primary crs-enter" disabled={busy || !pw}>{busy ? 'Checking…' : 'Enter'}</button>
       {err && <p className="crs-error" role="alert">{err}</p>}
     </form>
   </div>;

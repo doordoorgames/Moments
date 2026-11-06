@@ -1,13 +1,13 @@
-"""Sign-in for the Clock Race studio (/admin/clock-race).
+"""Sign-in for the Clock Race studio (/admin/clock-race): one password, checked only on the server.
 
-Who may sign in is set only on the server (Railway variables), never in the frontend:
+The password is set on the server (Railway variables), never in the frontend:
 
-    CLOCK_RACE_ADMINS="khaled:long-password,partner:another-password"   (preferred: records names)
-    CLOCK_RACE_ADMIN_PASSWORD="long-password"                           (one admin, recorded as "admin")
+    CLOCK_RACE_ADMIN_PASSWORD="new-password"           (simplest way to change it)
+    CLOCK_RACE_ADMIN_PASSWORD_HASH="pbkdf2_sha256$..."  (the same, stored as a hash)
+    CLOCK_RACE_ADMINS="khaled:pass-one,partner:pass-two" (several named admins)
 
-If neither is set, the existing CMS ADMIN_PASSWORD works too, but only when it was really set (not the
-built-in "admin123" default) and is at least 10 characters. With no usable password the studio stays
-closed (503) instead of falling back to anything guessable.
+With none of these set, the initial password applies. Only its PBKDF2 hash lives here (DEFAULT_HASH),
+not the password itself. To make a new hash: python -c "import clock_race_admin_auth as a; print(a.make_hash('...'))"
 
 A successful sign-in returns a signed token (HMAC-SHA256, 12 hours). Signing key: CLOCK_RACE_ADMIN_SECRET,
 or else one derived from the Supabase service key, which never leaves the server. Repeated wrong
@@ -20,14 +20,37 @@ import hashlib
 import hmac
 import json
 import os
+import secrets
 import time
 from collections import defaultdict, deque
 
 TOKEN_HOURS = 12
-MIN_PASSWORD = 10
+MIN_PASSWORD = 6
 FAIL_WINDOW = 600
 FAIL_LIMIT = 5
-WEAK_DEFAULTS = {'admin123', 'admin', 'password', 'changeme'}
+HASH_PREFIX = 'pbkdf2_sha256$'
+HASH_ROUNDS = 310000
+# The initial studio password (PBKDF2 hash only). Overridden by any of the variables above.
+DEFAULT_HASH = 'pbkdf2_sha256$310000$dd98b7edf8d7f5a312b08b19e1b0660a$f27e0be4b4fba23d1d6f8053ac9370750c654f3e9eee8d1fc8f294ccca08f6d7'
+
+
+def make_hash(password, salt=None, rounds=HASH_ROUNDS):
+    salt = salt or secrets.token_hex(16)
+    digest = hashlib.pbkdf2_hmac('sha256', password.encode(), salt.encode(), rounds).hex()
+    return f'{HASH_PREFIX}{rounds}${salt}${digest}'
+
+
+def matches(password, stored):
+    """Constant-time check of a typed password against a stored password or PBKDF2 hash."""
+    password = password or ''
+    if stored.startswith(HASH_PREFIX):
+        try:
+            rounds, salt, digest = stored[len(HASH_PREFIX):].split('$')
+            got = hashlib.pbkdf2_hmac('sha256', password.encode(), salt.encode(), int(rounds)).hex()
+        except ValueError:
+            return False
+        return hmac.compare_digest(got, digest)
+    return hmac.compare_digest(hashlib.sha256(password.encode()).digest(), hashlib.sha256(stored.encode()).digest())
 
 
 class AuthError(Exception):
@@ -46,12 +69,13 @@ def admins(env=None):
         if sep and name.strip() and len(pw) >= MIN_PASSWORD:
             out[name.strip()[:40]] = pw
     single = env.get('CLOCK_RACE_ADMIN_PASSWORD') or ''
-    if len(single) >= MIN_PASSWORD:
+    hashed = env.get('CLOCK_RACE_ADMIN_PASSWORD_HASH') or ''
+    if hashed.startswith(HASH_PREFIX):
+        out.setdefault('admin', hashed)
+    elif len(single) >= MIN_PASSWORD:
         out.setdefault('admin', single)
     if not out:
-        cms = env.get('ADMIN_PASSWORD') or ''
-        if len(cms) >= MIN_PASSWORD and cms.lower() not in WEAK_DEFAULTS:
-            out['admin'] = cms
+        out['admin'] = DEFAULT_HASH
     return out
 
 
@@ -128,11 +152,11 @@ def login(password, address, limiter, env=None, now=None):
     """Return (name, token) for a correct password. Constant-time compare against every admin."""
     allowed = admins(env)
     if not allowed:
-        raise AuthError(503, 'The studio is not configured on the server. Set CLOCK_RACE_ADMINS on Railway.')
+        raise AuthError(503, 'The studio is not configured on the server. Set CLOCK_RACE_ADMIN_PASSWORD on Railway.')
     limiter.check(address, now)
     hit = None
-    for name, pw in allowed.items():
-        if hmac.compare_digest(hashlib.sha256((password or '').encode()).digest(), hashlib.sha256(pw.encode()).digest()):
+    for name, stored in allowed.items():
+        if matches(password, stored):
             hit = name
     if not hit:
         limiter.fail(address, now)

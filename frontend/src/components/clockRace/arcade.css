@@ -536,6 +536,64 @@
 /* results / waiting: the pixel clock */
 .cr-app.cr-arcade .cr-finish-clock{display:block;margin:10px auto}
 /* which is more expensive: framed pictures like every other picture question; price shown after the pick */
-.cr-app.cr-arcade .cr-price-options strong{font-family:var(--cr-press);font-weight:400;font-size:12px;color:var(--cr-powder);text-shadow:var(--cr-ol-1)}
+/* the revealed price: big ivory pixel lettering, hard charcoal outline and a dark drop, no box behind it.
+   The answered buttons are disabled; they keep full strength so the prices never fade. */
+.cr-app.cr-arcade .cr-price-options button:disabled{opacity:1}
+.cr-app.cr-arcade .cr-price-options strong{font-family:var(--cr-pixel);font-weight:900;font-size:clamp(21px,calc((100vw - 48px) / var(--n,3) / 4.4),34px);line-height:1;
+  color:var(--cr-ivory);letter-spacing:.02em;white-space:nowrap;margin-top:2px;
+  text-shadow:var(--cr-ol-2),0 6px 0 rgba(20,16,24,.45)}
 .cr-app.cr-arcade .cr-price-options .cr-pic-name{font-size:clamp(17px,4.8vw,21px)}
 .cr-app.cr-arcade .cr-price-options button:active:not(:disabled){transform:translate(2px,2px)}
+
+/* ================================================================ race scoreboard (replaces the clock dials)
+   Names and X/20 straight on the painting: ivory pixel lettering, thin charcoal outline, no panel.
+   One column for up to 3 players, two up to 8, three up to 12, so it never grows past four lines. */
+.cr-app.cr-arcade .cr-score{flex:1;min-width:0;display:grid;grid-template-columns:repeat(var(--cols,1),minmax(0,1fr));gap:0 14px;margin:0;padding:6px 4px 0;list-style:none}
+.cr-app.cr-arcade .cr-score.is-c1{--cols:1;max-width:240px;margin-inline:auto}
+.cr-app.cr-arcade .cr-score.is-c2{--cols:2}
+.cr-app.cr-arcade .cr-score.is-c3{--cols:3;gap:0 10px}
+.cr-app.cr-arcade .cr-score-row{position:relative;display:flex;align-items:baseline;justify-content:space-between;gap:6px;min-width:0;padding-inline-start:10px}
+.cr-app.cr-arcade .cr-score-name{min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;font-family:var(--cr-pixel);font-weight:700;font-size:20px;line-height:1.15;color:var(--cr-ivory);text-shadow:var(--cr-ol-1)}
+.cr-app.cr-arcade .cr-score-num{flex:none;font-family:var(--cr-press);font-weight:400;font-size:11px;line-height:1;color:var(--cr-ivory);text-shadow:var(--cr-ol-1)}
+.cr-app.cr-arcade .cr-score.is-c2 .cr-score-name{font-size:18px}
+.cr-app.cr-arcade .cr-score.is-c3 .cr-score-name{font-size:16px}
+.cr-app.cr-arcade .cr-score.is-c3 .cr-score-num{font-size:9px}
+.cr-app.cr-arcade .cr-score-done{display:inline-block;animation:arc-score .3s steps(3)}
+@keyframes arc-score{from{transform:translateY(-3px);color:var(--cr-powder)}}
+/* you: powder-yellow lettering and a pixel cursor in front of your name */
+.cr-app.cr-arcade .cr-score-row.is-me :is(.cr-score-name,.cr-score-num){color:var(--cr-powder)}
+.cr-app.cr-arcade .cr-score-row.is-me:before{content:'';position:absolute;inset-inline-start:0;top:50%;width:6px;height:10px;margin-top:-6px;background:var(--cr-powder);
+  clip-path:polygon(0 0,2px 0,2px 2px,4px 2px,4px 4px,6px 4px,6px 6px,4px 6px,4px 8px,2px 8px,2px 10px,0 10px);filter:drop-shadow(0 1px 0 var(--cr-charcoal))}
+.cr-app.cr-arcade[dir=rtl] .cr-score-row.is-me:before{transform:scaleX(-1)}
+.cr-app.cr-arcade .cr-score-row.is-winner .cr-score-num{color:var(--cr-mint)}
+.cr-app.cr-arcade .cr-score-row.is-out .cr-score-name{opacity:.6}
+
+/* more than five hearts (lives given by friends): smaller so the line stays one line */
+.cr-app.cr-arcade .cr-hearts.is-many{gap:3px}
+.cr-app.cr-arcade .cr-hearts.is-many .cr-heart.is-pixel{width:18px;height:16px}
+
+/* ================================================================ extra-life request */
+.cr-app.cr-arcade .cr-out{background:rgba(42,38,48,.66)}
+.cr-out-card{display:flex;flex-direction:column;align-items:center;gap:12px;padding:0 20px;text-align:center;animation:arc-shudder .36s steps(6)}
+.cr-app.cr-arcade .cr-sad-face.is-small{width:112px;height:112px;animation:none}
+.cr-app.cr-arcade .cr-out-title{margin:0;font-family:var(--cr-pixel);font-weight:800;font-size:44px;line-height:1;color:var(--cr-ivory);text-shadow:var(--cr-ol-2)}
+.cr-app.cr-arcade .cr-out-ask{min-width:min(300px,80vw);min-height:56px;padding:0 18px;border:0;clip-path:var(--cr-step);background:var(--cr-pink);color:var(--cr-charcoal);
+  box-shadow:inset 0 -5px 0 var(--cr-pink-d),inset 0 3px 0 rgba(255,255,255,.35);font-family:var(--cr-pixel);font-weight:800;font-size:30px;line-height:1;cursor:pointer}
+.cr-app.cr-arcade .cr-out-ask:active:not(:disabled){transform:translateY(3px)}
+.cr-app.cr-arcade .cr-out-restart{font-family:var(--cr-pixel);font-weight:700;font-size:24px}
+.cr-app.cr-arcade :is(.cr-out-timer,.cr-out-wait b){font-family:var(--cr-press);font-size:18px;color:var(--cr-powder);text-shadow:var(--cr-ol-1)}
+.cr-app.cr-arcade .cr-out-timer{margin:0}
+.cr-app.cr-arcade .cr-out-wait{margin:0;font-family:var(--cr-pixel);font-weight:700;font-size:28px;color:var(--cr-ivory);text-shadow:var(--cr-ol-1)}
+.cr-app.cr-arcade .cr-out-wait b{margin-inline-start:8px}
+
+.cr-app.cr-arcade .cr-help{background:rgba(42,38,48,.48)}
+.cr-app.cr-arcade .cr-help-card{background:var(--cr-paper);clip-path:var(--cr-step);border:0;
+  box-shadow:inset 0 0 0 3px var(--cr-charcoal),inset 0 -8px 0 var(--cr-paper-d);animation:arc-finish .3s steps(4) both}
+.cr-app.cr-arcade .cr-help-q{font-family:var(--cr-pixel);font-weight:800;font-size:clamp(26px,7.4vw,32px);color:var(--cr-charcoal)}
+.cr-app.cr-arcade :is(.cr-help-yes,.cr-help-no){clip-path:var(--cr-step);border:0;font-family:var(--cr-pixel);font-weight:800;font-size:32px}
+.cr-app.cr-arcade .cr-help-yes{background:var(--cr-teal);color:var(--cr-ivory);text-shadow:var(--cr-ol-1);box-shadow:inset 0 -5px 0 var(--cr-teal-d),inset 0 3px 0 rgba(255,255,255,.25)}
+.cr-app.cr-arcade .cr-help-no{background:var(--cr-ivory-lo);color:var(--cr-charcoal);box-shadow:inset 0 -5px 0 var(--cr-gray)}
+.cr-app.cr-arcade .cr-help-x path{fill:var(--cr-red)}
+.cr-app.cr-arcade .cr-help-time{background:var(--cr-teal)}
+
+.cr-app.cr-arcade .cr-thanks{font-family:var(--cr-pixel);font-weight:900;font-size:clamp(36px,10vw,48px);color:var(--cr-powder);text-shadow:var(--cr-ol-2),0 6px 0 rgba(20,16,24,.4)}

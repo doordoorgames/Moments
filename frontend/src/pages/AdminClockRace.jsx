@@ -548,9 +548,16 @@ function TileForm({data, setData, item, refs, busy, pick, tile}) {
     </div>}
     <div className="crs-actions">
       <button type="button" className="crs-btn" disabled={busy} onClick={() => pick(ref => tile({source: ref, crop: null}))}>{sourceUrl ? 'Replace source photo' : 'Choose source photo'}</button>
-      <label className="crs-inline">Missing piece
-        <select value={grid} disabled={busy || !data.source} onChange={e => tile({grid: Number(e.target.value), crop: crop || undefined})}>
-          <option value={3}>Bottom-right third (current puzzles)</option><option value={2}>Bottom-right quarter</option></select></label>
+    </div>
+    <div className="crs-split" role="group" aria-label="Split the picture">
+      <span className="crs-split-label">Split the picture into</span>
+      {[[2, '4 pieces', '2 × 2'], [3, '9 pieces', '3 × 3']].map(([g, name, sub]) =>
+        <button key={g} type="button" className={`crs-split-btn ${grid === g ? 'is-on' : ''}`} aria-pressed={grid === g}
+          disabled={busy || !data.source || grid === g} onClick={() => tile({grid: g, crop: crop || undefined})}>
+          <i className="crs-split-icon" style={{'--g': g}} aria-hidden="true"/>
+          <b>{name}</b><small>{sub} · bottom-right missing</small>
+        </button>)}
+      {!data.source && <p className="crs-muted">Choose a source photo first to switch between 4 and 9.</p>}
     </div>
     {sourceInfo?.credit && Object.keys(sourceInfo.credit).length > 0 && <p className="crs-muted">Credit: {Object.values(sourceInfo.credit).join(' · ')}</p>}
     {sourceUrl && <>

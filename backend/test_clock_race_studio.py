@@ -337,13 +337,13 @@ def test_initial_password_is_stored_only_as_a_hash():
     assert e.value.status == 401
 
 
-def test_server_variables_replace_the_initial_password():
-    env = {'SUPABASE_KEY': 'k', 'CLOCK_RACE_ADMIN_PASSWORD': 'new-pass'}
-    assert auth.login('new-pass', 'x', auth.Limiter(), env)[0] == 'admin'
-    with pytest.raises(auth.AuthError):
-        auth.login('admin123', 'x', auth.Limiter(), env)
-    hashed = {'SUPABASE_KEY': 'k', 'CLOCK_RACE_ADMIN_PASSWORD_HASH': auth.make_hash('hashed-pass')}
-    assert auth.login('hashed-pass', 'x', auth.Limiter(), hashed)[0] == 'admin'
+def test_old_railway_password_variables_do_not_replace_admin123():
+    env = {'SUPABASE_KEY': 'k', 'CLOCK_RACE_ADMIN_PASSWORD': 'old-ugly-pass',
+           'CLOCK_RACE_ADMIN_PASSWORD_HASH': auth.make_hash('old-hashed-pass')}
+    assert auth.login('admin123', 'x', auth.Limiter(), env)[0] == 'admin'
+    for old in ('old-ugly-pass', 'old-hashed-pass'):
+        with pytest.raises(auth.AuthError):
+            auth.login(old, 'x', auth.Limiter(), env)
     assert auth.admins({'CLOCK_RACE_ADMINS': 'k:short'}) == {'admin': auth.DEFAULT_HASH}
 
 

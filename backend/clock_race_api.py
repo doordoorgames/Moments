@@ -52,6 +52,13 @@ class Answer(BaseModel):
     epoch: Optional[int] = Field(default=None, ge=0)
 
 
+class Life(BaseModel):
+    action: Literal['ask', 'restart', 'accept', 'decline']
+    round: str = Field(max_length=40)
+    request: Optional[str] = Field(default=None, max_length=40)
+    epoch: Optional[int] = Field(default=None, ge=0)
+
+
 class Dev(BaseModel):
     action: Literal['add', 'add_twin', 'solve']
     count: int = Field(default=1, ge=1, le=engine.MAX_PLAYERS)
@@ -153,13 +160,20 @@ def router(db, query):
         response.headers['Cache-Control'] = 'private, no-store'
         g, old = await load(code)
         me = auth(g, authorization)
-        if g['status'] == 'racing' and g.get('bots'):
-            # simulated players move by the clock; write their progress down when it changed
+        waiting = any((l or {}).get('out') for l in g.get('lives', {}).values())
+        if g['status'] == 'racing' and (g.get('bots') or waiting):
+            # simulated players move by the clock, and an extra-life request that ran out ends:
+            # write the room down when either changed
             async with locks[code]:
                 g, old = await load(code)
-                if engine.sync_bots(g):
+                bots = engine.sync_bots(g)
+                help_closed = engine.sync_help(g)
+                if bots or help_closed:
                     ended = g['status'] == 'finished'
-                    await save(code, g, old, None if ended else {'type': 'progress', **engine.progress(g)})
+                    try:
+                        await save(code, g, old, None if ended or help_closed else {'type': 'progress', **engine.progress(g)})
+                    except Conflict:
+                        g, _ = await load(code)  # another write landed first; show that one
         return engine.view(g, me['id'])
 
     @api.post('/rooms/{code}/start')
@@ -197,7 +211,8 @@ def router(db, query):
                 try:
                     if result['changed'] or moved:
                         ended = g['status'] == 'finished'
-                        await save(code, g, old, None if ended else {'type': 'progress', **engine.progress(g)})
+                        # out of hearts: every phone re-reads the room (the extra-life request lives there)
+                        await save(code, g, old, None if ended or result.get('out') else {'type': 'progress', **engine.progress(g)})
                     break
                 except Conflict:
                     if attempt == 5:
@@ -208,6 +223,27 @@ def router(db, query):
             if g['status'] == 'finished':
                 out['state'] = engine.view(g, me['id'])
             return out
+
+    @api.post('/rooms/{code}/life')
+    async def life(code: str, body: Life, response: Response, authorization: str = Header(default='')):
+        """Extra-life request: ask / restart (the player who is out), accept / decline (everyone else).
+        The decision is made on the freshly read room and saved with the optimistic lock; when two
+        servers race, the loser re-reads and sees the request already taken, so only one YES counts."""
+        response.headers['Cache-Control'] = 'private, no-store'
+        async with locks[code]:
+            for attempt in range(6):
+                g, old = await load(code)
+                me = auth(g, authorization)
+                result = engine.life_action(g, me['id'], body.action, body.round, body.request, body.epoch)
+                try:
+                    if result['changed']:
+                        await save(code, g, old)
+                    break
+                except Conflict:
+                    if attempt == 5:
+                        raise
+                    await asyncio.sleep(0.05 * (attempt + 1))
+            return dict(ok=result['ok'], reason=result.get('reason'), state=engine.view(g, me['id']))
 
     @api.post('/rooms/{code}/dev')
     async def dev(code: str, body: Dev, response: Response, authorization: str = Header(default='')):

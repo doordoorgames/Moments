@@ -9,12 +9,12 @@ export const PLAYER_COLORS = ARCADE ? ARCADE_COLORS : CLASSIC_COLORS;
 const PIE = 2 * Math.PI * 25; // circle r=25 drawn with a 50-wide stroke = a filled wedge
 
 // One player's clock: the wedge fills clockwise from 12 o'clock, the hand points at the progress,
-// one tick per task (30).
+// one tick per task (TOTAL).
 export const Dial = memo(function Dial(props) {
   return ARCADE ? <ArcadeDial {...props}/> : <ClassicDial {...props}/>;
 });
 
-// Arcade timer: a cabinet-style meter. Ivory bezel with a ring of 30 lamps (one per task) that light in the
+// Arcade timer: a cabinet-style meter. Ivory bezel with a ring of lamps (one per task) that light in the
 // player's colour, a powder-blue face filling like a clock, and a hand. Paint sits a hair off the ink line,
 // as on a hand-painted cel; the outline itself wobbles slightly. Same reading as the classic clock.
 const wob = (r, seed, n = 36) => {

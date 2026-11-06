@@ -27,7 +27,7 @@ export function localCheck(task, value, rosterIds = []) {
 
 // Who is where in the race: clock fill as a fraction.
 // Tasks in a race (TASKS on the server).
-export const TOTAL = 30;
+export const TOTAL = 20;
 
 export const fraction = (done, total = TOTAL) => Math.max(0, Math.min(1, done / total));
 

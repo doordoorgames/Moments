@@ -11,7 +11,8 @@ const PX = {green: '#36C25A', maroon: '#3A0E1C', qrPaper: '#ECE9E6'};
 // Keep the focused field (and the button under it) above the phone keyboard.
 const keepInView = e => { const el = e.currentTarget; setTimeout(() => el.scrollIntoView?.({block: 'center', behavior: 'smooth'}), 300); };
 import {normalizeCode, validRoomCode} from '../plotTwist/roomCode';
-import Dials, {Dial, PLAYER_COLORS} from './Dials';
+import {Dial, PLAYER_COLORS} from './Dials';
+import Scoreboard from './Scoreboard';
 import Face from './Face';
 import {TASK_VIEWS, stroopPrompt} from './Tasks';
 import {picturePrompt} from './PictureTasks';
@@ -34,13 +35,13 @@ const RESET_MS = 1600;    // losing the third heart: the clock drains back to 0,
 const LIVES = 3;
 const STARS_MS = 520;
 
-// Three hearts next to the count: full ones on the left, emptied ones fade; the last one left pulses red.
-// Arcade hearts are drawn on a 9x8 pixel grid, with one lighter pixel of shine.
+// Hearts next to the count (three, more once a friend gives a life): full ones on the left, emptied ones
+// fade; the last one left pulses red. Arcade hearts are drawn on a 9x8 pixel grid, with one lighter pixel of shine.
 const PIXEL_HEART = ['.XX...XX.', 'XXXX.XXXX', 'XXXXXXXXX', 'XXXXXXXXX', '.XXXXXXX.', '..XXXXX..', '...XXX...', '....X....']
   .flatMap((row, y) => [...row].map((c, x) => c === 'X' ? `M${x} ${y}h1v1h-1z` : '')).join('');
-function Hearts({left, label}) {
-  return <span className={`cr-hearts ${left === 1 ? 'is-last' : ''}`} dir="ltr" role="img" aria-label={label(left)}>
-    {Array.from({length: LIVES}, (_, i) => ARCADE
+function Hearts({left, total = LIVES, label}) {
+  return <span className={`cr-hearts ${left === 1 ? 'is-last' : ''} ${total > 5 ? 'is-many' : ''}`} dir="ltr" role="img" aria-label={label(left)}>
+    {Array.from({length: total}, (_, i) => ARCADE
       ? <svg key={i} viewBox="0 0 9 8" className={`cr-heart is-pixel ${i < left ? 'is-full' : 'is-empty'}`} shapeRendering="crispEdges" aria-hidden="true">
         <path d={PIXEL_HEART}/><path className="cr-heart-shine" d="M1 1h1v1h-1z"/>
       </svg>
@@ -112,6 +113,43 @@ function ResetClock({from, color, caption, hearts}) {
   </div>;
 }
 
+// Out of hearts, with friends in the room: ask them for a life (once), or start over. Ends by itself when
+// the time runs out (the server resets the clock then).
+function OutPanel({t, asked, deadline, now, busy, hearts, onAsk, onRestart}) {
+  const left = Math.max(0, Math.ceil((deadline - now) / 1000));
+  return <div className="cr-sad is-reset cr-out" role="dialog" aria-modal="true" aria-labelledby="cr-out-title">
+    <div className="cr-out-card">
+      <div className="cr-sad-face is-small"><Face mood="sad" color={0}/></div>
+      <Hearts left={0} total={hearts} label={t.hearts}/>
+      <h2 id="cr-out-title" className="cr-out-title">{t.outTitle}</h2>
+      {asked ? <p className="cr-out-wait" role="status">{t.waitingHelp}<b dir="ltr">{left}</b></p>
+        : <>
+          <button type="button" className="cr-out-ask" disabled={busy} onClick={onAsk}><span className="cr-letter">{t.askLife}</span></button>
+          <button type="button" className="cr-ghost cr-link cr-out-restart" disabled={busy} onClick={onRestart}>{t.startOver}</button>
+          <p className="cr-out-timer" dir="ltr">{left}</p>
+        </>}
+    </div>
+  </div>;
+}
+
+// Another player is out of hearts and asked the room for a life. The first YES on any phone wins it.
+function HelpAsk({t, name, deadline, now, busy, onYes, onNo}) {
+  const left = Math.max(0, Math.ceil((deadline - now) / 1000));
+  return <div className="cr-help" role="dialog" aria-modal="true" aria-labelledby="cr-help-q">
+    <div className="cr-help-card">
+      <button type="button" className="cr-help-x" aria-label={t.close} onClick={onNo}>
+        <svg viewBox="0 0 7 7" shapeRendering="crispEdges" aria-hidden="true"><path d="M0 0h2v1h-1v1h-1zM5 0h2v2h-1v-1h-1zM1 1h1v1h1v1h1v-1h1v-1h1v1h-1v1h-1v1h1v1h1v1h-1v-1h-1v-1h-1v1h-1v1h-1v-1h1v-1h1v-1h-1v-1h-1zM0 5h1v1h1v1h-2zM6 5h1v2h-2v-1h1z"/></svg>
+      </button>
+      <p id="cr-help-q" className="cr-help-q" dir="auto">{t.helpAsk(name)}</p>
+      <div className="cr-help-actions">
+        <button type="button" className="cr-help-yes" disabled={busy} onClick={onYes}><span className="cr-letter">{t.yes}</span></button>
+        <button type="button" className="cr-help-no" disabled={busy} onClick={onNo}><span className="cr-letter">{t.no}</span></button>
+      </div>
+      <i className="cr-help-time" style={{'--left': `${Math.min(1, left / 10)}`}} aria-hidden="true"/>
+    </div>
+  </div>;
+}
+
 // A short burst of golden stars where the finger landed.
 function Stars({x, y}) {
   return <div className="cr-stars" style={{left: x, top: y}} aria-hidden="true">
@@ -140,17 +178,23 @@ export default function ClockRace({onContinue}) {
   const [stars, setStars] = useState(null);
   const [sad, setSad] = useState(false);
   const [devOpen, setDevOpen] = useState(false);
+  const [lifeBusy, setLifeBusy] = useState(false);
+  const [dismissed, setDismissed] = useState(() => new Set());
+  const [thanks, setThanks] = useState(null);
+  const [tickNow, setTickNow] = useState(Date.now());
   const lang = game?.lang || pickedLang;
   const t = TEXT[lang] || TEXT.ar;
   const auth = creds ? `Bearer ${creds.player_id}:${creds.token}` : '';
   const offset = useRef(0);
   const gameRef = useRef(null), mineRef = useRef(mine), queue = useRef([]), pumping = useRef(false), confirmed = useRef({round: null, done: 0, epoch: 0});
   const guardUntil = useRef(0), locked = useRef(false), wordInput = useRef(null), nickRef = useRef(null), codeRef = useRef(null);
-  const toastTimer = useRef(null), starsTimer = useRef(null), point = useRef({x: 0, y: 0});
+  const toastTimer = useRef(null), starsTimer = useRef(null), point = useRef({x: 0, y: 0}), sadRef = useRef(false), seenThanks = useRef(null), outSeen = useRef(false);
   const live = useRef({code, auth, t});
+  const refreshRef = useRef(null);
   live.current = {code, auth, t};
   gameRef.current = game;
   mineRef.current = mine;
+  sadRef.current = sad;
 
   useEffect(() => { try { localStorage.setItem(LANG_KEY, pickedLang); } catch { /* private mode */ } }, [pickedLang]);
   // where the last finger landed, for the stars
@@ -186,7 +230,9 @@ export default function ClockRace({onContinue}) {
     catch (e) { if ([403, 404, 410].includes(e.status)) { localStorage.removeItem(KEY(c)); setCreds(null); setGame(null); setError(e.message); } else setNotice(e.message); }
   }, [accept]);
 
-  // The public race picture (from a WebSocket push or an answer reply): move the dials only.
+  refreshRef.current = refresh;
+
+  // The public race picture (from a WebSocket push or an answer reply): move the scoreboard only.
   const applyRace = useCallback(race => {
     if (!race) return;
     const g = gameRef.current;
@@ -303,32 +349,60 @@ export default function ClockRace({onContinue}) {
     if (gameRef.current?.round?.tasks[next]?.type === 'word') wordInput.current?.focus();
   }, []);
 
+  // The clock winds back to 0 (the reset animation), then task 1 with full hearts.
+  const runReset = useCallback((rid, i, epoch) => {
+    locked.current = true;
+    setSad({from: i});
+    setTimeout(() => {
+      setSad(false);
+      locked.current = false;
+      const m = mineRef.current;
+      if (m.round !== rid) return;
+      flushSync(() => setMine(x => ({...x, round: rid, done: 0, misses: 0, epoch: epoch ?? x.epoch + 1})));
+      guardUntil.current = Date.now() + GUARD_MS;
+      if (gameRef.current?.round?.tasks[0]?.type === 'word') wordInput.current?.focus();
+    }, RESET_MS);
+  }, []);
+
   // Right: stars and the next task at once. Wrong: the sad face for a second, then the next task.
-  const settle = useCallback((rid, i, right, extra) => {
+  const settle = useCallback((rid, i, right, extra, job) => {
     if (right) {
       burst();
       advance(rid, i + 1);
       if (extra) say(extra, 'word');
       return;
     }
-    // Wrong: one heart goes. The third one empties the clock back to 0 with full hearts.
+    // Wrong: one heart goes. Losing the last one either resets the clock or, with friends in the room,
+    // lets the player ask them for a life first. The server decides which; its answer comes in `job`.
     locked.current = true;
+    const g = gameRef.current, meP = g?.players.find(p => p.id === g.me);
+    const most = meP?.hearts ?? LIVES;
     const misses = mineRef.current.misses + 1;
-    const broken = misses >= LIVES;
-    setMine(m => ({...m, misses: broken ? LIVES : misses}));
-    setSad(broken ? {from: i} : true);
+    const broken = misses >= most;
+    setMine(m => ({...m, misses: Math.min(misses, most)}));
+    setSad(true);
+    if (broken) {
+      Promise.resolve(job).then(r => {
+        if (mineRef.current.round !== rid) { setSad(false); locked.current = false; return; }
+        if (r?.out) { outSeen.current = false; setSad({out: i, asked: false}); refreshRef.current?.(); return; }
+        if (r?.reset || !r || r.failed) {
+          if (r?.failed) { setSad(false); locked.current = false; return; }
+          runReset(rid, i, r.epoch);
+          return;
+        }
+        setSad(false); locked.current = false; // the server counted it differently: carry on
+        advance(rid, i + 1);
+      });
+      return;
+    }
     setTimeout(() => {
       setSad(false);
       locked.current = false;
       const m = mineRef.current;
       if (m.round !== rid || m.done !== i) return;
-      if (broken) {
-        flushSync(() => setMine(x => ({...x, round: rid, done: 0, misses: 0, epoch: x.epoch + 1})));
-        guardUntil.current = Date.now() + GUARD_MS;
-        if (gameRef.current?.round?.tasks[0]?.type === 'word') wordInput.current?.focus();
-      } else advance(rid, i + 1);
-    }, broken ? RESET_MS : WRONG_MS);
-  }, [advance, burst, say]);
+      advance(rid, i + 1);
+    }, WRONG_MS);
+  }, [advance, burst, say, runReset]);
 
   const pick = useCallback(value => {
     const g = gameRef.current, m = mineRef.current;
@@ -337,7 +411,7 @@ export default function ClockRace({onContinue}) {
     const i = m.done, task = g.round.tasks[i];
     if (!task) return;
     const right = !!localCheck(task, value, g.roster.map(p => p.id));
-    enqueue({round: g.round.id, task: i, answer: value, epoch: m.epoch});
+    const job = enqueue({round: g.round.id, task: i, answer: value, epoch: m.epoch});
     if (right && task.type === 'vote') say(t.reactions[Math.floor(Math.random() * t.reactions.length)]);
     if (task.type === 'price') {
       locked.current = true;
@@ -345,10 +419,10 @@ export default function ClockRace({onContinue}) {
         locked.current = false;
         const current = mineRef.current;
         if (current.round === g.round.id && current.done === i && current.epoch === m.epoch) {
-          settle(g.round.id, i, right);
+          settle(g.round.id, i, right, null, job);
         }
       }, 1200);
-    } else settle(g.round.id, i, right);
+    } else settle(g.round.id, i, right, null, job);
     return true;
   }, [enqueue, say, settle, t]);
 
@@ -360,8 +434,21 @@ export default function ClockRace({onContinue}) {
     const r = await enqueue({round: g.round.id, task: i, answer: text, epoch: m.epoch});
     locked.current = false;
     if (r.failed || mineRef.current.done !== i) return;
-    settle(g.round.id, i, !!r.right, r.word);
+    settle(g.round.id, i, !!r.right, r.word, r);
   }, [enqueue, settle]);
+
+  // ---------------------------------------------------------------- extra-life request
+  const lifeCall = useCallback(async body => {
+    const g = gameRef.current;
+    if (!g?.round) return null;
+    setLifeBusy(true);
+    try {
+      const r = await request(`/rooms/${live.current.code}/life`, {round: g.round.id, ...body}, live.current.auth, live.current.t);
+      if (r.state) accept(r.state);
+      return r;
+    } catch (e) { setNotice(e.message); return null; }
+    finally { setLifeBusy(false); }
+  }, [accept]);
 
   // ---------------------------------------------------------------- countdown clock (ticks only around the start)
   const startsAt = game?.round ? game.round.starts_at * 1000 - offset.current : 0;
@@ -435,6 +522,73 @@ export default function ClockRace({onContinue}) {
     {ARCADE ? <span className="cr-wordmark is-logo"><ClockRaceLogo label={t.title} animate={false}/></span> : <span className="cr-wordmark"><span className="cr-letter">{t.title}</span></span>}
     {devPanel}
   </header>;
+
+  // ---------------------------------------------------------------- extra-life: who is out, who asked
+  const serverNow = tickNow + offset.current;
+  const meView = game?.players.find(p => p.id === me);
+  const myHearts = meView?.hearts ?? LIVES;
+  const racingNow = game?.status === 'racing';
+  const openHelp = racingNow && inRace && !meView?.out && !sad?.out
+    ? (game.players.find(p => p.id !== me && p.out?.help && p.out.help.expires * 1000 > serverNow && !dismissed.has(p.out.help.id)) || null) : null;
+  const anyOut = racingNow && game.players.some(p => p.out);
+  useEffect(() => {
+    if (!anyOut && !thanks) return undefined;
+    const id = setInterval(() => setTickNow(Date.now()), 250);
+    return () => clearInterval(id);
+  }, [anyOut, thanks]);
+  // When a choice or a request runs out on the clock, ask the server so it closes it for everyone.
+  const outDeadline = meView?.out ? (meView.out.help ? meView.out.help.expires : meView.out.decide_by) : null;
+  useEffect(() => {
+    if (!outDeadline) return undefined;
+    const id = setTimeout(refresh, Math.max(0, outDeadline * 1000 - offset.current - Date.now()) + 300);
+    return () => clearTimeout(id);
+  }, [outDeadline, refresh]);
+  const helpDeadline = openHelp?.out.help.expires;
+  useEffect(() => {
+    if (!helpDeadline) return undefined;
+    const id = setTimeout(refresh, Math.max(0, helpDeadline * 1000 - offset.current - Date.now()) + 300);
+    return () => clearTimeout(id);
+  }, [helpDeadline, refresh]);
+  // My out panel ends when the server says so: a friend gave a life (carry on), or the clock reset.
+  useEffect(() => {
+    const s = sadRef.current;
+    if (!s || s.out == null || !game?.round || !meView) return;
+    if (meView.out) { outSeen.current = true; return; }
+    const rid = game.round.id;
+    if (meView.epoch > mineRef.current.epoch) { runReset(rid, s.out, meView.epoch); return; }
+    if (!outSeen.current) return; // this view is older than the answer that put me out
+    setSad(false);
+    locked.current = false;
+    confirmed.current = {round: rid, done: meView.done, epoch: meView.epoch};
+    flushSync(() => setMine({round: rid, done: meView.done, misses: meView.misses, epoch: meView.epoch}));
+    guardUntil.current = Date.now() + GUARD_MS;
+    if (game.round.tasks[meView.done]?.type === 'word') wordInput.current?.focus();
+  }, [game, meView, runReset]);
+  // A new round (or the race ending) clears any out-of-hearts panel left from the last one.
+  const roundId = game?.round?.id, raceStatus = game?.status;
+  useEffect(() => {
+    if (sadRef.current?.out != null) { setSad(false); locked.current = false; }
+  }, [roundId, raceStatus]);
+  // "Thank you, ..." on every phone when someone gives a life.
+  useEffect(() => {
+    const th = game?.thanks;
+    if (!th || seenThanks.current === th.id) return undefined;
+    seenThanks.current = th.id;
+    if (game.status !== 'racing' || (Date.now() + offset.current) / 1000 - th.at > 6) return undefined;
+    setThanks(th);
+    setTickNow(Date.now());
+    const id = setTimeout(() => setThanks(null), 2200);
+    return () => clearTimeout(id);
+  }, [game?.thanks, game?.status]);
+  const dismissHelp = (id, decline) => {
+    setDismissed(prev => new Set(prev).add(id));
+    if (decline) lifeCall({action: 'decline', request: id});
+  };
+  async function giveLife(id) {
+    const r = await lifeCall({action: 'accept', request: id});
+    setDismissed(prev => new Set(prev).add(id));
+    if (r && !r.ok) setNotice(t.helpTaken);
+  }
 
   // ---------------------------------------------------------------- screens
   if (!game || !auth) {
@@ -518,14 +672,14 @@ export default function ClockRace({onContinue}) {
     <Backdrop/>
     <header className="cr-top">
       <button className="cr-square-btn is-small" onClick={exit} aria-label={t.exit}><Arrow dir={t.dir}/></button>
-      <Dials players={players} me={me} winner={game.winner} youLabel={t.you} bots={game.bots} startsAt={round?.starts_at} offset={offset} racing={game.status === 'racing'}/>
+      <Scoreboard players={players} me={me} winner={game.winner} bots={game.bots} startsAt={round?.starts_at} offset={offset} racing={game.status === 'racing'} label={t.scores}/>
       {devPanel}
     </header>
     {!inRace ? cabinet('', null, <p className="cr-spectate">{t.spectating}</p>)
       : task && View ? cabinet(`cr-stage-${task.type}`,
         <div className="cr-task-head">
           <span className="cr-count" dir="ltr">{t.task(pos + 1, TOTAL)}</span>
-          <Hearts left={LIVES - (mine.round === round.id ? mine.misses : 0)} label={t.hearts}/>
+          <Hearts left={Math.max(0, myHearts - (mine.round === round.id ? mine.misses : 0))} total={myHearts} label={t.hearts}/>
           {boss && <span className="cr-boss-stamp">{t.bossStamp}</span>}
         </div>,
         <div className="cr-play" key={`${round.id}-${mine.epoch}-${pos}`}>
@@ -544,6 +698,13 @@ export default function ClockRace({onContinue}) {
     {sad?.from != null && <div className="cr-sad is-reset">
       <ResetClock from={sad.from} color={PLAYER_COLORS[(game.players.find(p => p.id === me)?.color || 0) % PLAYER_COLORS.length]} caption={t.resetToast} hearts={t.hearts}/>
     </div>}
+    {sad?.out != null && game.status === 'racing' && <OutPanel t={t} asked={!!meView?.out?.help} busy={lifeBusy} now={serverNow}
+      deadline={outDeadline ? outDeadline * 1000 : serverNow + 8000} hearts={myHearts}
+      onAsk={async () => { await lifeCall({action: 'ask', epoch: mine.epoch}); }}
+      onRestart={() => lifeCall({action: 'restart', epoch: mine.epoch})}/>}
+    {openHelp && <HelpAsk t={t} name={openHelp.name} deadline={openHelp.out.help.expires * 1000} now={serverNow} busy={lifeBusy}
+      onYes={() => giveLife(openHelp.out.help.id)} onNo={() => dismissHelp(openHelp.out.help.id, true)}/>}
+    {thanks && <div className="cr-thanks" role="status" dir="auto" key={thanks.id}>{t.thanks(thanks.by_name)}</div>}
     {toast && <div className={`cr-toast is-${toast.kind}`} key={`t${toast.id}`} dir="auto">{toast.text}</div>}
     {game.status === 'finished' && <div className="cr-finish" role="dialog" aria-modal="true" aria-labelledby="cr-finish-title">
       <div className="cr-finish-card">
@@ -552,7 +713,7 @@ export default function ClockRace({onContinue}) {
         <h2 id="cr-finish-title" dir="auto">{winner?.id === me ? t.youWon : t.won(winner?.name || '')}</h2>
         <ol className="cr-results">{[...players].filter(p => p.racing).sort((a, b) => (b.id === game.winner) - (a.id === game.winner) || b.done - a.done || (b.right || 0) - (a.right || 0)).map(p =>
           <li key={p.id} className={p.id === me ? 'is-me' : ''}><i style={{background: PLAYER_COLORS[p.color % PLAYER_COLORS.length]}}/><span dir="auto">{p.name}</span>
-            <em>{t.rightOf(p.right || 0, p.done)}</em><b dir="ltr">{Math.round(p.done / TOTAL * 100)}%</b></li>)}</ol>
+            <em>{t.rightOf(p.right || 0, p.done)}</em><b dir="ltr">{p.done}/{TOTAL}</b></li>)}</ol>
         {isHost ? <button className={ARCADE ? 'cr-next-word' : 'cr-primary'} disabled={busy} onClick={start}><span className="cr-letter">{t.again}</span></button> : <p className="cr-waiting">{t.waitAgain(hostName)}</p>}
         <button className="cr-ghost cr-link" onClick={exit}>{t.exit}</button>
       </div>

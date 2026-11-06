@@ -26,6 +26,11 @@
 .crs-btn.is-small{min-height:32px;padding:4px 10px;font-size:13px}
 
 .crs-login{width:min(360px,100%);background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:24px;display:grid;gap:12px}
+.crs-login-label{font-weight:700;font-size:15px;margin-top:4px}
+.crs-pw{position:relative}
+.crs .crs-pw input{min-height:48px;font-size:17px;padding-inline-end:68px}
+.crs-pw-toggle{position:absolute;inset-block:6px;inset-inline-end:6px;padding:0 12px;border:0;border-radius:4px;background:var(--bg);color:var(--accent);font:inherit;font-size:13px;font-weight:700;cursor:pointer}
+.crs-enter{min-height:48px;font-size:17px}
 
 .crs-top{position:sticky;top:0;z-index:20;display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;padding:10px 16px;background:var(--panel);border-bottom:1px solid var(--line)}
 .crs-brand{display:flex;flex-direction:column}

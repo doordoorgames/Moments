@@ -20,24 +20,28 @@ def test_round_shape(seed):
     people = 3 if seed % 3 else 1
     tasks = E.gen_round(roster(people), lang, rng=random.Random(seed))
     kinds = [t['type'] for t in tasks]
-    assert len(tasks) == 30
-    assert kinds[29] == 'boss' and kinds.count('boss') == 1 and kinds[28] != 'odd'
+    assert len(tasks) == E.TASKS == 20
+    assert kinds[19] == 'boss' and kinds.count('boss') == 1 and kinds[18] != 'odd'
     if people >= 3:
-        assert kinds[15] == 'vote' and kinds.count('vote') == 1
+        assert kinds[10] == 'vote' and kinds.count('vote') == 1
     else:
         assert 'vote' not in kinds                                  # the friend question needs 3+ people
-    assert sum(kinds.count(k) for k in ('belong', 'older', 'compare', 'which', 'price', 'photo')) >= 15
-    assert kinds.count('price') == 3
+    assert sum(kinds.count(k) for k in ('belong', 'older', 'compare', 'which', 'price', 'photo')) == 7
+    assert kinds.count('price') == 2
     assert kinds.count('alphabet') == 1
     assert kinds.count('word') in (1, 2)
-    for i in range(30):                                             # a type never returns within 3 tasks
+    assert 'animal' not in kinds                                    # "tap the tiger" is retired
+    for k in ('odd', 'stroop', 'geo', 'sock', 'memory', 'avoid', 'alphabet', 'scale', 'shadow', 'tile',
+              'belong', 'older', 'compare', 'which', 'photo'):
+        assert k in kinds, (k, kinds)                               # every question type still comes up
+    for i in range(20):                                             # a type never returns within 3 tasks
         if kinds[i] not in ('vote', 'boss'):
             assert kinds[i] not in kinds[max(0, i - 2):i], (i, kinds)
     assert len(set(kinds[:5])) == 5, kinds                           # opening five are all different
     assert kinds.count('memory') == 1
     qids = [t['qid'] for t in tasks if t.get('qid')]
     assert len(qids) == len(set(qids))                              # no question twice in a round
-    assert len({E.signature(t) for t in tasks}) == 30
+    assert len({E.signature(t) for t in tasks}) == 20
 
 
 def test_no_swap_generator_left():
@@ -56,14 +60,14 @@ def test_picture_answers_move_around_and_bank_rotates():
     seen = []
     for _ in range(6):
         seen += [t['qid'] for t in E.gen_round(roster(1), rng=rng, seen_q=seen[-90:]) if t.get('qid') and t['type'] != 'photo']
-    assert len(set(seen[:56])) == 56                                # four rounds without a repeat
+    assert len(set(seen[:24])) == 24                                # four rounds (6 a round) without a repeat
 
 
 def test_price_bank_rotates_and_scores_totals():
     assert len(E.PRICE_BANK) == 15
     seen = []
     rng = random.Random(41)
-    for _ in range(5):
+    for _ in range(8):  # two a round: all fifteen within eight rounds
         for task in E.gen_round(roster(3), rng=rng, seen_q=seen):
             if task['type'] != 'price':
                 continue
@@ -73,7 +77,7 @@ def test_price_bank_rotates_and_scores_totals():
             assert totals.count(max(totals)) == 1
             assert E.correct(task, totals.index(max(totals)), [])[0]
             seen.append(task['qid'])
-    assert len(set(seen)) == 15
+    assert len(set(seen[:15])) == 15
 
 
 def test_bank_counts_and_answers():
@@ -91,7 +95,7 @@ def test_friend_vote_excludes_yourself():
     b = E.add_player(g, 'Noor')
     E.add_player(g, 'Sara')
     E.start(g, '', now=0)
-    task = g['round']['tasks'][15]
+    task = g['round']['tasks'][E.VOTE_AT]
     assert task['type'] == 'vote'
     assert E.correct(task, host['id'], E.vote_choices(g, task, host['id']))[0] is False
     assert E.correct(task, b['id'], E.vote_choices(g, task, host['id']))[0] is True
@@ -545,7 +549,7 @@ def test_photo_questions():
     for _ in range(50):
         tasks = E.gen_round(roster(1), rng=rng)
         photos = [t for t in tasks if t['type'] == 'photo']
-        assert len(photos) == 2 and photos[0]['qid'] != photos[1]['qid']
+        assert len(photos) == 1
         for t in photos:
             assert len(t['options']) == 4
             right = next(q for q in E.PHOTO_BANK if q['id'] == t['qid'])['options'][0]
@@ -597,3 +601,142 @@ def test_photo_landmarks_never_repeat_in_round():
     for used in ({'photo_bigben'}, {'landmark_bigben'}):
         for seed in range(30):
             assert by_id[E.gen_photo(random.Random(seed), used)['qid']].get('landmark') != 'bigben'
+
+
+# ------------------------------------------------------------------ extra-life request
+
+def _wrong(task):
+    """An answer that is wrong for any tap task (Word Rush: a non-word)."""
+    return 'zzzzqq' if task['type'] == 'word' else -1
+
+
+def _race(n=3):
+    g, host = E.new_room('Khaled')
+    others = [E.add_player(g, name) for name in ('Jasim', 'Yousef', 'Noor')[:n - 1]]
+    E.start(g, '', now=0)
+    return g, host, others
+
+
+def _lose_all(g, pid, at):
+    """Three wrong answers in a row, spaced past the wrong-answer pause. Returns the last result and time."""
+    r = None
+    for _ in range(E.max_hearts(E.lives(g, pid)) - E.lives(g, pid)['misses']):
+        i = len(g['progress'][pid])
+        r = E.answer(g, pid, g['round']['id'], i, _wrong(g['round']['tasks'][i]), now=at)
+        at += E.WRONG_DELAY + 0.5
+    return r, at
+
+
+def test_out_of_hearts_waits_for_a_choice_instead_of_resetting():
+    g, host, _ = _race()
+    r, at = _lose_all(g, host['id'], 5)
+    assert r['out'] and len(g['progress'][host['id']]) == 2
+    view = E.view(g, host['id'], now=at)
+    me = next(p for p in view['players'] if p['id'] == host['id'])
+    assert me['out'] and me['out']['help'] is None
+    # answers are held while out
+    assert E.answer(g, host['id'], g['round']['id'], 2, 0, now=at)['changed'] is False
+
+
+def test_first_yes_wins_and_both_get_one_heart():
+    g, host, (jasim, yousef) = _race()
+    rid = g['round']['id']
+    _, at = _lose_all(g, host['id'], 5)
+    assert E.life_action(g, host['id'], 'ask', rid, now=at)['ok']
+    req = E.lives(g, host['id'])['out']['help']['id']
+    assert E.life_action(g, host['id'], 'ask', rid, now=at)['reason'] == 'already_asked'   # one request only
+    first = E.life_action(g, jasim['id'], 'accept', rid, req, now=at + 1)
+    second = E.life_action(g, yousef['id'], 'accept', rid, req, now=at + 1.01)               # a hair later
+    assert first['ok'] and not second['ok'] and second['reason'] == 'closed'
+    assert E.lives(g, host['id'])['bonus'] == 1 and E.lives(g, jasim['id'])['bonus'] == 1
+    assert E.lives(g, yousef['id'])['bonus'] == 0
+    assert E.lives(g, host['id'])['out'] is None
+    assert len(g['progress'][host['id']]) == 3                       # carries on after the missed task
+    assert E.max_hearts(E.lives(g, host['id'])) - E.lives(g, host['id'])['misses'] == 1
+    assert E.max_hearts(E.lives(g, jasim['id'])) == 4                # more than three is fine
+    assert g['thanks']['by'] == jasim['id'] and g['thanks']['by_name'] == 'Jasim'
+    # the rescued player answers on from task 4
+    i = len(g['progress'][host['id']])
+    task = g['round']['tasks'][i]
+    assert E.answer(g, host['id'], rid, i, E.solve(task, E.vote_choices(g, task, host['id'])), now=at + 3)['changed']
+
+
+def test_simultaneous_yes_through_a_saved_copy_only_rewards_once():
+    """Two servers each read the room before either wrote: the optimistic lock rejects the second write,
+    which then re-reads and finds the request closed."""
+    import copy
+    g, host, (jasim, yousef) = _race()
+    rid = g['round']['id']
+    _, at = _lose_all(g, host['id'], 5)
+    E.life_action(g, host['id'], 'ask', rid, now=at)
+    req = E.lives(g, host['id'])['out']['help']['id']
+    stored = copy.deepcopy(g)
+    a = copy.deepcopy(stored)
+    assert E.life_action(a, jasim['id'], 'accept', rid, req, now=at + 1)['ok']
+    stored = a  # Jasim's write landed; Yousef's conflicted and is retried on the fresh room
+    b = copy.deepcopy(stored)
+    assert not E.life_action(b, yousef['id'], 'accept', rid, req, now=at + 1)['ok']
+    assert E.lives(b, host['id'])['bonus'] == 1 and E.lives(b, yousef['id'])['bonus'] == 0
+
+
+def test_nobody_accepts_resets_after_the_window():
+    g, host, (jasim, _) = _race()
+    rid = g['round']['id']
+    _, at = _lose_all(g, host['id'], 5)
+    E.life_action(g, host['id'], 'ask', rid, now=at)
+    req = E.lives(g, host['id'])['out']['help']['id']
+    assert not E.sync_help(g, now=at + E.HELP_SECONDS - 1)
+    assert E.sync_help(g, now=at + E.HELP_SECONDS + 0.1)
+    life = E.lives(g, host['id'])
+    assert life['out'] is None and life['epoch'] == 1 and g['progress'][host['id']] == []
+    assert not E.life_action(g, jasim['id'], 'accept', rid, req, now=at + E.HELP_SECONDS + 1)['ok']   # expired
+
+
+def test_declines_do_not_block_and_all_declines_reset():
+    g, host, (jasim, yousef) = _race()
+    rid = g['round']['id']
+    _, at = _lose_all(g, host['id'], 5)
+    E.life_action(g, host['id'], 'ask', rid, now=at)
+    req = E.lives(g, host['id'])['out']['help']['id']
+    E.life_action(g, jasim['id'], 'decline', rid, req, now=at + 1)
+    assert E.lives(g, host['id'])['out'] is not None
+    assert E.life_action(g, yousef['id'], 'accept', rid, req, now=at + 2)['ok']
+    # next time both say no: straight back to the normal loss
+    _, at = _lose_all(g, host['id'], at + 5)
+    E.life_action(g, host['id'], 'ask', rid, now=at)
+    req = E.lives(g, host['id'])['out']['help']['id']
+    E.life_action(g, jasim['id'], 'decline', rid, req, now=at + 1)
+    E.life_action(g, yousef['id'], 'decline', rid, req, now=at + 1)
+    assert E.lives(g, host['id'])['out'] is None and g['progress'][host['id']] == []
+
+
+def test_no_choice_resets_and_restart_is_immediate():
+    g, host, _ = _race()
+    rid = g['round']['id']
+    _, at = _lose_all(g, host['id'], 5)
+    assert E.sync_help(g, now=at + E.DECIDE_SECONDS + 1)
+    assert g['progress'][host['id']] == [] and E.lives(g, host['id'])['epoch'] == 1
+    _, at = _lose_all(g, host['id'], at + E.DECIDE_SECONDS + 5)
+    assert E.life_action(g, host['id'], 'restart', rid, now=at)['ok']
+    assert E.lives(g, host['id'])['epoch'] == 2 and E.max_hearts(E.lives(g, host['id'])) == E.LIVES
+
+
+def test_alone_or_with_bots_there_is_no_request():
+    g, host = E.new_room('TEST99')       # one test bot, nobody human to ask
+    E.start(g, '', now=0)
+    r, _ = _lose_all(g, host['id'], 5)
+    assert r.get('reset') and not r.get('out')
+    g, host = E.new_room('Solo')
+    E.start(g, '', now=0)
+    r, _ = _lose_all(g, host['id'], 5)
+    assert r.get('reset') and not r.get('out')
+
+
+def test_requester_cannot_accept_their_own_request():
+    g, host, (jasim,) = _race(2)
+    rid = g['round']['id']
+    _, at = _lose_all(g, host['id'], 5)
+    E.life_action(g, host['id'], 'ask', rid, now=at)
+    req = E.lives(g, host['id'])['out']['help']['id']
+    assert E.life_action(g, host['id'], 'accept', rid, req, now=at)['reason'] == 'not_allowed'
+    assert E.life_action(g, jasim['id'], 'accept', 'old-round', req, now=at)['reason'] == 'over'

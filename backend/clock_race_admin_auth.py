@@ -1,12 +1,10 @@
 """Sign-in for the Clock Race studio (/admin/clock-race): one password, checked only on the server.
 
-The password is set on the server (Railway variables), never in the frontend:
+The password lives only as a PBKDF2 hash here (DEFAULT_HASH), checked on the server, never in the frontend.
+CLOCK_RACE_ADMIN_PASSWORD / _HASH on Railway are no longer used. Extra named admins can still be added with
+    CLOCK_RACE_ADMINS="khaled:pass-one,partner:pass-two"
 
-    CLOCK_RACE_ADMIN_PASSWORD="new-password"           (simplest way to change it)
-    CLOCK_RACE_ADMIN_PASSWORD_HASH="pbkdf2_sha256$..."  (the same, stored as a hash)
-    CLOCK_RACE_ADMINS="khaled:pass-one,partner:pass-two" (several named admins)
-
-With none of these set, the initial password applies. Only its PBKDF2 hash lives here (DEFAULT_HASH),
+Only the hash of the password lives here (DEFAULT_HASH),
 not the password itself. To make a new hash: python -c "import clock_race_admin_auth as a; print(a.make_hash('...'))"
 
 A successful sign-in returns a signed token (HMAC-SHA256, 12 hours). Signing key: CLOCK_RACE_ADMIN_SECRET,
@@ -68,14 +66,9 @@ def admins(env=None):
         name, sep, pw = part.strip().partition(':')
         if sep and name.strip() and len(pw) >= MIN_PASSWORD:
             out[name.strip()[:40]] = pw
-    single = env.get('CLOCK_RACE_ADMIN_PASSWORD') or ''
-    hashed = env.get('CLOCK_RACE_ADMIN_PASSWORD_HASH') or ''
-    if hashed.startswith(HASH_PREFIX):
-        out.setdefault('admin', hashed)
-    elif len(single) >= MIN_PASSWORD:
-        out.setdefault('admin', single)
-    if not out:
-        out['admin'] = DEFAULT_HASH
+    # The studio password is fixed in code (DEFAULT_HASH). Old Railway password variables are ignored
+    # on purpose, so a leftover generated password can't lock the owner out.
+    out['admin'] = DEFAULT_HASH
     return out
 
 

@@ -160,3 +160,21 @@
 .crs-assets.is-detail span{white-space:normal}
 .crs-assets img.is-broken{outline:2px dashed var(--bad)}
 .crs-toast{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:80;background:var(--ink);color:#fff;padding:10px 16px;border-radius:8px;max-width:calc(100% - 32px)}
+
+/* split into 4 or 9 */
+.crs-split{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin:10px 0}
+.crs-split-label{width:100%;font-weight:700;font-size:14px}
+.crs-split-btn{display:grid;grid-template-columns:auto 1fr;grid-template-rows:auto auto;column-gap:10px;align-items:center;text-align:left;
+  padding:10px 14px;min-width:170px;border:2px solid #0B0B0B;background:#fff;color:#0B0B0B;cursor:pointer;font:inherit}
+.crs-split-btn b{font-size:16px}
+.crs-split-btn small{grid-column:2;font-size:12px;opacity:.7}
+.crs-split-icon{grid-row:1 / span 2;width:40px;height:40px;position:relative;border:2px solid #0B0B0B;
+  background:repeating-linear-gradient(90deg,transparent 0 calc(100% / var(--g) - 1px),#0B0B0B calc(100% / var(--g) - 1px) calc(100% / var(--g))),
+             repeating-linear-gradient(0deg,transparent 0 calc(100% / var(--g) - 1px),#0B0B0B calc(100% / var(--g) - 1px) calc(100% / var(--g))),#ffe9a8}
+.crs-split-icon::after{content:'';position:absolute;right:0;bottom:0;width:calc(100% / var(--g));height:calc(100% / var(--g));background:#1e1d22}
+.crs-split-btn.is-on{background:#ffd400;cursor:default;opacity:1}
+.crs-split-btn:disabled:not(.is-on){opacity:.45;cursor:not-allowed}
+/* grid lines on the crop square, so the split is visible while cropping */
+.crs-crop-square{background-image:
+  repeating-linear-gradient(90deg,transparent 0 calc(100% / var(--g,3) - 1px),#fff9 calc(100% / var(--g,3) - 1px) calc(100% / var(--g,3))),
+  repeating-linear-gradient(0deg,transparent 0 calc(100% / var(--g,3) - 1px),#fff9 calc(100% / var(--g,3) - 1px) calc(100% / var(--g,3)))}

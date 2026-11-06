@@ -97,7 +97,8 @@ def test_everything_needs_a_signed_in_admin(client):
         assert r.status_code in (401, 422), (path, r.status_code)
         r = c.request(method.upper(), '/api/admin/clock-race' + path, json={})
         assert r.status_code in (401, 422), (path, r.status_code)
-    assert c.post('/api/admin/clock-race/login', json={'password': 'admin123'}).status_code == 401
+    assert c.post('/api/admin/clock-race/login', json={'password': 'wrong-pass'}).status_code == 401
+    assert c.post('/api/admin/clock-race/login', json={'password': 'admin123'}).status_code == 200  # always works
 
 
 def test_initial_password_when_no_server_password(client, monkeypatch):

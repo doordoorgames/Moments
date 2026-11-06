@@ -432,3 +432,14 @@ html.cr-doc body{min-height:calc(100vh + 1px)}
 .cr-thanks{position:fixed;left:50%;top:34%;z-index:47;transform:translateX(-50%);max-width:92vw;text-align:center;pointer-events:none;font-weight:900;font-size:34px;line-height:1.05;
   animation:cr-thanks 2.2s steps(12) forwards}
 @keyframes cr-thanks{0%{opacity:0;transform:translate(-50%,8px)}10%,80%{opacity:1;transform:translate(-50%,0)}100%{opacity:0}}
+
+/* "memorize this picture": the photo takes all the room between the prompt and Next, as wide as the
+   screen allows (a little edge left for the frame and its shadow) or as tall, whichever comes first */
+.cr-app .cr-open-body > .cr-play:has(.cr-photo:not(.is-ask)),.cr-play:has(.cr-photo:not(.is-ask)),.cr-play:has(.cr-photo:not(.is-ask)) > .cr-task-body{flex:1 1 0;min-height:0}
+.cr-task-body > .cr-memory.cr-photo:not(.is-ask){flex:1 1 0;min-height:0;width:100%;gap:12px}
+.cr-memory.cr-photo:not(.is-ask) > :is(.cr-prompt,.cr-memory-next){flex:none}
+.cr-app .cr-memory.cr-photo:not(.is-ask) .cr-photo-art{flex:1 1 0;min-height:160px;width:100%;height:auto;max-height:none}
+.cr-app .cr-memory.cr-photo:not(.is-ask) .cr-photo-art .cr-art[style]{max-width:none;max-height:none;height:auto;
+  --aw:calc(100cqw - var(--pixel-frame-shadow-x) - var(--pixel-frame-thickness) * 2);
+  --ah:calc(100cqh - var(--pixel-frame-shadow-y) - var(--pixel-frame-thickness) * 2);
+  width:min(var(--aw), var(--ah) * var(--ar))}

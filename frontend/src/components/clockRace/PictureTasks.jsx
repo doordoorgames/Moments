@@ -1,4 +1,4 @@
-import React, {memo, useEffect, useState} from 'react';
+import React, {memo, useCallback, useEffect, useState} from 'react';
 import {isReady, whenReady} from './preload';
 import {artUrl} from './assetUrls';
 import {frameVariant} from './frames';
@@ -24,13 +24,19 @@ export const Art = memo(function Art({k, seed = [0, 0]}) {
 // Sits in a .cr-pic-art slot, which sizes it.
 export const FramedPic = memo(function FramedPic({url, seed = [0, 0]}) {
   const [ready, setReady] = useState(() => isReady(url));
+  // the photo's own shape (width / height), so a slot can grow the picture to fill it (see .cr-photo-art)
+  const [ar, setAr] = useState(null);
+  const measure = useCallback(el => {
+    if (el && el.complete && el.naturalWidth) setAr(el.naturalWidth / el.naturalHeight);
+  }, []);
   useEffect(() => {
     if (isReady(url)) { setReady(true); return undefined; }
     setReady(false);
     return whenReady(url, () => setReady(true));
   }, [url]);
   return <PixelFrame variant={frameVariant(...seed)} className={ready ? '' : 'is-loading'}>
-    <img className="cr-art" src={url} alt="" loading="eager" decoding="async" draggable="false" onLoad={() => setReady(true)}/>
+    <img className="cr-art" src={url} alt="" loading="eager" decoding="async" draggable="false" ref={measure}
+      style={ar ? {'--ar': ar} : undefined} onLoad={e => { setReady(true); measure(e.currentTarget); }}/>
   </PixelFrame>;
 });
 

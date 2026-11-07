@@ -1,52 +1,15 @@
-import React, {memo} from 'react';
+import React from 'react';
 import {frameVariant} from './frames';
 import {PixelFrame} from './PixelFrame';
 import {tileUrls} from './assetUrls';
 
-// v4 challenges: heaviest group, shadow match, missing tile. The first two are drawn
+// v4 challenges: shadow match and missing tile. The shadow is drawn
 // from the task data (generated on the server each round); the missing tile uses ten hand-picked pictures.
 
 const tap = fn => ({
   onPointerDown: e => {if (e.button > 0) return; e.preventDefault(); fn();},
   onClick: e => {if (e.detail === 0) fn();},
 });
-
-// ------------------------------------------------------------------ الأثقل
-const STUFF = {
-  feathers: {ar: 'ريش', en: 'Feathers', bag: '#F3E9F7', size: 1.18},
-  cotton: {ar: 'قطن', en: 'Cotton', bag: '#E4E8F0', size: 1.12},
-  rice: {ar: 'رز', en: 'Rice', bag: '#F6EBD2', size: 1},
-  wood: {ar: 'خشب', en: 'Wood', bag: '#D7B48A', size: 0.98},
-  sand: {ar: 'رمل', en: 'Sand', bag: '#EFD9A0', size: 0.92},
-  stones: {ar: 'حجر', en: 'Stones', bag: '#B9BEC6', size: 0.84},
-  iron: {ar: 'حديد', en: 'Iron', bag: '#8C939E', size: 0.78},
-};
-const kg = n => String(n);
-
-const Bag = memo(function Bag({fill, label, unit}) {
-  return <svg viewBox="0 0 60 70" className="cr-bag" aria-hidden="true">
-    <path d="M22 8 Q30 2 38 8 L36 16 Q52 22 54 44 Q56 66 30 66 Q4 66 6 44 Q8 22 24 16 Z" fill="#00000022" transform="translate(2 3)"/>
-    <path d="M22 8 Q30 2 38 8 L36 16 Q52 22 54 44 Q56 66 30 66 Q4 66 6 44 Q8 22 24 16 Z" fill={fill}/>
-    <path d="M22 16 Q30 20 38 16" stroke="#3A3446" strokeWidth="2.5" fill="none"/>
-    <text x="30" y="44" textAnchor="middle" fontSize="15" fontWeight="900" fill="#3A3446">{label}</text>
-    <text x="30" y="57" textAnchor="middle" fontSize="9" fontWeight="800" fill="#3A3446">{unit}</text>
-  </svg>;
-});
-
-export function Heaviest({task, onPick, lang}) {
-  const unit = lang === 'ar' ? 'كغ' : 'kg';
-  return <div className="cr-scale">
-    {task.groups.map((g, i) => {
-      const s = STUFF[g.stuff] || STUFF.rice;
-      return <button key={i} type="button" className="cr-scale-card" {...tap(() => onPick(i))}>
-        <span className="cr-scale-name" dir="auto">{s[lang] || s.en}</span>
-        <span className="cr-scale-bags" style={{'--bag': s.size}}>
-          {Array.from({length: g.count}, (_, k) => <Bag key={k} fill={s.bag} label={kg(g.each)} unit={unit}/>)}
-        </span>
-      </button>;
-    })}
-  </div>;
-}
 
 // ------------------------------------------------------------------ الظل
 const TOY = ['#E8927C', '#7EC4BE', '#F4DE96', '#C4B8E0', '#E8A8B6'];

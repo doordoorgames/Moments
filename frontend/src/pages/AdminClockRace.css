@@ -48,7 +48,7 @@
 .crs-library{min-width:0}
 @media (min-width:1100px){.crs-main.has-editor{grid-template-columns:minmax(0,1fr) minmax(480px,48%)}}
 
-.crs-filters{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) auto;gap:8px;margin-bottom:8px}
+.crs-filters{display:grid;grid-template-columns:minmax(0,1fr);gap:8px;margin-bottom:8px}
 @media (max-width:640px){.crs-filters{grid-template-columns:1fr}}
 .crs-tabs{display:flex;gap:4px;overflow-x:auto;padding-bottom:4px;margin-bottom:8px}
 .crs-tabs button{flex:none;border:1px solid var(--line);background:#fff;border-radius:999px;padding:5px 12px;font:inherit;font-size:13px;cursor:pointer}
@@ -205,3 +205,12 @@
 .crs-tile .crs-btn{min-height:44px}
 /* modals render on <body>, above the editor */
 .crs-modal-back{z-index:200}
+
+/* sections: one big tab per kind of question */
+.crs-sections{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;margin-bottom:12px}
+.crs-sections button{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:56px;padding:10px 14px;border:1px solid var(--line);border-radius:10px;background:var(--panel);font:inherit;font-size:15px;font-weight:700;text-align:start;cursor:pointer}
+.crs-sections button b{flex:none;font-size:13px;font-weight:700;color:var(--muted)}
+.crs-sections button.is-on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.crs-sections button.is-on b{color:#fff;opacity:.75}
+@media (max-width:640px){.crs-sections{grid-template-columns:repeat(2,minmax(0,1fr))}.crs-sections button{min-height:52px;font-size:14px}}
+.crs-generated{display:flex;flex-direction:column;gap:4px;margin-bottom:10px;padding:10px 14px;border:1px dashed var(--line);border-radius:10px}

@@ -31,7 +31,7 @@ def test_round_shape(seed):
     assert kinds.count('alphabet') == 1
     assert kinds.count('word') in (1, 2)
     assert 'animal' not in kinds                                    # "tap the tiger" is retired
-    for k in ('odd', 'stroop', 'geo', 'sock', 'memory', 'avoid', 'alphabet', 'scale', 'shadow', 'tile',
+    for k in ('odd', 'stroop', 'geo', 'sock', 'memory', 'avoid', 'alphabet', 'shadow', 'tile',
               'belong', 'older', 'compare', 'which', 'photo'):
         assert k in kinds, (k, kinds)                               # every question type still comes up
     for i in range(20):                                             # a type never returns within 3 tasks
@@ -311,7 +311,7 @@ def play(g, pid, now, right=True):
 def wrong_value(t):
     return {'alphabet': -1, 'price': -1, 'odd': -1, 'memory': 'x', 'stroop': -1, 'geo': -1, 'sock': -1,
             'word': 'zzzzz', 'vote': 'stranger', 'boss': -1,
-            'scale': -1, 'shadow': -1, 'tile': -1, 'avoid': -1,
+            'shadow': -1, 'tile': -1, 'avoid': -1,
             'belong': -1, 'older': -1, 'compare': -1, 'which': -1, 'animal': -1, 'photo': -1}[t['type']]
 
 
@@ -503,13 +503,6 @@ def test_room_limits_and_dev_tools():
 
 
 # ------------------------------------------------------------------ v4 challenges
-
-def test_scale_has_one_heaviest():
-    for s in range(300):
-        t = E.gen_scale(random.Random(s), 'ar')
-        totals = [g['count'] * g['each'] for g in t['groups']]
-        assert max(totals) == totals[t['answer']] and totals.count(max(totals)) == 1
-
 
 def test_shadow_options_all_differ_and_one_is_right():
     for s in range(300):

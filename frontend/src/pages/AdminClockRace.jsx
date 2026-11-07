@@ -19,6 +19,17 @@ const PAGE = 24;
 const PICTURE_KINDS = ['belong', 'older', 'compare', 'which'];
 const OPTION_COUNT = {belong: 4, older: 2, compare: 2, which: 2};
 const FLIPS = [['none', 'Not mirrored'], ['H', 'Mirror L-R'], ['V', 'Mirror T-B']];
+// Sections of the studio: every question lives in exactly one. Anything not claimed below lands in Miscellaneous.
+const SECTIONS = [
+  ['jigsaw', 'Jigsaw puzzle', r => r.type === 'tile'],
+  ['memorize', 'Memorize this picture', r => r.type === 'photo' && r.mode === 'recall'],
+  ['thisorthis', 'This or this', r => ['older', 'compare', 'which'].includes(r.type)],
+  ['landmark', 'Where is this?', r => r.type === 'photo' && r.mode !== 'recall'],
+  ['price', 'What costs more', r => r.type === 'price'],
+  ['odd', 'Odd one out', r => r.type === 'belong'],
+  ['friend', 'Friend question', r => r.type === 'vote'],
+];
+const sectionOf = r => (SECTIONS.find(([, , f]) => f(r)) || ['misc'])[0];
 const STATUS_TABS = [
   ['all', 'All'], ['review', 'Needs review'], ['approved', 'Approved'], ['rejected', 'Rejected'],
   ['unpublished', 'Unpublished'], ['errors', 'Errors'], ['missing', 'Missing pictures'], ['broken', 'Broken pictures'],
@@ -100,8 +111,8 @@ function Login({onIn}) {
 function Studio({me, onOut}) {
   const [lib, setLib] = useState(null);
   const [error, setError] = useState('');
-  const [type, setType] = useState('all');
-  const [tab, setTab] = useState('review');
+  const [type, setType] = useState('jigsaw');
+  const [tab, setTab] = useState('all');
   const [q, setQ] = useState('');
   const [page, setPage] = useState(0);
   const [picked, setPicked] = useState(() => new Set());
@@ -134,7 +145,7 @@ function Studio({me, onOut}) {
   const rows = useMemo(() => {
     if (!lib) return [];
     const needle = q.trim().toLowerCase();
-    return lib.items.filter(r => (type === 'all' || r.type === type)
+    return lib.items.filter(r => (type === 'all' || sectionOf(r) === type)
       && (tab === 'all' || (tab === 'review' && r.status === 'draft') || r.status === tab
         || (tab === 'unpublished' && r.dirty) || (tab === 'errors' && r.errors) || (tab === 'missing' && r.missing_image)
         || (tab === 'broken' && broken.has(r.id)))
@@ -192,14 +203,19 @@ function Studio({me, onOut}) {
 
     <div className={`crs-main ${open ? 'has-editor' : ''}`}>
       <section className="crs-library">
+        <nav className="crs-sections" role="tablist" aria-label="Sections">
+          {[...SECTIONS.map(([k, label]) => [k, label]), ['misc', 'Miscellaneous'], ['all', 'Everything']].map(([k, label]) =>
+            <button key={k} role="tab" aria-selected={type === k} className={type === k ? 'is-on' : ''} onClick={() => setType(k)}>
+              <span>{label}</span><b>{k === 'all' ? lib.items.length : lib.items.filter(r => sectionOf(r) === k).length}</b></button>)}
+        </nav>
         <div className="crs-filters">
-          <select value={type} onChange={e => setType(e.target.value)} aria-label="Challenge type">
-            <option value="all">All types</option>
-            {Object.entries(lib.types).map(([k, label]) => <option key={k} value={k}>{label} ({lib.items.filter(r => r.type === k).length})</option>)}
-          </select>
           <input type="search" value={q} onChange={e => setQ(e.target.value)} placeholder="Search id or text"/>
-          <button className="crs-btn is-small" onClick={() => setModal('generated')}>Generated challenges</button>
         </div>
+        {type === 'misc' && <div className="crs-generated">
+          <b>Built by the game every round</b>
+          <span className="crs-muted">No question list to edit; these are drawn fresh from fixed rules.</span>
+          <ul className="crs-list">{Object.entries(lib.generated).map(([k, v]) => <li key={k}>{v}</li>)}</ul>
+        </div>}
         <div className="crs-tabs" role="tablist">
           {STATUS_TABS.map(([k, label]) => <button key={k} role="tab" aria-selected={tab === k} className={tab === k ? 'is-on' : ''} onClick={() => setTab(k)}>{label}</button>)}
         </div>

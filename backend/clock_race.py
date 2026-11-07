@@ -46,7 +46,7 @@ NAME_MAX = 24
 PICTURE_MIX = {'belong': 1, 'older': 1, 'compare': 1, 'price': 2, 'which': 1, 'photo': 1}
 # "Tap the tiger" (type 'animal') is out of the rotation: too obvious. Its pictures stay in the studio.
 ORDINARY_MIX = {'odd': 1, 'stroop': 1, 'geo': 1, 'sock': 1, 'memory': 1, 'avoid': 1,
-                'alphabet': 1, 'scale': 1, 'shadow': 1, 'tile': 1}
+                'alphabet': 1, 'shadow': 1, 'tile': 1}
 RETIRED_TYPES = ('animal',)
 # Extra-life request: a player out of hearts may ask the others once; the first YES gives both a heart.
 DECIDE_SECONDS = 8.0    # time to choose "ask for a life" or "start over" before the clock resets anyway
@@ -60,7 +60,7 @@ BOT_NAMES = ['نورة', 'سارة', 'فهد', 'دانة', 'عبدالله', 'ش
 # Simulated players: typical seconds per task type (measured feel: taps ~2-3s, typing ~7s,
 # memory = 12s of grid + the answer). Each task varies 0.7x-1.35x and ~12% are "wrong" (+1s).
 BOT_SECONDS = {'price': 4.0, 'alphabet': 2.2, 'odd': 2.4, 'stroop': 2.2, 'geo': 2.6, 'sock': 3.4, 'memory': 7.0,
-               'word': 7.5, 'vote': 2.0, 'boss': 5.5, 'scale': 4.5, 'shadow': 3.0, 'tile': 3.0, 'avoid': 2.3,
+               'word': 7.5, 'vote': 2.0, 'boss': 5.5, 'shadow': 3.0, 'tile': 3.0, 'avoid': 2.3,
                'belong': 3.8, 'older': 3.4, 'compare': 3.0, 'which': 3.4, 'animal': 2.2, 'photo': 4.5}
 BOT_WRONG = 0.12
 
@@ -281,22 +281,6 @@ def gen_boss(rng):
 
 # ------------------------------------------------------------------ v4: heaviest, shadow, missing tile
 
-SCALE_STUFF = ['feathers', 'cotton', 'wood', 'sand', 'rice', 'stones', 'iron']
-SCALE_EACH = [0.25, 0.5, 0.75, 1, 1.5, 2, 3]
-
-
-def gen_scale(rng, lang):
-    """Three groups of bags: how many bags, what is inside, the weight printed on each bag. The
-    heaviest group is the one with the biggest total; light-sounding stuff often wins."""
-    while True:
-        stuff = rng.sample(SCALE_STUFF, 3)
-        groups = [dict(stuff=s, count=rng.randint(1, 6), each=rng.choice(SCALE_EACH)) for s in stuff]
-        totals = [g['count'] * g['each'] for g in groups]
-        top = sorted(totals, reverse=True)
-        if len(set(totals)) == 3 and 0.25 <= top[0] - top[1] <= 2 and top[0] <= 12:
-            return dict(type='scale', groups=groups, answer=totals.index(top[0]))
-
-
 def _norm(cells):
     mx, my = min(x for x, _ in cells), min(y for _, y in cells)
     return sorted((x - mx, y - my) for x, y in cells)
@@ -455,7 +439,7 @@ def signature(t):
     keys = {'price': ('qid',), 'alphabet': ('letters',), 'odd': ('rows', 'cols', 'odd', 'base', 'mood'), 'stroop': ('mode', 'target', 'choices'),
             'geo': ('variant', 'items'), 'sock': ('socks',), 'memory': ('grid',),
             'word': ('variant', 'first', 'last', 'letter'), 'vote': ('question',), 'boss': ('faces',),
-            'scale': ('groups',), 'shadow': ('cells',), 'tile': ('pic',), 'avoid': ('rule', 'target', 'items'),
+            'shadow': ('cells',), 'tile': ('pic',), 'avoid': ('rule', 'target', 'items'),
             'belong': ('qid',), 'older': ('qid',), 'compare': ('qid',), 'which': ('qid',), 'animal': ('options',), 'photo': ('qid',)}[t['type']]
     return repr((t['type'],) + tuple(repr(t.get(k)) for k in keys))
 
@@ -567,8 +551,8 @@ def gen_alphabet(rng, lang):
     return dict(type='alphabet', letters=[alphabet[i] for i in positions], answer=positions.index(max(positions)))
 
 
-NEW_GENS = {'alphabet': gen_alphabet, 'animal': gen_animal, 'avoid': gen_avoid, 'scale': gen_scale, 'shadow': gen_shadow, 'tile': gen_tile}
-ANSWER_KINDS = ('price', 'alphabet', 'stroop', 'geo', 'sock', 'scale', 'shadow', 'tile', 'animal', 'photo') + K.KINDS
+NEW_GENS = {'alphabet': gen_alphabet, 'animal': gen_animal, 'avoid': gen_avoid, 'shadow': gen_shadow, 'tile': gen_tile}
+ANSWER_KINDS = ('price', 'alphabet', 'stroop', 'geo', 'sock', 'shadow', 'tile', 'animal', 'photo') + K.KINDS
 
 SPREAD = 3      # a type never comes back within 3 tasks
 OPENING = 5     # the first five tasks are five different challenges

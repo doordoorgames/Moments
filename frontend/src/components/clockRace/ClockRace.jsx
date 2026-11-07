@@ -18,7 +18,10 @@ import {TASK_VIEWS, stroopPrompt} from './Tasks';
 import {picturePrompt} from './PictureTasks';
 import {preloadFrom} from './preload';
 import AppErrorBoundary from '../AppErrorBoundary';
-import {PixelClock, ClockRaceLogo} from './Brand';
+import {PixelClock} from './Brand';
+
+// The game's logo (لحّق): on the home screen and in the room until the race starts.
+const GAME_LOGO = '/clock-race/art/logo.webp';
 import {GEO} from './content';
 import {TOTAL, localCheck} from './localCheck';
 import {TEXT} from './text';
@@ -69,19 +72,6 @@ async function request(path, body, auth, t) {
   const result = await response.json().catch(() => ({}));
   if (!response.ok) { const err = new Error(typeof result.detail === 'string' ? result.detail : t.unreachable); err.status = response.status; throw err; }
   return result;
-}
-
-function BigClock() {
-  if (ARCADE) return <span className="cr-hero-clock is-arcade"><PixelClock size={84}/></span>;
-  return <svg className="cr-hero-clock" viewBox="0 0 200 200" aria-hidden="true">
-    <circle cx="100" cy="108" r="86" fill="#0B0B0B"/>
-    <circle cx="100" cy="100" r="86" fill="#FFFDF7" stroke="#0B0B0B" strokeWidth="8"/>
-    <path d="M100 100 L100 26 A74 74 0 0 1 164 137 Z" fill="#FF5B36" stroke="#0B0B0B" strokeWidth="5" strokeLinejoin="round"/>
-    {Array.from({length: 20}, (_, i) => <line key={i} x1="100" y1="22" x2="100" y2={i % 5 ? 30 : 36} stroke="#0B0B0B" strokeWidth={i % 5 ? 4 : 6} strokeLinecap="round" transform={`rotate(${i * 18} 100 100)`}/>)}
-    <g className="cr-hero-hand"><line x1="100" y1="100" x2="100" y2="40" stroke="#0B0B0B" strokeWidth="9" strokeLinecap="round"/></g>
-    <circle cx="100" cy="100" r="11" fill="#0B0B0B"/><circle cx="100" cy="100" r="4" fill="#FFC93C"/>
-    <rect x="86" y="2" width="28" height="16" fill="#FFC93C" stroke="#0B0B0B" strokeWidth="5"/>
-  </svg>;
 }
 
 // The third heart is gone: your own clock, wearing the sad face, winds back to 0 (lamps go out last-first,
@@ -519,7 +509,7 @@ export default function ClockRace({onContinue}) {
   </section> : <section className={`cr-stage ${cls}`}>{head}{body}</section>;
   const bar = <header className="cr-bar">
     <button className="cr-square-btn" onClick={exit} aria-label={t.back}><Arrow dir={t.dir}/></button>
-    {ARCADE ? <span className="cr-wordmark is-logo"><ClockRaceLogo label={t.title} animate={false}/></span> : <span className="cr-wordmark"><span className="cr-letter">{t.title}</span></span>}
+    <span className="cr-wordmark is-game-logo"><img src={GAME_LOGO} alt={t.title}/></span>
     {devPanel}
   </header>;
 
@@ -600,9 +590,7 @@ export default function ClockRace({onContinue}) {
           <button type="button" className={pickedLang === 'ar' ? 'is-on' : ''} aria-pressed={pickedLang === 'ar'} lang="ar" onClick={() => setPickedLang('ar')}>عربي</button>
           <button type="button" className={pickedLang === 'en' ? 'is-on' : ''} aria-pressed={pickedLang === 'en'} lang="en" onClick={() => setPickedLang('en')}>English</button>
         </div>}
-        <div className="cr-hero"><BigClock/>{ARCADE
-          ? <h1 className="cr-hero-logo"><ClockRaceLogo label={t.title}/>{lang === 'ar' && <span className="cr-hero-ar"><span className="cr-letter">{t.title}</span></span>}</h1>
-          : <h1><span className="cr-letter">{t.title}</span></h1>}<p><span className="cr-letter">{t.tagline}</span></p></div>
+        <div className="cr-hero"><h1 className="cr-game-logo"><img src={GAME_LOGO} alt={t.title}/></h1><p><span className="cr-letter">{t.tagline}</span></p></div>
         {!linkJoin && <div className="cr-intents">
           <button type="button" className={`cr-intent ${intent === 'create' ? 'is-on' : ''}`} onClick={() => { setIntent('create'); setError(''); setTimeout(() => nickRef.current?.focus()); }}><span className="cr-letter">{t.create}</span><small>{t.createSmall}</small></button>
           <button type="button" className={`cr-intent is-join ${intent === 'join' ? 'is-on' : ''}`} onClick={() => { setIntent('join'); setError(''); setTimeout(() => nickRef.current?.focus()); }}><span className="cr-letter">{t.join}</span><small>{t.joinSmall}</small></button>
@@ -635,6 +623,7 @@ export default function ClockRace({onContinue}) {
     return shell('cr-page cr-lobby', <>
       <Backdrop/>{bar}
       <section className="cr-lobby-body">
+        <div className="cr-game-logo is-lobby"><img src={GAME_LOGO} alt={t.title}/></div>
         <h1 className="cr-lobby-title"><span className="cr-letter">{t.lobbyTitle}</span></h1>
         {/* Arcade: nothing boxed. The code reads straight off the room, the QR floats with only its quiet zone. */}
         <div className={ARCADE ? 'cr-room-code' : 'cr-card cr-code-card'}>

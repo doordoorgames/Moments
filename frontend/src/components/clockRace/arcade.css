@@ -597,3 +597,14 @@
 .cr-app.cr-arcade .cr-help-time{background:var(--cr-teal)}
 
 .cr-app.cr-arcade .cr-thanks{font-family:var(--cr-pixel);font-weight:900;font-size:clamp(36px,10vw,48px);color:var(--cr-powder);text-shadow:var(--cr-ol-2),0 6px 0 rgba(20,16,24,.4)}
+
+/* ================================================================ game logo (لحّق) */
+/* top quarter of the screen, never more than a third */
+.cr-app .cr-game-logo{display:flex;justify-content:center;margin:0 auto;padding:0;line-height:0;font-size:inherit}
+.cr-app .cr-game-logo img{display:block;width:auto;height:min(25dvh,33vh,300px);max-width:80vw;object-fit:contain;filter:drop-shadow(0 4px 0 rgba(0,0,0,.25))}
+.cr-app .cr-game-logo.is-lobby img{height:min(18dvh,33vh,200px)}
+.cr-app .cr-game-logo.is-lobby{margin-bottom:6px}
+/* small one in the top bar: hidden while the big one is on screen, gone once the race starts */
+.cr-app .cr-wordmark.is-game-logo{display:block;line-height:0}
+.cr-app .cr-wordmark.is-game-logo img{height:36px;width:auto}
+.cr-app:is(.cr-entry,.cr-lobby) .cr-wordmark.is-game-logo{visibility:hidden}

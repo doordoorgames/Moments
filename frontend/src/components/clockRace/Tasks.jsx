@@ -86,6 +86,9 @@ export function Memory({task, t, onPick, lang}) {
   </div>;
 }
 
+// Longest single word across the answers, so every button shares one font size that fits it.
+const longestWord = (opts, lang) => Math.max(4, ...opts.flatMap(o => String(lang === 'ar' ? o[0] : o[1]).split(/\s+/).map(w => w.length)));
+
 // ------------------------------------------------------------------ صورة: a real photo. "ask" shows it with the question;
 // "recall" shows it alone (remember it, tap Next), then the question with the photo gone.
 export function PhotoTask({task, t, onPick, lang, index = 0}) {
@@ -102,7 +105,7 @@ export function PhotoTask({task, t, onPick, lang, index = 0}) {
   return <div className={`cr-memory is-ask cr-photo ${task.mode === 'ask' ? 'is-with-pic' : ''}`}>
     <p className="cr-memory-q" dir="auto">{question}</p>
     {task.mode === 'ask' && pic}
-    <div className="cr-photo-choices" dir={lang === 'ar' ? 'rtl' : 'ltr'}>{task.options.map((o, i) =>
+    <div className="cr-photo-choices" dir={lang === 'ar' ? 'rtl' : 'ltr'} style={{'--w': longestWord(task.options, lang)}}>{task.options.map((o, i) =>
       <button key={o[1]} type="button" className="cr-choice cr-photo-choice" dir="auto" {...tap(() => onPick(i))}>{lang === 'ar' ? o[0] : o[1]}</button>)}</div>
   </div>;
 }

@@ -608,3 +608,12 @@
 .cr-app .cr-wordmark.is-game-logo{display:block;line-height:0}
 .cr-app .cr-wordmark.is-game-logo img{height:36px;width:auto}
 .cr-app:is(.cr-entry,.cr-lobby) .cr-wordmark.is-game-logo{visibility:hidden}
+
+/* photo answers (landmarks etc.): two equal columns, equal-height rows, one shared font size sized to the
+   longest word so nothing is cut; long names wrap onto two lines inside a taller button */
+.cr-app.cr-arcade .cr-photo .cr-photo-choices{container-type:inline-size;grid-template-columns:repeat(2,minmax(0,1fr));grid-auto-rows:1fr;gap:12px;width:100%}
+.cr-app.cr-arcade .cr-photo .cr-photo-choices .cr-photo-choice{min-width:0;min-height:76px;height:100%;padding:12px 10px 18px;
+  display:flex;align-items:center;justify-content:center;text-align:center;white-space:normal;overflow-wrap:normal;word-break:normal;hyphens:none;
+  font-family:var(--cr-press);font-weight:400;line-height:1.35;font-size:clamp(11px,calc((50cqi - 6px - 22px) / var(--w,8) * .96),20px)}
+.cr-app.cr-arcade[lang=ar] .cr-photo .cr-photo-choices .cr-photo-choice{font-family:var(--cr-pixel);font-weight:700;line-height:1.1;
+  font-size:clamp(22px,calc((50cqi - 6px - 22px) / var(--w,6) * 1.9),38px)}

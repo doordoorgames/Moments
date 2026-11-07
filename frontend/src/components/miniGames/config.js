@@ -33,6 +33,6 @@ export const miniGames = [
   { id: "letter-tv", name: "Letter TV", description: "Two retro TVs, two random letters. Shout an answer first. Play on one phone, or open a room so every phone shows the same letters.", component: LetterTV },
   { id: "letter-challenge", name: "Letter Challenge", description: "One letter, a run of categories. Shout an answer that starts with the letter; the host taps NEXT for the next one.", component: LetterChallenge },
   // 1-12 players race through the same 20 quick tasks; first full clock wins. Arabic first.
-  { id: "clock-race", name: "سباق الساعة", lang: "ar", play: "العب", description: "٢٠ مهمة سريعة على تلفوناتكم كلكم. شوفوا ساعات بعض تتعبى، وأول واحد يكمّل ساعته يفوز. من ١ إلى ١٢ لاعب.", component: ClockRace },
+  { id: "clock-race", name: "لحّق", lang: "ar", play: "العب", description: "٢٠ مهمة سريعة على تلفوناتكم كلكم. شوفوا ساعات بعض تتعبى، وأول واحد يكمّل ساعته يفوز. من ١ إلى ١٢ لاعب.", component: ClockRace },
   { id: "baccarat-classic", name: "The Baccarat Hunt: Classic", description: "The original one-screen perfume dash.", component: BaccaratHunt, hidden: true },
 ];

@@ -332,8 +332,6 @@
 .cr-app.cr-arcade .cr-word-note{font-size:var(--cr-fs-meta);font-weight:600;opacity:1;color:var(--cr-gray)}
 .cr-app.cr-arcade .cr-stage-word .cr-word{gap:10px}
 
-/* heaviest: each group is one row on the room, a dotted pixel rule between rows */
-  background:linear-gradient(90deg,var(--cr-ivory) 50%,transparent 0) 0 100%/6px 2px repeat-x;transition:transform .06s steps(2)}
 
 
 /* shadow match: the toy and four shadows on the room */

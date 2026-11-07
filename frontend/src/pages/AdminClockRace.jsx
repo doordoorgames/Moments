@@ -23,12 +23,18 @@ const FLIPS = [['none', 'Not mirrored'], ['H', 'Mirror L-R'], ['V', 'Mirror T-B'
 const SECTIONS = [
   ['jigsaw', 'Jigsaw puzzle', r => r.type === 'tile'],
   ['memorize', 'Memorize this picture', r => r.type === 'photo' && r.mode === 'recall'],
-  ['thisorthis', 'This or this', r => ['older', 'compare', 'which'].includes(r.type)],
   ['landmark', 'Where is this?', r => r.type === 'photo' && r.mode !== 'recall'],
   ['price', 'What costs more', r => r.type === 'price'],
   ['odd', 'Odd one out', r => r.type === 'belong'],
+  ['older', 'Which is older', r => r.type === 'older'],
+  ['heavier', 'Which is heavier / bigger', r => r.type === 'compare'],
+  ['which', 'Which one (facts)', r => r.type === 'which'],
   ['friend', 'Friend question', r => r.type === 'vote'],
+  ['animal', 'Find the animal', r => r.type === 'animal'],
 ];
+// The question type a new question in each tab starts as.
+const SECTION_TYPE = {jigsaw: 'tile', memorize: 'photo', landmark: 'photo', price: 'price', odd: 'belong', older: 'older',
+  heavier: 'compare', which: 'which', friend: 'vote', animal: 'animal'};
 const sectionOf = r => (SECTIONS.find(([, , f]) => f(r)) || ['misc'])[0];
 const STATUS_TABS = [
   ['all', 'All'], ['review', 'Needs review'], ['approved', 'Approved'], ['rejected', 'Rejected'],
@@ -209,11 +215,12 @@ function Studio({me, onOut}) {
               <span>{label}</span><b>{k === 'all' ? lib.items.length : lib.items.filter(r => sectionOf(r) === k).length}</b></button>)}
         </nav>
         <div className="crs-filters">
+          {SECTION_TYPE[type] && <button className="crs-btn is-primary" onClick={() => setModal('new')}>Add a new one here</button>}
           <input type="search" value={q} onChange={e => setQ(e.target.value)} placeholder="Search id or text"/>
         </div>
         {type === 'misc' && <div className="crs-generated">
-          <b>Built by the game every round</b>
-          <span className="crs-muted">No question list to edit; these are drawn fresh from fixed rules.</span>
+          <b>Made by the game itself every round</b>
+          <span className="crs-muted">These have no question list: the game builds a new one each time from fixed rules (for example random letters for "which letter comes later"), so there is nothing to edit or delete here.</span>
           <ul className="crs-list">{Object.entries(lib.generated).map(([k, v]) => <li key={k}>{v}</li>)}</ul>
         </div>}
         <div className="crs-tabs" role="tablist">
@@ -250,7 +257,7 @@ function Studio({me, onOut}) {
       <p className="crs-muted">These are drawn fresh by the server every round from fixed rules, so there is no question list to review. They keep playing as they are.</p>
       <ul className="crs-list">{Object.entries(lib.generated).map(([k, v]) => <li key={k}><b>{k}</b> {v}</li>)}</ul>
     </Modal>}
-    {modal === 'new' && <NewModal types={lib.types} onClose={() => setModal(null)} onMade={id => { setModal(null); load(); openItem(id); }}/>}
+    {modal === 'new' && <NewModal types={lib.types} start={SECTION_TYPE[type]} onClose={() => setModal(null)} onMade={id => { setModal(null); load(); openItem(id); }}/>}
     {toast && <div className="crs-toast" role="status">{toast}</div>}
   </div>;
 }
@@ -850,8 +857,8 @@ function HistoryModal({lib, onClose, onDone}) {
   </Modal>;
 }
 
-function NewModal({types, onClose, onMade}) {
-  const [type, setType] = useState('tile');
+function NewModal({types, start, onClose, onMade}) {
+  const [type, setType] = useState(start || 'tile');
   const [err, setErr] = useState('');
   const blank = {
     tile: {title: ''}, photo: {mode: 'ask', ar: '', en: '', options: [['', ''], ['', ''], ['', ''], ['', '']]},

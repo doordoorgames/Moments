@@ -57,7 +57,6 @@
 /* ================================================================ lettering */
 /* plain ivory lettering with a hard outline (most text) */
 .cr-app.cr-arcade :is(.cr-prompt,.cr-memory-q,.cr-word-prompt,.cr-vote-hint,.cr-word-note,.cr-wordmark,.cr-fine,.cr-waiting,.cr-spectate,.cr-status,
-  .cr-form label,.cr-form small,.cr-guests,.cr-meta,.cr-dial-name,.cr-pic-name,.cr-geo-name,.cr-scale-name,.cr-results,.cr-finish-card h2,.cr-reset-caption,
   .cr-lang button,.cr-intent,.cr-textbtn,.cr-link){color:var(--cr-ivory);text-shadow:var(--cr-ol-1)}
 /* large printed lettering: ivory with a warm-grey lower third, outlined like a cartridge label */
 .cr-app.cr-arcade .cr-letter{display:inline-block;color:transparent;padding:.04em .08em .1em;line-height:1.05;
@@ -334,13 +333,7 @@
 .cr-app.cr-arcade .cr-stage-word .cr-word{gap:10px}
 
 /* heaviest: each group is one row on the room, a dotted pixel rule between rows */
-.cr-app.cr-arcade .cr-scale{gap:0}
-.cr-app.cr-arcade .cr-scale-card{min-height:70px;padding:6px 4px 8px;border:0;background:none;box-shadow:none;
   background:linear-gradient(90deg,var(--cr-ivory) 50%,transparent 0) 0 100%/6px 2px repeat-x;transition:transform .06s steps(2)}
-.cr-app.cr-arcade .cr-scale-card:last-child{background:none}
-.cr-app.cr-arcade .cr-scale-card:active{transform:translateX(3px)}
-.cr-app.cr-arcade .cr-scale-name{width:70px;font-size:24px;font-weight:700}
-.cr-app.cr-arcade .cr-bag{filter:drop-shadow(0 2px 0 var(--cr-charcoal-a))}
 
 
 /* shadow match: the toy and four shadows on the room */
@@ -460,7 +453,6 @@
 
 /* while the results are up, the last challenge behind them steps away */
 .cr-app.cr-arcade.cr-race:has(.cr-finish) :is(.cr-open,.cr-top){visibility:hidden}
-.cr-app.cr-arcade .cr-bag text{font-family:var(--cr-pixel);font-weight:800}
 .cr-app.cr-arcade .cr-primary:not(:has(.cr-letter)){text-shadow:var(--cr-ol-1)}
 
 /* ================================================================ create room + lobby: pixel-outlined controls

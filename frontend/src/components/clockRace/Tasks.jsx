@@ -4,7 +4,7 @@ import Sock from './Sock';
 import {PLAYER_COLORS} from './Dials';
 import {GEO, STROOP} from './content';
 import {GEO_SHAPES} from './geoShapes';
-import {Heaviest, Shadow, MissingTile, DontTap} from './NewTasks';
+import {Shadow, MissingTile, DontTap} from './NewTasks';
 import {PictureQuiz, FramedPic} from './PictureTasks';
 import {frameVariant} from './frames';
 import {photoUrl, priceUrl} from './assetUrls';
@@ -190,5 +190,5 @@ function Alphabet({task, onPick}) {
 
 export const TASK_VIEWS = {price: PriceQuiz, alphabet: Alphabet, odd: OddFace, stroop: Stroop, geo: Geography, sock: LonelySock, memory: Memory,
   vote: FriendVote, word: WordRush, boss: FinalBoss,
-  scale: Heaviest, shadow: Shadow, tile: MissingTile, avoid: DontTap,
+  shadow: Shadow, tile: MissingTile, avoid: DontTap,
   belong: PictureQuiz, older: PictureQuiz, compare: PictureQuiz, which: PictureQuiz, animal: PictureQuiz, photo: PhotoTask};

@@ -295,12 +295,6 @@
 @media (min-width:700px){.cr-stage{padding-top:20px}.cr-dial-seat{width:66px}}
 
 /* ---------------------------------------------------------------- v4: heaviest */
-.cr-scale{display:flex;flex-direction:column;gap:10px;width:100%}
-.cr-scale-card{display:flex;align-items:center;gap:10px;min-height:64px;padding:6px 10px;border:3px solid var(--ink);background:var(--paper);box-shadow:var(--shadow);text-align:start}
-.cr-scale-card:active{transform:translate(3px,3px);box-shadow:1px 1px 0 var(--ink)}
-.cr-scale-name{flex:none;width:58px;font-weight:900;font-size:16px;line-height:1.1}
-.cr-scale-bags{flex:1;min-width:0;display:flex;flex-wrap:wrap;align-items:flex-end;gap:2px;direction:ltr}
-.cr-bag{width:calc(40px * var(--bag,1));height:auto}
 /* ---------------------------------------------------------------- v4: shadow */
 .cr-shadow{display:flex;flex-direction:column;align-items:center;gap:12px;width:100%}
 .cr-shadow-toy{width:min(34vw,140px,calc((var(--cr-h,100dvh) - 420px) * .5))}

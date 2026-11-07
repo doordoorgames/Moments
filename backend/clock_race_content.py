@@ -57,7 +57,6 @@ GENERATED_TYPES = {
     'sock': 'Lonely sock (generated)',
     'memory': 'Letter memory grid (generated)',
     'avoid': "Don't tap (generated buttons)",
-    'scale': 'Heaviest group (generated)',
     'shadow': 'Shadow match (generated)',
     'alphabet': 'Which letter comes later (generated)',
     'word': 'Word Rush (dictionary checked)',
@@ -830,6 +829,7 @@ def summary(state, assets=None):
                          warnings=sum(p['level'] == 'warn' for p in probs),
                          missing_image=any('picture missing' in p['msg'].lower() or 'photo missing' in p['msg'].lower()
                                            or 'no picture' in p['msg'].lower() or 'rendered' in p['msg'].lower() for p in probs),
+                         mode=e['draft'].get('mode') if e['type'] == 'photo' else None,
                          title=item_title(e), thumb=item_thumb(e, assets), updated_at=e.get('updated_at'),
                          updated_by=e.get('updated_by')))
     return rows

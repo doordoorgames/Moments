@@ -23,6 +23,7 @@ from pydantic import BaseModel, Field
 import clock_race_admin_auth as auth
 import clock_race_assets as A
 import clock_race_content as C
+import clock_race_iq as Q
 
 log = logging.getLogger(__name__)
 
@@ -46,12 +47,16 @@ class Save(BaseModel):
 
 
 class Create(BaseModel):
-    type: Literal['tile', 'photo', 'price', 'belong', 'older', 'compare', 'which', 'animal', 'vote']
+    type: Literal['tile', 'photo', 'price', 'belong', 'older', 'compare', 'which', 'animal', 'vote', 'wrongword', 'iq']
     data: Dict[str, Any] = Field(default_factory=dict)
 
 
 class Status(BaseModel):
     status: Literal['draft', 'approved', 'rejected']
+
+
+class IqMake(BaseModel):
+    kind: Literal['fold', 'hidden', 'matrix', 'rotate', 'match', 'overlap']
 
 
 class Bulk(BaseModel):
@@ -284,6 +289,33 @@ def router(db, query):
     async def discard(qid: str, authorization: str = Header(default='')):
         who = _who(authorization)
         state, _ = await mutate(lambda s: C.revert_draft(s, qid, who))
+        return _item_payload(state, qid)
+
+    @api.delete('/items/{qid}')
+    async def delete(qid: str, authorization: str = Header(default='')):
+        """Delete a question: removed outright if it never went live, otherwise rejected and hidden (it leaves
+        the game with the next publish)."""
+        who = _who(authorization)
+        _, how = await mutate(lambda s: C.delete(s, qid, who))
+        return dict(id=qid, deleted=how)
+
+    @api.post('/items/{qid}/restore')
+    async def restore(qid: str, authorization: str = Header(default='')):
+        who = _who(authorization)
+        state, _ = await mutate(lambda s: C.restore(s, qid, who))
+        return _item_payload(state, qid)
+
+    @api.post('/items/{qid}/iq')
+    async def iq_new(qid: str, body: IqMake, authorization: str = Header(default='')):
+        """Make a fresh visual puzzle of a kind for this question (saved as its draft; already checked)."""
+        who = _who(authorization)
+
+        def change(state):
+            e = C.view(state, qid)
+            if not e or e['type'] != 'iq':
+                raise KeyError('No such puzzle.')
+            C.save_draft(state, qid, Q.generate(body.kind), who)
+        state, _ = await mutate(change)
         return _item_payload(state, qid)
 
     @api.post('/bulk-approve')

@@ -2,14 +2,11 @@ import React from 'react';
 import {frameVariant} from './frames';
 import {PixelFrame} from './PixelFrame';
 import {tileUrls} from './assetUrls';
+import {tap} from './tap';
 
 // v4 challenges: shadow match and missing tile. The shadow is drawn
 // from the task data (generated on the server each round); the missing tile uses ten hand-picked pictures.
 
-const tap = fn => ({
-  onPointerDown: e => {if (e.button > 0) return; e.preventDefault(); fn();},
-  onClick: e => {if (e.detail === 0) fn();},
-});
 
 // ------------------------------------------------------------------ الظل
 const TOY = ['#E8927C', '#7EC4BE', '#F4DE96', '#C4B8E0', '#E8A8B6'];

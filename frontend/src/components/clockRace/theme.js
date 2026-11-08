@@ -38,3 +38,27 @@ if (ARCADE && typeof document !== 'undefined' && !document.getElementById('cr-fo
     document.head.appendChild(link);
   });
 }
+
+// One accent per question, rotating between questions: pink, soft lavender, stark white, faded yellow.
+// Every shadow, outline glow and decorative highlight inside a question uses its accent (see the
+// "per-question accent" block at the end of arcade.css). Teal is never an accent: it belongs to the room's
+// frames. The purple stopwatch logo is branding and never changes.
+//   c = the accent, d = its darker shade (hard drop shadows, button lips), l = its lighter tint
+export const ACCENTS = [
+  {name: 'pink',     c: '#EEA5BD', d: '#C67C96', l: '#F8D3DF'},
+  {name: 'lavender', c: '#C9BCE6', d: '#9A8BC0', l: '#E6DFF5'},
+  {name: 'white',    c: '#FFFFFF', d: '#CFC8BC', l: '#FFFFFF'},
+  {name: 'yellow',   c: '#EEDFA2', d: '#C4B06C', l: '#F7EFCC'},
+];
+
+// The accent of the question at `index` (its place in the round): neighbours always differ.
+export function accentFor(index = 0) {
+  const n = ACCENTS.length;
+  return ACCENTS[((index % n) + n) % n];
+}
+
+// CSS variables carrying a question's accent (set on .cr-play; the pixel frames pick up their shadow from it).
+export function accentVars(index = 0) {
+  const a = accentFor(index);
+  return {'--cr-accent': a.c, '--cr-accent-d': a.d, '--cr-accent-l': a.l, '--pixel-frame-shadow-color': a.c};
+}

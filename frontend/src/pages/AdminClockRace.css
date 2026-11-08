@@ -214,3 +214,13 @@
 .crs-sections button.is-on b{color:#fff;opacity:.75}
 @media (max-width:640px){.crs-sections{grid-template-columns:repeat(2,minmax(0,1fr))}.crs-sections button{min-height:52px;font-size:14px}}
 .crs-generated{display:flex;flex-direction:column;gap:4px;margin-bottom:10px;padding:10px 14px;border:1px dashed var(--line);border-radius:10px}
+
+/* tap the incorrect word: the sentence as tappable words; the picked one is the answer */
+.crs-words{display:flex;flex-wrap:wrap;gap:6px;padding:10px;border:2px solid var(--ink);background:#fff}
+.crs-word{display:inline-flex;align-items:baseline;gap:4px;min-height:40px;padding:4px 10px;border:2px solid var(--line);background:#fff;color:var(--ink);
+  font:inherit;font-size:18px;font-weight:600;cursor:pointer}
+.crs-words.is-ar .crs-word{font-size:20px}
+.crs-word small{font-size:11px;font-weight:700;opacity:.5}
+.crs-word.is-on{border-color:#B3261E;background:#FCE8E6;color:#B3261E}
+/* visual IQ: raw puzzle data */
+.crs-code{width:100%;font-family:ui-monospace,Menlo,monospace;font-size:12px;line-height:1.35}

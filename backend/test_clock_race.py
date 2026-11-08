@@ -31,8 +31,9 @@ def test_round_shape(seed):
     assert kinds.count('alphabet') == 1
     assert kinds.count('word') in (1, 2)
     assert 'animal' not in kinds                                    # "tap the tiger" is retired
-    for k in ('odd', 'stroop', 'geo', 'sock', 'memory', 'avoid', 'alphabet', 'shadow', 'tile',
-              'belong', 'older', 'compare', 'which', 'photo'):
+    # the lonely sock moved to the extra pool to make room for tap-the-wrong-word and the IQ puzzle
+    for k in ('odd', 'stroop', 'geo', 'memory', 'avoid', 'alphabet', 'shadow', 'tile',
+              'belong', 'older', 'compare', 'which', 'photo', 'wrongword', 'iq'):
         assert k in kinds, (k, kinds)                               # every question type still comes up
     for i in range(20):                                             # a type never returns within 3 tasks
         if kinds[i] not in ('vote', 'boss'):
@@ -312,7 +313,8 @@ def wrong_value(t):
     return {'alphabet': -1, 'price': -1, 'odd': -1, 'memory': 'x', 'stroop': -1, 'geo': -1, 'sock': -1,
             'word': 'zzzzz', 'vote': 'stranger', 'boss': -1,
             'shadow': -1, 'tile': -1, 'avoid': -1,
-            'belong': -1, 'older': -1, 'compare': -1, 'which': -1, 'animal': -1, 'photo': -1}[t['type']]
+            'belong': -1, 'older': -1, 'compare': -1, 'which': -1, 'animal': -1, 'photo': -1,
+            'wrongword': -1, 'iq': -1}[t['type']]
 
 
 def walk(g, pid, now, right=True):

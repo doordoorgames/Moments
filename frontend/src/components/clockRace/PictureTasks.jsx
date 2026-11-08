@@ -3,16 +3,13 @@ import {isReady, whenReady} from './preload';
 import {artUrl} from './assetUrls';
 import {frameVariant} from './frames';
 import {PixelFrame} from './PixelFrame';
+import {tap} from './tap';
 
 // Picture comparisons (أي واحد مختلف؟ / أيهم أقدم؟ / أيهم أثقل؟ / أيهم؟) and the animal finder.
 // Questions come from the server's bank (backend/clock_race_bank.py); this file only draws them.
 // Each task names a layout so the screens don't all look alike:
 //   two answers:  pair (side by side, names under), vs (facing, a VS stamp between), panels (manga panels)
 //   four answers: board (stickers on a prize board), table (objects on a painted tabletop, numbered)
-const tap = fn => ({
-  onPointerDown: e => {if (e.button > 0) return; e.preventDefault(); fn();},
-  onClick: e => {if (e.detail === 0) fn();},
-});
 
 // Every picture wears the shared pixel frame (PixelFrame.jsx); `seed` picks its teal variant.
 // Until the picture has downloaded, the frame holds a plain dark-teal square instead of an empty box.

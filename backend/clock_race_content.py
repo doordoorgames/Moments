@@ -153,7 +153,9 @@ def builtin():
 
 
 def empty_state():
-    return dict(version=1, items={}, assets={}, log=[], publishes=[], rev=0)
+    # deleted: built-in questions deleted for good ({id: {at, by}}). Their text lives in code, so this list is
+    # what keeps them out of the game and the studio after every refresh and restart.
+    return dict(version=1, items={}, assets={}, log=[], publishes=[], rev=0, deleted={})
 
 
 def now_iso():
@@ -165,7 +167,7 @@ def _entry(state, qid):
     items = state['items']
     if qid in items:
         return items[qid]
-    b = builtin().get(qid)
+    b = None if qid in state.get('deleted', {}) else builtin().get(qid)
     if not b:
         raise KeyError(qid)
     kind, data = b
@@ -180,7 +182,7 @@ def view(state, qid):
     """An item as the studio sees it (built-in items that were never touched included)."""
     e = state['items'].get(qid)
     if e is None:
-        b = builtin().get(qid)
+        b = None if qid in state.get('deleted', {}) else builtin().get(qid)
         if not b:
             return None
         kind, data = b
@@ -197,7 +199,8 @@ def view(state, qid):
 
 
 def all_ids(state):
-    return list(dict.fromkeys(list(builtin()) + list(state['items'])))
+    gone = state.get('deleted', {})
+    return [q for q in dict.fromkeys(list(builtin()) + list(state['items'])) if q not in gone]
 
 
 def live_state(e):
@@ -281,32 +284,34 @@ def set_status(state, qid, status, who, assets=None):
 
 
 def delete(state, qid, who):
-    """Delete a question. A studio-made one that never went live is removed outright. Anything players may
-    still get (an original question, or one already published) is rejected and hidden from the studio: it
-    leaves new rounds with the next publish, which keeps that step reviewable and revertible.
-    Returns 'removed' or 'hidden'."""
-    e = state['items'].get(qid)
-    if e is None and qid not in builtin():
-        raise KeyError('No such question.')
-    if e is not None and e.get('origin') == 'new' and e.get('published_status') != 'approved':
-        del state['items'][qid]
-        return 'removed'
-    e = _entry(state, qid)
-    e['status'] = 'rejected'
-    e['deleted'] = True
-    e['updated_at'], e['updated_by'] = now_iso(), who
-    _log(e, 'deleted', who)
-    return 'hidden'
-
-
-def restore(state, qid, who):
-    """Undo a delete that hid a question (it comes back as a draft)."""
-    e = _entry(state, qid)
-    e.pop('deleted', None)
-    e['status'] = 'draft'
-    e['updated_at'], e['updated_by'] = now_iso(), who
-    _log(e, 'restored', who)
-    return e
+    """Delete a question for good: it leaves the studio and new rounds at once and never comes back.
+    A studio-made question's record is removed from the database. An original question's text lives in code,
+    so its id goes on the state's `deleted` list, which the game and the studio both skip (after every
+    refresh and restart). Its pictures are kept (Pictures can delete them separately); no other question
+    changes. Refused when it would leave a type with fewer questions than a round needs.
+    Returns the deleted question's type."""
+    e = view(state, qid)
+    if e is None:
+        raise KeyError('No such question (it may already be deleted).')
+    kind = e['type']
+    if e['live'] in ('live', 'legacy'):
+        left = live_counts(state)[kind] - 1
+        if left < MIN_LIVE[kind]:
+            raise ValueError(f'{TYPE_LABELS[kind]} would have {left} questions left in the game (needs at least '
+                             f'{MIN_LIVE[kind]}). Add or approve another one first.')
+        if kind == 'wrongword':
+            lang = (e.get('live_data') or {}).get('lang')
+            same = [q for q in all_ids(state) if q != qid and (view(state, q) or {}).get('type') == 'wrongword'
+                    and view(state, q)['live'] in ('live', 'legacy') and (view(state, q)['live_data'] or {}).get('lang') == lang]
+            if len(same) < 3:
+                raise ValueError(f'Only {len(same)} {"Arabic" if lang == "ar" else "English"} incorrect-word questions '
+                                 'would be left (needs at least 3). Add another one first.')
+    state['items'].pop(qid, None)
+    if qid in builtin():
+        state.setdefault('deleted', {})[qid] = dict(at=now_iso(), by=who, type=kind)
+    state.setdefault('log', []).append(dict(at=now_iso(), by=who, action='deleted question', id=qid, type=kind))
+    state['log'] = state['log'][-200:]
+    return kind
 
 
 def revert_draft(state, qid, who):
@@ -398,15 +403,18 @@ def revert_publish(state, rev, who):
         raise ValueError('That publish is not in the history any more.')
     if rec.get('reverted_by_rev'):
         raise ValueError('Already reverted.')
+    if rec.get('blocked'):
+        raise ValueError(f'This publish can no longer be undone: {rec["blocked"]}.')
+    before = {qid: b for qid, b in rec['before'].items() if qid in state['items']}   # deleted questions stay deleted
     override = {qid: (('approve' if b['published_status'] == 'approved' or (b['published_status'] is None and state['items'][qid]['origin'] == 'builtin') else 'reject'), None)
-                for qid, b in rec['before'].items()}
+                for qid, b in before.items()}
     counts = live_counts(state, override)
     short = [f'{TYPE_LABELS[k]} would have {n}' for k, n in counts.items() if n < MIN_LIVE[k]]
     if short:
         raise ValueError('Reverting would leave too few live questions: ' + '; '.join(short))
     state['rev'] += 1
     new = dict(rev=state['rev'], at=now_iso(), by=who, kind='revert', of=rev, changes=[], before={})
-    for qid, b in rec['before'].items():
+    for qid, b in before.items():
         e = state['items'][qid]
         new['before'][qid] = dict(published=copy.deepcopy(e.get('published')), published_status=e.get('published_status'))
         e['published'], e['published_status'] = copy.deepcopy(b['published']), b['published_status']
@@ -778,6 +786,7 @@ class Live:
         self.assets = {}      # asset id -> public url
         self.rev = 0
         self.loaded_at = 0.0
+        self.deleted = set()  # built-in questions deleted for good
 
     def load(self, state):
         overrides = {}
@@ -790,6 +799,7 @@ class Live:
         assets = {aid: a.get('url') for aid, a in (state or {}).get('assets', {}).items() if a.get('url')}
         with self.lock:
             self.overrides, self.assets = overrides, assets
+            self.deleted = set((state or {}).get('deleted', {}))
             self.rev = (state or {}).get('rev', 0)
             self.loaded_at = time.time()
 
@@ -803,9 +813,10 @@ class Live:
         """[(id, data)] live for a type: built-ins not overridden, then published ones."""
         with self.lock:
             ov = dict(self.overrides)
+            gone = set(self.deleted)
         out = []
         for qid, (t, data) in builtin().items():
-            if t != kind:
+            if t != kind or qid in gone:
                 continue
             if qid in ov:
                 if ov[qid][1] is not None:
@@ -968,6 +979,74 @@ def item_thumb(e, assets):
     if t == 'animal':
         return asset_url(d.get('key'), assets, True) or f'@art:{d.get("key")}'
     return None
+
+
+# ------------------------------------------------------------------ deleting pictures
+
+def asset_usage(state, aid):
+    """Every question pointing at an uploaded picture, and in which version: draft (being edited),
+    approved (waiting to publish) or live (what players get now)."""
+    ref = f'asset:{aid}'
+    out = []
+    for qid in all_ids(state):
+        e = state['items'].get(qid)
+        if not e:
+            continue
+        where = [k for k, v in (('draft', e.get('draft')), ('approved', e.get('approved')),
+                                ('live', e.get('published') if e.get('published_status') == 'approved' else None))
+                 if v is not None and ref in json.dumps(v)]
+        if where:
+            out.append(dict(id=qid, type=e['type'], title=item_title(e), where=where))
+    return out
+
+
+def _scrub(v, ref):
+    """v with every reference to the picture emptied (lists, dicts and strings walked)."""
+    if isinstance(v, str):
+        return '' if v == ref else v
+    if isinstance(v, list):
+        return [_scrub(x, ref) for x in v]
+    if isinstance(v, dict):
+        return {k: _scrub(x, ref) for k, x in v.items()}
+    return v
+
+
+def delete_asset(state, aid, who, confirm=False):
+    """Delete an uploaded picture for good. Returns (asset record, [question ids that pointed at it]).
+
+    Never deletes a question. A picture players can see right now (in a published question) is refused:
+    replace it in that question and publish first, so the game never shows a broken picture. Otherwise, with
+    confirm=True, every question still pointing at it (drafts, approved-but-unpublished) loses the picture:
+    the slot is left empty, the question goes back to draft and shows "picture missing" until a new one is
+    picked. Publishes that would bring the picture back can no longer be undone."""
+    a = state.get('assets', {}).get(aid)
+    if not a:
+        raise KeyError('No such picture (it may already be deleted).')
+    use = asset_usage(state, aid)
+    live = [u for u in use if 'live' in u['where']]
+    if live:
+        raise ValueError('Players can see this picture now in ' + ', '.join(u['id'] for u in live)
+                         + '. Replace it in that question and publish, then delete it.')
+    if use and not confirm:
+        raise ValueError('Used by ' + ', '.join(u['id'] for u in use) + '. Confirm to remove it from them.')
+    ref = f'asset:{aid}'
+    for u in use:
+        e = state['items'][u['id']]
+        e['draft'] = _scrub(e['draft'], ref)
+        if e.get('approved') is not None and ref in json.dumps(e['approved']):
+            e['approved'] = None
+        if e['status'] == 'approved' and e.get('approved') is None:
+            e['status'] = 'draft'
+        e['updated_at'], e['updated_by'] = now_iso(), who
+        _log(e, 'picture deleted', who, aid)
+    for p in state.get('publishes', []):
+        if ref in json.dumps(p.get('before', {})):
+            p['blocked'] = f'a picture it used ({aid}) was deleted'
+    del state['assets'][aid]
+    state.setdefault('log', []).append(dict(at=now_iso(), by=who, action='deleted picture', id=aid,
+                                            used_by=[u['id'] for u in use]))
+    state['log'] = state['log'][-200:]
+    return a, [u['id'] for u in use]
 
 
 def dumps(state):

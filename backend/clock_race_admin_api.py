@@ -293,17 +293,10 @@ def router(db, query):
 
     @api.delete('/items/{qid}')
     async def delete(qid: str, authorization: str = Header(default='')):
-        """Delete a question: removed outright if it never went live, otherwise rejected and hidden (it leaves
-        the game with the next publish)."""
+        """Delete a question for good (admins only): gone from the studio and from new rounds at once."""
         who = _who(authorization)
-        _, how = await mutate(lambda s: C.delete(s, qid, who))
-        return dict(id=qid, deleted=how)
-
-    @api.post('/items/{qid}/restore')
-    async def restore(qid: str, authorization: str = Header(default='')):
-        who = _who(authorization)
-        state, _ = await mutate(lambda s: C.restore(s, qid, who))
-        return _item_payload(state, qid)
+        _, kind = await mutate(lambda s: C.delete(s, qid, who))
+        return dict(id=qid, type=kind, deleted=True)
 
     @api.post('/items/{qid}/iq')
     async def iq_new(qid: str, body: IqMake, authorization: str = Header(default='')):
@@ -469,6 +462,27 @@ def router(db, query):
         rows = [dict(ref='asset:' + aid, used_by=used.get(aid, []), **a) for aid, a in state.get('assets', {}).items()]
         rows.sort(key=lambda r: r.get('uploaded_at') or '', reverse=True)
         return dict(assets=rows)
+
+    @api.get('/assets/{aid}/usage')
+    async def asset_usage(aid: str, authorization: str = Header(default='')):
+        _who(authorization)
+        state, _ = await load_state()
+        if aid not in state.get('assets', {}):
+            raise HTTPException(404, 'No such picture.')
+        return dict(id=aid, used_by=C.asset_usage(state, aid))
+
+    @api.delete('/assets/{aid}')
+    async def asset_delete(aid: str, confirm: bool = False, authorization: str = Header(default='')):
+        """Delete an uploaded picture for good (admins only). The record and every question's reference go
+        first (one saved state), then its files leave storage. A picture the live game shows is refused."""
+        who = _who(authorization)
+        if not re.fullmatch(r'[a-f0-9]{8,40}', aid):
+            raise HTTPException(404, 'No such picture.')
+        _, (record, cleared) = await mutate(lambda s: C.delete_asset(s, aid, who, confirm))
+        problems = await store.remove(A.asset_paths(aid, record))
+        if problems:
+            log.warning('Clock Race studio: picture %s deleted, but some files stayed: %s', aid, problems)
+        return dict(id=aid, deleted=True, cleared=cleared, files_left=bool(problems))
 
     @api.patch('/assets/{aid}')
     async def credit(aid: str, body: Credit, authorization: str = Header(default='')):

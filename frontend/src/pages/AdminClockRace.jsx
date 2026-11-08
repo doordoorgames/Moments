@@ -736,7 +736,7 @@ function WrongWordForm({data, setData}) {
 // The server checks every puzzle: exactly one answer may be right and it must be the marked one. "Make a new
 // one" builds a fresh, already-checked puzzle; the puzzle data can also be edited directly below.
 const IQ_KINDS = [['fold', 'Folded paper'], ['hidden', 'Hidden figure'], ['matrix', 'Pattern matrix'], ['rotate', 'Turned, not mirrored'],
-  ['match', 'Matchsticks'], ['overlap', 'Overlapping shapes']];
+  ['overlap', 'Overlapping shapes']];
 
 function IqForm({data, setData, busy, iq}) {
   const [kind, setKind] = useState(data.kind || 'matrix');

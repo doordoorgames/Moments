@@ -1,10 +1,9 @@
-"""Clock Race · visual reasoning puzzles (اختبار ذكاء بصري), six kinds:
+"""Clock Race · visual reasoning puzzles (اختبار ذكاء بصري), five kinds:
 
     fold     a paper folded in half and punched: which one is it unfolded?
     hidden   which picture hides this little shape (same size, not turned)?
     matrix   a 3x3 pattern with one missing: which one completes it?
     rotate   which one is the same shape only turned (the others are mirror images)?
-    match    move one matchstick to fix the sum: which is the fixed sum?
     overlap  shapes stacked on each other: which is at the back / on top?
 
 A puzzle is stored as {kind, spec, options, answer}. Nothing is trusted as written: `solve` works out the right
@@ -21,9 +20,9 @@ import copy
 import math
 import random
 
-KINDS = ('fold', 'hidden', 'matrix', 'rotate', 'match', 'overlap')
+KINDS = ('fold', 'hidden', 'matrix', 'rotate', 'overlap')  # the matchstick sums were removed for good
 LABELS = {'fold': 'Folded paper', 'hidden': 'Hidden figure', 'matrix': 'Pattern matrix', 'rotate': 'Turned, not mirrored',
-          'match': 'Matchsticks', 'overlap': 'Overlapping shapes'}
+          'overlap': 'Overlapping shapes'}
 STARTERS = 6   # per kind
 
 SHAPES = ('circle', 'square', 'triangle', 'diamond', 'plus', 'hexagon')  # drawn exactly as _inside() below
@@ -269,97 +268,6 @@ def view_matrix(spec, options):
     return dict(grid=grid, options=[list(o) for o in options])
 
 
-# ------------------------------------------------------------------ match: matchstick sums
-# Seven-segment digits (a top, b top-right, c bottom-right, d bottom, e bottom-left, f top-left, g middle).
-# The operator is a horizontal stick, plus one vertical stick for '+'. '=' never changes.
-SEG = {'0': 'abcdef', '1': 'bc', '2': 'abged', '3': 'abgcd', '4': 'fgbc', '5': 'afgcd', '6': 'afgedc',
-       '7': 'abc', '8': 'abcdefg', '9': 'abcdfg'}
-
-
-def _parse(eq):
-    eq = str(eq).replace(' ', '')
-    if len(eq) != 5 or eq[1] not in '+-' or eq[3] != '=' or not all(ch in SEG for ch in eq[0] + eq[2] + eq[4]):
-        raise Bad(f'"{eq}" is not like 3+5=8 (one digit each)')
-    return eq
-
-
-def _sticks(eq):
-    eq = _parse(eq)
-    s = {('a', i, x) for i, ch in ((0, eq[0]), (1, eq[2]), (2, eq[4])) for x in SEG[ch]}
-    s.add(('op', 'h'))
-    if eq[1] == '+':
-        s.add(('op', 'v'))
-    return s
-
-
-def _true(eq):
-    eq = _parse(eq)
-    a, b, c = int(eq[0]), int(eq[2]), int(eq[4])
-    return (a + b if eq[1] == '+' else a - b) == c
-
-
-def moves(a, b):
-    """Matchsticks moved to turn sum a into sum b (None if the counts differ: a stick added or taken away)."""
-    sa, sb = _sticks(a), _sticks(b)
-    if len(sa) != len(sb):
-        return None
-    return len(sa - sb)
-
-
-def solve_match(spec, options):
-    return [i for i, o in enumerate(options) if _true(o) and moves(spec['eq'], o) == 1]
-
-
-def _all_eqs():
-    return [f'{a}{op}{b}={c}' for a in '0123456789' for op in '+-' for b in '0123456789' for c in '0123456789']
-
-
-def check_match(spec, options):
-    start = _parse(spec.get('eq', ''))
-    if _true(start):
-        raise Bad('The starting sum is already right')
-    fixes = [e for e in _all_eqs() if _true(e) and moves(start, e) == 1]
-    if len(fixes) != 1:
-        raise Bad(f'The starting sum has {len(fixes)} one-move fixes (needs exactly 1)')
-    if len(options) != 4:
-        raise Bad('Needs 4 answers')
-    if len({_parse(o) for o in options}) != 4:
-        raise Bad('Two answers are the same')
-    if start in {_parse(o) for o in options}:
-        raise Bad('The starting sum cannot be an answer')
-
-
-def gen_match(rng):
-    eqs = _all_eqs()
-    trues = [e for e in eqs if _true(e)]
-    while True:
-        fix = rng.choice(trues)
-        starts = [e for e in eqs if not _true(e) and moves(e, fix) == 1]
-        rng.shuffle(starts)
-        for start in starts:
-            fixes = [e for e in trues if moves(start, e) == 1]
-            if fixes != [fix]:
-                continue
-            # decoys: a one-move change that doesn't add up, and right sums that need two moves
-            near_false = [e for e in eqs if not _true(e) and e != start and moves(start, e) == 1]
-            two = [e for e in trues if moves(start, e) == 2]
-            if len(near_false) < 2 or not two:
-                continue
-            options = [fix] + rng.sample(near_false, 2) + [rng.choice(two)]
-            rng.shuffle(options)
-            spec = dict(eq=start)
-            try:
-                check_match(spec, options)
-            except Bad:
-                continue
-            if len(solve_match(spec, options)) == 1:
-                return spec, options
-
-
-def view_match(spec, options):
-    return dict(eq=_parse(spec['eq']), options=[_parse(o) for o in options])
-
-
 # ------------------------------------------------------------------ hidden: find the little shape
 # Lines on a 4x4 lattice (points 0-4). An edge is ['h', x, y] (from (x,y) to (x+1,y)) or ['v', x, y] (to (x,y+1)).
 # The target is found in a picture when all its edges are there after sliding it (no turning, no mirroring).
@@ -556,16 +464,15 @@ def view_overlap(spec, options):
                 options=[dict(spec['layers'][int(o)], i=int(o)) for o in options])
 
 
-# ------------------------------------------------------------------ one interface for all six
+# ------------------------------------------------------------------ one interface for all five
 
-GEN = {'fold': gen_fold, 'hidden': gen_hidden, 'matrix': gen_matrix, 'rotate': gen_rotate, 'match': gen_match,
-       'overlap': gen_overlap}
+GEN = {'fold': gen_fold, 'hidden': gen_hidden, 'matrix': gen_matrix, 'rotate': gen_rotate, 'overlap': gen_overlap}
 SOLVE = {'fold': solve_fold, 'hidden': solve_hidden, 'matrix': solve_matrix, 'rotate': solve_rotate,
-         'match': solve_match, 'overlap': solve_overlap}
+         'overlap': solve_overlap}
 CHECK = {'fold': check_fold, 'hidden': check_hidden, 'matrix': check_matrix, 'rotate': check_rotate,
-         'match': check_match, 'overlap': check_overlap}
+         'overlap': check_overlap}
 VIEW = {'fold': view_fold, 'hidden': view_hidden, 'matrix': view_matrix, 'rotate': view_rotate,
-        'match': view_match, 'overlap': view_overlap}
+        'overlap': view_overlap}
 
 
 def generate(kind, rng=None):
@@ -580,6 +487,8 @@ def generate(kind, rng=None):
 def problems(d):
     """[(level, message)] for a stored puzzle. Errors block approval."""
     kind = d.get('kind')
+    if kind == 'match':
+        return [('error', 'Matchstick sums are no longer used in the game')]
     if kind not in KINDS:
         return [('error', 'Unknown puzzle kind')]
     try:

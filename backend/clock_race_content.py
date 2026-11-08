@@ -198,9 +198,15 @@ def view(state, qid):
     return e
 
 
+def _retired(qid, state):
+    """Matchstick sums were removed from the game for good: saved ones stay in the database but are never listed or played."""
+    e = state['items'].get(qid)
+    return bool(e) and e.get('type') == 'iq' and (e.get('draft') or {}).get('kind') == 'match'
+
+
 def all_ids(state):
     gone = state.get('deleted', {})
-    return [q for q in dict.fromkeys(list(builtin()) + list(state['items'])) if q not in gone]
+    return [q for q in dict.fromkeys(list(builtin()) + list(state['items'])) if q not in gone and not _retired(q, state)]
 
 
 def live_state(e):
@@ -896,7 +902,7 @@ _IQ_OK = {}
 
 
 def _iq_ok(d):
-    """Does a puzzle still check out? Cached by content (checking a matchstick sum walks every sum)."""
+    """Does a puzzle still check out? Cached by content ."""
     key = json.dumps(d, sort_keys=True)
     if key not in _IQ_OK:
         if len(_IQ_OK) > 2000:

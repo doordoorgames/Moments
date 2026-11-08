@@ -4,8 +4,9 @@ import axios from 'axios';
 import {BACKEND_URL, apiErrorMessage} from '@/lib/api';
 import {TASK_VIEWS} from '@/components/clockRace/Tasks';
 import {picturePrompt} from '@/components/clockRace/PictureTasks';
+import {iqPrompt} from '@/components/clockRace/IqTasks';
 import {TEXT} from '@/components/clockRace/text';
-import {ARCADE, ARCADE_VARS} from '@/components/clockRace/theme';
+import {ARCADE, ARCADE_VARS, accentVars} from '@/components/clockRace/theme';
 import {artUrl, anyUrl} from '@/components/clockRace/assetUrls';
 import '@/components/clockRace/clockRace.css';
 import '@/components/clockRace/arcade.css';
@@ -30,11 +31,13 @@ const SECTIONS = [
   ['heavier', 'Which is heavier / bigger', r => r.type === 'compare'],
   ['which', 'Which one (facts)', r => r.type === 'which'],
   ['friend', 'Friend question', r => r.type === 'vote'],
+  ['wrongword', 'Tap the incorrect word', r => r.type === 'wrongword'],
+  ['iq', 'Visual IQ', r => r.type === 'iq'],
   ['animal', 'Find the animal', r => r.type === 'animal'],
 ];
 // The question type a new question in each tab starts as.
 const SECTION_TYPE = {jigsaw: 'tile', memorize: 'photo', landmark: 'photo', price: 'price', odd: 'belong', older: 'older',
-  heavier: 'compare', which: 'which', friend: 'vote', animal: 'animal'};
+  heavier: 'compare', which: 'which', friend: 'vote', animal: 'animal', wrongword: 'wrongword', iq: 'iq'};
 const sectionOf = r => (SECTIONS.find(([, , f]) => f(r)) || ['misc'])[0];
 const STATUS_TABS = [
   ['all', 'All'], ['review', 'Needs review'], ['approved', 'Approved'], ['rejected', 'Rejected'],
@@ -151,7 +154,7 @@ function Studio({me, onOut}) {
   const rows = useMemo(() => {
     if (!lib) return [];
     const needle = q.trim().toLowerCase();
-    return lib.items.filter(r => (type === 'all' || sectionOf(r) === type)
+    return lib.items.filter(r => !(r.deleted && !r.dirty) && (type === 'all' || sectionOf(r) === type)
       && (tab === 'all' || (tab === 'review' && r.status === 'draft') || r.status === tab
         || (tab === 'unpublished' && r.dirty) || (tab === 'errors' && r.errors) || (tab === 'missing' && r.missing_image)
         || (tab === 'broken' && broken.has(r.id)))
@@ -163,10 +166,13 @@ function Studio({me, onOut}) {
 
   const leave = () => !dirty || window.confirm('You have unsaved changes. Leave without saving?');
   const openItem = id => { if (id === open || leave()) { setDirty(false); setOpen(id); } };
-  const next = () => {
+  const next = gone => {
     const i = rows.findIndex(r => r.id === open);
     const n = rows[i + 1] || rows.find(r => r.id !== open && r.status === 'draft');
-    if (n) openItem(n.id); else setToast('No more questions in this list.');
+    if (gone) setDirty(false);
+    if (n) { if (gone) setOpen(n.id); else openItem(n.id); }
+    else if (gone) setOpen(null);
+    else setToast('No more questions in this list.');
   };
   const markBroken = useCallback(id => setBroken(b => (b.has(id) ? b : new Set(b).add(id))), []);
 
@@ -212,7 +218,7 @@ function Studio({me, onOut}) {
         <nav className="crs-sections" role="tablist" aria-label="Sections">
           {[...SECTIONS.map(([k, label]) => [k, label]), ['misc', 'Miscellaneous'], ['all', 'Everything']].map(([k, label]) =>
             <button key={k} role="tab" aria-selected={type === k} className={type === k ? 'is-on' : ''} onClick={() => setType(k)}>
-              <span>{label}</span><b>{k === 'all' ? lib.items.length : lib.items.filter(r => sectionOf(r) === k).length}</b></button>)}
+              <span>{label}</span><b>{lib.items.filter(r => !(r.deleted && !r.dirty) && (k === 'all' || sectionOf(r) === k)).length}</b></button>)}
         </nav>
         <div className="crs-filters">
           {SECTION_TYPE[type] && <button className="crs-btn is-primary" onClick={() => setModal('new')}>Add a new one here</button>}
@@ -269,7 +275,7 @@ function Card({r, label, thumb, on, picked, onPick, onOpen, onBroken}) {
     <button className="crs-card-body" onClick={onOpen}>
       <span className="crs-thumb">{thumb && !bad
         ? <img src={thumb} alt="" loading="lazy" onError={() => { setBad(true); onBroken(r.id); }}/>
-        : <span className="crs-thumb-none">{bad ? 'Broken picture' : r.type === 'vote' ? 'Text only' : 'No picture'}</span>}</span>
+        : <span className="crs-thumb-none">{bad ? 'Broken picture' : r.type === 'vote' || r.type === 'wrongword' ? 'Text only' : r.type === 'iq' ? 'Drawn puzzle' : 'No picture'}</span>}</span>
       <span className="crs-card-text">
         <span className="crs-card-id">{r.id} · {label}</span>
         <span className="crs-card-title" dir="auto">{r.title}</span>
@@ -326,6 +332,20 @@ function Editor({id, lib, onDirty, onChanged, onNext, onClose, onToast}) {
       s === 'approved' ? 'Approved. It goes live when you publish.' : s === 'rejected' ? 'Rejected. It leaves the game when you publish.' : 'Back to draft.');
   };
   const tile = body => run(() => call('post', `/items/${encodeURIComponent(id)}/tile`, body));
+  const iq = kind => run(() => call('post', `/items/${encodeURIComponent(id)}/iq`, {kind}), 'New puzzle made and checked. Saved as draft.');
+  const remove = async () => {
+    const live = item.live !== 'off';
+    if (!window.confirm(live ? 'Delete this question? It leaves the game when you publish.' : 'Delete this question for good?')) return;
+    setBusy(true); setErr('');
+    try {
+      const r = await call('delete', `/items/${encodeURIComponent(id)}`);
+      onToast(r.deleted === 'removed' ? 'Deleted.' : 'Deleted. It leaves the game when you publish.');
+      onChanged();
+      onDirty(false);
+      onNext(true);
+    } catch (x) { setErr(apiErrorMessage(x)); }
+    finally { setBusy(false); }
+  };
 
   if (err && !item) return <aside className="crs-editor"><p className="crs-error">{err}</p><button className="crs-btn" onClick={onClose}>Close</button></aside>;
   if (!item || !data) return <aside className="crs-editor"><p>Loading…</p></aside>;
@@ -356,7 +376,10 @@ function Editor({id, lib, onDirty, onChanged, onNext, onClose, onToast}) {
       {dirty && <button className="crs-btn is-ghost" onClick={() => setData(clone(item.draft))}>Undo changes</button>}
       {!dirty && item.status !== 'approved' && (item.approved || item.live_data) && !same(item.draft, item.approved || item.live_data)
         && <button className="crs-btn is-ghost" disabled={busy} onClick={() => run(() => call('post', `/items/${encodeURIComponent(id)}/discard`), 'Back to the last approved version.')}>Discard edits</button>}
-      <button className="crs-btn" onClick={onNext}>Next question</button>
+      <button className="crs-btn" onClick={() => onNext()}>Next question</button>
+      {item.deleted
+        ? <button className="crs-btn is-ghost" disabled={busy} onClick={() => run(() => call('post', `/items/${encodeURIComponent(id)}/restore`), 'Restored as a draft.')}>Undo delete</button>
+        : <button className="crs-btn is-bad is-ghost" disabled={busy} onClick={remove}>Delete</button>}
     </div>
     {err && <p className="crs-error" role="alert">{err}</p>}
     {item.status === 'draft' && item.live !== 'off' && item.approved == null && item.origin === 'builtin' &&
@@ -372,7 +395,7 @@ function Editor({id, lib, onDirty, onChanged, onNext, onClose, onToast}) {
     {preview && <PlayPreview id={id} type={item.type} stamp={JSON.stringify(item.draft)} dirty={dirty}/>}
 
     <Form data={data} setData={setData} item={item} resolve={resolve} refs={refs} busy={busy}
-      pick={cb => setPicker(() => cb)} tile={tile} errors={errors}/>
+      pick={cb => setPicker(() => cb)} tile={tile} iq={iq} errors={errors}/>
 
     {item.history?.length > 0 && <details className="crs-history">
       <summary>History ({item.history.length})</summary>
@@ -674,8 +697,70 @@ function CropPreview({url, crop, nat, grid}) {
   </div>;
 }
 
+// ------------------------------------------------------------------ tap the incorrect word
+// Write the sentence, then tap the word that is wrong. The answer is the word's position (so a word that
+// appears twice is never confused); if the sentence changes, the pick is cleared and must be made again.
+const splitWords = text => String(text || '').split(/\s+/).filter(Boolean);
+
+function WrongWordForm({data, setData}) {
+  const words = splitWords(data.text);
+  const setText = text => {
+    const now = splitWords(text);
+    const keep = data.wrong != null && now[data.wrong] === data.word;
+    setData({...data, text, wrong: keep ? data.wrong : null, word: keep ? data.word : null});
+  };
+  const ar = data.lang === 'ar';
+  return <div className="crs-form">
+    <Field label="Language"><select value={data.lang || 'ar'} onChange={e => setData({...data, lang: e.target.value})}>
+      <option value="ar">Arabic</option><option value="en">English</option></select></Field>
+    <Field label="Sentence (one incorrect word)" wide>
+      <textarea rows={3} dir={ar ? 'rtl' : 'ltr'} lang={data.lang} value={data.text || ''} onChange={e => setText(e.target.value)}/>
+    </Field>
+    <h3>Tap the incorrect word <span className="crs-muted">({words.length} words; keep it under 28)</span></h3>
+    <div className={`crs-words ${ar ? 'is-ar' : ''}`} dir={ar ? 'rtl' : 'ltr'} lang={data.lang}>
+      {words.map((w, i) => <button key={i} type="button" className={`crs-word ${i === data.wrong ? 'is-on' : ''}`} aria-pressed={i === data.wrong}
+        onClick={() => setData({...data, wrong: i, word: w})}><small dir="ltr">{i + 1}</small>{w}</button>)}
+      {!words.length && <span className="crs-muted">Write the sentence above first.</span>}
+    </div>
+    <p className="crs-muted">{data.wrong != null ? `Incorrect word: #${data.wrong + 1} "${data.word}". Only you decide this; nothing guesses it.` : 'No incorrect word picked yet.'}</p>
+  </div>;
+}
+
+// ------------------------------------------------------------------ visual IQ puzzles
+// The server checks every puzzle: exactly one answer may be right and it must be the marked one. "Make a new
+// one" builds a fresh, already-checked puzzle; the puzzle data can also be edited directly below.
+const IQ_KINDS = [['fold', 'Folded paper'], ['hidden', 'Hidden figure'], ['matrix', 'Pattern matrix'], ['rotate', 'Turned, not mirrored'],
+  ['match', 'Matchsticks'], ['overlap', 'Overlapping shapes']];
+
+function IqForm({data, setData, busy, iq}) {
+  const [kind, setKind] = useState(data.kind || 'matrix');
+  const [raw, setRaw] = useState(() => JSON.stringify({spec: data.spec, options: data.options}, null, 1));
+  const [bad, setBad] = useState('');
+  useEffect(() => { setRaw(JSON.stringify({spec: data.spec, options: data.options}, null, 1)); setKind(data.kind || 'matrix'); }, [data.spec, data.options, data.kind]);
+  const apply = text => {
+    setRaw(text);
+    try { const v = JSON.parse(text); setBad(''); setData({...data, spec: v.spec, options: v.options}); }
+    catch { setBad('Not valid JSON yet.'); }
+  };
+  return <div className="crs-form">
+    <div className="crs-row2">
+      <Field label="Puzzle kind"><select value={kind} onChange={e => setKind(e.target.value)}>
+        {IQ_KINDS.map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select></Field>
+      <div className="crs-actions"><button type="button" className="crs-btn is-primary" disabled={busy} onClick={() => iq(kind)}>Make a new one</button></div>
+    </div>
+    <Field label="Correct answer (as stored, before the game shuffles)"><select value={data.answer ?? ''} onChange={e => setData({...data, answer: Number(e.target.value)})}>
+      {(data.options || []).map((_, i) => <option key={i} value={i}>Option {i + 1}</option>)}</select></Field>
+    <details className="crs-history">
+      <summary>Edit the puzzle data</summary>
+      <textarea className="crs-code" rows={12} dir="ltr" spellCheck={false} value={raw} onChange={e => apply(e.target.value)}/>
+      {bad && <p className="crs-error">{bad}</p>}
+      <p className="crs-muted">Save to re-check it. Approval is refused unless exactly one option is right and it is the marked one.</p>
+    </details>
+  </div>;
+}
+
 const FORMS = {belong: PictureForm, older: PictureForm, compare: PictureForm, which: PictureForm, price: PriceForm,
-  photo: PhotoForm, tile: TileForm, animal: AnimalForm, vote: VoteForm};
+  photo: PhotoForm, tile: TileForm, animal: AnimalForm, vote: VoteForm, wrongword: WrongWordForm, iq: IqForm};
 
 // ------------------------------------------------------------------ play preview (the real game screen)
 
@@ -695,6 +780,7 @@ function PlayPreview({id, type, stamp, dirty}) {
   const View = task && TASK_VIEWS[task.type];
   const prompt = !task || task.type === 'photo' ? null : task.type === 'vote' ? task.text[lang === 'ar' ? 0 : 1]
     : PICTURE_KINDS.includes(task.type) ? picturePrompt(task, lang)
+    : task.type === 'iq' ? iqPrompt(task, t)
     : task.type === 'animal' ? t.animal(lang === 'ar' ? task.target[1] : task.target[2]) : t.prompts[task.type];
   const roster = [{id: 'p1', name: 'Noor'}, {id: 'p2', name: 'Hamad'}, {id: 'p3', name: 'Sara'}];
   return <section className="crs-preview">
@@ -706,12 +792,13 @@ function PlayPreview({id, type, stamp, dirty}) {
     </div>
     {dirty && <p className="crs-muted">Preview shows the last saved draft.</p>}
     {err && <p className="crs-error">{err}</p>}
+    {task?.type === 'wrongword' && task.lang !== lang && <p className="crs-muted">This question is {task.lang === 'ar' ? 'Arabic' : 'English'}: only {task.lang === 'ar' ? 'Arabic' : 'English'} rooms get it.</p>}
     {task && View && <main className={`cr-app ${ARCADE ? 'cr-arcade' : ''} cr-race crs-phone`} style={ARCADE ? ARCADE_VARS : undefined} dir={t.dir} lang={lang} data-typography-ignore>
       {ARCADE ? <div className="cr-backdrop is-arcade" aria-hidden="true"><i className="cr-room"/><i className="cr-room-light"/><i className="cr-room-wash"/></div>
         : <div className="cr-backdrop" aria-hidden="true"/>}
       <section className={`cr-stage ${ARCADE ? 'cr-open' : ''} cr-stage-${task.type}`}>
         <div className={ARCADE ? 'cr-open-body' : ''}>
-          <div className="cr-play">
+          <div className="cr-play" style={accentVars(n)}>
             {prompt && <h2 className="cr-prompt" dir="auto">{prompt}</h2>}
             <div className="cr-task-body">
               <View task={task} t={t} lang={lang} onPick={i => setPicked(i)} onWord={() => {}} inputRef={{current: null}}
@@ -864,6 +951,7 @@ function NewModal({types, start, onClose, onMade}) {
     tile: {title: ''}, photo: {mode: 'ask', ar: '', en: '', options: [['', ''], ['', ''], ['', ''], ['', '']]},
     price: {options: [{key: '', ar: '', en: '', unit_usd: 0, quantity: 1}, {key: '', ar: '', en: '', unit_usd: 0, quantity: 1}]},
     animal: {key: '', ar: '', en: ''}, vote: {ar: '', en: ''},
+    wrongword: {lang: 'ar', text: '', wrong: null}, iq: {kind: 'matrix'},
   };
   const make = async () => {
     try {

@@ -36,16 +36,19 @@ from pathlib import Path
 
 import clock_race_bank as K
 import clock_race_data as D
+import clock_race_iq as Q
+import clock_race_wrongword as W
 
 # ------------------------------------------------------------------ types
 
 PICTURE_KINDS = ('belong', 'older', 'compare', 'which')
-EDITABLE_TYPES = ('tile', 'photo', 'price') + PICTURE_KINDS + ('animal', 'vote')
+EDITABLE_TYPES = ('tile', 'photo', 'price') + PICTURE_KINDS + ('animal', 'vote', 'wrongword', 'iq')
 
 TYPE_LABELS = {
     'tile': 'Missing piece (jigsaw)', 'photo': 'Photo / landmark', 'price': 'What costs more',
     'belong': 'Odd one out (pictures)', 'older': 'Which is older', 'compare': 'Heavier / bigger',
     'which': 'Which one (facts)', 'animal': 'Find the animal', 'vote': 'Friend question',
+    'wrongword': 'Tap the incorrect word', 'iq': 'Visual IQ puzzle',
 }
 
 # Challenges the server draws fresh every round from rules, not from a question list. Shown in the
@@ -65,7 +68,7 @@ GENERATED_TYPES = {
 
 # A round needs at least this many live items of a type (several of a type can appear in one round).
 MIN_LIVE = {'belong': 6, 'older': 5, 'compare': 3, 'which': 5, 'price': 5, 'photo': 4, 'tile': 2,
-            'animal': 6, 'vote': 3}
+            'animal': 6, 'vote': 3, 'wrongword': 6, 'iq': 6}
 
 STATUSES = ('draft', 'approved', 'rejected')
 FLIPS = ('none', 'H', 'V')
@@ -138,6 +141,10 @@ def builtin():
                 b['animal_' + key] = ('animal', dict(key=key, ar=ar, en=en))
             for i, (ar, en) in enumerate(D.QUESTIONS):
                 b[f'v{i + 1:02d}'] = ('vote', dict(ar=ar, en=en))
+            for qid, d in W.builtin().items():
+                b[qid] = ('wrongword', d)
+            for qid, d in Q.builtin().items():
+                b[qid] = ('iq', copy.deepcopy(d))
             _BUILTIN = b
         return _BUILTIN
 
@@ -235,7 +242,10 @@ def create(state, kind, data, who, qid=None):
     if kind not in EDITABLE_TYPES:
         raise ValueError(f'Unknown question type: {kind}')
     if qid is None:
-        prefix = {'tile': 'tile', 'photo': 'photo', 'price': 'price', 'animal': 'animal', 'vote': 'vote'}.get(kind, kind[:1])
+        prefix = {'tile': 'tile', 'photo': 'photo', 'price': 'price', 'animal': 'animal', 'vote': 'vote',
+                  'wrongword': 'ww', 'iq': 'iq'}.get(kind, kind[:1])
+        if kind == 'iq' and not (data or {}).get('spec'):
+            data = Q.generate((data or {}).get('kind') if (data or {}).get('kind') in Q.KINDS else 'matrix')
         qid = f'{prefix}_n{secrets_hex(4)}'
     if qid in state['items'] or qid in builtin():
         raise ValueError('That id already exists.')
@@ -263,8 +273,39 @@ def set_status(state, qid, status, who, assets=None):
         e['approved'] = copy.deepcopy(e['draft'])
         e['approved_by'], e['approved_at'] = who, now_iso()
     e['status'] = status
+    if status != 'rejected':
+        e.pop('deleted', None)
     e['updated_at'], e['updated_by'] = now_iso(), who
     _log(e, status if status != 'draft' else 'back to draft', who)
+    return e
+
+
+def delete(state, qid, who):
+    """Delete a question. A studio-made one that never went live is removed outright. Anything players may
+    still get (an original question, or one already published) is rejected and hidden from the studio: it
+    leaves new rounds with the next publish, which keeps that step reviewable and revertible.
+    Returns 'removed' or 'hidden'."""
+    e = state['items'].get(qid)
+    if e is None and qid not in builtin():
+        raise KeyError('No such question.')
+    if e is not None and e.get('origin') == 'new' and e.get('published_status') != 'approved':
+        del state['items'][qid]
+        return 'removed'
+    e = _entry(state, qid)
+    e['status'] = 'rejected'
+    e['deleted'] = True
+    e['updated_at'], e['updated_by'] = now_iso(), who
+    _log(e, 'deleted', who)
+    return 'hidden'
+
+
+def restore(state, qid, who):
+    """Undo a delete that hid a question (it comes back as a draft)."""
+    e = _entry(state, qid)
+    e.pop('deleted', None)
+    e['status'] = 'draft'
+    e['updated_at'], e['updated_by'] = now_iso(), who
+    _log(e, 'restored', who)
     return e
 
 
@@ -469,6 +510,19 @@ def normalize(kind, data):
         return dict(key=_s(data.get('key'), 120), ar=_s(data.get('ar'), 60), en=_s(data.get('en'), 60))
     if kind == 'vote':
         return dict(ar=_s(data.get('ar')), en=_s(data.get('en')))
+    if kind == 'wrongword':
+        return W.normalize(data)
+    if kind == 'iq':
+        if len(json.dumps(data, default=str)) > 12000:
+            raise ValueError('Puzzle data is too large.')
+        try:
+            answer = int(data.get('answer'))
+        except (TypeError, ValueError):
+            answer = None
+        return dict(kind=data.get('kind') if data.get('kind') in Q.KINDS else None,
+                    spec=copy.deepcopy(data.get('spec')) if isinstance(data.get('spec'), dict) else {},
+                    options=copy.deepcopy(data.get('options')) if isinstance(data.get('options'), list) else [],
+                    answer=answer)
     raise ValueError(f'Unknown question type: {kind}')
 
 
@@ -573,6 +627,12 @@ def validate(kind, d, assets=None):
             _problem(out, 'error', 'Photo missing')
     elif kind == 'tile':
         out.extend(validate_tile(d, assets))
+    elif kind == 'wrongword':
+        for level, msg in W.validate(d):
+            _problem(out, level, msg)
+    elif kind == 'iq':
+        for level, msg in Q.problems(d):
+            _problem(out, level, msg)
     elif kind == 'animal':
         if not image_ok(d.get('key'), assets):
             _problem(out, 'error', 'Picture missing')
@@ -815,6 +875,30 @@ def vote_list():
     return [(qid, d['ar'], d['en']) for qid, d in LIVE.pool('vote')]
 
 
+def wrongword_bank(lang):
+    """[(id, data)] live "tap the incorrect word" questions in a language (only ones that still check out)."""
+    return [(qid, d) for qid, d in LIVE.pool('wrongword')
+            if d.get('lang') == lang and not [p for p in W.validate(d) if p[0] == 'error']]
+
+
+_IQ_OK = {}
+
+
+def _iq_ok(d):
+    """Does a puzzle still check out? Cached by content (checking a matchstick sum walks every sum)."""
+    key = json.dumps(d, sort_keys=True)
+    if key not in _IQ_OK:
+        if len(_IQ_OK) > 2000:
+            _IQ_OK.clear()
+        _IQ_OK[key] = not [p for p in Q.problems(d) if p[0] == 'error']
+    return _IQ_OK[key]
+
+
+def iq_bank():
+    """[(id, data)] live visual puzzles (only ones whose answer still checks out)."""
+    return [(qid, d) for qid, d in LIVE.pool('iq') if _iq_ok(d)]
+
+
 # ------------------------------------------------------------------ studio summaries
 
 
@@ -830,6 +914,9 @@ def summary(state, assets=None):
                          missing_image=any('picture missing' in p['msg'].lower() or 'photo missing' in p['msg'].lower()
                                            or 'no picture' in p['msg'].lower() or 'rendered' in p['msg'].lower() for p in probs),
                          mode=e['draft'].get('mode') if e['type'] == 'photo' else None,
+                         lang=e['draft'].get('lang') if e['type'] == 'wrongword' else None,
+                         kind=e['draft'].get('kind') if e['type'] == 'iq' else None,
+                         deleted=bool(e.get('deleted')),
                          title=item_title(e), thumb=item_thumb(e, assets), updated_at=e.get('updated_at'),
                          updated_by=e.get('updated_by')))
     return rows
@@ -843,6 +930,10 @@ def item_title(e):
         return ' vs '.join(o.get('en', '') for o in d.get('options', []))
     if e['type'] == 'animal':
         return d.get('en', '')
+    if e['type'] == 'wrongword':
+        return d.get('text') or e['id']
+    if e['type'] == 'iq':
+        return Q.LABELS.get(d.get('kind'), 'Puzzle')
     return d.get('en') or d.get('ar') or e['id']
 
 
@@ -923,4 +1014,12 @@ def preview_task(kind, d, assets):
         return dict(type='animal', target=target, options=[target], answer=0, layout='board')
     if kind == 'vote':
         return dict(type='vote', question='preview', text=[d.get('ar', ''), d.get('en', '')], order=[])
+    if kind == 'wrongword':
+        if d.get('wrong') is None:
+            raise ValueError('Pick the incorrect word first.')
+        return W.task('preview', d)
+    if kind == 'iq':
+        if [p for p in Q.problems(d) if p[0] == 'error']:
+            raise ValueError('Fix the puzzle first: ' + Q.problems(d)[0][1])
+        return Q.task('preview', d)
     raise ValueError(kind)

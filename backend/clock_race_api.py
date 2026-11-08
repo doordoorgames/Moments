@@ -59,6 +59,12 @@ class Life(BaseModel):
     epoch: Optional[int] = Field(default=None, ge=0)
 
 
+class Gamble(BaseModel):
+    action: Literal['accept', 'decline']
+    round: str = Field(max_length=40)
+    offer: str = Field(max_length=40)
+
+
 class Dev(BaseModel):
     action: Literal['add', 'add_twin', 'solve']
     count: int = Field(default=1, ge=1, le=engine.MAX_PLAYERS)
@@ -235,6 +241,25 @@ def router(db, query):
                 g, old = await load(code)
                 me = auth(g, authorization)
                 result = engine.life_action(g, me['id'], body.action, body.round, body.request, body.epoch)
+                try:
+                    if result['changed']:
+                        await save(code, g, old)
+                    break
+                except Conflict:
+                    if attempt == 5:
+                        raise
+                    await asyncio.sleep(0.05 * (attempt + 1))
+            return dict(ok=result['ok'], reason=result.get('reason'), state=engine.view(g, me['id']))
+
+    @api.post('/rooms/{code}/gamble')
+    async def gamble(code: str, body: Gamble, response: Response, authorization: str = Header(default='')):
+        """Catch-up gamble (experimental, off unless CLOCK_RACE_GAMBLE=1): accept or decline this player's offer."""
+        response.headers['Cache-Control'] = 'private, no-store'
+        async with locks[code]:
+            for attempt in range(6):
+                g, old = await load(code)
+                me = auth(g, authorization)
+                result = engine.gamble_action(g, me['id'], body.action, body.round, body.offer)
                 try:
                     if result['changed']:
                         await save(code, g, old)

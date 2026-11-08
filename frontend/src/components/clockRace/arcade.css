@@ -335,11 +335,12 @@
 
 
 /* shadow match: the toy and four shadows on the room */
-.cr-app.cr-arcade .cr-shadow{gap:16px}
-.cr-app.cr-arcade .cr-shadow-toy{filter:drop-shadow(0 4px 0 var(--cr-charcoal-a))}
-.cr-app.cr-arcade .cr-shadow-opts{gap:14px}
-.cr-app.cr-arcade .cr-shadow-card{padding:12%;border:0;background:none;box-shadow:none;transition:transform .06s steps(2)}
-.cr-app.cr-arcade .cr-shadow-card .cr-blocks{filter:drop-shadow(2px 0 0 var(--cr-ivory-lo)) drop-shadow(-2px 0 0 var(--cr-ivory-lo)) drop-shadow(0 2px 0 var(--cr-ivory-lo)) drop-shadow(0 -2px 0 var(--cr-ivory-lo))}
+.cr-app.cr-arcade .cr-shadow{gap:8px}
+.cr-app.cr-arcade .cr-shadow-toy{filter:drop-shadow(0 4px 0 var(--cr-accent-d,var(--cr-charcoal-a)))}
+.cr-app.cr-arcade .cr-shadow-opts{gap:8px}
+.cr-app.cr-arcade .cr-shadow-card{padding:11%;border:0;background:none;box-shadow:none;transition:transform .06s steps(2)}
+.cr-app.cr-arcade .cr-stage-shadow .cr-prompt{margin-bottom:6px}
+.cr-app.cr-arcade .cr-shadow-card .cr-blocks{filter:drop-shadow(2px 0 0 var(--cr-accent,var(--cr-ivory-lo))) drop-shadow(-2px 0 0 var(--cr-accent,var(--cr-ivory-lo))) drop-shadow(0 2px 0 var(--cr-accent,var(--cr-ivory-lo))) drop-shadow(0 -2px 0 var(--cr-accent,var(--cr-ivory-lo)))}
 .cr-app.cr-arcade .cr-shadow-card:active{transform:scale(.9)}
 
 /* missing tile: the picture and its pieces wear pixel frames (below); the frame sits outside the picture,
@@ -607,3 +608,36 @@
   font-family:var(--cr-press);font-weight:400;line-height:1.35;font-size:clamp(11px,calc((50cqi - 6px - 22px) / var(--w,8) * .96),20px)}
 .cr-app.cr-arcade[lang=ar] .cr-photo .cr-photo-choices .cr-photo-choice{font-family:var(--cr-pixel);font-weight:700;line-height:1.1;
   font-size:clamp(22px,calc((50cqi - 6px - 22px) / var(--w,6) * 1.9),38px)}
+
+/* ================================================================ per-question accent (theme.js ACCENTS)
+   One accent per question, set on .cr-play: pink, lavender, white or faded yellow. Everything decorative inside
+   the question wears it (picture-frame shadows, outline glows, highlighted words, arrows, answer keys), so a
+   question never mixes two accents. Teal frames, hearts and the purple logo stay as they are. */
+.cr-app.cr-arcade .cr-play .cr-prompt :is(.cr-stroop-key,.cr-avoid-key){color:var(--cr-accent)}
+.cr-app.cr-arcade .cr-play .cr-prompt .cr-stroop-name{color:var(--cr-accent-l);background:linear-gradient(var(--cr-accent),var(--cr-accent)) 0 100%/100% 3px no-repeat}
+.cr-app.cr-arcade .cr-play .cr-next-arrow{background:var(--cr-accent)}
+.cr-app.cr-arcade .cr-play .cr-memory-next:focus-visible{outline-color:var(--cr-accent)}
+.cr-app.cr-arcade .cr-play :is(.cr-choice,.cr-memory.is-ask .cr-choice){background:var(--cr-accent);box-shadow:inset 0 -6px 0 var(--cr-accent-d),inset 0 3px 0 rgba(255,255,255,.5)}
+.cr-app.cr-arcade .cr-play .cr-choice:active{box-shadow:inset 0 -2px 0 var(--cr-accent-d)}
+.cr-app.cr-arcade .cr-play .cr-word-prompt b{background:var(--cr-accent);box-shadow:inset 0 -4px 0 var(--cr-accent-d)}
+.cr-app.cr-arcade .cr-play .cr-pics.is-table .cr-pic-num{color:var(--cr-accent)}
+.cr-app.cr-arcade .cr-play .cr-tile-hole{color:var(--cr-accent)}
+.cr-app.cr-arcade .cr-play .cr-word-go{background:var(--cr-accent);box-shadow:inset 0 -5px 0 var(--cr-accent-d),inset 0 3px 0 rgba(255,255,255,.4)}
+.cr-app.cr-arcade .cr-play .cr-word-go:active{box-shadow:inset 0 -2px 0 var(--cr-accent-d)}
+
+/* tap the incorrect word: ivory pixel lettering on the room, the pressed word underlined in the accent */
+.cr-app.cr-arcade .cr-ww-word{font-family:var(--cr-pixel);color:var(--cr-ivory);text-shadow:var(--cr-ol-1)}
+.cr-app.cr-arcade .cr-ww-word:active span{border-bottom:3px solid var(--cr-accent,var(--cr-pink-l))}
+.cr-app.cr-arcade .cr-ww-word:focus-visible{outline:2px dashed var(--cr-accent,var(--cr-powder));outline-offset:-2px}
+
+/* visual IQ: answers float on the room with a hard accent-coloured shadow, like the picture frames */
+.cr-app.cr-arcade .cr-iq-q{filter:drop-shadow(0 3px 0 var(--cr-charcoal-a))}
+.cr-app.cr-arcade .cr-iq-card{padding:6%;border:0;background:none;box-shadow:none;clip-path:none;transition:transform .06s steps(2);
+  filter:drop-shadow(3px 3px 0 var(--cr-accent,var(--cr-pink)))}
+.cr-app.cr-arcade .cr-iq-opts.is-wide .cr-iq-card{background:rgba(42,38,48,.42);clip-path:var(--cr-step-sm);filter:none;
+  box-shadow:inset 0 -3px 0 var(--cr-accent-d,var(--cr-pink-d))}
+.cr-app.cr-arcade .cr-iq-card:active{transform:translate(2px,2px)}
+.cr-app.cr-arcade .cr-iq-q.is-sum{padding:6px 10px;background:rgba(42,38,48,.42);clip-path:var(--cr-step-sm);filter:none}
+.cr-app.cr-arcade :is(.cr-stage-iq,.cr-stage-wrongword) .cr-prompt{margin-bottom:6px}
+.cr-app.cr-arcade .cr-gamble-note{font-family:var(--cr-pixel);font-weight:600;font-size:19px;color:var(--cr-charcoal);opacity:.75;text-shadow:none}
+.cr-app.cr-arcade .cr-gamble-stamp{color:var(--cr-accent-l,var(--cr-pink-l));animation:none}

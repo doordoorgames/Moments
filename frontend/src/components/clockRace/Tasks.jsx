@@ -9,12 +9,9 @@ import {PictureQuiz, FramedPic} from './PictureTasks';
 import {frameVariant} from './frames';
 import {photoUrl, priceUrl} from './assetUrls';
 import {PixelFrame} from './PixelFrame';
+import {tap} from './tap';
+import {WrongWord, IqPuzzle} from './IqTasks';
 
-// Taps count on finger-down (no wait for release); keyboard Enter/Space still works through click.
-const tap = fn => ({
-  onPointerDown: e => {if (e.button > 0) return; e.preventDefault(); fn();},
-  onClick: e => {if (e.detail === 0) fn();},
-});
 
 // ------------------------------------------------------------------ الإيموجي المختلف
 export function OddFace({task, onPick}) {
@@ -191,4 +188,5 @@ function Alphabet({task, onPick}) {
 export const TASK_VIEWS = {price: PriceQuiz, alphabet: Alphabet, odd: OddFace, stroop: Stroop, geo: Geography, sock: LonelySock, memory: Memory,
   vote: FriendVote, word: WordRush, boss: FinalBoss,
   shadow: Shadow, tile: MissingTile, avoid: DontTap,
-  belong: PictureQuiz, older: PictureQuiz, compare: PictureQuiz, which: PictureQuiz, animal: PictureQuiz, photo: PhotoTask};
+  belong: PictureQuiz, older: PictureQuiz, compare: PictureQuiz, which: PictureQuiz, animal: PictureQuiz, photo: PhotoTask,
+  wrongword: WrongWord, iq: IqPuzzle};

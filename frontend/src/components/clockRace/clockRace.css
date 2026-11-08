@@ -296,16 +296,24 @@
 
 /* ---------------------------------------------------------------- v4: heaviest */
 /* ---------------------------------------------------------------- v4: shadow */
-.cr-shadow{display:flex;flex-direction:column;align-items:center;gap:12px;width:100%}
-.cr-shadow-toy{width:min(34vw,140px,calc((var(--cr-h,100dvh) - 420px) * .5))}
-.cr-shadow-toy .cr-blocks{display:block;width:100%;min-width:80px}
-.cr-shadow-opts{display:grid;grid-template-columns:1fr 1fr;gap:10px;width:min(100%,calc((var(--cr-h,100dvh) - 420px - var(--cr-chrome,0px)) * 1.1 + 140px))}
-.cr-shadow-card{aspect-ratio:1;padding:14%;border:3px solid var(--ink);background:#FFFCF4;box-shadow:var(--shadow)}
+/* Shadow match fits the phone with no scrolling. --cr-avail is the question area's real height (measured in
+   ClockRace.jsx: under the scoreboard, above the toolbar and the safe area). From it, after the question line
+   (--sh-room), the toy takes about a quarter and the 2x2 answers the rest: at most 67% of the width (two
+   thirds of the old full-width grid) and 250px, never below 150px so each answer stays an easy tap. */
+.cr-shadow{--sh-room:calc(var(--cr-avail,calc(var(--cr-h,100dvh) - var(--cr-chrome,96px) - 60px)) - 96px);
+  --sh-toy:clamp(60px,calc(var(--sh-room) * .26),118px);
+  display:flex;flex-direction:column;align-items:center;gap:8px;width:100%}
+.cr-shadow-toy{width:var(--sh-toy)}
+.cr-shadow-toy .cr-blocks{display:block;width:100%}
+.cr-shadow-opts{display:grid;grid-template-columns:1fr 1fr;gap:8px;
+  width:clamp(150px,min(67%,250px,calc(var(--sh-room) - var(--sh-toy) - 16px)),250px)}
+.cr-shadow-card{aspect-ratio:1;padding:11%;border:3px solid var(--ink);background:#FFFCF4;box-shadow:var(--shadow);touch-action:manipulation}
+.cr-stage-shadow .cr-prompt{margin-bottom:6px}
 .cr-shadow-card:active{transform:translate(3px,3px);box-shadow:1px 1px 0 var(--ink)}
 .cr-blocks{display:block;width:100%;height:100%}
 /* ---------------------------------------------------------------- v4: missing tile */
 .cr-tile{display:flex;flex-direction:column;align-items:center;gap:12px;width:100%}
-.cr-tile-pic{position:relative;display:block;width:min(100%,calc((var(--cr-h,100dvh) - 360px - var(--cr-chrome,0px)) * .62),300px);aspect-ratio:1;box-shadow:var(--shadow)}
+.cr-tile-pic{position:relative;display:block;width:clamp(140px,min(100%,calc(var(--cr-avail,calc(var(--cr-h,100dvh) - var(--cr-chrome,96px) - 60px)) - 200px)),300px);aspect-ratio:1;box-shadow:var(--shadow)}
 .cr-tile-pic img{display:block;width:100%;height:100%;user-select:none;-webkit-user-drag:none}
 .cr-tile-hole{position:absolute;left:66.667%;top:66.667%;width:33.333%;height:33.333%;display:flex;align-items:center;justify-content:center;box-sizing:border-box;border:2px dashed #FBF5E8b3;font-size:clamp(24px,9vw,40px);font-weight:900;color:#FBF5E8cc;background:#3A3446}
 .cr-tile-opts{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;width:100%;max-width:340px}
@@ -437,3 +445,35 @@ html.cr-doc body{min-height:calc(100vh + 1px)}
   --aw:calc(100cqw - var(--pixel-frame-shadow-x) - var(--pixel-frame-thickness) * 2);
   --ah:calc(100cqh - var(--pixel-frame-shadow-y) - var(--pixel-frame-thickness) * 2);
   width:min(var(--aw), var(--ah) * var(--ar))}
+
+/* ================================================================ tap the incorrect word (IqTasks.jsx)
+   Big words, about four to a line, centred, wrapping only between words. Each word's 7px padding is its extra
+   tap room; buttons touch edge to edge with no gap, so no two touch targets overlap. */
+.cr-ww{display:flex;flex-wrap:wrap;justify-content:center;align-content:flex-start;gap:0;width:100%;max-width:348px;margin:4px auto 0;
+  padding:4px 0}
+.cr-ww-word{flex:none;margin:0;padding:7px;border:0;background:none;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent;
+  font:inherit;font-weight:800;font-size:clamp(28px,8.2vw,36px);line-height:1.15;white-space:nowrap;color:var(--ink)}
+.cr-ww-word span{display:block;padding:0 1px 3px;border-bottom:2px dotted transparent}
+.cr-ww-word:active span{border-bottom-color:currentColor}
+.cr-ww.is-ar .cr-ww-word{font-size:clamp(30px,8.8vw,40px);line-height:1.25}
+
+/* ================================================================ visual IQ puzzles (IqTasks.jsx)
+   Same rule as the shadow match: everything fits the measured question area (--cr-avail) with no scrolling.
+   The question figure takes a share of the room after the question line; the four answers take the rest. */
+.cr-iq{--iq-room:calc(var(--cr-avail,calc(var(--cr-h,100dvh) - var(--cr-chrome,96px) - 60px)) - 104px);
+  --iq-q:clamp(64px,calc(var(--iq-room) * .28),124px);
+  display:flex;flex-direction:column;align-items:center;gap:8px;width:100%}
+.cr-iq-q{width:var(--iq-q)}
+.cr-iq-q.is-big{--iq-q:clamp(96px,calc(var(--iq-room) * .4),190px)}
+.cr-iq-q.is-small{--iq-q:clamp(48px,calc(var(--iq-room) * .18),88px)}
+.cr-iq-q.is-sum{width:min(100%,calc(var(--iq-q) * 2.4))}
+.cr-iq-svg{display:block;width:100%;height:auto}
+.cr-iq-opts{display:grid;grid-template-columns:1fr 1fr;gap:8px;
+  width:clamp(150px,min(76%,280px,calc(var(--iq-room) - var(--iq-q) - 18px)),280px)}
+.cr-iq-q.is-big + .cr-iq-opts{width:clamp(140px,min(72%,250px,calc(var(--iq-room) - clamp(96px,calc(var(--iq-room) * .4),190px) - 18px)),250px)}
+.cr-iq-opts.is-wide{width:min(100%,360px)}
+.cr-iq-card{aspect-ratio:1;display:flex;align-items:center;justify-content:center;padding:8%;border:3px solid var(--ink);background:#FFFCF4;
+  box-shadow:var(--shadow);cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+.cr-iq-opts.is-wide .cr-iq-card{aspect-ratio:2.6;padding:6% 8%}
+.cr-iq-card:active{transform:translate(3px,3px)}
+.cr-gamble-note{margin:-4px 0 8px;font-size:18px;opacity:.85;text-align:center}

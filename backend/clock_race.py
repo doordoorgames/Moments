@@ -13,6 +13,7 @@ letter memory grid with 1-2 Word Rush tasks, spread so no type comes back within
 import collections
 import colorsys
 import json
+import os
 from pathlib import Path
 import random
 import secrets
@@ -25,11 +26,13 @@ import clock_race_ar as AR
 import clock_race_data as D
 import clock_race_bank as K
 import clock_race_content as C
+import clock_race_iq as Q
+import clock_race_wrongword as W
 from clock_race_landmarks import LANDMARK_BANK
 
 PRICE_BANK = json.loads(Path(__file__).with_name('clock_race_prices.json').read_text(encoding='utf-8'))
 
-VERSION = 8  # 8: 20 tasks, extra-life request
+VERSION = 8  # 8: 20 tasks, extra-life request (new task types and the catch-up gamble need no room change)
 MAX_PLAYERS = 12
 TASKS = 20
 VOTE_AT = 10    # task 11 (0-based), only when 3+ people are racing
@@ -45,13 +48,15 @@ NAME_MAX = 24
 # Every question type still comes up each round; the bank itself is unchanged.
 PICTURE_MIX = {'belong': 1, 'older': 1, 'compare': 1, 'price': 2, 'which': 1, 'photo': 1}
 # "Tap the tiger" (type 'animal') is out of the rotation: too obvious. Its pictures stay in the studio.
-ORDINARY_MIX = {'odd': 1, 'stroop': 1, 'geo': 1, 'sock': 1, 'memory': 1, 'avoid': 1,
-                'alphabet': 1, 'shadow': 1, 'tile': 1}
+# 'wrongword' (tap the incorrect word) and 'iq' (visual reasoning) come up once a round each; the lonely sock
+# moved to EXTRA_POOL to make room (it still comes up in some rounds, just not every one).
+ORDINARY_MIX = {'odd': 1, 'stroop': 1, 'geo': 1, 'memory': 1, 'avoid': 1,
+                'alphabet': 1, 'shadow': 1, 'tile': 1, 'wrongword': 1, 'iq': 1}
 RETIRED_TYPES = ('animal',)
 # Extra-life request: a player out of hearts may ask the others once; the first YES gives both a heart.
 DECIDE_SECONDS = 8.0    # time to choose "ask for a life" or "start over" before the clock resets anyway
 HELP_SECONDS = 10.0     # how long the request stays open on the other phones
-EXTRA_POOL = ['odd', 'stroop', 'avoid', 'sock', 'geo']  # fills the slot the vote or a 2nd Word Rush doesn't take
+EXTRA_POOL = ['odd', 'stroop', 'avoid', 'sock', 'geo', 'iq']  # fills the slot the vote or a 2nd Word Rush doesn't take
 # The memory grid is the only letter challenge: 1 or 2 a round (half of v2's ~3 letter tasks).
 WORD_VARIANTS = ('pair', 'country', 'fruit')
 TYPO_MIN_LENGTH = 5  # one-typo forgiveness only for words this long or longer
@@ -61,8 +66,18 @@ BOT_NAMES = ['نورة', 'سارة', 'فهد', 'دانة', 'عبدالله', 'ش
 # memory = 12s of grid + the answer). Each task varies 0.7x-1.35x and ~12% are "wrong" (+1s).
 BOT_SECONDS = {'price': 4.0, 'alphabet': 2.2, 'odd': 2.4, 'stroop': 2.2, 'geo': 2.6, 'sock': 3.4, 'memory': 7.0,
                'word': 7.5, 'vote': 2.0, 'boss': 5.5, 'shadow': 3.0, 'tile': 3.0, 'avoid': 2.3,
-               'belong': 3.8, 'older': 3.4, 'compare': 3.0, 'which': 3.4, 'animal': 2.2, 'photo': 4.5}
+               'belong': 3.8, 'older': 3.4, 'compare': 3.0, 'which': 3.4, 'animal': 2.2, 'photo': 4.5,
+               'wrongword': 4.2, 'iq': 5.5}
 BOT_WRONG = 0.12
+
+# Catch-up gamble (EXPERIMENTAL, OFF by default). When the leader reaches GAMBLE_AT tasks, every person at least
+# GAMBLE_GAP tasks behind is offered, once a round: stake everything on the next question. Right: jump to
+# GAMBLE_AT. Wrong: the clock goes back to 0. Nobody else is touched. Turn it on with CLOCK_RACE_GAMBLE=1 on the
+# server (CLOCK_RACE_GAMBLE_AT moves the milestone); nothing in the game changes while it is off.
+GAMBLE_ON = os.environ.get('CLOCK_RACE_GAMBLE', '').strip() == '1'
+GAMBLE_AT = max(2, min(TASKS - 1, int(os.environ.get('CLOCK_RACE_GAMBLE_AT', '16') or 16)))
+GAMBLE_GAP = 2
+GAMBLE_SECONDS = 8.0
 
 
 class GameError(ValueError):
@@ -440,7 +455,8 @@ def signature(t):
             'geo': ('variant', 'items'), 'sock': ('socks',), 'memory': ('grid',),
             'word': ('variant', 'first', 'last', 'letter'), 'vote': ('question',), 'boss': ('faces',),
             'shadow': ('cells',), 'tile': ('pic',), 'avoid': ('rule', 'target', 'items'),
-            'belong': ('qid',), 'older': ('qid',), 'compare': ('qid',), 'which': ('qid',), 'animal': ('options',), 'photo': ('qid',)}[t['type']]
+            'belong': ('qid',), 'older': ('qid',), 'compare': ('qid',), 'which': ('qid',), 'animal': ('options',), 'photo': ('qid',),
+            'wrongword': ('qid',), 'iq': ('qid',)}[t['type']]
     return repr((t['type'],) + tuple(repr(t.get(k)) for k in keys))
 
 
@@ -545,6 +561,30 @@ def gen_photo(rng, used=(), seen=()):
 # Picture questions served lately on this server, any room: a new room doesn't start from scratch.
 _RECENT_Q = collections.deque(maxlen=80)
 
+def _fresh_pick(rng, pool, seen):
+    """One (id, data) from pool, preferring ones not served lately (seen is oldest first)."""
+    last = {qid: i for i, qid in enumerate(seen)}
+    oldest = min(last.get(qid, -1) for qid, _ in pool)
+    return rng.choice([x for x in pool if last.get(x[0], -1) == oldest])
+
+
+def gen_wrongword(rng, lang, used=(), seen=()):
+    """Tap the incorrect word: a hand-checked sentence in the room's language (never twice in a round)."""
+    bank = C.wrongword_bank(lang) or [(q, d) for q, d in W.builtin().items() if d['lang'] == lang]
+    pool = [x for x in bank if x[0] not in used] or bank
+    qid, d = _fresh_pick(rng, pool, seen)
+    return W.task(qid, d)
+
+
+def gen_iq(rng, lang, used=(), seen=(), kinds_used=()):
+    """A visual reasoning puzzle from the studio's bank; a second one in a round is of another kind."""
+    bank = C.iq_bank() or list(Q.builtin().items())
+    pool = [x for x in bank if x[0] not in used and x[1]['kind'] not in kinds_used] \
+        or [x for x in bank if x[0] not in used] or bank
+    qid, d = _fresh_pick(rng, pool, seen)
+    return Q.task(qid, d, rng)
+
+
 def gen_alphabet(rng, lang):
     alphabet = 'أبتثجحخدذرزسشصضطظعغفقكلمنهوي' if lang == 'ar' else 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
     positions = rng.sample(range(len(alphabet)), 2)
@@ -552,7 +592,7 @@ def gen_alphabet(rng, lang):
 
 
 NEW_GENS = {'alphabet': gen_alphabet, 'animal': gen_animal, 'avoid': gen_avoid, 'shadow': gen_shadow, 'tile': gen_tile}
-ANSWER_KINDS = ('price', 'alphabet', 'stroop', 'geo', 'sock', 'shadow', 'tile', 'animal', 'photo') + K.KINDS
+ANSWER_KINDS = ('price', 'alphabet', 'stroop', 'geo', 'sock', 'shadow', 'tile', 'animal', 'photo', 'wrongword', 'iq') + K.KINDS
 
 SPREAD = 3      # a type never comes back within 3 tasks
 OPENING = 5     # the first five tasks are five different challenges
@@ -573,7 +613,7 @@ def plan_types(rng, vote=True):
     mix['word'] = words
     extra = room - words
     for k in rng.sample(EXTRA_POOL, extra):
-        mix[k] += 1
+        mix[k] = mix.get(k, 0) + 1
     fixed = {BOSS_AT: 'boss'}
     if vote:
         fixed[VOTE_AT] = 'vote'
@@ -643,6 +683,11 @@ def gen_round(roster, lang='ar', avoid_question=None, rng=None, avoid=(), seen_q
                 t = gen_photo(rng, {x.get('qid') for x in tasks if x['type'] == 'photo'}, seen_q)
             elif kind == 'avoid':
                 t = gen_avoid(rng, lang, ['color', 'shape'][sum(x['type'] == 'avoid' for x in tasks) % 2])
+            elif kind == 'wrongword':
+                t = gen_wrongword(rng, lang, {x.get('qid') for x in tasks}, seen_q)
+            elif kind == 'iq':
+                t = gen_iq(rng, lang, {x.get('qid') for x in tasks}, seen_q,
+                           {x.get('kind') for x in tasks if x['type'] == 'iq'})
             elif kind in NEW_GENS:
                 t = NEW_GENS[kind](rng, lang)
             elif kind == 'word':
@@ -804,6 +849,8 @@ def start(g, round_id, now=None, rng=None):
     g['progress'] = {p['id']: [] for p in roster}  # per task: [seconds after start, right?]
     g['lives'] = {p['id']: _fresh_life() for p in roster}
     g['thanks'] = None
+    g['gamble'] = {}            # pid -> the catch-up offer for this round (see GAMBLE_ON)
+    g['gamble_fired'] = False   # one wave of offers per round, so nobody gets popups over and over
     g['bots'] = {p['id']: bot_schedule(tasks, rng) for p in g['players'] if p['sim']}
     g['status'] = 'racing'
     g['winner'] = None
@@ -840,6 +887,8 @@ def sync_bots(g, now=None):
     for at, pid in sorted(finishes + humans_done):
         _finish(g, pid, start_at + at)
         break
+    if moved:
+        _gamble_offers(g, now)
     return moved
 
 
@@ -967,6 +1016,7 @@ def life_action(g, pid, action, round_id, request_id=None, epoch=None, now=None)
                        to_name=names.get(asker, ''), at=now)
     if len(done) == TASKS:
         _finish(g, asker, now)
+    _gamble_offers(g, now)
     return dict(ok=True, changed=True)
 
 
@@ -998,6 +1048,21 @@ def answer(g, pid, round_id, index, value, now=None, epoch=None):
         return dict(right=False, done=count, word=None, changed=False, wait=round(ready - now + 0.05, 2), **same)
     right, word = correct(task, value, vote_choices(g, task, pid))
     at = round(max(0.0, now - g['round']['starts_at']), 3)
+    staked = _gamble_on_task(g, pid, index)
+    if staked:
+        # the gamble question: right jumps to the milestone, wrong sends the clock back to 0 (hearts or not)
+        if right:
+            done.append([at, True])
+            while len(done) < staked['at']:
+                done.append([at, False])  # skipped, not answered: never counted as right
+            staked['state'] = 'won'
+            if len(done) >= TASKS:
+                _finish(g, pid, now)
+            _gamble_offers(g, now)
+            return dict(right=True, done=len(done), word=word, changed=True, gamble='won', misses=life['misses'], epoch=life['epoch'])
+        staked['state'] = 'lost'
+        _reset(g, pid, now)
+        return dict(right=False, done=0, word=word, changed=True, reset=True, gamble='lost', misses=0, epoch=life['epoch'])
     if not right and pid not in g.get('bots', {}):
         life['misses'] += 1
         if life['misses'] >= max_hearts(life):
@@ -1010,7 +1075,77 @@ def answer(g, pid, round_id, index, value, now=None, epoch=None):
     done.append([at, bool(right)])
     if len(done) == TASKS:
         _finish(g, pid, now)
+    _gamble_offers(g, now)
     return dict(right=bool(right), done=len(done), word=word, changed=True, misses=life['misses'], epoch=life['epoch'])
+
+
+# ------------------------------------------------------------------ catch-up gamble (experimental, off by default)
+
+def _gamble_offers(g, now):
+    """The first time anyone reaches GAMBLE_AT this round, offer the gamble to the people well behind."""
+    if not GAMBLE_ON or g.get('gamble_fired') or g.get('status') != 'racing':
+        return
+    if not any(len(v) >= GAMBLE_AT for v in g['progress'].values()):
+        return
+    g['gamble_fired'] = True
+    offers = g.setdefault('gamble', {})
+    for p in g['roster']:
+        pid = p['id']
+        if p.get('sim') or pid in offers or lives(g, pid).get('out'):
+            continue
+        if len(g['progress'].get(pid, [])) <= GAMBLE_AT - GAMBLE_GAP:
+            offers[pid] = dict(id=uuid.uuid4().hex[:12], state='offered', expires=now + GAMBLE_SECONDS, at=GAMBLE_AT)
+
+
+def _gamble_on_task(g, pid, index):
+    """The accepted gamble riding on this player's task `index`, if any (None once a reset voided it)."""
+    gb = (g.get('gamble') or {}).get(pid)
+    if not gb or gb.get('state') != 'accepted':
+        return None
+    if gb.get('epoch') != lives(g, pid)['epoch']:
+        gb['state'] = 'void'  # the clock reset before the gamble question was answered: nothing staked any more
+        return None
+    return gb if gb.get('task') == index else None
+
+
+def gamble_action(g, pid, action, round_id, offer_id, now=None):
+    """'accept' or 'decline' the catch-up offer. Checked on the room the server just read, so a double tap or
+    a retry after a reconnect can never accept twice. Returns dict(ok, changed, reason?)."""
+    now = time.time() if now is None else now
+    sync_bots(g, now)
+    no = lambda reason: dict(ok=False, changed=False, reason=reason)  # noqa: E731
+    if not GAMBLE_ON:
+        return no('off')
+    if g['status'] != 'racing' or not g['round'] or round_id != g['round']['id'] or pid not in g['progress']:
+        return no('over')
+    gb = (g.get('gamble') or {}).get(pid)
+    if not gb or gb['id'] != offer_id:
+        return no('closed')
+    if gb['state'] != 'offered':
+        return dict(ok=gb['state'] == ('accepted' if action == 'accept' else 'declined'), changed=False, reason='answered')
+    if now >= gb['expires']:
+        gb['state'] = 'expired'
+        return dict(ok=False, changed=True, reason='closed')
+    if action == 'decline':
+        gb['state'] = 'declined'
+        return dict(ok=True, changed=True)
+    count = len(g['progress'][pid])
+    if lives(g, pid).get('out') or count >= gb['at'] - 1:
+        gb['state'] = 'expired'  # out of hearts, or caught up on their own: nothing left to gamble for
+        return dict(ok=False, changed=True, reason='closed')
+    # the friend question has no wrong answer, so the stake rides on the question after it
+    task = count + 1 if g['round']['tasks'][count]['type'] == 'vote' else count
+    gb.update(state='accepted', task=task, epoch=lives(g, pid)['epoch'])
+    return dict(ok=True, changed=True)
+
+
+def _public_gamble(gb, now):
+    if not gb:
+        return None
+    state = gb['state']
+    if state == 'offered' and now >= gb['expires']:
+        state = 'expired'
+    return dict(id=gb['id'], state=state, expires=gb['expires'], at=gb['at'], task=gb.get('task'), epoch=gb.get('epoch'))
 
 
 def progress(g):
@@ -1063,6 +1198,7 @@ def view(g, pid, now=None):
         round=dict(id=r['id'], starts_at=r['starts_at'], tasks=r['tasks'],
                    question=vote_text(r['tasks'][VOTE_AT], lang_i) if r['tasks'][VOTE_AT]['type'] == 'vote' else None) if r else None,
         roster=g['roster'],
+        gamble=_public_gamble((g.get('gamble') or {}).get(pid), now) if GAMBLE_ON and r else None,
         # bot finish times (seconds after the start), so every phone can move the bot's clock smoothly
         bots={b: [t for t, _ in plan] for b, plan in g.get('bots', {}).items()} if r else {},
         timing=timing(g) if g['dev'] else None,

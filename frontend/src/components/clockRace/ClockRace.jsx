@@ -16,6 +16,7 @@ import Scoreboard from './Scoreboard';
 import Face from './Face';
 import {TASK_VIEWS, stroopPrompt} from './Tasks';
 import {picturePrompt} from './PictureTasks';
+import {iqPrompt} from './IqTasks';
 import {preloadFrom} from './preload';
 import AppErrorBoundary from '../AppErrorBoundary';
 import {PixelClock} from './Brand';
@@ -25,7 +26,7 @@ const GAME_LOGO = '/clock-race/art/logo.webp';
 import {GEO} from './content';
 import {TOTAL, localCheck} from './localCheck';
 import {TEXT} from './text';
-import {ARCADE, ARCADE_VARS} from './theme';
+import {ARCADE, ARCADE_VARS, accentFor, accentVars} from './theme';
 import './clockRace.css';
 import './arcade.css';
 
@@ -140,11 +141,31 @@ function HelpAsk({t, name, deadline, now, busy, onYes, onNo}) {
   </div>;
 }
 
+// Catch-up gamble (experimental; the server only offers it when CLOCK_RACE_GAMBLE=1). Stake everything on the
+// next question: right jumps to the milestone, wrong starts over. Never forced: X, NO or the timer closes it.
+function GambleAsk({t, at, deadline, now, busy, onYes, onNo}) {
+  const left = Math.max(0, Math.ceil((deadline - now) / 1000));
+  return <div className="cr-help" role="dialog" aria-modal="true" aria-labelledby="cr-gamble-q">
+    <div className="cr-help-card">
+      <button type="button" className="cr-help-x" aria-label={t.close} onClick={onNo}>
+        <svg viewBox="0 0 7 7" shapeRendering="crispEdges" aria-hidden="true"><path d="M0 0h2v1h-1v1h-1zM5 0h2v2h-1v-1h-1zM1 1h1v1h1v1h1v-1h1v-1h1v1h-1v1h-1v1h1v1h1v1h-1v-1h-1v-1h-1v1h-1v1h-1v-1h1v-1h1v-1h-1v-1h-1zM0 5h1v1h1v1h-2zM6 5h1v2h-2v-1h1z"/></svg>
+      </button>
+      <p id="cr-gamble-q" className="cr-help-q" dir="auto">{t.gambleAsk}</p>
+      <p className="cr-gamble-note" dir="auto">{t.gambleNote(at)}</p>
+      <div className="cr-help-actions">
+        <button type="button" className="cr-help-yes" disabled={busy} onClick={onYes}><span className="cr-letter">{t.yes}</span></button>
+        <button type="button" className="cr-help-no" disabled={busy} onClick={onNo}><span className="cr-letter">{t.no}</span></button>
+      </div>
+      <i className="cr-help-time" style={{'--left': `${Math.min(1, left / 8)}`}} aria-hidden="true"/>
+    </div>
+  </div>;
+}
+
 // A short burst of golden stars where the finger landed.
-function Stars({x, y}) {
+function Stars({x, y, color}) {
   return <div className="cr-stars" style={{left: x, top: y}} aria-hidden="true">
     {Array.from({length: 9}, (_, i) => <svg key={i} viewBox="0 0 20 20" style={{'--a': `${i * 40 + 12}deg`, '--d': `${58 + (i % 3) * 20}px`, '--s': 0.7 + (i % 3) * 0.25}}>
-      <path d="M10 1 L12.6 7.2 L19 7.6 L14 11.8 L15.7 18.6 L10 15 L4.3 18.6 L6 11.8 L1 7.6 L7.4 7.2 Z" fill={ARCADE ? '#F2CF6B' : '#FFC93C'} stroke={ARCADE ? 'none' : '#0B0B0B'} strokeWidth="1.6" strokeLinejoin="round"/>
+      <path d="M10 1 L12.6 7.2 L19 7.6 L14 11.8 L15.7 18.6 L10 15 L4.3 18.6 L6 11.8 L1 7.6 L7.4 7.2 Z" fill={ARCADE ? (color || '#F2CF6B') : '#FFC93C'} stroke={ARCADE ? 'none' : '#0B0B0B'} strokeWidth="1.6" strokeLinejoin="round"/>
     </svg>)}
   </div>;
 }
@@ -261,6 +282,19 @@ export default function ClockRace({onContinue}) {
     return () => root.classList.remove('cr-doc');
   }, []);
 
+  // The room a question really has (under the scoreboard, above the toolbar and safe area), measured on the
+  // question area itself and handed to the CSS as --cr-avail, so answers are sized to fit without scrolling.
+  const bodyObserver = useRef(null);
+  const measureBody = useCallback(el => {
+    bodyObserver.current?.disconnect();
+    bodyObserver.current = null;
+    if (!el || typeof ResizeObserver === 'undefined') return;
+    const set = () => el.style.setProperty('--cr-avail', `${el.clientHeight}px`);
+    set();
+    bodyObserver.current = new ResizeObserver(set);
+    bodyObserver.current.observe(el);
+  }, []);
+
   // Race screen follows the visible viewport (the phone keyboard in Word Rush shrinks it and may scroll it).
   useEffect(() => {
     const vv = window.visualViewport;
@@ -328,7 +362,7 @@ export default function ClockRace({onContinue}) {
 
   const burst = useCallback(() => {
     clearTimeout(starsTimer.current);
-    setStars({...point.current, id: Date.now()});
+    setStars({...point.current, id: Date.now(), at: mineRef.current.done});
     starsTimer.current = setTimeout(() => setStars(null), STARS_MS);
   }, []);
 
@@ -394,6 +428,27 @@ export default function ClockRace({onContinue}) {
     }, WRONG_MS);
   }, [advance, burst, say, runReset]);
 
+  // The catch-up gamble rides on this question (only when the server offered it and the player said yes):
+  // its outcome comes from the server, never from the phone.
+  const stakedOn = useCallback(i => {
+    const gb = gameRef.current?.gamble;
+    return !!gb && gb.state === 'accepted' && gb.task === i && gb.epoch === mineRef.current.epoch;
+  }, []);
+  const settleStake = useCallback((rid, i, r) => {
+    if (r?.gamble === 'won') {
+      burst();
+      locked.current = false;
+      flushSync(() => setMine(m => ({...m, round: rid, done: r.done})));
+      guardUntil.current = Date.now() + GUARD_MS;
+      if (gameRef.current?.round?.tasks[r.done]?.type === 'word') wordInput.current?.focus();
+      refreshRef.current?.();
+      return;
+    }
+    if (r?.gamble === 'lost') { setSad(true); runReset(rid, i, r.epoch); refreshRef.current?.(); return; }
+    locked.current = false;
+    settle(rid, i, !!r?.right, r?.word, Promise.resolve(r));
+  }, [burst, runReset, settle]);
+
   const pick = useCallback(value => {
     const g = gameRef.current, m = mineRef.current;
     if (!g?.round || g.status !== 'racing' || m.round !== g.round.id || locked.current) return;
@@ -402,6 +457,11 @@ export default function ClockRace({onContinue}) {
     if (!task) return;
     const right = !!localCheck(task, value, g.roster.map(p => p.id));
     const job = enqueue({round: g.round.id, task: i, answer: value, epoch: m.epoch});
+    if (stakedOn(i)) {
+      locked.current = true;
+      job.then(r => { if (r.failed) { locked.current = false; return; } settleStake(g.round.id, i, r); });
+      return true;
+    }
     if (right && task.type === 'vote') say(t.reactions[Math.floor(Math.random() * t.reactions.length)]);
     if (task.type === 'price') {
       locked.current = true;
@@ -414,18 +474,20 @@ export default function ClockRace({onContinue}) {
       }, 1200);
     } else settle(g.round.id, i, right, null, job);
     return true;
-  }, [enqueue, say, settle, t]);
+  }, [enqueue, say, settle, settleStake, stakedOn, t]);
 
   const word = useCallback(async text => {
     const g = gameRef.current, m = mineRef.current;
     if (!g?.round || g.status !== 'racing' || locked.current) return;
     const i = m.done;
     locked.current = true;
+    const staked = stakedOn(i);
     const r = await enqueue({round: g.round.id, task: i, answer: text, epoch: m.epoch});
     locked.current = false;
     if (r.failed || mineRef.current.done !== i) return;
+    if (staked || r.gamble) { settleStake(g.round.id, i, r); return; }
     settle(g.round.id, i, !!r.right, r.word, r);
-  }, [enqueue, settle]);
+  }, [enqueue, settle, settleStake, stakedOn]);
 
   // ---------------------------------------------------------------- extra-life request
   const lifeCall = useCallback(async body => {
@@ -505,8 +567,8 @@ export default function ClockRace({onContinue}) {
   // its answers below it, straight on the painting.
   const cabinet = (cls, head, body) => ARCADE ? <section className={`cr-stage cr-open ${cls}`}>
     {head && <div className="cr-open-head">{head}</div>}
-    <div className="cr-open-body">{body}</div>
-  </section> : <section className={`cr-stage ${cls}`}>{head}{body}</section>;
+    <div className="cr-open-body" ref={measureBody}>{body}</div>
+  </section> : <section className={`cr-stage ${cls}`} ref={measureBody}>{head}{body}</section>;
   const bar = <header className="cr-bar">
     <button className="cr-square-btn" onClick={exit} aria-label={t.back}><Arrow dir={t.dir}/></button>
     <span className="cr-wordmark is-game-logo"><img src={GAME_LOGO} alt={t.title}/></span>
@@ -521,11 +583,26 @@ export default function ClockRace({onContinue}) {
   const openHelp = racingNow && inRace && !meView?.out && !sad?.out
     ? (game.players.find(p => p.id !== me && p.out?.help && p.out.help.expires * 1000 > serverNow && !dismissed.has(p.out.help.id)) || null) : null;
   const anyOut = racingNow && game.players.some(p => p.out);
+  const gb = racingNow && inRace ? game.gamble : null;
+  const offered = gb?.state === 'offered';
   useEffect(() => {
-    if (!anyOut && !thanks) return undefined;
+    if (!anyOut && !thanks && !offered) return undefined;
     const id = setInterval(() => setTickNow(Date.now()), 250);
     return () => clearInterval(id);
-  }, [anyOut, thanks]);
+  }, [anyOut, thanks, offered]);
+  const gambleOpen = offered && gb.expires * 1000 > serverNow && !dismissed.has(gb.id) && !sad && !openHelp;
+  const staked = gb?.state === 'accepted' && gb.epoch === mine.epoch && mine.round === round?.id && gb.task === pos;
+  async function gamble(action) {
+    const id = gb?.id;
+    if (!id) return;
+    setDismissed(prev => new Set(prev).add(id));
+    setLifeBusy(true);
+    try {
+      const r = await request(`/rooms/${live.current.code}/gamble`, {action, round: game.round.id, offer: id}, live.current.auth, live.current.t);
+      if (r.state) accept(r.state);
+    } catch (e) { setNotice(e.message); }
+    finally { setLifeBusy(false); }
+  }
   // When a choice or a request runs out on the clock, ask the server so it closes it for everyone.
   const outDeadline = meView?.out ? (meView.out.help ? meView.out.help.expires : meView.out.decide_by) : null;
   useEffect(() => {
@@ -654,7 +731,7 @@ export default function ClockRace({onContinue}) {
 
   const boss = task?.type === 'boss';
   const prompt = !task || task.type === 'photo' ? null : task.type === 'vote' ? round.question : task.type === 'stroop' ? stroopPrompt(task, t, lang)
-    : task.type === 'geo' ? t.geo[task.variant] : task.type === 'avoid' ? t.avoid(task)
+    : task.type === 'geo' ? t.geo[task.variant] : task.type === 'avoid' ? t.avoid(task) : task.type === 'iq' ? iqPrompt(task, t)
     : ['belong', 'older', 'compare', 'which'].includes(task.type) ? picturePrompt(task, lang)
     : task.type === 'animal' ? t.animal(lang === 'ar' ? task.target[1] : task.target[2]) : t.prompts[task.type]; // Word Rush and memory draw their own headings
   return shell(`cr-race ${boss ? 'is-boss' : ''} ${task?.type === 'vote' ? 'is-vote' : ''}`, <>
@@ -670,8 +747,9 @@ export default function ClockRace({onContinue}) {
           <span className="cr-count" dir="ltr">{t.task(pos + 1, TOTAL)}</span>
           <Hearts left={Math.max(0, myHearts - (mine.round === round.id ? mine.misses : 0))} total={myHearts} label={t.hearts}/>
           {boss && <span className="cr-boss-stamp">{t.bossStamp}</span>}
+          {staked && <span className="cr-boss-stamp cr-gamble-stamp">{t.gambleStamp}</span>}
         </div>,
-        <div className="cr-play" key={`${round.id}-${mine.epoch}-${pos}`}>
+        <div className="cr-play" key={`${round.id}-${mine.epoch}-${pos}`} style={accentVars(pos)}>
           {prompt && <h2 className="cr-prompt" dir="auto">{prompt}</h2>}
           <div className="cr-task-body">
             <AppErrorBoundary compact resetKey={`${round.id}-${pos}`}>
@@ -682,7 +760,7 @@ export default function ClockRace({onContinue}) {
       : cabinet('', null, <div className="cr-done-wait">{ARCADE ? <PixelClock size={96} className="cr-finish-clock"/> : <Dial done={TOTAL} color={PLAYER_COLORS[(game.players.find(p => p.id === me)?.color || 0) % 12]} size={120} big/>}</div>)}
     {counting && <div className="cr-countdown" aria-live="assertive"><span key={seconds}>{seconds}</span></div>}
     {!counting && game.status === 'racing' && clock - startsAt < 700 && inRace && pos === 0 && <div className="cr-countdown is-go"><span>{t.go}</span></div>}
-    {stars && <Stars key={`s${stars.id}`} x={stars.x} y={stars.y}/>}
+    {stars && <Stars key={`s${stars.id}`} x={stars.x} y={stars.y} color={accentFor(stars.at).c}/>}
     {sad === true && <div className="cr-sad" role="status" aria-label="wrong"><div className="cr-sad-face"><Face mood="sad" color={0}/></div></div>}
     {sad?.from != null && <div className="cr-sad is-reset">
       <ResetClock from={sad.from} color={PLAYER_COLORS[(game.players.find(p => p.id === me)?.color || 0) % PLAYER_COLORS.length]} caption={t.resetToast} hearts={t.hearts}/>
@@ -693,6 +771,8 @@ export default function ClockRace({onContinue}) {
       onRestart={() => lifeCall({action: 'restart', epoch: mine.epoch})}/>}
     {openHelp && <HelpAsk t={t} name={openHelp.name} deadline={openHelp.out.help.expires * 1000} now={serverNow} busy={lifeBusy}
       onYes={() => giveLife(openHelp.out.help.id)} onNo={() => dismissHelp(openHelp.out.help.id, true)}/>}
+    {gambleOpen && <GambleAsk t={t} at={gb.at} deadline={gb.expires * 1000} now={serverNow} busy={lifeBusy}
+      onYes={() => gamble('accept')} onNo={() => gamble('decline')}/>}
     {thanks && <div className="cr-thanks" role="status" dir="auto" key={thanks.id}>{t.thanks(thanks.by_name)}</div>}
     {toast && <div className={`cr-toast is-${toast.kind}`} key={`t${toast.id}`} dir="auto">{toast.text}</div>}
     {game.status === 'finished' && <div className="cr-finish" role="dialog" aria-modal="true" aria-labelledby="cr-finish-title">

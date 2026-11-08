@@ -82,7 +82,7 @@ export default function AdminClockRace() {
     call('get', '/me').then(r => setMe(r.name)).catch(() => { localStorage.removeItem(TOKEN_KEY); setToken(null); });
   }, [token]);
   if (!token) return <Login onIn={t => { localStorage.setItem(TOKEN_KEY, t); setToken(t); }}/>;
-  if (!me) return <div className="crs crs-center"><p>Loading…</p></div>;
+  if (!me) return <div className="crs crs-center" data-status-bar-color="#0E3A3C"><p>Loading…</p></div>;
   return <Studio me={me} onOut={() => { localStorage.removeItem(TOKEN_KEY); setToken(null); setMe(''); }}/>;
 }
 
@@ -99,7 +99,7 @@ function Login({onIn}) {
     catch (x) { setErr(x?.response?.status === 401 ? 'Wrong password.' : apiErrorMessage(x, 'Sign-in failed.')); }
     finally { setBusy(false); }
   };
-  return <div className="crs crs-center">
+  return <div className="crs crs-center" data-status-bar-color="#0E3A3C">
     <form className="crs-login" onSubmit={submit} autoComplete="off">
       <h1>Clock Race studio</h1>
       <label htmlFor="crs-password" className="crs-login-label">Admin Password</label>
@@ -154,7 +154,7 @@ function Studio({me, onOut}) {
   const rows = useMemo(() => {
     if (!lib) return [];
     const needle = q.trim().toLowerCase();
-    return lib.items.filter(r => !(r.deleted && !r.dirty) && (type === 'all' || sectionOf(r) === type)
+    return lib.items.filter(r => (type === 'all' || sectionOf(r) === type)
       && (tab === 'all' || (tab === 'review' && r.status === 'draft') || r.status === tab
         || (tab === 'unpublished' && r.dirty) || (tab === 'errors' && r.errors) || (tab === 'missing' && r.missing_image)
         || (tab === 'broken' && broken.has(r.id)))
@@ -176,6 +176,21 @@ function Studio({me, onOut}) {
   };
   const markBroken = useCallback(id => setBroken(b => (b.has(id) ? b : new Set(b).add(id))), []);
 
+  // Delete for good, from the library card or the editor. The confirm names the question exactly.
+  const removeItem = async r => {
+    const what = `${r.id} · ${lib.types[r.type] || r.type}${r.title ? `\n"${r.title}"` : ''}`;
+    if (!window.confirm(`Delete this question for good?\n\n${what}\n\nIt leaves the studio and the game now and cannot be brought back. Its pictures are kept.`)) return false;
+    try {
+      await call('delete', `/items/${encodeURIComponent(r.id)}`);
+      setLib(l => l && ({...l, items: l.items.filter(x => x.id !== r.id)}));
+      setPicked(p => { const n = new Set(p); n.delete(r.id); return n; });
+      if (open === r.id) { setDirty(false); setOpen(null); }
+      setToast(`Deleted ${r.id}.`);
+      load();
+      return true;
+    } catch (x) { setError(apiErrorMessage(x, 'Could not delete it.')); return false; }
+  };
+
   const bulkApprove = async () => {
     try {
       const r = await call('post', '/bulk-approve', {ids: [...picked]});
@@ -186,9 +201,9 @@ function Studio({me, onOut}) {
     } catch (x) { setError(apiErrorMessage(x)); }
   };
 
-  if (!lib) return <div className="crs crs-center">{error ? <p className="crs-error">{error}</p> : <p>Loading…</p>}</div>;
+  if (!lib) return <div className="crs crs-center" data-status-bar-color="#0E3A3C">{error ? <p className="crs-error">{error}</p> : <p>Loading…</p>}</div>;
   const c = lib.counts;
-  return <div className="crs">
+  return <div className="crs" data-status-bar-color="#134647">
     <header className="crs-top">
       <div className="crs-brand"><b>Clock Race studio</b><span className="crs-muted">Signed in as {me}</span></div>
       <div className="crs-top-actions">
@@ -218,7 +233,7 @@ function Studio({me, onOut}) {
         <nav className="crs-sections" role="tablist" aria-label="Sections">
           {[...SECTIONS.map(([k, label]) => [k, label]), ['misc', 'Miscellaneous'], ['all', 'Everything']].map(([k, label]) =>
             <button key={k} role="tab" aria-selected={type === k} className={type === k ? 'is-on' : ''} onClick={() => setType(k)}>
-              <span>{label}</span><b>{lib.items.filter(r => !(r.deleted && !r.dirty) && (k === 'all' || sectionOf(r) === k)).length}</b></button>)}
+              <span>{label}</span><b dir="ltr">{k === 'all' ? lib.items.length : lib.items.filter(r => sectionOf(r) === k).length}</b></button>)}
         </nav>
         <div className="crs-filters">
           {SECTION_TYPE[type] && <button className="crs-btn is-primary" onClick={() => setModal('new')}>Add a new one here</button>}
@@ -242,7 +257,7 @@ function Studio({me, onOut}) {
         <ul className="crs-grid">
           {shown.map(r => <Card key={r.id} r={r} label={lib.types[r.type]} thumb={resolve(r.thumb)} on={open === r.id}
             picked={picked.has(r.id)} onPick={v => setPicked(p => { const n = new Set(p); v ? n.add(r.id) : n.delete(r.id); return n; })}
-            onOpen={() => openItem(r.id)} onBroken={markBroken}/>)}
+            onOpen={() => openItem(r.id)} onBroken={markBroken} onDelete={() => removeItem(r)}/>)}
         </ul>
         {!shown.length && <p className="crs-muted crs-empty">Nothing here.</p>}
         {pages > 1 && <nav className="crs-pager">
@@ -252,7 +267,7 @@ function Studio({me, onOut}) {
         </nav>}
       </section>
 
-      {open && <Editor key={open} id={open} lib={lib} onDirty={setDirty} onChanged={load} onNext={next}
+      {open && <Editor key={open} id={open} lib={lib} onDirty={setDirty} onChanged={load} onNext={next} onDelete={removeItem}
         onClose={() => { if (leave()) { setDirty(false); setOpen(null); } }} onToast={setToast}/>}
     </div>
 
@@ -268,7 +283,7 @@ function Studio({me, onOut}) {
   </div>;
 }
 
-function Card({r, label, thumb, on, picked, onPick, onOpen, onBroken}) {
+function Card({r, label, thumb, on, picked, onPick, onOpen, onBroken, onDelete}) {
   const [bad, setBad] = useState(false);
   return <li className={`crs-card ${on ? 'is-open' : ''} ${bad ? 'is-broken' : ''}`}>
     <input type="checkbox" className="crs-card-check" checked={picked} onChange={e => onPick(e.target.checked)} aria-label={`Select ${r.id}`}/>
@@ -277,8 +292,8 @@ function Card({r, label, thumb, on, picked, onPick, onOpen, onBroken}) {
         ? <img src={thumb} alt="" loading="lazy" onError={() => { setBad(true); onBroken(r.id); }}/>
         : <span className="crs-thumb-none">{bad ? 'Broken picture' : r.type === 'vote' || r.type === 'wrongword' ? 'Text only' : r.type === 'iq' ? 'Drawn puzzle' : 'No picture'}</span>}</span>
       <span className="crs-card-text">
-        <span className="crs-card-id">{r.id} · {label}</span>
-        <span className="crs-card-title" dir="auto">{r.title}</span>
+        <span className="crs-card-id"><bdi>{r.id}</bdi> · <bdi>{label}</bdi></span>
+        <span className="crs-card-title" dir="auto"><bdi>{r.title}</bdi></span>
         <span className="crs-pills">
           <Pill kind={r.status}>{r.status === 'draft' ? 'Draft' : r.status === 'approved' ? 'Approved' : 'Rejected'}</Pill>
           <Pill kind={`live-${r.live}`}>{r.live === 'live' ? 'Live' : r.live === 'legacy' ? 'Live (original)' : 'Not live'}</Pill>
@@ -287,6 +302,7 @@ function Card({r, label, thumb, on, picked, onPick, onOpen, onBroken}) {
         </span>
       </span>
     </button>
+    <button type="button" className="crs-card-delete" onClick={onDelete} aria-label={`Delete ${r.id}`}>Delete</button>
   </li>;
 }
 
@@ -294,7 +310,7 @@ const Pill = ({kind, children}) => <span className={`crs-pill is-${kind}`}>{chil
 
 // ================================================================== editor
 
-function Editor({id, lib, onDirty, onChanged, onNext, onClose, onToast}) {
+function Editor({id, lib, onDirty, onChanged, onNext, onClose, onToast, onDelete}) {
   const [item, setItem] = useState(null);
   const [data, setData] = useState(null);
   const [busy, setBusy] = useState(false);
@@ -334,16 +350,8 @@ function Editor({id, lib, onDirty, onChanged, onNext, onClose, onToast}) {
   const tile = body => run(() => call('post', `/items/${encodeURIComponent(id)}/tile`, body));
   const iq = kind => run(() => call('post', `/items/${encodeURIComponent(id)}/iq`, {kind}), 'New puzzle made and checked. Saved as draft.');
   const remove = async () => {
-    const live = item.live !== 'off';
-    if (!window.confirm(live ? 'Delete this question? It leaves the game when you publish.' : 'Delete this question for good?')) return;
-    setBusy(true); setErr('');
-    try {
-      const r = await call('delete', `/items/${encodeURIComponent(id)}`);
-      onToast(r.deleted === 'removed' ? 'Deleted.' : 'Deleted. It leaves the game when you publish.');
-      onChanged();
-      onDirty(false);
-      onNext(true);
-    } catch (x) { setErr(apiErrorMessage(x)); }
+    setBusy(true);
+    try { await onDelete({id, type: item.type, title: item.draft?.en || item.draft?.text || item.draft?.title || ''}); }
     finally { setBusy(false); }
   };
 
@@ -377,9 +385,7 @@ function Editor({id, lib, onDirty, onChanged, onNext, onClose, onToast}) {
       {!dirty && item.status !== 'approved' && (item.approved || item.live_data) && !same(item.draft, item.approved || item.live_data)
         && <button className="crs-btn is-ghost" disabled={busy} onClick={() => run(() => call('post', `/items/${encodeURIComponent(id)}/discard`), 'Back to the last approved version.')}>Discard edits</button>}
       <button className="crs-btn" onClick={() => onNext()}>Next question</button>
-      {item.deleted
-        ? <button className="crs-btn is-ghost" disabled={busy} onClick={() => run(() => call('post', `/items/${encodeURIComponent(id)}/restore`), 'Restored as a draft.')}>Undo delete</button>
-        : <button className="crs-btn is-bad is-ghost" disabled={busy} onClick={remove}>Delete</button>}
+      <button className="crs-btn is-bad" disabled={busy} onClick={remove}>Delete question</button>
     </div>
     {err && <p className="crs-error" role="alert">{err}</p>}
     {item.status === 'draft' && item.live !== 'off' && item.approved == null && item.origin === 'builtin' &&
@@ -873,23 +879,51 @@ function PicturePicker({onPick, onClose}) {
 function PicturesModal({onClose}) {
   const [list, load, err] = useAssets();
   const [edit, setEdit] = useState(null);
+  const [busy, setBusy] = useState(null);
+  const [msg, setMsg] = useState('');
+  // Delete a picture for good. First ask the server who uses it: a picture players see now can't go;
+  // questions that only point at it in a draft keep everything else and show "picture missing".
+  const removePicture = async a => {
+    setBusy(a.id); setMsg('');
+    try {
+      const {used_by: used} = await call('get', `/assets/${a.id}/usage`);
+      const live = used.filter(u => u.where.includes('live'));
+      if (live.length) {
+        setMsg(`"${a.name || a.id}" is in the live game (${live.map(u => u.id).join(', ')}). Replace it in ${live.length > 1 ? 'those questions' : 'that question'} and publish first, then delete it.`);
+        return;
+      }
+      const lines = used.map(u => `- ${u.id} (${u.title || u.type}): ${u.where.join(' + ')}`).join('\n');
+      const text = used.length
+        ? `Delete the picture "${a.name || a.id}" for good?\n\nIt is used by ${used.length} question${used.length > 1 ? 's' : ''}:\n${lines}\n\n${used.length > 1 ? 'Those questions are' : 'That question is'} NOT deleted. ${used.length > 1 ? 'They' : 'It'} will show "picture missing" and go back to draft until you pick a new picture.`
+        : `Delete the picture "${a.name || a.id}" for good?\n\nNo question uses it. This cannot be undone.`;
+      if (!window.confirm(text)) return;
+      const r = await call('delete', `/assets/${a.id}${used.length ? '?confirm=true' : ''}`);
+      setMsg(`Deleted "${a.name || a.id}".${r.cleared.length ? ` Removed from ${r.cleared.join(', ')}.` : ''}${r.files_left ? ' Some stored files could not be removed; they are no longer used.' : ''}`);
+      await load();
+    } catch (x) { setMsg(apiErrorMessage(x, 'Could not delete the picture.')); }
+    finally { setBusy(null); }
+  };
   const saveCredit = async () => {
     try { await call('patch', `/assets/${edit.id}`, edit.credit); setEdit(null); load(); } catch (x) { window.alert(apiErrorMessage(x)); }
   };
   return <Modal title="Pictures" onClose={onClose} wide>
     <Uploader onDone={load}/>
     {err && <p className="crs-error">{err}</p>}
+    {msg && <p className="crs-note" role="status">{msg}</p>}
     <ul className="crs-assets is-detail">{(list || []).map(a => <li key={a.id}>
       <img src={anyUrl(a.thumb || a.url)} alt="" loading="lazy" onError={e => { e.currentTarget.classList.add('is-broken'); }}/>
       <div>
-        <b>{a.name || a.id}</b>
+        <b dir="auto"><bdi>{a.name || a.id}</bdi></b>
         <span className="crs-muted">{a.w}×{a.h} · {a.kind || 'upload'} · {a.uploaded_by} {(a.uploaded_at || '').slice(0, 10)}</span>
         <span className="crs-muted">{a.used_by.length ? `Used by ${a.used_by.join(', ')}` : 'Not used'}</span>
         {edit?.id === a.id ? <div className="crs-row3">
           {['source', 'license', 'author'].map(k => <input key={k} placeholder={k} value={edit.credit[k] || ''} onChange={e => setEdit({...edit, credit: {...edit.credit, [k]: e.target.value}})}/>)}
           <button className="crs-btn is-small" onClick={saveCredit}>Save credit</button>
         </div> : <span className="crs-muted">{Object.values(a.credit || {}).join(' · ') || 'No credit recorded'} <button className="crs-link" onClick={() => setEdit({id: a.id, credit: {...(a.credit || {})}})}>edit</button></span>}
-        {a.original && <a className="crs-link" href={anyUrl(a.original)} target="_blank" rel="noreferrer">Original</a>}
+        <span className="crs-asset-actions">
+          {a.original && <a className="crs-link" href={anyUrl(a.original)} target="_blank" rel="noreferrer">Original</a>}
+          <button type="button" className="crs-btn is-small is-bad" disabled={busy === a.id} onClick={() => removePicture(a)}>{busy === a.id ? 'Deleting…' : 'Delete picture'}</button>
+        </span>
       </div>
     </li>)}</ul>
   </Modal>;

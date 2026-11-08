@@ -2,7 +2,8 @@
 
 Every upload is checked on the server (real JPG / PNG / WebP, size and dimension limits), then kept three
 ways: the untouched original, an optimised WebP the game shows, and a small WebP thumbnail for the studio.
-Nothing is ever deleted: rejecting or replacing a question only stops pointing at a picture.
+Rejecting or replacing a question only stops pointing at a picture; a picture is removed only when an admin
+deletes it in Pictures (Store.remove takes its files out of storage and the database).
 
 Storage: the project's Supabase Storage (public bucket `clock-race-assets`) when the server's key may
 use it; otherwise the pictures go into reserved rows of the existing `rooms` table and the backend serves
@@ -124,6 +125,23 @@ class Store:
             await self.query(lambda: self.db().table('rooms').insert({'code': code, 'flags': row, 'created_at': ''}).execute())
         return f'/api/clock-race/asset/{path}', 'db'
 
+    async def remove(self, paths):
+        """Delete files from wherever they may be kept (Storage bucket and the rooms-table fallback).
+        Returns a list of problems (empty when everything went)."""
+        problems = []
+        if await self._bucket():
+            try:
+                bucket = self.db().storage.from_(BUCKET)
+                await self.query(lambda: bucket.remove(list(paths)))
+            except Exception as exc:
+                problems.append(f'storage: {exc}')
+        for path in paths:
+            try:
+                await self.query(lambda p=path: self.db().table('rooms').delete().eq('code', DB_PREFIX + p).execute())
+            except Exception as exc:
+                problems.append(f'{path}: {exc}')
+        return problems
+
     async def get_db(self, path):
         code = DB_PREFIX + path
         res = await self.query(lambda: self.db().table('rooms').select('flags').eq('code', code).maybe_single().execute())
@@ -164,3 +182,12 @@ async def save_rendered(store, aid, blob, who, kind, now='', w=0, h=0):
 def clean_credit(c):
     c = c if isinstance(c, dict) else {}
     return {k: str(c.get(k) or '').strip()[:300] for k in ('source', 'license', 'author', 'note') if c.get(k)}
+
+
+def asset_paths(aid, record):
+    """Every stored file of a picture."""
+    paths = [f'{aid}/player.webp', f'{aid}/thumb.webp']
+    orig = (record or {}).get('original') or ''
+    ext = orig.rsplit('.', 1)[-1] if '/original.' in orig else None
+    paths += [f'{aid}/original.{e}' for e in ([ext] if ext in ('jpg', 'png', 'webp') else ['jpg', 'png', 'webp'])]
+    return paths

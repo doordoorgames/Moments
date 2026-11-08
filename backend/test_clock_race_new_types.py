@@ -125,17 +125,80 @@ def test_studio_creates_previews_and_approves_the_new_types():
         C.set_status(s, iq['id'], 'approved', 'tester')
 
 
-def test_delete_removes_unpublished_and_hides_live_questions():
+def test_delete_is_permanent_for_studio_and_original_questions():
     s = C.empty_state()
     e = C.create(s, 'wrongword', dict(lang='en', text='The cat drink milk every day.', wrong=2), 'tester')
-    assert C.delete(s, e['id'], 'tester') == 'removed' and e['id'] not in s['items']
-    assert C.delete(s, 'ww_en01', 'tester') == 'hidden'
-    assert s['items']['ww_en01']['status'] == 'rejected' and s['items']['ww_en01']['deleted']
-    assert any(c['id'] == 'ww_en01' and c['change'] == 'reject' for c in C.pending(s))
-    C.restore(s, 'ww_en01', 'tester')
-    assert 'deleted' not in s['items']['ww_en01'] and s['items']['ww_en01']['status'] == 'draft'
+    assert C.delete(s, e['id'], 'tester') == 'wrongword' and e['id'] not in s['items']
+    C.save_draft(s, 'ww_en01', dict(lang='en', text='edited one', wrong=0), 'tester')   # an edited original
+    C.delete(s, 'ww_en01', 'tester')
+    assert 'ww_en01' not in s['items'] and 'ww_en01' in s['deleted']
+    assert 'ww_en01' not in C.all_ids(s) and C.view(s, 'ww_en01') is None
+    assert all(r['id'] != 'ww_en01' for r in C.summary(s))
+    with pytest.raises(KeyError):
+        C.delete(s, 'ww_en01', 'tester')           # already gone
+    with pytest.raises(KeyError):
+        C.save_draft(s, 'ww_en01', dict(lang='en', text='back', wrong=0), 'tester')
+    # after a "restart": a fresh live pool built from the saved state still leaves it out
+    saved = C.dumps(s)
+    live = C.Live()
+    import json
+    live.load(json.loads(saved))
+    assert 'ww_en01' not in {q for q, _ in live.pool('wrongword')}
+    assert 'ww_en02' in {q for q, _ in live.pool('wrongword')}   # nothing else went
     with pytest.raises(KeyError):
         C.delete(s, 'nope', 'tester')
+
+
+def test_delete_never_empties_a_question_type():
+    s = C.empty_state()
+    ids = [q for q in C.all_ids(s) if C.view(s, q)['type'] == 'vote']
+    with pytest.raises(ValueError):
+        for q in ids:
+            C.delete(s, q, 'tester')
+    assert C.live_counts(s)['vote'] >= C.MIN_LIVE['vote']
+    en = [q for q in C.all_ids(s) if q.startswith('ww_en')]
+    with pytest.raises(ValueError):
+        for q in en:
+            C.delete(s, q, 'tester')
+    assert sum(1 for q in C.all_ids(s) if q.startswith('ww_en')) >= 3
+
+
+def _asset(s, aid):
+    s['assets'][aid] = dict(id=aid, url=f'/api/clock-race/asset/{aid}/player.webp', thumb='', original=None)
+    return f'asset:{aid}'
+
+
+def test_picture_delete_keeps_questions_and_refuses_live_pictures():
+    s = C.empty_state()
+    ref = _asset(s, 'ab12cd34ef')
+    a = C.create(s, 'animal', dict(key=ref, ar='قط', en='Cat'), 'tester')
+    b = C.create(s, 'animal', dict(key=ref, ar='نمر', en='Tiger'), 'tester')
+    other = _asset(s, 'ff00ff00ff')
+    c = C.create(s, 'animal', dict(key=other, ar='أسد', en='Lion'), 'tester')
+    assert {u['id'] for u in C.asset_usage(s, 'ab12cd34ef')} == {a['id'], b['id']}
+    with pytest.raises(ValueError):                 # shared: needs confirming
+        C.delete_asset(s, 'ab12cd34ef', 'tester')
+    record, cleared = C.delete_asset(s, 'ab12cd34ef', 'tester', confirm=True)
+    assert set(cleared) == {a['id'], b['id']} and 'ab12cd34ef' not in s['assets']
+    assert a['id'] in s['items'] and b['id'] in s['items']           # the questions stay
+    assert s['items'][a['id']]['draft']['key'] == ''                  # and say "picture missing"
+    assert any('Picture missing' in p['msg'] for p in C.validate('animal', s['items'][a['id']]['draft'], s['assets']))
+    assert s['items'][c['id']]['draft']['key'] == other               # nothing else touched
+    # a picture players see now can't be deleted
+    s['items'][c['id']].update(status='approved', approved=dict(s['items'][c['id']]['draft']),
+                               published=dict(s['items'][c['id']]['draft']), published_status='approved')
+    with pytest.raises(ValueError):
+        C.delete_asset(s, 'ff00ff00ff', 'tester', confirm=True)
+    assert 'ff00ff00ff' in s['assets']
+    with pytest.raises(KeyError):
+        C.delete_asset(s, 'ab12cd34ef', 'tester', confirm=True)
+
+
+def test_unused_picture_deletes_without_confirming():
+    s = C.empty_state()
+    _asset(s, '0123456789')
+    C.delete_asset(s, '0123456789', 'tester')
+    assert '0123456789' not in s['assets']
 
 
 # ------------------------------------------------------------------ catch-up gamble

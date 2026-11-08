@@ -81,19 +81,16 @@ def test_puzzles_that_would_have_two_answers_are_refused():
     d = copy.deepcopy(Q.builtin()['iq_fold_01'])
     d['options'][(d['answer'] + 1) % 4] = copy.deepcopy(d['options'][d['answer']])
     assert [p for p in Q.problems(d) if p[0] == 'error']
-    m = copy.deepcopy(Q.builtin()['iq_match_01'])
-    m['spec']['eq'] = '1+1=2'                      # already right
-    assert [p for p in Q.problems(m) if p[0] == 'error']
     r = copy.deepcopy(Q.builtin()['iq_rotate_01'])
     r['spec']['cells'] = [[0, 0, 0], [1, 0, 1], [2, 0, 0], [1, 1, 0], [1, 2, 0]]   # a T, eye on its axis: same in a mirror
     assert [p for p in Q.problems(r) if p[0] == 'error']
 
 
-def test_matchstick_moves():
-    assert Q.moves('2-2=9', '2-2=0') == 1   # 9 -> 0: the middle stick moves to the bottom-left
-    assert Q.moves('3+3=8', '3-3=0') is None  # plus loses its upright, 8 loses its middle: taken away, not moved
-    assert Q.moves('8-3=5', '9-3=6') == 1   # the bottom-left stick of the 8 moves onto the 5, making 6
-    assert Q.moves('6+2=8', '6+2=9') is None  # a stick taken away is not a move
+def test_matchstick_sums_are_gone_for_good():
+    assert 'match' not in Q.KINDS
+    assert not [q for q in Q.builtin() if q.startswith('iq_match')]
+    old = dict(kind='match', spec=dict(eq='2-2=9'), options=['2-2=0', '2-2=8', '3-2=9', '2+2=4'], answer=0)
+    assert [p for p in Q.problems(old) if p[0] == 'error']   # a saved one can never pass into the game
 
 
 def test_iq_task_shuffles_but_keeps_the_answer():

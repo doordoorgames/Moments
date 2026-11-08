@@ -56,7 +56,7 @@ class Status(BaseModel):
 
 
 class IqMake(BaseModel):
-    kind: Literal['fold', 'hidden', 'matrix', 'rotate', 'match', 'overlap']
+    kind: Literal['fold', 'hidden', 'matrix', 'rotate', 'overlap']
 
 
 class Bulk(BaseModel):

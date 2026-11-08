@@ -525,7 +525,8 @@
 .cr-app.cr-arcade .cr-arrow-btn:focus-visible{outline:2px dashed var(--cr-pink-l);outline-offset:2px}
 .cr-app.cr-arcade .cr-arrow-btn .cr-next-arrow{width:12px;height:17px}
 /* results / waiting: the pixel clock */
-.cr-app.cr-arcade .cr-finish-clock{display:block;margin:10px auto}
+/* the approved purple لحّق logo (public/clock-race/art/logo.webp) on the finish and waiting screens, original proportions */
+.cr-app.cr-arcade .cr-finish-logo{display:block;width:auto;height:min(20dvh,150px);max-width:60vw;margin:6px auto;object-fit:contain;filter:drop-shadow(0 4px 0 rgba(0,0,0,.25))}
 /* which is more expensive: framed pictures like every other picture question; price shown after the pick */
 /* the revealed price: big ivory pixel lettering, hard charcoal outline and a dark drop, no box behind it.
    The answered buttons are disabled; they keep full strength so the prices never fade. */
@@ -625,8 +626,10 @@
 .cr-app.cr-arcade .cr-play .cr-word-go{background:var(--cr-accent);box-shadow:inset 0 -5px 0 var(--cr-accent-d),inset 0 3px 0 rgba(255,255,255,.4)}
 .cr-app.cr-arcade .cr-play .cr-word-go:active{box-shadow:inset 0 -2px 0 var(--cr-accent-d)}
 
-/* tap the incorrect word: ivory pixel lettering on the room, the pressed word underlined in the accent */
-.cr-app.cr-arcade .cr-ww-word{font-family:var(--cr-pixel);color:var(--cr-ivory);text-shadow:var(--cr-ol-1)}
+/* tap the incorrect word: pixel lettering on the room in one of the game's own colours (IqTasks.jsx WW_COLORS:
+   teal, purple, pink, white, rotating between questions), so the sentence never matches the ivory question line;
+   the pressed word is underlined in the accent */
+.cr-app.cr-arcade .cr-ww-word{font-family:var(--cr-pixel);color:var(--cr-ww,var(--cr-ivory));text-shadow:var(--cr-ol-1)}
 .cr-app.cr-arcade .cr-ww-word:active span{border-bottom:3px solid var(--cr-accent,var(--cr-pink-l))}
 .cr-app.cr-arcade .cr-ww-word:focus-visible{outline:2px dashed var(--cr-accent,var(--cr-powder));outline-offset:-2px}
 
@@ -634,10 +637,7 @@
 .cr-app.cr-arcade .cr-iq-q{filter:drop-shadow(0 3px 0 var(--cr-charcoal-a))}
 .cr-app.cr-arcade .cr-iq-card{padding:6%;border:0;background:none;box-shadow:none;clip-path:none;transition:transform .06s steps(2);
   filter:drop-shadow(3px 3px 0 var(--cr-accent,var(--cr-pink)))}
-.cr-app.cr-arcade .cr-iq-opts.is-wide .cr-iq-card{background:rgba(42,38,48,.42);clip-path:var(--cr-step-sm);filter:none;
-  box-shadow:inset 0 -3px 0 var(--cr-accent-d,var(--cr-pink-d))}
 .cr-app.cr-arcade .cr-iq-card:active{transform:translate(2px,2px)}
-.cr-app.cr-arcade .cr-iq-q.is-sum{padding:6px 10px;background:rgba(42,38,48,.42);clip-path:var(--cr-step-sm);filter:none}
 .cr-app.cr-arcade :is(.cr-stage-iq,.cr-stage-wrongword) .cr-prompt{margin-bottom:6px}
 .cr-app.cr-arcade .cr-gamble-note{font-family:var(--cr-pixel);font-weight:600;font-size:19px;color:var(--cr-charcoal);opacity:.75;text-shadow:none}
 .cr-app.cr-arcade .cr-gamble-stamp{color:var(--cr-accent-l,var(--cr-pink-l));animation:none}

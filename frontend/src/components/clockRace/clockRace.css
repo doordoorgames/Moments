@@ -467,15 +467,12 @@ html.cr-doc body{min-height:calc(100vh + 1px)}
 .cr-iq{--iq-big:clamp(96px,calc(var(--iq-room) * .4),190px)}
 .cr-iq-q.is-big{--iq-q:var(--iq-big)}
 .cr-iq-q.is-small{--iq-q:clamp(48px,calc(var(--iq-room) * .18),88px)}
-.cr-iq-q.is-sum{width:min(100%,calc(var(--iq-q) * 2.4))}
 .cr-iq-svg{display:block;width:100%;height:auto}
 .cr-iq-opts{display:grid;grid-template-columns:1fr 1fr;gap:8px;
   width:clamp(150px,min(76%,280px,calc(var(--iq-room) - var(--iq-q) - 18px)),280px)}
 .cr-iq-q.is-big + .cr-iq-opts{width:clamp(140px,min(72%,250px,calc(var(--iq-room) - var(--iq-big) - 18px)),250px)}
-.cr-iq-opts.is-wide{width:min(100%,360px)}
 .cr-iq-card{aspect-ratio:1;display:flex;align-items:center;justify-content:center;padding:8%;border:3px solid var(--ink);background:#FFFCF4;
   box-shadow:var(--shadow);cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
-.cr-iq-opts.is-wide .cr-iq-card{aspect-ratio:2.6;padding:6% 8%}
 .cr-iq-card:active{transform:translate(3px,3px)}
 .cr-gamble-note{margin:-4px 0 8px;font-size:18px;opacity:.85;text-align:center}
 

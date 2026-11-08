@@ -19,7 +19,6 @@ import {picturePrompt} from './PictureTasks';
 import {iqPrompt} from './IqTasks';
 import {preloadFrom} from './preload';
 import AppErrorBoundary from '../AppErrorBoundary';
-import {PixelClock} from './Brand';
 
 // The game's logo (لحّق): on the home screen and in the room until the race starts.
 const GAME_LOGO = '/clock-race/art/logo.webp';
@@ -757,7 +756,7 @@ export default function ClockRace({onContinue}) {
             </AppErrorBoundary>
           </div>
         </div>)
-      : cabinet('', null, <div className="cr-done-wait">{ARCADE ? <PixelClock size={96} className="cr-finish-clock"/> : <Dial done={TOTAL} color={PLAYER_COLORS[(game.players.find(p => p.id === me)?.color || 0) % 12]} size={120} big/>}</div>)}
+      : cabinet('', null, <div className="cr-done-wait">{ARCADE ? <img className="cr-finish-logo" src={GAME_LOGO} alt={t.title}/> : <Dial done={TOTAL} color={PLAYER_COLORS[(game.players.find(p => p.id === me)?.color || 0) % 12]} size={120} big/>}</div>)}
     {counting && <div className="cr-countdown" aria-live="assertive"><span key={seconds}>{seconds}</span></div>}
     {!counting && game.status === 'racing' && clock - startsAt < 700 && inRace && pos === 0 && <div className="cr-countdown is-go"><span>{t.go}</span></div>}
     {stars && <Stars key={`s${stars.id}`} x={stars.x} y={stars.y} color={accentFor(stars.at).c}/>}
@@ -778,7 +777,7 @@ export default function ClockRace({onContinue}) {
     {game.status === 'finished' && <div className="cr-finish" role="dialog" aria-modal="true" aria-labelledby="cr-finish-title">
       <div className="cr-finish-card">
         <span className="cr-finish-kicker">{t.winnerTitle}</span>
-        {winner && (ARCADE ? <PixelClock size={96} className="cr-finish-clock"/> : <Dial done={TOTAL} color={PLAYER_COLORS[winner.color % PLAYER_COLORS.length]} size={124} big/>)}
+        {winner && (ARCADE ? <img className="cr-finish-logo" src={GAME_LOGO} alt={t.title}/> : <Dial done={TOTAL} color={PLAYER_COLORS[winner.color % PLAYER_COLORS.length]} size={124} big/>)}
         <h2 id="cr-finish-title" dir="auto">{winner?.id === me ? t.youWon : t.won(winner?.name || '')}</h2>
         <ol className="cr-results">{[...players].filter(p => p.racing).sort((a, b) => (b.id === game.winner) - (a.id === game.winner) || b.done - a.done || (b.right || 0) - (a.right || 0)).map(p =>
           <li key={p.id} className={p.id === me ? 'is-me' : ''}><i style={{background: PLAYER_COLORS[p.color % PLAYER_COLORS.length]}}/><span dir="auto">{p.name}</span>

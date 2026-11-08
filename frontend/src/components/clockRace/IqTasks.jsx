@@ -1,7 +1,7 @@
 import React from 'react';
 import {tap} from './tap';
 
-// "Tap the incorrect word" and the six visual reasoning puzzles. The server (clock_race_wrongword.py,
+// "Tap the incorrect word" and the five visual reasoning puzzles. The server (clock_race_wrongword.py,
 // clock_race_iq.py) builds and checks every one; these only draw what the task says, as fine pixel art:
 // crisp edges, thin charcoal outlines, paper and wood tones. The question's accent (var(--cr-accent)) marks
 // what to look for; teal is never used here.
@@ -16,9 +16,23 @@ export const IQ_COLORS = ['#E8927C', '#F0CF6E', '#9C8FD6', '#E88AAE', '#6E9BD9']
 // Every word is its own button. The button's 7px padding is the extra tap room around the word; buttons sit
 // edge to edge, so no two touch targets overlap. Words never break (nowrap); Arabic shaping stays whole
 // because each word is one unbroken run of text; punctuation stays on its word.
-export function WrongWord({task, onPick}) {
+// The sentence's colour rotates between questions, taken from the game's own pixel palette: the frames' teal
+// highlight, the lavender purple accent, the cotton-candy pink and white (never the question line's ivory).
+export const WW_COLORS = ['#86CBC5', '#C9BCE6', '#EEA5BD', '#FFFFFF'];
+// Each new sentence takes the next colour in turn, so two in a row never share one (a re-render keeps its colour).
+let wwTurn = 0;
+const wwSeen = new Map();
+export function wwColor(key) {
+  if (!wwSeen.has(key)) {
+    if (wwSeen.size > 200) wwSeen.clear();
+    wwSeen.set(key, WW_COLORS[wwTurn++ % WW_COLORS.length]);
+  }
+  return wwSeen.get(key);
+}
+
+export function WrongWord({task, onPick, index = 0}) {
   const ar = task.lang === 'ar';
-  return <div className={`cr-ww ${ar ? 'is-ar' : 'is-en'}`} dir={ar ? 'rtl' : 'ltr'} lang={task.lang}>
+  return <div className={`cr-ww ${ar ? 'is-ar' : 'is-en'}`} dir={ar ? 'rtl' : 'ltr'} lang={task.lang} style={{'--cr-ww': wwColor(`${task.qid}:${index}`)}}>
     {task.words.map((w, i) => <button key={i} type="button" className="cr-ww-word" {...tap(() => onPick(i))}>
       <span dir="auto">{w}</span>
     </button>)}
@@ -41,8 +55,8 @@ export function Shape({shape, cx, cy, s, fill, stroke = INK, sw = 1.2}) {
   }
 }
 
-function Opts({task, onPick, wide, render}) {
-  return <div className={`cr-iq-opts ${wide ? 'is-wide' : ''}`}>
+function Opts({task, onPick, render}) {
+  return <div className="cr-iq-opts">
     {task.view.options.map((o, i) => <button key={i} type="button" className="cr-iq-card" aria-label={`${i + 1}`} {...tap(() => onPick(i))}>
       {render(o, i)}
     </button>)}
@@ -141,38 +155,6 @@ export function Rotate({task, onPick}) {
   </div>;
 }
 
-// ------------------------------------------------------------------ match: matchstick sums
-// a seven-segment digit 6 wide x 11 tall; a stick is a pale wooden bar with a red head
-const SEG = {'0': 'abcdef', '1': 'bc', '2': 'abged', '3': 'abgcd', '4': 'fgbc', '5': 'afgcd', '6': 'afgedc', '7': 'abc', '8': 'abcdefg', '9': 'abcdfg'};
-const SEG_AT = {a: [1, 0, 'h'], b: [5, 1, 'v'], c: [5, 6, 'v'], d: [1, 10, 'h'], e: [0, 6, 'v'], f: [0, 1, 'v'], g: [1, 5, 'h']};
-function Stick({x, y, o}) {
-  return o === 'h'
-    ? <g><rect x={x} y={y} width="4" height=".9" fill="#E9C48A"/><rect x={x + 3.2} y={y - .1} width="1.1" height="1.1" fill="#D2504A"/></g>
-    : <g><rect x={x} y={y} width=".9" height="4" fill="#E9C48A"/><rect x={x - .1} y={y} width="1.1" height="1.1" fill="#D2504A"/></g>;
-}
-function Sum({eq}) {
-  const parts = [];
-  let x = 0;
-  for (const ch of eq) {
-    if (SEG[ch]) {
-      for (const s of SEG[ch]) { const [dx, dy, o] = SEG_AT[s]; parts.push(<Stick key={`${x}${s}`} x={x + dx} y={dy} o={o}/>); }
-      x += 7.5;
-    } else {
-      if (ch === '+' || ch === '-') parts.push(<Stick key={`${x}h`} x={x} y={5} o="h"/>);
-      if (ch === '+') parts.push(<Stick key={`${x}v`} x={x + 1.55} y={3} o="v"/>);
-      if (ch === '=') { parts.push(<Stick key={`${x}a`} x={x} y={3.6} o="h"/>); parts.push(<Stick key={`${x}b`} x={x} y={6.4} o="h"/>); }
-      x += 5.5;
-    }
-  }
-  return <svg viewBox={`-1 -1.2 ${x + 1} 13.4`} className="cr-iq-svg is-sum" shapeRendering="crispEdges" aria-hidden="true" direction="ltr">{parts}</svg>;
-}
-export function Match({task, onPick}) {
-  return <div className="cr-iq is-match" dir="ltr">
-    <div className="cr-iq-q is-sum"><Sum eq={task.view.eq}/></div>
-    <Opts task={task} onPick={onPick} wide render={o => <Sum eq={o}/>}/>
-  </div>;
-}
-
 // ------------------------------------------------------------------ overlap: what's at the back / on top
 export function Overlap({task, onPick}) {
   return <div className="cr-iq is-overlap">
@@ -186,7 +168,7 @@ export function Overlap({task, onPick}) {
   </div>;
 }
 
-const IQ_VIEWS = {fold: Fold, hidden: Hidden, matrix: Matrix, rotate: Rotate, match: Match, overlap: Overlap};
+const IQ_VIEWS = {fold: Fold, hidden: Hidden, matrix: Matrix, rotate: Rotate, overlap: Overlap};
 export function IqPuzzle(props) {
   const View = IQ_VIEWS[props.task.kind];
   return View ? <View {...props}/> : null;

@@ -13,6 +13,7 @@ import PlayRoom from "@/pages/PlayRoom";
 import AdminLogin from "@/pages/AdminLogin";
 import AdminStories from "@/pages/AdminStories";
 import AdminEmojiClues from "@/pages/AdminEmojiClues";
+import AdminPlotTwistAvatars from "@/pages/AdminPlotTwistAvatars";
 import AdminCanvas from "@/pages/AdminCanvas";
 import ShougVillagePrototype from "@/pages/ShougVillagePrototype";
 
@@ -108,6 +109,14 @@ function App() {
                         element={
                             <AdminGate>
                                 <AdminEmojiClues />
+                            </AdminGate>
+                        }
+                    />
+                    <Route
+                        path="/admin/plot-twist-avatars"
+                        element={
+                            <AdminGate>
+                                <AdminPlotTwistAvatars />
                             </AdminGate>
                         }
                     />

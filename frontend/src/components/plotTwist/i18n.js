@@ -4,7 +4,7 @@ export const LANGS = ['en', 'ar'];
 
 const en = {
   dir: 'ltr',
-  categoryLine: 'Everyone’s words are about ', yourWords: n => n > 1 ? 'Your words' : 'Your word',
+  yourWords: n => n > 1 ? 'Your words' : 'Your word', howTo: 'How to Play',
   secretGoal: n => n > 1 ? '(make someone say one of these to win)' : '(make someone say this word to win)',
   swap: 'Swap', swapLabel: w => `Swap ${w} for a new word. One swap per game.`,
   swapNote: 'You can swap one word, once per game.', swapUsed: 'Your one swap is used.',
@@ -28,7 +28,7 @@ const en = {
   modesFine: '*Okay, one rule: exactly five words in Story Time.',
   modes: {
     story: {name: 'Story Time', desc: 'Pass the story around. Five words at a time. See where the night takes you.', meta: '5 WORDS / TURN', option: 'Story Time · exactly 5 words'},
-    trap: {name: 'Word Trap', desc: 'Five to fifteen words. Everyone’s words share a theme. Make someone else say yours.', meta: '5–15 WORDS / TURN', option: 'Word Trap · 5 to 15 words, no time limit'},
+    trap: {name: 'Word Trap', desc: 'Five to fifteen words. Everyone gets secret words. Make someone else say yours.', meta: '5–15 WORDS / TURN', option: 'Word Trap · 5 to 15 words, no time limit'},
   },
   connectKicker: 'YOUR EVENING STARTS HERE',
   connectTitle: auth => auth ? <>Finding your<br/><em>rooftop seat.</em></> : <>Save yourself<br/><em>a rooftop seat.</em></>,
@@ -77,14 +77,14 @@ const en = {
   sealed: 'MY LIPS ARE SEALED',
   trapLabel: 'SOMEONE WALKED RIGHT INTO IT', trapTitle: <>PLOT<br/><em>TWIST!</em></>,
   saidWord: name => `${name} said the word.`, scores: name => `${name} scores +1.`,
-  freshWords: 'Trapped words were swapped for fresh ones from the same theme.', backToStory: 'BACK TO THE STORY',
+  freshWords: 'Trapped words were swapped for fresh ones.', backToStory: 'BACK TO THE STORY',
   langNoteLabel: 'HEADS UP', langNoteTitle: 'This room plays in English.',
   langNoteText: 'The host picked English, so the whole game is in English for everyone.', gotIt: 'GOT IT',
 };
 
 const ar = {
   dir: 'rtl',
-  categoryLine: 'كلمات الكل عن ', yourWords: n => n > 1 ? 'كلماتك' : 'كلمتك',
+  yourWords: n => n > 1 ? 'كلماتك' : 'كلمتك', howTo: 'طريقة اللعب',
   secretGoal: n => n > 1 ? '(خل أحد يقول وحدة منها عشان تفوز)' : '(خل أحد يقول هالكلمة عشان تفوز)',
   swap: 'بدّل', swapLabel: w => `بدّل ${w} بكلمة جديدة. تبديلة وحدة كل لعبة.`,
   swapNote: 'تقدر تبدل كلمة وحدة، مرة وحدة كل لعبة.', swapUsed: 'استخدمت تبديلتك.',
@@ -108,7 +108,7 @@ const ar = {
   modesFine: '*أوكي، قانون واحد بس: خمس كلمات بالضبط في وقت السالفة.',
   modes: {
     story: {name: 'وقت السالفة', desc: 'مرروا السالفة بينكم. خمس كلمات كل دور. وشوفوا وين توديكم الليلة.', meta: '5 كلمات / الدور', option: 'وقت السالفة · 5 كلمات بالضبط'},
-    trap: {name: 'فخ الكلمة', desc: 'من 5 إلى 15 كلمة. كلمات الكل من نفس الموضوع. خل غيرك يقول كلمتك.', meta: '5–15 كلمة / الدور', option: 'فخ الكلمة · من 5 إلى 15 كلمة، بدون وقت'},
+    trap: {name: 'فخ الكلمة', desc: 'من 5 إلى 15 كلمة. كل واحد عنده كلمات سرية. خل غيرك يقول كلمتك.', meta: '5–15 كلمة / الدور', option: 'فخ الكلمة · من 5 إلى 15 كلمة، بدون وقت'},
   },
   connectKicker: 'سهرتكم تبدأ من هني',
   connectTitle: auth => auth ? <>قاعدين ندور<br/><em>مكانك فوق السطح.</em></> : <>احجز لك<br/><em>مكان فوق السطح.</em></>,
@@ -157,7 +157,7 @@ const ar = {
   sealed: 'سرّك في بير',
   trapLabel: 'أحد طاح فيها', trapTitle: <>انقلبت<br/><em>السالفة!</em></>,
   saidWord: name => `${name} قال الكلمة.`, scores: name => `${name} ياخذ +1.`,
-  freshWords: 'الكلمات اللي انصادت تبدلت بكلمات جديدة من نفس الموضوع.', backToStory: 'ارجع للسالفة',
+  freshWords: 'الكلمات اللي انصادت تبدلت بكلمات جديدة.', backToStory: 'ارجع للسالفة',
   langNoteLabel: 'تنبيه', langNoteTitle: 'هالغرفة تنلعب بالعربي.',
   langNoteText: 'المضيف اختار العربي، فاللعبة كلها بالعربي للكل.', gotIt: 'تمام',
 };

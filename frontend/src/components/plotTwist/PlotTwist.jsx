@@ -1,9 +1,13 @@
 import React, {useCallback, useEffect, useRef, useState} from 'react';
 import {useNavigate, useParams, useSearchParams} from 'react-router-dom';
 import {flushSync} from 'react-dom';
-import {ArrowLeft, ArrowRight, BookOpen, Check, Copy, Eye, Link as LinkIcon, LogIn, Palette, Plus, RefreshCw, Send, Sparkles, X} from 'lucide-react';
+import {ArrowLeft, ArrowRight, BookOpen, Check, CircleHelp, Copy, Eye, Link as LinkIcon, LogIn, Palette, Plus, RefreshCw, Send, Sparkles, X} from 'lucide-react';
 import {BACKEND_URL} from '@/lib/api';
 import Rooftop from './Rooftop';
+import Avatar from './Avatar';
+import HowToPlay from './HowToPlay';
+import {useAvatars} from './avatars';
+import {markHowToPlaySeen, seenHowToPlay} from './howToPlayContent';
 import RoomCodeInput from './RoomCodeInput';
 import RoomQR from './RoomQR';
 import {normalizeCode, validRoomCode} from './roomCode';
@@ -44,6 +48,8 @@ export default function PlotTwist({onContinue}) {
   const [swapError,setSwapError] = useState('');
   const [trap,setTrap] = useState(null);
   const [picker,setPicker] = useState(false);
+  const [howTo,setHowTo] = useState(false);
+  const avatarList = useAvatars();
   const [asPlayer,setAsPlayer] = useState('');
   const nickRef = useRef(null), codeRef = useRef(null), inputRef = useRef(null), storyRef = useRef(null), pending = useRef(false), swapPending = useRef(false);
   const current = useRef(null), latestRequest = useRef(0), seenRun = useRef(''), seenTraps = useRef(new Set());
@@ -117,6 +123,10 @@ export default function PlotTwist({onContinue}) {
       if(newTraps.length)setTrap(newTraps);
     }
   },[game]);
+  // Word Trap's How to Play opens by itself once per phone, in the lobby, after the language note.
+  useEffect(()=>{
+    if(game?.mode==='trap'&&game.status==='lobby'&&!langNote&&!seenHowToPlay()){markHowToPlaySeen();setHowTo(true);}
+  },[game?.mode,game?.status,langNote]);
   useEffect(()=>{setDraft('');},[game?.turn,game?.run,asPlayer]);
   useEffect(()=>{setSwapError('');},[game?.target,game?.secret_id,reveal]);
   useEffect(()=>{
@@ -174,6 +184,7 @@ export default function PlotTwist({onContinue}) {
   // Arrived from a scanned code or shared link: only the nickname is left to fill.
   const linkJoin=!!routeCode&&!auth;
   const playerName=id=>game?.players.find(p=>p.id===id)?.name || t.aFriend;
+  const avatarOf=id=>game?.players.find(p=>p.id===id)?.avatar;
   const styleOf=id=>{const i=game?.players.findIndex(p=>p.id===id)??0;return game?.players[i]?.style||{ink:INKS[Math.max(i,0)%INKS.length],mark:'none'};};
   const myStyle=styleOf(me);
   const myWords=game?.words||(game?.target?[game.target]:[]);
@@ -191,7 +202,7 @@ export default function PlotTwist({onContinue}) {
   // Step back one screen: connect → modes → language → mini games. Language and mode stay picked.
   const back=()=>{if(screen==='connect'&&!code){setError('');setScreen('modes');}else if(screen==='modes')setScreen('language');else exit();};
   const stepBack=(screen==='connect'&&!code)||screen==='modes';
-  const playerList=<div className="pt-roster">{game?.players.map((p,i)=><div className={`pt-nameplate ${p.id===turnPlayer?.id&&game.status==='active'?'is-active':''}`} key={p.id}><span className={`pt-avatar pt-avatar-${i%4}`}>{p.name.slice(0,1).toUpperCase()}</span><span>{p.name}<small>{p.id===game.host?t.tags.host:p.simulated?t.tags.test:p.id===credentials?.player_id?t.tags.you:t.tags.friend}</small></span>{game.mode==='trap'&&game.status!=='lobby'&&<b>{p.score} <span className="pt-sr">{t.points}</span></b>}</div>)}</div>;
+  const playerList=<div className="pt-roster">{game?.players.map(p=><div className={`pt-nameplate ${p.id===turnPlayer?.id&&game.status==='active'?'is-active':''}`} key={p.id}><Avatar slot={p.avatar} name={p.name} list={avatarList}/><span>{p.name}<small>{p.id===game.host?t.tags.host:p.simulated?t.tags.test:p.id===credentials?.player_id?t.tags.you:t.tags.friend}</small></span>{game.mode==='trap'&&game.status!=='lobby'&&<b>{p.score} <span className="pt-sr">{t.points}</span></b>}</div>)}</div>;
   return <main dir={t.dir} lang={game?.lang || lang} className={`pt-app ${t.dir==='rtl'?'pt-rtl':''} ${screen==='room'?'pt-in-room':''} ${playing?'pt-playing':''} ${trapMood?'pt-trap':''} pt-screen-${screen}`} data-typography-ignore>
     <Rooftop mood={trapMood?'trap':undefined}/>
     <div className="pt-shell">
@@ -216,7 +227,7 @@ export default function PlotTwist({onContinue}) {
       {screen==='room'&&game&&<>
         {!playing&&<div className="pt-room-top"><span>{t.modes[game.mode].name} <i> / {game.status==='lobby'?t.gathering:game.status==='ended'?t.finalPage:roundLabel()}</i></span><button className="pt-code-tag" onClick={share}><LinkIcon size={14}/>{code}</button></div>}
         {game.status==='lobby'?<section className="pt-lobby">
-          <div className="pt-lobby-head"><h1>{t.lobbyTitle}</h1><p>{game.mode==='trap'?t.lobbyTrap:t.lobbyStory(game.rounds)}</p></div>
+          <div className="pt-lobby-head"><h1>{t.lobbyTitle}</h1><p>{game.mode==='trap'?t.lobbyTrap:t.lobbyStory(game.rounds)}</p>{game.mode==='trap'&&<button type="button" className="pt-howto-open" onClick={()=>setHowTo(true)}><CircleHelp size={16}/>{t.howTo}</button>}</div>
           <div className="pt-paper pt-guestbook"><div className="pt-paper-heading"><h2>{t.guestList}</h2><span>{game.players.length}/8</span></div>{host?<button className="pt-primary" disabled={game.players.length<2||busy} onClick={()=>action('start')}>{t.start} <ArrowRight size={18}/></button>:<p className="pt-waiting">{t.hostWillStart(playerName(game.host))}</p>}{game.players.length<2&&<small className="pt-hint">{t.needFriend}</small>}{playerList}{host&&game.dev&&game.players.length<8&&<button className="pt-add-test" disabled={busy} onClick={()=>action('add_test')}><Plus size={17}/> {t.addTest}</button>}</div>
           <div className="pt-invite"><p className="pt-invite-title">{t.lobbyText}</p>{host&&<div className="pt-invite-qr"><RoomQR url={inviteUrl} label={t.qrLabel(code)}/><span>{t.qrHint}</span></div>}<div className="pt-invite-code"><span>{t.yourCode}</span><strong dir="ltr">{code}</strong></div><div className="pt-invite-actions"><button className="pt-ghost" onClick={async()=>{try{await navigator.clipboard.writeText(code);setNotice(t.codeCopied);}catch{setNotice(t.yourCodeIs(code));}}}><Copy size={15}/> {t.copyCode}</button><button className="pt-ghost" onClick={share}><LinkIcon size={15}/> {t.shareInvite}</button></div></div>
         </section>
@@ -231,14 +242,13 @@ export default function PlotTwist({onContinue}) {
             <button className="pt-code-tag" dir="ltr" onClick={share} aria-label={t.shareInvite}><LinkIcon size={13}/>{code}</button>
           </div>
           {game.mode==='trap'&&game.status==='active'&&<button className="pt-secret-board" onClick={()=>setReveal(true)} aria-label={t.showSecret}>
-            {game.category&&<span className="pt-secret-cat">{t.categoryLine}<b>{game.category.name}</b></span>}
             <span className="pt-secret-words"><i>{t.yourWords(myWords.length)}</i>{myWords.map(w=><strong key={w}>{w}</strong>)}<Eye size={14}/></span>
             <small>{t.secretGoal(myWords.length)}</small>
           </button>}
           <div className={`pt-page ${myTurn?'is-mine':''}`} onClick={()=>{if(myTurn)inputRef.current?.focus();}}>
-            <div className="pt-page-head"><span className="pt-page-label">{t.soFar}</span><button type="button" className="pt-colors-button" onClick={e=>{e.stopPropagation();setPicker(true);}}><span className="pt-colors-dot" style={{color:inkColor(myStyle.ink),background:markColor(myStyle.mark)}}>A</span>{t.colours}<Palette size={14}/></button></div>
+            <div className="pt-page-head"><span className="pt-page-label">{t.soFar}</span><span className="pt-page-tools">{game.mode==='trap'&&<button type="button" className="pt-colors-button pt-howto-chip" aria-label={t.howTo} title={t.howTo} onClick={e=>{e.stopPropagation();setHowTo(true);}}><CircleHelp size={17}/></button>}<button type="button" className="pt-colors-button" onClick={e=>{e.stopPropagation();setPicker(true);}}><span className="pt-colors-dot" style={{color:inkColor(myStyle.ink),background:markColor(myStyle.mark)}}>A</span>{t.colours}<Palette size={14}/></button></span></div>
             <div className="pt-page-story" ref={storyRef} aria-live="polite" aria-relevant="additions">
-              {game.contributions.length?game.contributions.map((c,i)=>{const st=styleOf(c.player);const same=i>0&&game.contributions[i-1].player===c.player;return <p className={`pt-line ${same?'is-same':''}`} key={`${game.run}-${i}`}>{!same&&<small className="pt-line-name" style={{color:inkColor(st.ink)}}>{playerName(c.player)}</small>}<span className="pt-line-text" style={{color:inkColor(st.ink),background:markColor(st.mark)}}>{c.text}</span></p>;}):!myTurn&&<span className="pt-page-empty">{t.firstLine}</span>}
+              {game.contributions.length?game.contributions.map((c,i)=>{const st=styleOf(c.player);const same=i>0&&game.contributions[i-1].player===c.player;return <p className={`pt-line ${same?'is-same':''}`} key={`${game.run}-${i}`}>{!same&&<span className="pt-line-who"><Avatar slot={avatarOf(c.player)} name={playerName(c.player)} list={avatarList} ring={inkColor(st.ink)}/><small className="pt-line-name" style={{color:inkColor(st.ink)}}>{playerName(c.player)}</small></span>}<span className="pt-line-text" style={{color:inkColor(st.ink),background:markColor(st.mark)}}>{c.text}</span></p>;}):!myTurn&&<span className="pt-page-empty">{t.firstLine}</span>}
               {myTurn&&<textarea ref={inputRef} className="pt-page-input" value={draft} onChange={e=>typeDraft(e.target.value)} maxLength={350} rows={1}
                 dir="auto" aria-label={t.ariaLine(lo,hi)} placeholder={game.mode==='trap'?t.placeholderTrap:t.placeholderStory}
                 enterKeyHint="send" spellCheck autoCorrect="on" autoCapitalize="sentences"
@@ -263,7 +273,6 @@ export default function PlotTwist({onContinue}) {
       {!playing&&<footer className="pt-site-footer">PLOT TWIST <span>{t.footer[0]}</span><span>{t.footer[1]}</span></footer>}
     </div>
     {reveal&&game?.target&&<div className="pt-modal" role="dialog" aria-modal="true" aria-labelledby="pt-reveal-title"><div className="pt-reveal-card"><span className="pt-small-label">{t.revealLabel}</span><Sparkles size={38}/><h2 id="pt-reveal-title">{t.revealTitle}</h2>
-      {game.category&&<p className="pt-reveal-cat">{t.categoryLine}<b>{game.category.name}</b></p>}
       <div className="pt-reveal-list" aria-live="polite">{myWords.map(w=>{const canSwap=game.status==='active'&&game.mode==='trap'&&(game.rerolls_used??0)<(game.rerolls_max??1);return <div className="pt-reveal-word" key={w}><strong>{w.toUpperCase()}</strong>
         {canSwap&&<button type="button" className={`pt-reroll ${swapping?'is-busy':''}`} disabled={swapping} aria-busy={swapping||undefined} onClick={()=>swapWord(w)} aria-label={t.swapLabel(w)}><RefreshCw size={16}/><span className="pt-reroll-count">{t.swap}</span></button>}
       </div>;})}</div>
@@ -276,6 +285,7 @@ export default function PlotTwist({onContinue}) {
       <div className="pt-swatch-group"><span>{t.inkLabel}</span><div className="pt-swatches">{INKS.map(id=><button type="button" key={id} className={`pt-swatch ${myStyle.ink===id?'is-on':''}`} aria-pressed={myStyle.ink===id} aria-label={id} style={{background:inkColor(id)}} onClick={()=>pickStyle(id,myStyle.mark)}/>)}</div></div>
       <div className="pt-swatch-group"><span>{t.markLabel}</span><div className="pt-swatches">{HIGHLIGHTS.map(id=><button type="button" key={id} className={`pt-swatch pt-swatch-mark ${id==='none'?'is-none':''} ${myStyle.mark===id?'is-on':''}`} aria-pressed={myStyle.mark===id} aria-label={id==='none'?t.noHighlight:id} style={{background:id==='none'?'transparent':markColor(id)}} onClick={()=>pickStyle(myStyle.ink,id)}/>)}</div></div>
       <button className="pt-primary" autoFocus onClick={()=>setPicker(false)}>{t.gotIt} <Check size={18}/></button></div></div>}
+    {howTo&&<HowToPlay lang={game?.lang || lang} onClose={()=>setHowTo(false)}/>}
     {langNote&&game&&!reveal&&<div className="pt-modal" role="dialog" aria-modal="true" aria-labelledby="pt-lang-title"><div className="pt-reveal-card"><span className="pt-small-label">{t.langNoteLabel}</span><h2 id="pt-lang-title">{t.langNoteTitle}</h2><p>{t.langNoteText}</p><button className="pt-primary" autoFocus onClick={()=>setLangNote(false)}>{t.gotIt} <Check size={18}/></button></div></div>}
   </main>;
 }

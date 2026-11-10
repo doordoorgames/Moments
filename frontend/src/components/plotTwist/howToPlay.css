@@ -1,0 +1,103 @@
+/* Word Trap · How to Play. Copy and examples: howToPlayContent.js. The pictures are the game's own
+   pieces (story page, chat lines, avatars, secret-word board, PLOT TWIST card) drawn small
+   on a slice of the Word Trap rooftop sky. Four panels: 2 × 2 when there is room, stacked on phones. */
+.pt-app .pt-howto-modal{padding:20px}
+.pt-howto{display:flex;flex-direction:column;width:min(980px,100%);max-height:min(calc(100dvh - 40px),calc(var(--pt-height,100dvh) - 40px));background:#3d263f;color:#ffe6c1;border:1px solid #c795a5;border-radius:12px;box-shadow:9px 12px 0 #170f2455;overflow:hidden;text-align:start;animation:pt-reveal .35s ease-out}
+.pt-howto-head{flex-shrink:0;display:flex;align-items:center;justify-content:space-between;gap:16px;padding:16px 20px 13px;border-bottom:1px solid #a0768b66}
+.pt-howto-head .pt-small-label{color:#f0cfd6}
+.pt-app .pt-howto-head h2{margin-top:2px;font-size:34px;line-height:1.1;color:#fff2d9}
+.pt-app .pt-howto-close{display:grid;place-items:center;width:46px;height:46px;flex-shrink:0;padding:0;border-radius:50%;border:1.5px solid #fff2d9cc;background:#2f1e3b;color:#fff2d9;box-shadow:0 3px 0 #1d1226}
+.pt-app .pt-howto-close:hover{background:#4a2d4a}
+.pt-howto-body{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+.pt-howto-panels{list-style:none;margin:0;padding:16px 20px 4px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.pt-howto-panel{display:grid;grid-template-rows:subgrid;grid-row:span 2;row-gap:0;min-width:0;background:var(--pt-paper);color:var(--pt-ink);border:1px solid #eacbb3;border-radius:10px;overflow:hidden;box-shadow:0 5px 0 #1d122666;color-scheme:light}
+.pt-howto-copy{padding:11px 16px 15px}
+.pt-howto-num{display:block;font-size:10px;font-weight:800;letter-spacing:1.6px;color:#a07882}
+.pt-app .pt-howto-copy h3{margin:1px 0 4px;font:600 22px/1.2 'Playfair Display',Georgia,serif;letter-spacing:-.02em;color:#40263c}
+.pt-app .pt-howto-copy p{font-size:14px;line-height:1.5;color:#6b4a62}
+.pt-howto-foot{display:flex;justify-content:center;padding:12px 20px 18px}
+.pt-app .pt-howto-foot .pt-primary{width:min(340px,100%)}
+
+/* The picture: Word Trap's night sky with the string of lights, then the game pieces on top. */
+.pt-howto-art{position:relative;isolation:isolate;min-height:176px;display:flex;align-items:center;justify-content:center;padding:24px 16px 12px;overflow:hidden;background:linear-gradient(180deg,#22133a 0%,#432651 50%,#7c3f66 86%,#a6566f 100%)}
+.pt-howto-art::before{content:'';position:absolute;z-index:-1;left:-12%;right:-12%;top:-36px;height:58px;border-bottom:2px solid #170d24;border-radius:0 0 50% 50%}
+.pt-howto-art::after{content:'';position:absolute;z-index:-1;inset:0 0 auto;height:44px;background:radial-gradient(circle at 9% 9px,#ffe7a8 0 2.5px,#ffcc7773 3.5px,transparent 11px),radial-gradient(circle at 29% 17px,#ffe7a8 0 2.5px,#ffcc7773 3.5px,transparent 11px),radial-gradient(circle at 50% 21px,#ffe7a8 0 2.5px,#ffcc7773 3.5px,transparent 11px),radial-gradient(circle at 71% 17px,#ffe7a8 0 2.5px,#ffcc7773 3.5px,transparent 11px),radial-gradient(circle at 91% 9px,#ffe7a8 0 2.5px,#ffcc7773 3.5px,transparent 11px)}
+.pt-howto-art>img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+
+/* Small copies of the real pieces. */
+.pt-howto .pt-face{--pt-face-size:18px}
+.pt-howto .pt-line-name{font-size:8.5px;letter-spacing:1.2px}
+.pt-ht-stage{position:relative;width:100%;max-width:340px}
+.pt-ht-status{display:block;margin-bottom:5px;font:600 15px/1.2 'Playfair Display',Georgia,serif;color:#fff2d9}
+.pt-ht-page{position:relative;width:100%;background:var(--pt-paper);color:var(--pt-ink);border:1px solid #eacbb3;border-radius:9px;padding:8px 11px 7px;box-shadow:0 8px 22px #12081f80;font:14.5px/1.5 'Playfair Display',Georgia,serif;text-align:start}
+.pt-ht-page.is-mine{box-shadow:0 0 0 3px #ffd79966,0 8px 22px #12081f80}
+.pt-app .pt-ht-page .pt-page-label{display:block;margin-bottom:5px;font-size:7.5px;letter-spacing:1.5px}
+.pt-app .pt-ht-page .pt-line{margin:0 0 5px;font-size:inherit;line-height:1.45}
+.pt-ht-page .pt-line-who{margin-bottom:2px}
+.pt-ht-input{margin:5px 0 0;padding:0 0 2px;border-bottom:2px dashed #865174;color:#2b1a2e;font:inherit}
+.pt-ht-caret{display:inline-block;width:2px;height:1em;margin-inline-start:2px;vertical-align:-2px;background:#865174;animation:pt-ht-blink 1.1s steps(1) infinite}
+@keyframes pt-ht-blink{50%{opacity:0}}
+.pt-ht-foot{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:7px;padding-top:6px;border-top:1px solid #e3cfbe;font:700 10px/1.2 'DM Sans',sans-serif;color:#a88a96}
+.pt-ht-foot .pt-count-ready{color:#447c60}
+.pt-ht-send{display:inline-flex;align-items:center;gap:5px;border-radius:999px;background:#40263e;color:#fff2d9;padding:4px 10px;font:800 10px/1.2 'DM Sans',sans-serif;white-space:nowrap}
+
+.pt-ht-board{width:100%;max-width:290px;border:1px solid #c995ad80;background:#2f1e3bd9;color:#ffe8c7;border-radius:10px;padding:8px 11px;text-align:start}
+.pt-app .pt-ht-board .pt-secret-words{gap:5px;font-size:10.5px}
+.pt-app .pt-ht-board .pt-secret-words strong{position:relative;font-size:14px;padding:2px 8px}
+.pt-ht-board strong.is-new{box-shadow:0 0 0 2px #f5b6ca}
+.pt-app .pt-ht-board strong em{position:absolute;top:-9px;inset-inline-end:-11px;padding:3px 5px;border-radius:999px;background:#f5b6ca;color:#5b1f45;font:900 7.5px/1 'DM Sans',sans-serif;font-style:normal;letter-spacing:.8px;text-transform:none}
+
+/* 1 · two phones */
+.pt-ht-phones{display:flex;justify-content:center;align-items:flex-start;gap:clamp(10px,4%,22px);width:100%}
+.pt-ht-phone{display:flex;flex-direction:column;align-items:center;gap:5px;width:44%;max-width:158px;min-width:0}
+.pt-ht-phone>.pt-line-who{margin:0;max-width:100%}
+.pt-app .pt-ht-phone>.pt-line-who .pt-line-name{color:#fff2d9!important;opacity:1}
+.pt-ht-screen{position:relative;width:100%;padding:13px 7px 8px;border:3px solid #150c20;border-radius:16px;background:#2a1a38;box-shadow:0 6px 16px #0b051466}
+.pt-ht-screen::before{content:'';position:absolute;top:4px;left:50%;width:24px;height:4px;margin-left:-12px;border-radius:4px;background:#150c20}
+.pt-ht-screen .pt-ht-board{padding:6px 7px;border-radius:8px}
+.pt-app .pt-ht-screen .pt-secret-words strong{font-size:13px;padding:2px 7px}
+.pt-ht-ghost{margin-top:7px;padding:5px 7px;border-radius:6px;background:var(--pt-paper)}
+.pt-ht-ghost i{display:block;height:4px;margin:3px 0;border-radius:2px;background:#e3cfbe}
+.pt-ht-ghost i:nth-child(2){width:72%}
+.pt-ht-ghost i:nth-child(3){width:46%}
+.pt-ht-only{display:inline-flex;align-items:center;gap:4px;font:700 9px/1.3 'DM Sans',sans-serif;color:#f0cfd6;text-align:center}
+
+/* 3 · the board grows by one word */
+.pt-ht-grow{display:flex;flex-direction:column;align-items:center;gap:7px;width:100%}
+.pt-ht-step{display:flex;align-items:center;gap:7px;color:#ffd799}
+
+/* 4 · safe line, trapped line, PLOT TWIST card */
+.pt-ht-hit{background:#ffd5df;color:#8a2544;box-shadow:inset 0 -2px 0 #c2416b;border-radius:3px;padding:0 2px;font-weight:700}
+.pt-ht-safe{display:inline-flex;align-items:center;gap:3px;margin-inline-start:6px;vertical-align:2px;padding:3px 6px;border-radius:999px;background:#d9f0df;color:#2f6b3a;font:800 8px/1 'DM Sans',sans-serif;letter-spacing:1px;text-transform:uppercase;white-space:nowrap}
+.pt-ht-page.has-twist{padding-bottom:14px}
+.pt-ht-twist{position:relative;z-index:1;display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:4px 10px;width:max-content;max-width:calc(100% - 16px);margin:-9px auto 0;padding:6px 13px 7px;background:#3d263f;border:1px solid #c795a5;border-radius:8px;box-shadow:4px 5px 0 #170f2466;text-align:center;animation:pt-reveal .45s ease-out}
+.pt-app .pt-ht-twist b{display:block;white-space:nowrap;font:900 17px/1 'DM Sans',sans-serif;letter-spacing:-.5px;color:#fff0d8;text-shadow:2px 2px 0 #a13b73}
+.pt-ht-twist b br{display:none}
+.pt-ht-twist b em{margin-inline-start:.28em;color:#f1a1c0}
+.pt-ht-twist span{font:800 10px/1.2 'DM Sans',sans-serif;color:#ffcf8e;white-space:nowrap}
+
+/* Arabic: Cairo everywhere, no letter-spacing (it breaks the joins), mirrored layout from dir=rtl. */
+.pt-app.pt-rtl .pt-howto *,.pt-howto[dir=rtl] *{font-family:'Cairo',system-ui,sans-serif!important;letter-spacing:0!important}
+.pt-app.pt-rtl .pt-howto-head h2,.pt-howto[dir=rtl] .pt-howto-head h2{font-weight:800;line-height:1.3}
+.pt-app.pt-rtl .pt-howto-copy h3,.pt-howto[dir=rtl] .pt-howto-copy h3{font-weight:800;font-size:20px;line-height:1.35}
+.pt-howto[dir=rtl] .pt-ht-page{font-size:13.5px;line-height:1.55}
+.pt-howto[dir=rtl] .pt-ht-status{font-weight:800}
+.pt-howto[dir=rtl] .pt-line-name{font-size:10px;font-weight:800}
+.pt-howto[dir=rtl] .pt-ht-board .pt-secret-words strong{font-weight:800}
+.pt-howto[dir=rtl] .pt-ht-twist b{font-size:16px;line-height:1.3;font-weight:900}
+.pt-howto[dir=rtl] .pt-ht-safe,.pt-howto[dir=rtl] .pt-ht-board strong em{font-size:9px;padding:2px 6px}
+.pt-howto[dir=rtl] .lucide-send{transform:scaleX(-1)}
+
+@media(max-width:720px){
+  .pt-app .pt-howto-modal{padding:10px}
+  .pt-howto{max-height:min(calc(100dvh - 20px),calc(var(--pt-height,100dvh) - 20px))}
+  .pt-howto-head{padding:12px 14px 10px}
+  .pt-app .pt-howto-head h2{font-size:28px}
+  .pt-howto-panels{grid-template-columns:minmax(0,1fr);padding:12px 12px 2px;gap:12px}
+  .pt-howto-art{min-height:170px;padding:22px 12px 12px}
+  .pt-howto-copy{padding:10px 14px 14px}
+  .pt-app .pt-howto-copy h3{font-size:20px}
+  .pt-app .pt-howto-copy p{font-size:13.5px}
+  .pt-howto-foot{padding:10px 12px 14px}
+}
+@media(prefers-reduced-motion:reduce){.pt-ht-caret{animation:none}}

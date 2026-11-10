@@ -4,8 +4,6 @@ import re
 import secrets
 import uuid
 
-import word_trap_categories as CATS
-
 WORDS = """pancake ice moon cat dog pizza crown dragon robot ghost cake banana rainbow mirror pirate princess castle taxi coffee umbrella suitcase lemon balloon sandwich candle garden ocean mountain violin chocolate diamond dinosaur popcorn circus penguin rabbit rocket bicycle wedding detective elevator window blanket library camera monster butterfly treasure island thunder wizard snow beach airport kitchen cinema duck cheese fountain ladder socks spaghetti sunflower perfume tiger bus telephone cookie star pumpkin clock pocket shark watermelon piano letter shoes hat horse supermarket lipstick cloud train door baby chocolate milk queen king suitcase pillow chicken orange spider carpet ring honey hospital museum school party frog wallet mermaid spaceship giraffe dentist suitcase shampoo magnet statue beard tea soap broccoli disco vampire elephant dolphin pickle costume scooter notebook apple avocado necklace candle jungle squirrel snowman unicorn toaster bagel toaster turtle lobster shampoo jacket suitcase kettle mango cupcake lighthouse volcano swimmingpool snowflake keyboard guitar lipstick suitcase microphone moustache pineapple hamster feather cushion telescope bakery lipstick rollercoaster jellyfish yogurt slippers suitcase waterfall castle hamburger astronaut apron balcony velvet cherry cupboard waterfall pony trophy postcard passport ribbon cinema bakery puppy fountain football handbag eyebrow coconut pastry mushroom window dragonfly glitter octopus grapefruit hedgehog macaroni moonlight scarf seagull shoelace strawberry teaspoon traffic spaghetti starfish teapot umbrella watermelon whistle zebra treasure pineapple""".split()
 POOL = list(dict.fromkeys(WORDS))
 # Apostrophes and hyphens inside a word count as one; standalone punctuation never counts.
@@ -46,7 +44,11 @@ def add_player(game, name, simulated=False):
     name = nickname(name)
     if any(p['name'].casefold() == name.casefold() for p in game['players']):
         raise GameError("That nickname is taken in this room.", "هالاسم مأخوذ في هالغرفة.")
-    p = dict(id=str(uuid.uuid4()), name=name, token=secrets.token_urlsafe(32), score=0, simulated=simulated)
+    # One avatar per player for the whole room (replays included), never shared while a free one exists.
+    taken = {avatar_of(game, i) for i in range(len(game['players']))}
+    free = [n for n in range(1, AVATARS + 1) if n not in taken] or list(range(1, AVATARS + 1))
+    p = dict(id=str(uuid.uuid4()), name=name, token=secrets.token_urlsafe(32), score=0, simulated=simulated,
+             avatar=secrets.choice(free))
     game['players'].append(p)
     game['version'] += 1
     return p
@@ -59,7 +61,7 @@ def new_game(name, mode, rounds, dev=False, lang='en'):
     elif mode != 'story' or not 1 <= rounds <= 10:
         raise GameError("Choose a mode and 1–10 rounds.", "اختار نوع اللعبة ومن 1 إلى 10 جولات.")
     g = dict(mode=mode, rounds=rounds, dev=dev, lang=lang, status='lobby', players=[], contributions=[],
-             targets={}, secrets={}, styles={}, category=None, used=[], traps=[], turn=0, version=0, run=str(uuid.uuid4()))
+             targets={}, secrets={}, styles={}, used=[], traps=[], turn=0, version=0, run=str(uuid.uuid4()))
     host = add_player(g, name)
     g['host'] = host['id']
     return g, host
@@ -72,9 +74,16 @@ def authenticate(g, pid, token):
                     "ما قدرنا نتأكد منك. استخدم نفس الجهاز اللي دخلت منه.")
 
 def pool(g):
-    cat = CATS.category(g.get('category'), lang_of(g))
-    if cat: return cat['words']
+    # Secret words are random, unrelated everyday nouns in the room's language. There is no
+    # shared theme: players who could guess a theme would simply avoid every word in it.
     return AR_POOL if lang_of(g) == 'ar' else POOL
+
+# Avatar pictures: numbered slots 1..AVATARS, uploaded at /admin/plot-twist-avatars.
+AVATARS = 20
+
+def avatar_of(g, i):
+    """Player i's avatar slot. Rooms saved before avatars existed get a stable one by seat."""
+    return g['players'][i].get('avatar') or (i % AVATARS) + 1
 
 # Word Trap: one swap per player per story.
 REROLLS = 1
@@ -92,7 +101,7 @@ def live(g):
     return {w for pid in g['targets'] for w in held(g, pid)}
 
 def fresh(g, avoid=()):
-    """A word from the room's category nobody holds right now, preferring ones not dealt yet."""
+    """A random word from the room's pool that nobody holds right now, preferring ones not dealt this game."""
     taken = live(g) | set(avoid)
     options = [w for w in pool(g) if w not in g['used'] and w not in taken]
     if not options:
@@ -164,10 +173,7 @@ def start(g):
     if g['status'] == 'active':
         raise GameError("The story is already underway.", "السالفة شغالة.")
     g.update(status='active', contributions=[], targets={}, secrets={}, used=[], traps=[], turn=0, run=str(uuid.uuid4()))
-    if g['mode'] == 'trap':
-        # One category per story; a replay never repeats the last one.
-        options = [c['id'] for c in CATS.CATEGORIES if c['id'] != g.get('category')]
-        g['category'] = secrets.choice(options)
+    g.pop('category', None)  # rooms saved while Word Trap had shared categories
     for p in g['players']:
         p['score'] = 0
         if g['mode'] == 'trap':
@@ -198,7 +204,7 @@ def submit(g, pid, text, turn, run, request_id):
     for owner, word in hits:
         next(p for p in g['players'] if p['id'] == owner)['score'] += 1
         g['traps'].append(dict(id=str(uuid.uuid4()), owner=owner, writer=pid, word=word, turn=g['turn']))
-    # A trapped word is replaced with a fresh one from the same category.
+    # A trapped word is replaced with a fresh random one.
     for owner, word in hits:
         mine = held(g, owner)
         new = fresh(g)
@@ -235,13 +241,11 @@ def said(word, tokens):
 def view(g, pid):
     lo, hi = (STORY_WORDS, STORY_WORDS) if g['mode'] == 'story' else (TRAP_MIN, TRAP_MAX)
     mine = held(g, pid)
-    cat = CATS.category(g.get('category'), lang_of(g)) if g['mode'] == 'trap' and g['status'] != 'lobby' else None
     return dict(mode=g['mode'], rounds=g['rounds'], dev=g['dev'], lang=lang_of(g), min_words=lo, max_words=hi,
                 status=g['status'], host=g['host'],
-                players=[dict({k:p[k] for k in ('id','name','score','simulated')}, style=style_of(g, p['id'], i)) for i, p in enumerate(g['players'])],
+                players=[dict({k:p[k] for k in ('id','name','score','simulated')}, style=style_of(g, p['id'], i), avatar=avatar_of(g, i)) for i, p in enumerate(g['players'])],
                 contributions=[{k:c[k] for k in ('player','text')} for c in g['contributions']],
                 traps=copy.deepcopy(g['traps']), turn=g['turn'], version=g['version'], run=g['run'],
-                category=cat and dict(id=g['category'], name=cat['name']),
                 me=pid, target=mine[0] if mine else None, words=mine, **secret_view(g, pid))
 
 def secret_view(g, pid):

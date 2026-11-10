@@ -3,6 +3,9 @@ import json
 import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
+import io
+from fastapi import Header, HTTPException
+from PIL import Image
 import plot_twist as E
 from plot_twist_api import router
 
@@ -68,28 +71,53 @@ def test_trap_range(n):
     g=game('trap');send(g,' '.join(['word']*n));assert g['turn']==1
 
 @pytest.mark.parametrize('lang',['en','ar'])
-def test_category_words_grow_and_never_clash(lang):
+def test_words_grow_only_for_the_writer_and_never_clash(lang):
     g,_=E.new_game('Host','trap',1,lang=lang)
     for i in range(1,8):E.add_player(g,f'Friend {i}')
-    E.start(g);cat=E.CATS.BY_ID[g['category']][lang]['words']
+    E.start(g);pool=set(E.AR_POOL if lang=='ar' else E.POOL)
     assert all(len(E.held(g,p['id']))==1 for p in g['players'])
+    dealt=set(E.live(g))
     for n in range(40):
-        writer=g['players'][g['turn']%8]['id'];before=len(E.held(g,writer))
+        writer=g['players'][g['turn']%8]['id']
+        before={p['id']:list(E.held(g,p['id'])) for p in g['players']}
         send(g,'x x x x x')
         held=[w for p in g['players'] for w in E.held(g,p['id'])]
-        assert len(held)==len(set(held)) and all(w in cat for w in held)
-        if n<8:assert len(E.held(g,writer))==before+1
+        # No duplicates in the game, every word from the language pool, never one dealt twice.
+        assert len(held)==len(set(held)) and all(w in pool for w in held)
+        new=set(held)-dealt
+        assert len(new)==1 and dealt.isdisjoint(new);dealt|=new
+        # The new word goes to whoever just wrote, on top of what they had; nobody else changes.
+        assert E.held(g,writer)==before[writer]+list(new)
+        assert all(E.held(g,p['id'])==before[p['id']] for p in g['players'] if p['id']!=writer)
     assert g['status']=='active'
 
-def test_category_shared_words_private_replay_new_category():
+@pytest.mark.parametrize('lang',['en','ar'])
+def test_secret_words_have_no_shared_category(lang):
+    # Words come from the whole everyday pool, so nobody can guess a theme and dodge it.
+    seen=set()
+    for _ in range(60):
+        g,_=E.new_game('Host','trap',1,lang=lang)
+        for i in range(1,8):E.add_player(g,f'Friend {i}')
+        E.start(g)
+        assert E.pool(g) is (E.AR_POOL if lang=='ar' else E.POOL) and 'category' not in g
+        first=[E.held(g,p['id'])[0] for p in g['players']]
+        assert len(set(first))==8
+        seen|=set(first)
+    # 480 random first words from one ~30-word theme would repeat constantly; the open pool barely does.
+    assert len(seen)>(150 if lang=='ar' else 250)
+    v=E.view(g,g['players'][0]['id'])
+    assert 'category' not in v and 'category' not in json.dumps(v)
+
+def test_words_private_and_old_category_rooms_play_on():
     g=game('trap',3);a,b,c=[p['id'] for p in g['players']]
-    v=E.view(g,a);name=E.CATS.BY_ID[g['category']]['en']['name']
-    assert v['category']=={'id':g['category'],'name':name} and E.view(g,b)['category']==v['category']
+    v=E.view(g,a)
     assert v['words']==E.held(g,a)
     raw=json.dumps(E.view(g,b))
     assert all(w not in raw for w in E.held(g,a))
-    first=g['category'];E.end(g);E.start(g);assert g['category']!=first
-    assert E.view(game('story'),a)['category'] is None
+    # A room saved while categories existed: the old field is ignored, then dropped on replay.
+    g['category']='water';assert 'category' not in E.view(g,a)
+    send(g,'one two three four five');assert len(E.held(g,a))==2
+    E.end(g);E.start(g);assert 'category' not in g and all(len(E.held(g,p))==1 for p in (a,b,c))
 
 def test_writer_gains_word_and_trap_scores_any_held_word():
     g=game('trap',2);a,b=[p['id'] for p in g['players']]
@@ -111,7 +139,7 @@ def test_arabic_matching_and_language():
     g,_=E.new_game('خالد','trap',1,lang='ar');E.add_player(g,'سعود');E.start(g)
     a,b=[p['id'] for p in g['players']]
     assert E.view(g,a)['lang']=='ar' and E.view(g,a)['min_words']==5 and E.view(g,a)['max_words']==15
-    assert E.view(g,a)['category']['name']==E.CATS.BY_ID[g['category']]['ar']['name']
+    assert 'category' not in E.view(g,a) and all(w in E.AR_POOL for w in E.held(g,a))
     g['targets'][b]=['قطة']
     send(g,'وفجأة طلعت القطّة من الشباك وركضت')
     assert g['players'][1]['score']==1
@@ -124,7 +152,7 @@ def test_arabic_matching_and_language():
 
 def test_legacy_string_target_room():
     g=game('trap',2);a,b=[p['id'] for p in g['players']]
-    g['targets'][b]='piano';g['category']=None;g['secrets']={}
+    g['targets'][b]='piano';g['secrets']={}
     send(g,'one two three four piano')
     assert g['players'][1]['score']==1 and 'piano' not in E.held(g,b)
 
@@ -151,18 +179,28 @@ class Query:
     def maybe_single(self):self.single=True;return self
     def insert(self,data):self.op='insert';self.body=data;return self
     def update(self,data):self.op='update';self.body=data;return self
+    def delete(self):self.op='delete';return self
     def execute(self):
-        if self.op=='insert':self.db.rows[self.body['code']]=copy.deepcopy(self.body);return Result([self.body])
+        if self.op=='insert':
+            if self.body['code'] in self.db.rows:raise ValueError('duplicate key value violates unique constraint (23505)')
+            self.db.rows[self.body['code']]=copy.deepcopy(self.body);return Result([self.body])
         rows=[r for r in self.db.rows.values() if all(r.get(k)==v for k,v in self.filters.items())]
+        if self.op=='delete':
+            for r in rows:del self.db.rows[r['code']]
         if self.op=='update':
             for r in rows:r.update(copy.deepcopy(self.body))
         return Result(copy.deepcopy(rows[0] if rows else None) if self.single else copy.deepcopy(rows))
+
+ADMIN={'X-Admin-Token':'let-me-in'}
+def require_admin(x_admin_token: str = Header(default=None, alias='X-Admin-Token')):
+    if x_admin_token!='let-me-in':raise HTTPException(401,'Unauthorized')
+    return True
 
 @pytest.fixture
 def client(monkeypatch):
     monkeypatch.setenv('SUPABASE_SERVICE_ROLE_KEY','test-only-key');db=DB()
     async def query(fn):return fn()
-    app=FastAPI();app.include_router(router(lambda:db,query))
+    app=FastAPI();app.include_router(router(lambda:db,query,require_admin))
     with TestClient(app) as c:yield c,db
 
 def headers(p):return {'Authorization':f"Bearer {p['player_id']}:{p['token']}"}
@@ -282,7 +320,7 @@ def test_reroll_legacy_room_without_allowances():
 def test_http_reroll_and_style(client):
     c,db=client;a=create(c);url='/api/plot-twist/rooms/'+a['code'];b=c.post(url+'/join',json={'nickname':'Guest'}).json()
     av=c.post(url+'/action',json={'action':'start'},headers=headers(a)).json();bv=c.get(url,headers=headers(b)).json()
-    assert av['category'] and av['category']==bv['category']
+    assert 'category' not in av and 'category' not in bv
     def go(p,v,rid,**kw):
         return c.post(url+'/action',headers=headers(p),json=dict(action='reroll',run=v['run'],secret=v['secret_id'],used=v['rerolls_used'],request_id=rid,**kw))
     old=av['target'];r=go(a,av,'a1',word=old);assert r.status_code==200
@@ -304,3 +342,90 @@ def test_http_reroll_developer_seat(client):
     r=c.post(url+'/action',headers=headers(a),json=dict(action='reroll',run=sv['run'],secret=sv['secret_id'],used=0,request_id='sim',as_player=sim))
     assert r.status_code==200 and r.json()['me']==sim and r.json()['rerolls_used']==1
     assert c.get(url,headers=headers(a)).json()['rerolls_used']==0
+
+
+# ------------------------------------------------------------------ avatars
+
+def test_avatars_unique_stable_and_shared_by_every_view():
+    g=game('trap',8);ids=[p['id'] for p in g['players']]
+    slots=[p['avatar'] for p in g['players']]
+    assert len(set(slots))==8 and all(1<=n<=E.AVATARS for n in slots)
+    def seen():return [[p['avatar'] for p in E.view(g,pid)['players']] for pid in ids]
+    assert all(v==slots for v in seen())
+    for _ in range(10):send(g,'one two three four five')
+    E.set_style(g,ids[1],'teal','mint')
+    assert all(v==slots for v in seen())
+    E.end(g);E.start(g);assert all(v==slots for v in seen())
+
+def test_avatars_spread_over_all_twenty_slots():
+    used=set()
+    for _ in range(40):
+        g,_=E.new_game('Host','story',1)
+        E.add_player(g,'Guest');used|={p['avatar'] for p in g['players']}
+    assert used==set(range(1,E.AVATARS+1))
+
+def test_rooms_from_before_avatars_get_stable_ones():
+    g,_=E.new_game('Host','trap',0);E.add_player(g,'Guest')
+    for p in g['players']:del p['avatar']
+    first=[p['avatar'] for p in E.view(g,g['players'][0]['id'])['players']]
+    assert first==[1,2] and [p['avatar'] for p in E.view(g,g['players'][1]['id'])['players']]==first
+    p=E.add_player(g,'Late');assert p['avatar'] not in (1,2)
+
+def picture(size=(300,200),mode='RGB',fmt='PNG',color=(200,40,90)):
+    b=io.BytesIO();Image.new(mode,size,color).save(b,fmt);return b.getvalue()
+
+def upload(c,slot,data,headers=ADMIN,name='me.png'):
+    return c.put(f'/api/plot-twist/avatars/{slot}',files={'file':(name,data,'image/png')},headers=headers)
+
+def test_avatar_slots_upload_replace_clear(client):
+    c,db=client;url='/api/plot-twist/avatars'
+    r=c.get(url);assert r.status_code==200 and r.json()=={'count':20,'slots':[None]*20}
+    assert upload(c,3,picture(),headers={}).status_code==401
+    assert upload(c,3,picture(),headers={'X-Admin-Token':'nope'}).status_code==401
+    assert c.delete(url+'/3').status_code==401
+    r=upload(c,3,picture());assert r.status_code==200
+    first=r.json()['slots'][2];assert first and r.json()['slots'][:2]==[None,None]
+    assert c.get(url).json()['slots'][2]==first
+    img=c.get(f'{url}/{first}.webp');assert img.status_code==200 and img.headers['content-type']=='image/webp'
+    assert 'immutable' in img.headers['cache-control']
+    pic=Image.open(io.BytesIO(img.content));assert pic.format=='WEBP' and pic.size==(256,256)
+    # Replacing the slot gets a new address and the old picture is removed.
+    second=upload(c,3,picture(color=(10,120,90))).json()['slots'][2]
+    assert second!=first and c.get(f'{url}/{first}.webp').status_code==404 and c.get(f'{url}/{second}.webp').status_code==200
+    # The same picture in two slots is stored once and survives clearing one of them.
+    assert upload(c,20,picture(color=(10,120,90))).json()['slots'][19]==second
+    assert c.delete(url+'/3',headers=ADMIN).json()['slots'][2] is None
+    assert c.get(f'{url}/{second}.webp').status_code==200
+    assert c.delete(url+'/20',headers=ADMIN).json()['slots']==[None]*20
+    assert c.get(f'{url}/{second}.webp').status_code==404
+    assert not [k for k in db.rows if k.startswith('ptavatar:')]
+
+def test_avatar_upload_checks(client):
+    c,_=client
+    for slot in (0,21):assert upload(c,slot,picture()).status_code==404
+    assert upload(c,1,b'not a picture').status_code==400
+    assert upload(c,1,b'').status_code==400
+    assert upload(c,1,picture(size=(40,40))).status_code==400
+    gif=picture(fmt='GIF',mode='P',color=1);assert upload(c,1,gif,name='x.gif').status_code==400
+    # Transparent PNGs and phone JPEGs both come out as square WebP.
+    for data in (picture(size=(900,400),mode='RGBA',color=(0,0,0,0)),picture(size=(400,900),fmt='JPEG')):
+        r=upload(c,2,data);assert r.status_code==200
+        pic=Image.open(io.BytesIO(c.get(f"/api/plot-twist/avatars/{r.json()['slots'][1]}.webp").content))
+        assert pic.size==(256,256)
+    for bad in ('nothex','ABCDEF0123456789abcd','0'*19,'../../etc/passwd'):
+        assert c.get(f'/api/plot-twist/avatars/{bad}.webp').status_code==404
+
+def test_avatar_admin_closed_without_admin_check(monkeypatch):
+    monkeypatch.setenv('SUPABASE_SERVICE_ROLE_KEY','test-only-key');db=DB()
+    async def query(fn):return fn()
+    app=FastAPI();app.include_router(router(lambda:db,query))
+    with TestClient(app) as c:
+        assert upload(c,1,picture()).status_code==401
+        assert c.get('/api/plot-twist/avatars').json()['slots']==[None]*20
+
+def test_room_views_carry_avatars(client):
+    c,_=client;a=create(c);url='/api/plot-twist/rooms/'+a['code']
+    b=c.post(url+'/join',json={'nickname':'Guest'}).json()
+    av=c.get(url,headers=headers(a)).json();bv=c.get(url,headers=headers(b)).json()
+    assert [p['avatar'] for p in av['players']]==[p['avatar'] for p in bv['players']]
+    assert len({p['avatar'] for p in av['players']})==2

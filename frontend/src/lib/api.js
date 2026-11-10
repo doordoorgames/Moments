@@ -124,6 +124,16 @@ export const api = {
         axios.get(apiUrl("/emoji-rooftop/clues"), { headers: adminHeaders(), params: { lang } }).then((r) => r.data),
     adminSaveEmojiClues: (csv, mode, lang = "en") =>
         axios.put(apiUrl("/emoji-rooftop/clues"), { csv, mode }, { headers: adminHeaders(), params: { lang } }).then((r) => r.data),
+    // Plot Twist avatars: 20 picture slots (public list; uploads and removals need the admin token).
+    plotTwistAvatars: () =>
+        axios.get(apiUrl("/plot-twist/avatars"), { params: { _ts: Date.now() } }).then((r) => r.data),
+    adminUploadPlotTwistAvatar: (slot, file) => {
+        const form = new FormData();
+        form.append("file", file);
+        return axios.put(apiUrl(`/plot-twist/avatars/${slot}`), form, { headers: adminHeaders() }).then((r) => r.data);
+    },
+    adminClearPlotTwistAvatar: (slot) =>
+        axios.delete(apiUrl(`/plot-twist/avatars/${slot}`), { headers: adminHeaders() }).then((r) => r.data),
     adminCreateStory: (payload) =>
         axios.post(apiUrl("/admin/stories"), payload, { headers: adminHeaders() }).then((r) => r.data),
     adminUpdateStory: (id, payload) =>

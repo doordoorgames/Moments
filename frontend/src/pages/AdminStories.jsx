@@ -95,6 +95,9 @@ export default function AdminStories() {
                     <Button variant="secondary" size="sm" onClick={() => nav("/admin/emoji-clues")}>
                         Emoji clues
                     </Button>
+                    <Button variant="secondary" size="sm" onClick={() => nav("/admin/plot-twist-avatars")}>
+                        Plot Twist avatars
+                    </Button>
                     <Button
                         variant="secondary"
                         size="sm"

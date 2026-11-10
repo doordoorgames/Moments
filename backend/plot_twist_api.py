@@ -1,10 +1,16 @@
 """Supabase-backed room transport. Uses existing rooms, encrypted at rest with a server-only key.
 Compare-and-swap prevents lost turns even if another process receives a concurrent request.
 WebSockets carry invalidations only; all private state requires a bearer session over HTTP.
+
+Avatars: 20 numbered picture slots, uploaded at /admin/plot-twist-avatars (admin password).
+Each upload is centre-cropped to a square, saved as a 256 px WebP in its own reserved `rooms`
+row (code ptavatar:<id>) and listed in the `plot_twist_avatars` row (slot -> id). Picture
+urls never change (a new upload gets a new id), so phones cache them for good.
 """
 import asyncio
 import base64
 import hashlib
+import io
 import json
 import os
 import secrets
@@ -13,12 +19,48 @@ from collections import defaultdict
 from datetime import datetime, timezone
 from typing import Literal
 from cryptography.fernet import Fernet, InvalidToken
-from fastapi import APIRouter, Header, HTTPException, Response, WebSocket, WebSocketDisconnect
+from fastapi import APIRouter, Depends, File, Header, HTTPException, Response, UploadFile, WebSocket, WebSocketDisconnect
+from PIL import Image, ImageOps, UnidentifiedImageError
 from pydantic import BaseModel, Field
 import plot_twist as engine
 
 PREFIX = 'plot_twist_v1:'
 ROOM_CODE_RE = re.compile(r'^\d{5}$')
+AVATAR_INDEX = 'plot_twist_avatars'
+AVATAR_ROW = 'ptavatar:'
+AVATAR_ID_RE = re.compile(r'^[0-9a-f]{20}$')
+AVATAR_SIDE = 256
+AVATAR_MIN_SIDE = 64
+AVATAR_MAX_BYTES = 15 * 1024 * 1024
+
+
+def avatar_webp(data):
+    """An uploaded picture as a square 256 px WebP (centre crop, phone rotation applied, transparency kept)."""
+    if not data:
+        raise ValueError('That file is empty.')
+    if len(data) > AVATAR_MAX_BYTES:
+        raise ValueError('That picture is over 15 MB.')
+    Image.MAX_IMAGE_PIXELS = 60_000_000
+    try:
+        img = Image.open(io.BytesIO(data))
+        fmt = img.format
+        img.load()
+    except (UnidentifiedImageError, OSError, SyntaxError, ValueError, Image.DecompressionBombError):
+        raise ValueError('That file is not a picture we can read. Use JPG, PNG or WebP.') from None
+    if fmt not in ('JPEG', 'PNG', 'WEBP'):
+        raise ValueError(f'Use a JPG, PNG or WebP picture (this one is {fmt or "unknown"}).')
+    img = ImageOps.exif_transpose(img)
+    if min(img.size) < AVATAR_MIN_SIDE:
+        raise ValueError(f'That picture is too small ({img.size[0]}x{img.size[1]}). Use at least {AVATAR_MIN_SIDE}x{AVATAR_MIN_SIDE}.')
+    alpha = img.mode in ('RGBA', 'LA', 'PA') or (img.mode == 'P' and 'transparency' in img.info)
+    img = ImageOps.fit(img.convert('RGBA' if alpha else 'RGB'), (AVATAR_SIDE, AVATAR_SIDE), Image.LANCZOS)
+    out = io.BytesIO()
+    img.save(out, 'WEBP', quality=86, method=6)
+    return out.getvalue()
+
+
+def _deny_admin():
+    raise HTTPException(401, 'Unauthorized')
 
 class Create(BaseModel):
     nickname: str = Field(min_length=1, max_length=100)
@@ -48,10 +90,11 @@ def say(g, en, ar):
     return ar if engine.lang_of(g) == 'ar' else en
 
 
-def router(db, query):
+def router(db, query, require_admin=None):
     api = APIRouter(prefix='/api/plot-twist')
     locks = defaultdict(asyncio.Lock)
     sockets = defaultdict(set)
+    admin = Depends(require_admin or _deny_admin)
 
     def cipher():
         key = os.environ.get('SUPABASE_SERVICE_ROLE_KEY') or os.environ.get('SUPABASE_KEY')
@@ -163,6 +206,86 @@ def router(db, query):
             except engine.GameError as e: raise HTTPException(400,e.text(engine.lang_of(g)))
             await save(code,g,old)
             return engine.view(g,pid)
+
+    # ------------------------------------------------------------------ avatars
+
+    async def avatar_slots():
+        """({'1': id, ...}, version) from the index row; (empty, None) before the first upload."""
+        res = await query(lambda: db().table('rooms').select('flags,wheel_winner_choice_id').eq('code', AVATAR_INDEX).maybe_single().execute())
+        data = res.data if res and res.data else None
+        if not data:
+            return {}, None
+        flags = data.get('flags')
+        slots = flags[0] if isinstance(flags, list) and flags and isinstance(flags[0], dict) else {}
+        slots = {k: v for k, v in slots.items() if k.isdigit() and 1 <= int(k) <= engine.AVATARS and isinstance(v, str) and AVATAR_ID_RE.fullmatch(v)}
+        return slots, data.get('wheel_winner_choice_id') or ''
+
+    async def save_avatar_slots(slots, version):
+        row = {'flags': [slots], 'wheel_winner_choice_id': secrets.token_hex(16)}
+        if version is None:
+            await query(lambda: db().table('rooms').insert({'code': AVATAR_INDEX, 'created_at': datetime.now(timezone.utc).isoformat(), **row}).execute())
+            return
+        result = await query(lambda: db().table('rooms').update(row).eq('code', AVATAR_INDEX).eq('wheel_winner_choice_id', version).execute())
+        if not result or not result.data:
+            raise HTTPException(409, 'The avatars just changed somewhere else. Reload and try again.')
+
+    async def drop_unused_picture(aid, slots):
+        if aid and aid not in slots.values():
+            try: await query(lambda: db().table('rooms').delete().eq('code', AVATAR_ROW + aid).execute())
+            except Exception: pass  # an orphaned picture costs a few KB; the slot is already right
+
+    def avatar_list(slots):
+        return dict(count=engine.AVATARS, slots=[slots.get(str(n)) for n in range(1, engine.AVATARS + 1)])
+
+    @api.get('/avatars')
+    async def avatars(response: Response):
+        response.headers['Cache-Control'] = 'no-cache'
+        slots, _ = await avatar_slots()
+        return avatar_list(slots)
+
+    @api.get('/avatars/{aid}.webp')
+    async def avatar_picture(aid: str):
+        if not AVATAR_ID_RE.fullmatch(aid):
+            raise HTTPException(404, 'Avatar not found.')
+        res = await query(lambda: db().table('rooms').select('flags').eq('code', AVATAR_ROW + aid).maybe_single().execute())
+        flags = res.data.get('flags') if res and res.data else None
+        try: data = base64.b64decode(flags[0]['b64'])
+        except Exception: raise HTTPException(404, 'Avatar not found.')
+        return Response(data, media_type='image/webp', headers={'Cache-Control': 'public, max-age=31536000, immutable'})
+
+    def avatar_slot(slot):
+        if not 1 <= slot <= engine.AVATARS:
+            raise HTTPException(404, f'Avatar slots are numbered 1 to {engine.AVATARS}.')
+        return str(slot)
+
+    @api.put('/avatars/{slot}')
+    async def upload_avatar(slot: int, file: UploadFile = File(...), _: bool = admin):
+        n = avatar_slot(slot)
+        try: picture = avatar_webp(await file.read(AVATAR_MAX_BYTES + 1))
+        except ValueError as e: raise HTTPException(400, str(e))
+        aid = hashlib.sha256(picture).hexdigest()[:20]
+        row = [dict(mime='image/webp', b64=base64.b64encode(picture).decode())]
+        async with locks[AVATAR_INDEX]:
+            existing = await query(lambda: db().table('rooms').select('code').eq('code', AVATAR_ROW + aid).maybe_single().execute())
+            if not (existing and existing.data):
+                await query(lambda: db().table('rooms').insert({'code': AVATAR_ROW + aid, 'flags': row, 'created_at': datetime.now(timezone.utc).isoformat()}).execute())
+            slots, version = await avatar_slots()
+            old = slots.get(n)
+            slots[n] = aid
+            await save_avatar_slots(slots, version)
+            if old != aid: await drop_unused_picture(old, slots)
+        return avatar_list(slots)
+
+    @api.delete('/avatars/{slot}')
+    async def clear_avatar(slot: int, _: bool = admin):
+        n = avatar_slot(slot)
+        async with locks[AVATAR_INDEX]:
+            slots, version = await avatar_slots()
+            old = slots.pop(n, None)
+            if old:
+                await save_avatar_slots(slots, version)
+                await drop_unused_picture(old, slots)
+        return avatar_list(slots)
 
     @api.websocket('/rooms/{code}/live')
     async def live(ws: WebSocket, code: str):

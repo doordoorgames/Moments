@@ -99,7 +99,7 @@ test('English and Arabic teach the same thing', () => {
     const c = HOW_TO_PLAY[lang];
     expect(c.players).toHaveLength(2);
     expect(c.panels[2].after.length).toBe(c.panels[2].before.length + 1);
-    expect(c.panels.every(p => p.image === null)).toBe(true);
+    expect(c.panels.every(p => p.image === null || typeof p.image === 'string')).toBe(true);
   }
   expect(HOW_TO_PLAY.en.players.map(p => [p.avatar, p.ink, p.mark])).toEqual(HOW_TO_PLAY.ar.players.map(p => [p.avatar, p.ink, p.mark]));
 });

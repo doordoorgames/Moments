@@ -259,6 +259,10 @@
 
 /* ---------------------------------------------------------------- three-grid memory */
 .cr-memory{display:flex;flex-direction:column;align-items:center;gap:12px}
+/* Nothing on the memory screens can be selected. The letters are plain text, not buttons, so a quick extra tap
+   (the second tap of the last answer) or a finger resting on the grid made the phone select one letter and paint
+   that cell in its blue selection colour. No selection, no long-press menu, no tap flash: only the yellow blink. */
+.cr-memory,.cr-memory *{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}
 /* Remember this: white grid, big black letters, 12 seconds. Slow, soft tint waves (one every 2s) that glide
    white -> lilac -> pale blend -> powder yellow -> white; neighbouring cells start on opposite colours.
    Background colour and a tiny lift only: cheap on phones, letters stay black and sharp throughout. */

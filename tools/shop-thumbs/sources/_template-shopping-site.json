@@ -1,0 +1,21 @@
+{
+  "source": "your-shopping-site",
+  "adapter": "manifest",
+  "reuse": {
+    "status": "unchecked",
+    "evidence": ""
+  },
+  "notes": "Check terms and robots.txt, get written permission, and record evidence before collecting.",
+  "items": [
+    {
+      "name": "Example handbag",
+      "category": "handbags",
+      "image_url": "https://example.com/approved-product.jpg",
+      "source_url": "https://example.com/product",
+      "license": "",
+      "license_url": "",
+      "creator": "",
+      "attribution": ""
+    }
+  ]
+}

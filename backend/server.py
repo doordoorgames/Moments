@@ -2429,6 +2429,10 @@ app.include_router(emoji_rooftop_router(lambda: supa, _q, require_admin))
 from letter_tv_api import router as letter_tv_router
 app.include_router(letter_tv_router(lambda: supa, _q))
 
+# TikTok Memory: words flash for 2 seconds, one player draws while the room watches, then calls them out in order.
+from tiktok_memory_api import router as tiktok_memory_router
+app.include_router(tiktok_memory_router(lambda: supa, _q))
+
 # Clock Race (سباق الساعة): 1-12 players race through the same 20 quick tasks.
 from clock_race_api import router as clock_race_router
 app.include_router(clock_race_router(lambda: supa, _q))

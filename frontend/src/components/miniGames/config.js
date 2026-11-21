@@ -14,6 +14,8 @@ const LetterChallenge = lazy(() => import("../letterChallenge/LetterChallenge"))
 
 const ClockRace = lazy(() => import("../clockRace/ClockRace"));
 
+const TikTokMemory = lazy(() => import("../tiktokMemory/TikTokMemory"));
+
 const BaccaratAdventureEntry = lazy(() => import("../baccaratAdventure/BaccaratAdventureEntry"));
 
 // Rollback switch: set to false and "The Baccarat Hunt" card opens the classic
@@ -34,5 +36,7 @@ export const miniGames = [
   { id: "letter-challenge", name: "Letter Challenge", description: "One letter, a run of categories. Shout an answer that starts with the letter; the host taps NEXT for the next one.", component: LetterChallenge },
   // 1-12 players race through the same 20 quick tasks; first full clock wins. Arabic first.
   { id: "clock-race", name: "لحّق", lang: "ar", play: "العب", description: "٢٠ مهمة سريعة على تلفوناتكم كلكم. شوفوا ساعات بعض تتعبى، وأول واحد يكمّل ساعته يفوز. من ١ إلى ١٢ لاعب.", component: ClockRace },
+  // One player draws a word every 2 seconds while everyone watches, then calls them back in order.
+  { id: "tiktok-memory", name: "TikTok Memory", description: "A new word every 2 seconds. Draw it, then call them all back in order from your drawings while everyone watches. One player at a time, the host judges. 9, 12, 15 or 20 words. English or Arabic.", component: TikTokMemory },
   { id: "baccarat-classic", name: "The Baccarat Hunt: Classic", description: "The original one-screen perfume dash.", component: BaccaratHunt, hidden: true },
 ];

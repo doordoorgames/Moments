@@ -23,6 +23,7 @@ const PlotTwist = lazyRetry(() => import("@/components/plotTwist/PlotTwist"));
 const EmojiRooftop = lazyRetry(() => import("@/components/emojiRooftop/EmojiRooftop"));
 const LetterTV = lazyRetry(() => import("@/components/letterTv/LetterTV"));
 const ClockRace = lazyRetry(() => import("@/components/clockRace/ClockRace"));
+const TikTokMemory = lazyRetry(() => import("@/components/tiktokMemory/TikTokMemory"));
 const AdminClockRace = lazyRetry(() => import("@/pages/AdminClockRace"));
 
 const BaccaratAdventureRoom = lazyRetry(() => import("@/components/baccaratAdventure/BaccaratAdventureRoom"));
@@ -57,6 +58,7 @@ function StatusBarTheme() {
                 : path.includes('emoji-rooftop') ? '#120c28'
                 : path.includes('letter-tv') ? '#000000'
                 : path.includes('letter-challenge') ? '#000000'
+                : path.includes('tiktok-memory') ? '#2a1438'
                 : path.includes('baccarat') ? '#000000'
                 : path.includes('shoug') ? '#6E1F35'
                 : path.includes('admin') ? '#FBF4E4'
@@ -86,6 +88,7 @@ function App() {
                     <Route path="/mini-games/emoji-rooftop/room/:code" element={<Suspense fallback={null}><EmojiRooftop /></Suspense>} />
                     <Route path="/mini-games/letter-tv/room/:code" element={<Suspense fallback={null}><LetterTV /></Suspense>} />
                     <Route path="/mini-games/clock-race/room/:code" element={<Suspense fallback={null}><ClockRace /></Suspense>} />
+                    <Route path="/mini-games/tiktok-memory/room/:code" element={<Suspense fallback={null}><TikTokMemory /></Suspense>} />
                     <Route path="/mini-games/plot-twist/room/:code" element={<Suspense fallback={null}><PlotTwist /></Suspense>} />
                     <Route path="/mini-games/:gameId" element={<SoloMiniGame />} />
                     <Route path="/visual-test" element={<Navigate to="/" replace />} />

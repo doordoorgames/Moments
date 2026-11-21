@@ -2429,7 +2429,7 @@ app.include_router(emoji_rooftop_router(lambda: supa, _q, require_admin))
 from letter_tv_api import router as letter_tv_router
 app.include_router(letter_tv_router(lambda: supa, _q))
 
-# TikTok Memory: words flash for 2 seconds, one player draws while the room watches, then calls them out in order.
+# TikTok Memory: words flash for 3 seconds, one player draws while the room watches, then calls them out in order.
 from tiktok_memory_api import router as tiktok_memory_router
 app.include_router(tiktok_memory_router(lambda: supa, _q))
 

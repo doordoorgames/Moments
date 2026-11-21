@@ -1,4 +1,4 @@
-"""TikTok Memory engine: words flash for 2 seconds each, you draw them, then you
+"""TikTok Memory engine: words flash for 3 seconds each, you draw them, then you
 call them out in order from your own drawings while the room watches.
 
 One player at a time. The host picks the length (9, 12, 15 or 20 words) and the
@@ -25,7 +25,7 @@ VERSION = 1
 LANGS = ('en', 'ar')
 LENGTHS = {9: (3, 3), 12: (3, 4), 15: (3, 5), 20: (4, 5)}  # words: (columns, rows)
 DEFAULT_LENGTH = 12
-STEP = 2.0          # seconds per word
+STEP = 3.0          # seconds per word
 COUNTDOWN = 3.0     # 3-2-1 before the first word
 GRACE = 8.0         # after the last word, how long the drawer's phone has to send drawings
 MAX_PLAYERS = 12

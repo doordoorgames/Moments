@@ -4,13 +4,13 @@ import {ArrowLeft, ArrowRight, Check, Copy, Crown, Eye, Link as LinkIcon, ListOr
 import {BACKEND_URL} from '@/lib/api';
 import RoomQR from '@/components/plotTwist/RoomQR';
 import {normalizeCode} from '@/components/plotTwist/roomCode';
-import Skyline from './Skyline';
+import Skyline, {SKIES, pickSky} from './Skyline';
 import Sketch from './Sketch';
 import DrawPad from './DrawPad';
 import {GRID_LABEL, TEXT, flavorFor} from './i18n';
 import './tiktokMemory.css';
 
-// TikTok Memory: one player at a time draws a word every 2 seconds while the room watches,
+// TikTok Memory: one player at a time draws a word every 3 seconds while the room watches,
 // then calls the words back in order from their own drawings. The judge marks each one.
 const PATH = '/mini-games/tiktok-memory';
 const ROOM = /^\d{5}$/;
@@ -20,8 +20,14 @@ const NAME_KEY = 'tiktok-memory-name';
 const loadSession = code => { try { return JSON.parse(localStorage.getItem(key(code)) || 'null'); } catch { return null; } };
 const savedName = () => { try { return localStorage.getItem(NAME_KEY) || ''; } catch { return ''; } };
 
-function Btn({kind = 'primary', className = '', type = 'button', children, ...rest}) {
-  return <button type={type} className={`tm-btn tm-btn-${kind} ${className}`} {...rest}><span className="tm-btn-face">{children}</span></button>;
+const buzz = () => { try { navigator.vibrate?.(8); } catch { /* not supported */ } };
+
+// Console-style 3D button: ink outline, a coloured lip underneath, gloss on top.
+// Pressing sinks the face into the lip; letting go springs it back.
+function Btn({kind = 'primary', className = '', type = 'button', children, onPointerDown, ...rest}) {
+  return <button type={type} className={`tm-btn tm-3d tm-btn-${kind} ${className}`} onPointerDown={e => { buzz(); onPointerDown?.(e); }} {...rest}>
+    <span className="tm-btn-face tm-3d-face"><span className="tm-btn-label">{children}</span></span>
+  </button>;
 }
 
 function Card({className = '', children}) {
@@ -68,6 +74,7 @@ export default function TikTokMemory({onContinue}) {
   const [cursor, setCursor] = useState(null);
   const [optimistic, setOptimistic] = useState({});
   const [shown, setShown] = useState(() => new Set());
+  const sky = useMemo(() => pickSky(code), [code]);
   const pending = useRef(false), sequence = useRef(0), current = useRef({}), latest = useRef(null);
   const drafts = useRef({}), flushing = useRef(false), flushAgain = useRef(false), retries = useRef(0);
   const markQueue = useRef(Promise.resolve());
@@ -263,8 +270,8 @@ export default function TikTokMemory({onContinue}) {
   const pickLang = value => { setLang(value); setScreen('landing'); };
 
   const lengthPicker = <div className="tm-lengths" role="group" aria-label={t.length}>
-    {LENGTHS.map(n => <button type="button" key={n} className={`tm-length ${length === n ? 'is-on' : ''}`} onClick={() => setLength(n)} aria-pressed={length === n}>
-      <b>{n}</b><small dir="ltr">{GRID_LABEL[n]}</small>
+    {LENGTHS.map(n => <button type="button" key={n} className={`tm-length tm-3d ${length === n ? 'is-on' : ''}`} onPointerDown={buzz} onClick={() => setLength(n)} aria-pressed={length === n}>
+      <span className="tm-3d-face"><b>{n}</b><small dir="ltr">{GRID_LABEL[n]}</small></span>
     </button>)}
   </div>;
 
@@ -305,8 +312,8 @@ export default function TikTokMemory({onContinue}) {
 
   const connect = <Card className="tm-form-card"><form className="tm-form" onSubmit={enter}>
     <div className="tm-tabs">
-      <button type="button" className={intent === 'create' ? 'is-on' : ''} onClick={() => { setIntent('create'); setError(''); }}>{t.create}</button>
-      <button type="button" className={intent === 'join' ? 'is-on' : ''} onClick={() => { setIntent('join'); setError(''); }}>{t.join}</button>
+      <button type="button" className={`tm-tab tm-3d ${intent === 'create' ? 'is-on' : ''}`} onPointerDown={buzz} onClick={() => { setIntent('create'); setError(''); }}><span className="tm-3d-face">{t.create}</span></button>
+      <button type="button" className={`tm-tab tm-3d ${intent === 'join' ? 'is-on' : ''}`} onPointerDown={buzz} onClick={() => { setIntent('join'); setError(''); }}><span className="tm-3d-face">{t.join}</span></button>
     </div>
     {auth ? <p className="tm-muted">{t.reconnecting}</p> : <>
       {intent === 'join' && <label className="tm-field"><span>{t.joinHint}</span>
@@ -466,14 +473,14 @@ export default function TikTokMemory({onContinue}) {
   const focus = playing && game.phase === 'drawing' && isDrawer;
 
   return <main dir={t.dir} lang={game?.lang || lang} className={`tm-app ${t.dir === 'rtl' ? 'tm-rtl' : ''} ${focus ? 'tm-focus' : ''}`}
-    data-typography-ignore data-status-bar-color="#2a1438">
-    <Skyline/>
+    data-typography-ignore data-status-bar-color={SKIES[sky].status}>
+    <Skyline variant={sky} still={focus}/>
     <div className="tm-shell">
       {!focus && <header className="tm-top">
-        <button className="tm-icon" aria-label={t.back} onClick={exit}><ArrowLeft size={20}/></button>
+        <button className="tm-icon tm-3d" aria-label={t.back} onPointerDown={buzz} onClick={exit}><span className="tm-3d-face"><ArrowLeft size={20} strokeWidth={3}/></span></button>
         {screen === 'room' && game && <span className="tm-top-title">{t.title}</span>}
-        {playing && !focus && <button className={`tm-scores-tab ${showScores ? 'is-on' : ''}`} onClick={() => setShowScores(v => !v)} aria-expanded={showScores}>
-          <ListOrdered size={14}/> {t.scores}
+        {playing && !focus && <button className={`tm-scores-tab tm-3d ${showScores ? 'is-on' : ''}`} onPointerDown={buzz} onClick={() => setShowScores(v => !v)} aria-expanded={showScores}>
+          <span className="tm-3d-face"><ListOrdered size={14} strokeWidth={2.6}/> {t.scores}</span>
         </button>}
       </header>}
       {playing && showScores && !focus && <div className="tm-scores">

@@ -402,7 +402,7 @@ export default function TikTokMemory({onContinue}) {
         {cur != null && <div className="tm-judge-word">
           <span className="tm-judge-n" dir="ltr">{t.word(cur + 1)}</span>
           {selfJudge && !shown.has(cur) && marks[cur] == null
-            ? <Btn kind="secondary" onClick={() => setShown(s => new Set(s).add(cur))}><Eye size={18}/> {t.showWord}</Btn>
+            ? <Btn kind="gold" onClick={() => setShown(s => new Set(s).add(cur))}><Eye size={18}/> {t.showWord}</Btn>
             : <strong>{words[cur]}</strong>}
         </div>}
         {cur != null && (!selfJudge || shown.has(cur) || marks[cur] != null) && <div className="tm-judge-buttons">

@@ -37,6 +37,19 @@ const FAR = [[0, 170, 34], [30, 145, 28], [56, 188, 40], [92, 158, 22], [112, 13
   [238, 164, 30], [266, 142, 40], [304, 180, 26], [328, 156, 38], [364, 134, 40], [402, 166, 30], [430, 144, 36], [464, 172, 28], [490, 150, 34]];
 const MID = [[-6, 228, 60], [52, 200, 46], [96, 250, 52], [146, 212, 40], [184, 236, 58], [240, 196, 44], [282, 224, 52], [332, 206, 74],
   [404, 230, 50], [452, 202, 72]];
+// An airliner seen side-on, nose to the right: fuselage, swept tail fin, tailplane,
+// the near wing sweeping back under the body and an engine hanging from it. No lights.
+// Each part is its own path so overlapping parts never cut holes in one another.
+const PLANE = [
+  'M1 -2.8H54C60 -2.8 64.5 -1.4 66.5 0.4C64.5 2.2 60 3.4 54 3.4H12C8 3.4 4 2.2 1 -0.6Z', // fuselage
+  'M16 -2.8L6.5 -15.5H2L1 -2.8Z', // tail fin
+  'M17 -0.4H5.5L-1.5 2.4H2.5L13 1.6Z', // tailplane
+  'M40 1.8L24.5 10.5H20L30 1.8Z', // wing
+  'M29.5 4.6H38.5C40 4.6 40 7.6 38.5 7.6H29.5Z', // engine
+];
+// One gull: two curved wings meeting at the body. The flock sits in a loose wave.
+const GULL = 'M-8 -0.6Q-4.5 -5 0 0.4Q4.5 -5 8 -0.6Q4.5 -2.6 0 1.8Q-4.5 -2.6 -8 -0.6Z';
+const GULLS = [[0, 182, 2], [38, 164, 1.7], [74, 152, 1.85], [110, 160, 1.5], [146, 178, 1.75], [186, 190, 1.6], [224, 178, 1.9], [262, 162, 1.45], [298, 154, 1.65], [334, 164, 1.3], [92, 200, 1.4], [204, 146, 1.25]];
 const BULBS = Array.from({length: 25}, (_, i) => {
   const u = i / 24;
   return [-210 + i * 39, 70 + 30 * u + 70 * Math.sin(Math.PI * u)];
@@ -104,7 +117,12 @@ function Skyline({variant = 'purple', still = false}) {
     <div className="tm-layer" ref={add} data-depth="0.3">{top(620, <>
       {CLOUDS.map((c, i) => <path key={i} className={`cloud ${c.c}`} d={`M0 ${c.y}h${c.w}l-${c.h * 2} ${c.h}H${c.h * 2}Z`}
         style={{animationDuration: `${c.d}s`, animationDelay: `${c.o}s`}}/>)}
-      <g className="plane"><path d="M0 0h26l6-4h4l-3 5 3 5h-4l-6-4H0Z"/><circle className="blink" cx="2" cy="1" r="1.6"/><circle className="blink blink-b" cx="30" cy="-3" r="1.4"/></g>
+      <g className="plane">{PLANE.map((d, i) => <path key={i} d={d}/>)}</g>
+      <g className="flock">{GULLS.map(([x, y, s], i) => <g key={i} transform={`translate(${x} ${y}) scale(${s})`}>
+        <g className="bob" style={{animationDelay: `${-(i * 0.47) % 3.4}s`}}>
+          <path className="gull" d={GULL} style={{animationDelay: `${-(i * 0.29) % 0.8}s`, animationDuration: `${0.7 + (i % 3) * 0.12}s`}}/>
+        </g>
+      </g>)}</g>
     </>)}</div>
     <div className="tm-layer" ref={add} data-depth="0.42">{bottom(420, <>
       <path className="beam" d="M170 330L120 -160h44Z"/>
